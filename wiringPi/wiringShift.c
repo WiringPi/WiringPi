@@ -90,7 +90,7 @@ void shiftOut (uint8_t dPin, uint8_t cPin, uint8_t order, uint8_t val)
  *********************************************************************************
  */
 
-void shiftOutWithDelay (uint8_t dPin, uint8_t cPin, uint8_t order, uint8_t val, uint8_t delay)
+void shiftOutWithDelay (uint8_t dPin, uint8_t cPin, uint8_t order, uint8_t val, int delay)
 {
   int8_t i;
 
