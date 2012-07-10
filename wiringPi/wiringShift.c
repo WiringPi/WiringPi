@@ -82,3 +82,36 @@ void shiftOut (uint8_t dPin, uint8_t cPin, uint8_t order, uint8_t val)
       digitalWrite (cPin, LOW) ;
     }
 }
+
+
+/*
+ * shiftOut:
+ *	Shift data out to a clocked source
+ *********************************************************************************
+ */
+
+void shiftOutWithDelay (uint8_t dPin, uint8_t cPin, uint8_t order, uint8_t val, uint8_t delay)
+{
+  int8_t i;
+
+  if (order == MSBFIRST)
+    for (i = 7 ; i >= 0 ; --i)
+    {
+      digitalWrite (dPin, val & (1 << i)) ;
+      delayMicroseconds (delay) ;
+      digitalWrite (cPin, HIGH) ;
+      delayMicroseconds (delay) ;
+      digitalWrite (cPin, LOW) ;
+      delayMicroseconds (delay) ;
+    }
+  else
+    for (i = 0 ; i < 8 ; ++i)
+    {
+      digitalWrite (dPin, val & (1 << i)) ;
+      delayMicroseconds (delay) ;
+      digitalWrite (cPin, HIGH) ;
+      delayMicroseconds (delay) ;
+      digitalWrite (cPin, LOW) ;
+      delayMicroseconds (delay) ;
+    }
+}
