@@ -1,0 +1,145 @@
+.TH "GPIO" "14 June 2012" "Command-Line access to Raspberry Pi GPIO"
+
+.SH NAME
+gpio \- Command-line access to Raspberry Pi GPIO
+
+.SH SYNOPSIS
+.B gpio
+.RB [ \-g ]
+.RB < read/write/pwm/mode ...>
+.TP
+.B gpio
+.RB < export/unexport/exports ...>
+
+.SH DESCRIPTION
+
+.B GPIO
+is a command line tool to allow the user easy access to the GPIO pins
+on the Raspberry Pi. It's designed for simple testing and diagnostic
+purposes, but can be used in shell scripts for general if somewhat slow
+control of the GPIO pins.
+
+Additionally, it can be used to set the exports in the /sys/class/gpio
+system directory to allow subsequent programs to use the /sys/class/gpio
+interface without needing to be run as root.
+
+.SH OPTIONS
+
+.TP
+.B \-g
+Use the BCM_GPIO pins numbers rather than WiringPi pin numbers.
+
+.TP
+.B read
+Read the digital value of the given pin and print 0 or 1 to represent the
+respective logic levels.
+
+.TP
+.B write
+Write the given value (0 or 1) to the pin.
+
+.TP
+.B pwm
+Write a PWM value (0-1023) to the given pin.
+
+.TP
+.B mode
+Set a pin into input, output or pwm mode. Can also use the literals up, down or tri
+to set the internal pull-up, pull-down or tristate controls.
+
+.TP
+.B export
+Export a GPIO pin in the /sys/class/gpio directory. Use like the mode command above
+however only in and out are supported at this time.
+
+Once a GPIO pin has been exported, the
+.B gpio
+program changes the ownership of the /sys/class/gpio/gpioX/value pseudo file to
+that of the user running the
+.B gpio
+program. This means that you can have a small script of gpio exports to setup
+the gpio pins as your program requires without the need to run anything as
+root, or with the sudo command.
+
+.TP
+.B unexport
+Un-Export a GPIO pin in the /sys/class/gpio directory.
+
+.TP
+.B exports
+Print a list (if any) of all the exported GPIO pins and their current values.
+
+.SH "WiringPi vs. GPIO Pin numbering"
+
+.PP
+.TS
+r r l.
+WiringPi	GPIO	Function
+_
+0	17
+1	18	(PWM)
+2	21
+3	22
+4	23
+5	24
+6	25
+7	4
+8	0	SDA0
+9	1	SCL0
+10	8	SPI CE0
+11	7	SPI CE1
+12	10	SPI MOSI
+13	9	SPI MISO
+14	11	SPI SCLK
+15	14	TxD
+16	15	RxD
+.TE
+
+.SH FILES
+
+.TP 2.2i
+.I gpio
+executable
+
+.SH EXAMPLES
+.TP 2.2i
+gpio mode 4 output # Set pin 4 to output
+.PP
+gpio -g mode 23 output # Set GPIO pin 23 to output (same as WiringPi pin 4)
+.PP
+gpio mode 1 pwm # Set pin 1 to PWM mode
+.PP
+gpio pwm 1 512 # Set pin 1 to PWM value 512 - half brightness
+.PP
+gpio export 17 out # Set GPIO Pin 17 to output
+.PP
+gpio export 0 in # Set GPIO Pin 0 (SDA0) to input.
+.PP
+gpio -g read 0 # Read GPIO Pin 0 (SDA0)
+
+.SH "NOTES"
+
+When using the export or unexport commands, the pin numbers are
+.B always
+native GPIO numbers and never wiringPi pin numbers.
+
+.SH "SEE ALSO"
+
+.LP
+WiringPi's home page
+.IP
+https://projects.drogon.net/raspberry-pi/wiringpi/
+
+.SH AUTHOR
+
+Gordon Henderson
+
+.SH "REPORTING BUGS"
+
+Report bugs to <gordon@drogon.net>
+
+.SH COPYRIGHT
+
+Copyright (c) 2012 Gordon Henderson
+This is free software; see the source for copying conditions. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
