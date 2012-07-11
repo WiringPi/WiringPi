@@ -30,14 +30,17 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
-//#include <sys/stat.h>
 #include <fcntl.h>
 
+
+#define	VERSION	"1.0"
 
 static int wpMode ;
 
 
-char *usage = "Usage: gpio [-g] <read/write/pwm/mode/export/unexport/exports> ..." ;
+char *usage = "Usage: gpio -v\n"
+              "       gpio [-g] <read/write/pwm/mode/> ...\n"
+	      "       gpio <export/unexport/exports> ..." ;
 
 
 /*
@@ -367,6 +370,14 @@ int main (int argc, char *argv [])
     return 1 ;
   }
 
+  if (strcasecmp (argv [1], "-v") == 0)
+  {
+    printf ("gpio version: %s\n", VERSION) ;
+    printf ("Copyright (c) 2012 Gordon Henderson\n") ;
+    printf ("This is free software with ABSOLUTELY NO WARRANTY.\n") ;
+    return 0 ;
+  }
+
 // Initial test for /sys/class/gpio operations:
 
   /**/ if (strcasecmp (argv [1], "exports" ) == 0)
@@ -411,7 +422,7 @@ int main (int argc, char *argv [])
     doPwm    (argc, argv) ;
   else
   {
-    fprintf (stderr, "%s: Unknown command: %s. (read/write/pwm/mode/export/unexport expected)\n", argv [0], argv [1]) ;
+    fprintf (stderr, "%s: Unknown command: %s. (read/write/pwm/mode expected)\n", argv [0], argv [1]) ;
     exit (1) ;
   }
   return 0 ;

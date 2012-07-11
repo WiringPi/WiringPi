@@ -35,9 +35,9 @@ LIBS    =
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	wiringPi.c serial.c wiringShift.c
+SRC	=	wiringPi.c serial.c wiringShift.c lcd.c
 
-OBJ	=	wiringPi.o serial.o wiringShift.o
+OBJ	=	wiringPi.o serial.o wiringShift.o lcd.o
 
 all:		$(TARGET)
 

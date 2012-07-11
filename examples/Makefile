@@ -35,11 +35,11 @@ LIBS    = -lwiringPi
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	test1.c test2.c speed.c
+SRC	=	test1.c test2.c speed.c lcd.c
 
-OBJ	=	test1.o test2.o speed.o
+OBJ	=	test1.o test2.o speed.o lcd.o
 
-all:		test1 test2 speed
+all:		test1 test2 speed lcd
 
 test1:	test1.o
 	@echo [link]
@@ -52,14 +52,18 @@ test2:	test2.o
 speed:	speed.o
 	@echo [link]
 	$(CC) -o $@ speed.o $(LDFLAGS) $(LIBS)
-	
+
+lcd:	lcd.o
+	@echo [link]
+	$(CC) -o $@ lcd.o $(LDFLAGS) $(LIBS)
+
 
 .c.o:
 	@echo [CC] $<
 	@$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(OBJ) *~ core tags test1 test2 speed
+	rm -f $(OBJ) *~ core tags test1 test2 speed lcd
 
 tags:	$(SRC)
 	@echo [ctags]
