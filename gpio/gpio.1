@@ -1,0 +1,179 @@
+.TH "GPIO" "14 June 2012" "Command-Line access to Raspberry Pi and PiFace GPIO"
+
+.SH NAME
+gpio \- Command-line access to Raspberry Pi and PiFace GPIO
+
+.SH SYNOPSIS
+.TP
+.B gpio
+.RB [ \-v ]
+.TP
+.B gpio
+.RB [ \-g ]
+.RB < read/write/pwm/mode ...>
+.TP
+.B gpio
+.RB [ \-p ]
+.RB < read/write/mode ...>
+.TP
+.B gpio
+.RB < export/edge/unexport/unexportall/exports ...>
+
+.SH DESCRIPTION
+
+.B GPIO
+is a command line tool to allow the user easy access to the GPIO pins
+on the Raspberry Pi. It's designed for simple testing and diagnostic
+purposes, but can be used in shell scripts for general if somewhat slow
+control of the GPIO pins.
+
+Additionally, it can be used to set the exports in the \fI/sys/class/gpio\fR
+system directory to allow subsequent programs to use the \fR/sys/class/gpio\fR
+interface without needing to be run as root.
+
+.SH OPTIONS
+
+.TP
+.B \-v
+Output the current version
+
+.TP
+.B \-g
+Use the BCM_GPIO pins numbers rather than wiringPi pin numbers.
+
+.TP
+.B \-p
+Use the PiFace interface board and its corresponding pin numbers.
+
+.TP
+.B read
+Read the digital value of the given pin and print 0 or 1 to represent the
+respective logic levels.
+
+.TP
+.B write
+Write the given value (0 or 1) to the pin.
+
+.TP
+.B pwm
+Write a PWM value (0-1023) to the given pin.
+
+.TP
+.B mode
+Set a pin into \fIinput\fR, \fIoutput\fR or \fIpwm\fR mode. Can also
+use the literals \fIup\fR, \fIdown\fR or \fItri\fR to set the internal
+pull-up, pull-down or tristate (off) controls.
+
+.TP
+.B export
+Export a GPIO pin in the \fI/sys/class/gpio\fR directory. Use like the
+mode command above however only \fIin\fR and \fIout\fR are supported at
+this time. Note that the pin number is the \fBBCM_GPIO\fR number and
+not the wiringPi number.
+
+Once a GPIO pin has been exported, the \fBgpio\fR program changes the
+ownership of the \fI/sys/class/gpio/gpioX/value\fR and if present in
+later kernels, the \fI/sys/class/gpio/gpioX/edge\fR pseudo files to
+that of the user running the \fBgpio\fR program. This means that you
+can have a small script of gpio exports to setup the gpio pins as your
+program requires without the need to run anything as root, or with the
+sudo command.
+
+.TP
+.B edge
+This exports a GPIO pin in the \fI/sys/class/gpio\fR directory, set
+the direction to input and set the edge interrupt method to \fInone\fR,
+\fIrising\fR, \fIfalling\fR or \fIboth\fR.  Use like the export command
+above and note that \fBBCM_GPIO\fR pin number is used not not wiringPi pin
+numbering.
+
+Like the export commands abovem ownership is set to that of the 
+calling user, allowing subsequent access from user programs without
+requiring root/sudo.
+
+.TP
+.B unexport
+Un-Export a GPIO pin in the /sys/class/gpio directory.
+
+.TP
+.B unexportall
+Un-Export all the GPIO pins in the /sys/class/gpio directory.
+
+.TP
+.B exports
+Print a list (if any) of all the exported GPIO pins and their current values.
+
+.SH "WiringPi vs. GPIO Pin numbering"
+
+.PP
+.TS
+r r l.
+WiringPi	GPIO	Function
+_
+0	17
+1	18	(PWM)
+2	21
+3	22
+4	23
+5	24
+6	25
+7	4
+8	0	SDA0
+9	1	SCL0
+10	8	SPI CE0
+11	7	SPI CE1
+12	10	SPI MOSI
+13	9	SPI MISO
+14	11	SPI SCLK
+15	14	TxD
+16	15	RxD
+.TE
+
+.SH FILES
+
+.TP 2.2i
+.I gpio
+executable
+
+.SH EXAMPLES
+.TP 2.2i
+gpio mode 4 output # Set pin 4 to output
+.PP
+gpio -g mode 23 output # Set GPIO pin 23 to output (same as WiringPi pin 4)
+.PP
+gpio mode 1 pwm # Set pin 1 to PWM mode
+.PP
+gpio pwm 1 512 # Set pin 1 to PWM value 512 - half brightness
+.PP
+gpio export 17 out # Set GPIO Pin 17 to output
+.PP
+gpio export 0 in # Set GPIO Pin 0 (SDA0) to input.
+.PP
+gpio -g read 0 # Read GPIO Pin 0 (SDA0)
+
+.SH "NOTES"
+
+When using the \fIexport\fR, \fIedge\fR or \fIunexport\fR commands, the
+pin numbers are \fBalways\fR native BCM_GPIO numbers and never wiringPi
+pin numbers.
+
+.SH "SEE ALSO"
+
+.LP
+WiringPi's home page
+.IP
+https://projects.drogon.net/raspberry-pi/wiringpi/
+
+.SH AUTHOR
+
+Gordon Henderson
+
+.SH "REPORTING BUGS"
+
+Report bugs to <gordon@drogon.net>
+
+.SH COPYRIGHT
+
+Copyright (c) 2012 Gordon Henderson
+This is free software; see the source for copying conditions. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
