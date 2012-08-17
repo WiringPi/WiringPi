@@ -11,21 +11,32 @@
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
  *
  *    wiringPi is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
- *    the Free Software Foundation, either version 3 of the License, or
- *    (at your option) any later version.
+ *    it under the terms of the GNU Lesser General Public License as
+ *    published by the Free Software Foundation, either version 3 of the
+ *    License, or (at your option) any later version.
  *
  *    wiringPi is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *    GNU Lesser General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
- *    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
+ *    You should have received a copy of the GNU Lesser General Public
+ *    License along with wiringPi.
+ *    If not, see <http://www.gnu.org/licenses/>.
  ***********************************************************************
  */
 
 // Revisions:
+//	19 Jul 2012:
+//		Moved to the LGPL
+//		Added an abstraction layer to the main routines to save a tiny
+//		bit of run-time and make the clode a little cleaner (if a little
+//		larger)
+//		Added waitForInterrupt code
+//		Added piHiPri code
+//
+//	 9 Jul 2012:
+//		Added in support to use the /sys/class/gpio interface.
 //	 2 Jul 2012:
 //		Fixed a few more bugs to do with range-checking when in GPIO mode.
 //	11 Jun 2012:
@@ -45,6 +56,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <poll.h>
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
@@ -55,9 +67,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
-
 #include "wiringPi.h"
+
+// Function stubs
+
+void (*pinMode)          (int pin, int mode) ;
+void (*pullUpDnControl)  (int pin, int pud) ;
+void (*digitalWrite)     (int pin, int value) ;
+void (*pwmWrite)         (int pin, int value) ;
+int  (*digitalRead)      (int pin) ;
+int  (*waitForInterrupt) (int pin, int mS) ;
+
 
 #ifndef	TRUE
 #define	TRUE	(1==1)
@@ -77,7 +97,7 @@
 #define	FSEL_ALT5		0b010
 
 // Access from ARM Running Linux
-//	Take from Gerts code. Some of this is not in the manual
+//	Take from Gert/Doms code. Some of this is not in the manual
 //	that I can find )-:
 
 #define BCM2708_PERI_BASE	0x20000000
@@ -143,13 +163,9 @@ static volatile uint32_t *clk ;
 //	X / 10 + ((X % 10) * 3)
 
 // sysFds:
-//	Map a file descriptor from the /sys/class/gpio/gpioX/value file
+//	Map a file descriptor from the /sys/class/gpio/gpioX/value
 
 static int sysFds [64] ;
-
-// Mode
-
-static int gpioPinMode ;
 
 // Doing it the Arduino way with lookup tables...
 //	Yes, it's probably more innefficient than all the bit-twidling, but it
@@ -158,13 +174,19 @@ static int gpioPinMode ;
 // pinToGpio:
 //	Take a Wiring pin (0 through X) and re-map it to the BCM_GPIO pin
 
-static int pinToGpio [] =
+static int pinToGpio [64] =
 {
   17, 18, 21, 22, 23, 24, 25, 4,	// From the Original Wiki - GPIO 0 through 7
    0,  1,				// I2C  - SDA0, SCL0
    8,  7,				// SPI  - CE1, CE0
   10,  9, 11, 				// SPI  - MOSI, MISO, SCLK
   14, 15,				// UART - Tx, Rx
+
+// Padding:
+
+          -1, -1, -1,-1,-1,-1,-1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 31
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 47
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 63
 } ;
 
 // gpioToGPFSEL:
@@ -219,6 +241,35 @@ static uint8_t gpioToGPLEV [] =
   14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,
 } ;
 
+#ifdef notYetReady
+// gpioToEDS
+//	(Word) offset to the Event Detect Status
+
+static uint8_t gpioToEDS [] =
+{
+  16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,16,
+  17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,17,
+} ;
+
+// gpioToREN
+//	(Word) offset to the Rising edgde ENable register
+
+static uint8_t gpioToREN [] =
+{
+  19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,19,
+  20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,
+} ;
+
+// gpioToFEN
+//	(Word) offset to the Falling edgde ENable register
+
+static uint8_t gpioToFEN [] =
+{
+  22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,
+  23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,
+} ;
+#endif
+
 // gpioToPUDCLK
 //	(Word) offset to the Pull Up Down Clock regsiter
 
@@ -265,15 +316,303 @@ static unsigned long long epoch ;
 
 
 /*
- * wiringPiGpioMode:
- *	Set the mode - use Pin numbers (0-16) or GPIO number (seemingly random)
+ * pinMode:
+ *	Sets the mode of a pin to be input, output or PWM output
  *********************************************************************************
  */
 
-void wiringPiGpioMode (int mode)
+void pinModeGpio (int pin, int mode)
 {
-  gpioPinMode = mode ;
+  static int pwmRunning  = FALSE ;
+  int fSel, shift, alt ;
+
+  pin &= 63 ;
+
+  fSel    = gpioToGPFSEL [pin] ;
+  shift   = gpioToShift  [pin] ;
+
+  /**/ if (mode == INPUT)
+    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) ; // Sets bits to zero = input
+  else if (mode == OUTPUT)
+    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (1 << shift) ;
+  else if (mode == PWM_OUTPUT)
+  {
+    if ((alt = gpioToPwmALT [pin]) == 0)	// Not a PWM pin
+      return ;
+
+// Set pin to PWM mode
+
+    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
+
+// We didn't initialise the PWM hardware at setup time - because it's possible that
+//	something else is using the PWM - e.g. the Audio systems! So if we use PWM
+//	here, then we're assuming that nothing else is, otherwise things are going
+//	to sound a bit funny...
+
+    if (!pwmRunning)
+    {
+
+//	Gert/Doms Values
+      *(clk + PWMCLK_DIV)  = 0x5A000000 | (32<<12) ;	// set pwm div to 32 (19.2/3 = 600KHz)
+      *(clk + PWMCLK_CNTL) = 0x5A000011 ;		// Source=osc and enable
+      digitalWrite (pin, LOW) ;
+      *(pwm + PWM_CONTROL) = 0 ;			// Disable PWM
+      delayMicroseconds (10) ;
+      *(pwm + PWM0_RANGE) = 0x400 ;
+      delayMicroseconds (10) ;
+      *(pwm + PWM1_RANGE) = 0x400 ;
+      delayMicroseconds (10) ;
+
+// Enable PWMs
+
+      *(pwm + PWM0_DATA) = 512 ;
+      *(pwm + PWM1_DATA) = 512 ;
+
+      *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
+    }
+
+  }
+
+// When we change mode of any pin, we remove the pull up/downs
+
+  pullUpDnControl (pin, PUD_OFF) ;
 }
+
+void pinModeWPi (int pin, int mode)
+{
+  pinModeGpio (pinToGpio [pin & 63], mode) ;
+}
+
+void pinModeSys (int pin, int mode)
+{
+  return ;
+}
+
+
+#ifdef notYetReady
+/*
+ * pinED01:
+ * pinED10:
+ *	Enables edge-detect mode on a pin - from a 0 to a 1 or 1 to 0
+ *	Pin must already be in input mode with appropriate pull up/downs set.
+ *********************************************************************************
+ */
+
+void pinEnableED01Pi (int pin)
+{
+  pin = pinToGpio [pin & 63] ;
+}
+#endif
+
+
+
+/*
+ * digitalWrite:
+ *	Set an output bit
+ *********************************************************************************
+ */
+
+void digitalWriteWPi (int pin, int value)
+{
+  int gpioPin = pinToGpio [pin & 63] ;
+
+  if (value == LOW)
+    *(gpio + gpioToGPCLR [gpioPin]) = 1 << gpioPin ;
+  else
+    *(gpio + gpioToGPSET [gpioPin]) = 1 << gpioPin ;
+}
+
+void digitalWriteGpio (int pin, int value)
+{
+  pin &= 63 ;
+
+  if (value == LOW)
+    *(gpio + gpioToGPCLR [pin]) = 1 << pin ;
+  else
+    *(gpio + gpioToGPSET [pin]) = 1 << pin ;
+}
+
+void digitalWriteSys (int pin, int value)
+{
+  pin &= 63 ;
+
+  if (sysFds [pin] != -1)
+  {
+    if (value == LOW)
+      write (sysFds [pin], "0\n", 2) ;
+    else
+      write (sysFds [pin], "1\n", 2) ;
+  }
+}
+
+
+/*
+ * pwnWrite:
+ *	Set an output PWM value
+ *********************************************************************************
+ */
+
+void pwmWriteWPi (int pin, int value)
+{
+  int port, gpioPin ;
+
+  gpioPin = pinToGpio [pin & 63] ;
+  port    = gpioToPwmPort [gpioPin] ;
+
+  *(pwm + port) = value & 0x3FF ;
+}
+
+void pwmWriteGpio (int pin, int value)
+{
+  int port, gpioPin ;
+
+  gpioPin = pin & 63 ;
+  port    = gpioToPwmPort [gpioPin] ;
+
+  *(pwm + port) = value & 0x3FF ;
+}
+
+
+void pwmWriteSys (int pin, int value)
+{
+  return ;
+}
+
+
+/*
+ * digitalRead:
+ *	Read the value of a given Pin, returning HIGH or LOW
+ *********************************************************************************
+ */
+
+int digitalReadWPi (int pin)
+{
+  int gpioPin ;
+
+  pin &= 63 ;
+
+  gpioPin = pinToGpio [pin] ;
+
+  if ((*(gpio + gpioToGPLEV [gpioPin]) & (1 << gpioPin)) != 0)
+    return HIGH ;
+  else
+    return LOW ;
+}
+
+int digitalReadGpio (int pin)
+{
+  pin &= 63 ;
+
+  if ((*(gpio + gpioToGPLEV [pin]) & (1 << pin)) != 0)
+    return HIGH ;
+  else
+    return LOW ;
+}
+
+int digitalReadSys (int pin)
+{
+  char c ;
+
+  pin &= 63 ;
+
+  if (sysFds [pin] == -1)
+    return 0 ;
+
+  lseek (sysFds [pin], 0L, SEEK_SET) ;
+  read  (sysFds [pin], &c, 1) ;
+  return (c == '0') ? 0 : 1 ;
+}
+
+
+/*
+ * pullUpDownCtrl:
+ *	Control the internal pull-up/down resistors on a GPIO pin
+ *	The Arduino only has pull-ups and these are enabled by writing 1
+ *	to a port when in input mode - this paradigm doesn't quite apply
+ *	here though.
+ *********************************************************************************
+ */
+
+void pullUpDnControlWPi (int pin, int pud)
+{
+  pin = pinToGpio [pin & 63] ;
+
+  *(gpio + 37) = pud ;
+  delayMicroseconds (10) ;
+  *(gpio + gpioToPUDCLK [pin]) = 1 << pin ;
+  delayMicroseconds (10) ;
+  
+  *(gpio + 37) = 0 ;
+  *(gpio + gpioToPUDCLK [pin]) = 0 ;
+}
+
+void pullUpDnControlGpio (int pin, int pud)
+{
+  pin &= 63 ;
+
+  *(gpio + 37) = pud ;
+  delayMicroseconds (10) ;
+  *(gpio + gpioToPUDCLK [pin]) = 1 << pin ;
+  delayMicroseconds (10) ;
+  
+  *(gpio + 37) = 0 ;
+  *(gpio + gpioToPUDCLK [pin]) = 0 ;
+}
+
+void pullUpDnControlSys (int pin, int pud)
+{
+  return ;
+}
+
+
+/*
+ * waitForInterrupt:
+ *	Wait for Interrupt on a GPIO pin.
+ *	This is actually done via the /sys/class/gpio interface regardless of
+ *	the wiringPi access mode in-use. Maybe sometime it might get a better
+ *	way for a bit more efficiency.
+ *********************************************************************************
+ */
+
+int waitForInterruptSys (int pin, int mS)
+{
+  int fd, x ;
+  char buf [8] ;
+  struct pollfd polls ;
+
+  if ((fd = sysFds [pin & 63]) == -1)
+    return -2 ;
+
+// Do a dummy read
+
+  x = read (fd, buf, 6) ;
+  if (x < 0)
+    return x ;
+
+// And seek
+
+  lseek (fd, 0, SEEK_SET) ;
+
+// Setup poll structure
+
+  polls.fd     = fd ;
+  polls.events = POLLPRI ;	// Urgent data!
+
+// Wait for it ...
+
+  return poll (&polls, 1, mS) ;
+}
+
+int waitForInterruptWPi (int pin, int mS)
+{
+  return waitForInterruptSys (pinToGpio [pin & 63], mS) ;
+}
+
+int waitForInterruptGpio (int pin, int mS)
+{
+  return waitForInterruptSys (pin, mS) ;
+}
+
 
 
 /*
@@ -296,9 +635,12 @@ int wiringPiSetup (void)
   uint32_t *pads ;
 #endif
 
-// Set Pin mode by default
-
-  wiringPiGpioMode (WPI_MODE_PINS) ;
+           pinMode =          pinModeWPi ;
+   pullUpDnControl =  pullUpDnControlWPi ;
+      digitalWrite =     digitalWriteWPi ;
+          pwmWrite =         pwmWriteWPi ;
+       digitalRead =      digitalReadWPi ;
+  waitForInterrupt = waitForInterruptWPi ;
   
 // Open the master /dev/memory device
 
@@ -417,7 +759,13 @@ int wiringPiSetupGpio (void)
   if (x != 0)
     return x ;
 
-  wiringPiGpioMode (WPI_MODE_GPIO) ;
+           pinMode =          pinModeGpio ;
+   pullUpDnControl =  pullUpDnControlGpio ;
+      digitalWrite =     digitalWriteGpio ;
+          pwmWrite =         pwmWriteGpio ;
+       digitalRead =      digitalReadGpio ;
+  waitForInterrupt = waitForInterruptGpio ;
+
   return 0 ;
 }
 
@@ -433,25 +781,27 @@ int wiringPiSetupGpio (void)
 
 int wiringPiSetupSys (void)
 {
-  int fd, pin ;
+  int pin ;
   struct timeval tv ;
   char fName [128] ;
 
-// Set GPIO_SYS mode by default
-
-  wiringPiGpioMode (WPI_MODE_GPIO_SYS) ;
+           pinMode =          pinModeSys ;
+   pullUpDnControl =  pullUpDnControlSys ;
+      digitalWrite =     digitalWriteSys ;
+          pwmWrite =         pwmWriteSys ;
+       digitalRead =      digitalReadSys ;
+  waitForInterrupt = waitForInterruptSys ;
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open
-//	the 'value' part to speed things up for later
+//	the 'value' interface to speed things up for later
   
   for (pin = 0 ; pin < 64 ; ++pin)
   {
-    sysFds [pin] = -1 ;
     sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
-    if ((fd = open (fName, O_RDWR)) == -1)
-      continue ;
-    sysFds [pin] = fd ;
+    sysFds [pin] = open (fName, O_RDWR) ;
   }
+
+// Initialise the epoch for mills() ...
 
   gettimeofday (&tv, NULL) ;
   epoch = (tv.tv_sec * 1000000 + tv.tv_usec) / 1000 ;
@@ -460,228 +810,7 @@ int wiringPiSetupSys (void)
 }
 
 
-/*
- * pinMode:
- *	Sets the mode of a pin to be input, output or PWM output
- *********************************************************************************
- */
 
-void pinMode (int pin, int mode)
-{
-  static int pwmRunning  = FALSE ;
-
-  int gpioPin, fSel, shift ;
-  int alt ;
-
-// We can't change the mode in GPIO_SYS mode
-
-  if (gpioPinMode == WPI_MODE_GPIO_SYS)
-    return ;
-
-  if (gpioPinMode == WPI_MODE_PINS)
-  {
-    if ((pin < 0) || (pin >= NUM_PINS))
-      return ;
-    gpioPin = pinToGpio    [pin] ;
-  }
-  else
-    gpioPin = pin ;
-
-  fSel    = gpioToGPFSEL [gpioPin] ;
-  shift   = gpioToShift  [gpioPin] ;
-
-  /**/ if (mode == INPUT)
-    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) ; // Sets bits to zero = input
-  else if (mode == OUTPUT)
-    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (1 << shift) ;
-  else if (mode == PWM_OUTPUT)
-  {
-    if ((alt = gpioToPwmALT [gpioPin]) == 0)	// Not a PWM pin
-      return ;
-
-// Set pin to PWM mode
-
-    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
-
-// We didn't initialise the PWM hardware at setup time - because it's possible that
-//	something else is using the PWM - e.g. the Audio systems! So if we use PWM
-//	here, then we're assuming that nothing else is, otherwise things are going
-//	to sound a bit funny...
-
-    if (!pwmRunning)
-    {
-
-//	Gert/Doms Values
-      *(clk + PWMCLK_DIV)  = 0x5A000000 | (32<<12) ;	// set pwm div to 32 (19.2/3 = 600KHz)
-      *(clk + PWMCLK_CNTL) = 0x5A000011 ;		// Source=osc and enable
-      digitalWrite (pin, LOW) ;
-      *(pwm + PWM_CONTROL) = 0 ;			// Disable PWM
-      delayMicroseconds (10) ;
-      *(pwm + PWM0_RANGE) = 0x400 ;
-      delayMicroseconds (10) ;
-      *(pwm + PWM1_RANGE) = 0x400 ;
-      delayMicroseconds (10) ;
-
-// Enable PWMs
-
-      *(pwm + PWM0_DATA) = 512 ;
-      *(pwm + PWM1_DATA) = 512 ;
-
-      *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
-    }
-
-  }
-
-// When we change mode of any pin, we remove the pull up/downs
-
-  pullUpDnControl (pin, PUD_OFF) ;
-}
-
-
-/*
- * digitalWrite:
- *	Set an output bit
- *********************************************************************************
- */
-
-void digitalWrite (int pin, int value)
-{
-  int gpioPin ;
-
-  if (gpioPinMode == WPI_MODE_PINS)
-  {
-    if ((pin < 0) || (pin >= NUM_PINS))
-      return ;
-    gpioPin = pinToGpio [pin] ;
-  }
-  else
-    gpioPin = pin ;
-
-  if (gpioPinMode == WPI_MODE_GPIO_SYS)
-  {
-    if (sysFds [gpioPin] != -1)
-    {
-      if (value == LOW)
-	write (sysFds [gpioPin], "0\n", 2) ;
-      else
-	write (sysFds [gpioPin], "1\n", 2) ;
-    }
-  }
-  else
-  {
-    if (value == LOW)
-      *(gpio + gpioToGPCLR [gpioPin]) = 1 << gpioPin ;
-    else
-      *(gpio + gpioToGPSET [gpioPin]) = 1 << gpioPin ;
-  }
-}
-
-
-/*
- * pwnWrite:
- *	Set an output PWM value
- *********************************************************************************
- */
-
-void pwmWrite (int pin, int value)
-{
-  int port, gpioPin ;
-
-// We can't do this in GPIO_SYS mode
-
-  if (gpioPinMode == WPI_MODE_GPIO_SYS)
-    return ;
-
-  if (gpioPinMode == WPI_MODE_PINS)
-  {
-    if ((pin < 0) || (pin >= NUM_PINS))
-      return ;
-    gpioPin = pinToGpio [pin] ;
-  }
-  else
-    gpioPin = pin ;
-
-  port = gpioToPwmPort [gpioPin] ;
-
-  *(pwm + port) = value & ~0x400 ;
-}
-
-
-/*
- * digitalRead:
- *	Read the value of a given Pin, returning HIGH or LOW
- *********************************************************************************
- */
-
-int digitalRead (int pin)
-{
-  int gpioPin ;
-  char c ;
-
-  if (gpioPinMode == WPI_MODE_PINS)
-  {
-    if ((pin < 0) || (pin >= NUM_PINS))
-      return 0 ;
-    gpioPin = pinToGpio [pin] ;
-  }
-  else
-    gpioPin = pin ;
-
-  if (gpioPinMode == WPI_MODE_GPIO_SYS)
-  {
-    if (sysFds [gpioPin] == -1)
-      return 0 ;
-    else
-    {
-      lseek (sysFds [gpioPin], 0L, SEEK_SET) ;
-      read  (sysFds [gpioPin], &c, 1) ;
-      return (c == '0') ? 0 : 1 ;
-    }
-  }
-  else
-  {
-    if ((*(gpio + gpioToGPLEV [gpioPin]) & (1 << gpioPin)) != 0)
-      return HIGH ;
-    else
-      return LOW ;
-  }
-}
-
-/*
- * pullUpDownCtrl:
- *	Control the internal pull-up/down resistors on a GPIO pin
- *	The Arduino only has pull-ups and these are enabled by writing 1
- *	to a port when in input mode - this paradigm doesn't quite apply
- *	here though.
- *********************************************************************************
- */
-
-void pullUpDnControl (int pin, int pud)
-{
-  int gpioPin ;
-
-// We can't do this in GPIO_SYS mode
-
-  if (gpioPinMode == WPI_MODE_GPIO_SYS)
-    return ;
-
-  if (gpioPinMode == WPI_MODE_PINS)
-  {
-    if ((pin < 0) || (pin >= NUM_PINS))
-      return ;
-    gpioPin = pinToGpio [pin] ;
-  }
-  else
-    gpioPin = pin ;
-
-  *(gpio + 37) = pud ;
-  delayMicroseconds (10) ;
-  *(gpio + gpioToPUDCLK [gpioPin]) = 1 << gpioPin ;
-  delayMicroseconds (10) ;
-  
-  *(gpio + 37) = 0 ;
-  *(gpio + gpioToPUDCLK [gpioPin]) = 0 ;
-}
 
 
 /*

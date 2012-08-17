@@ -7,16 +7,16 @@
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
  *
  *    wiringPi is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
+ *    it under the terms of the GNU Lesser General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
  *
  *    wiringPi is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *    GNU Lesser General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
+ *    You should have received a copy of the GNU Lesser General Public License
  *    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
  ***********************************************************************
  */
@@ -28,6 +28,7 @@
 #define	WPI_MODE_PINS		 0
 #define	WPI_MODE_GPIO		 1
 #define	WPI_MODE_GPIO_SYS	 2
+#define	WPI_MODE_PIFACE		 3
 
 #define	INPUT		 0
 #define	OUTPUT		 1
@@ -48,17 +49,39 @@
 extern "C" {
 #endif
 
-extern int  wiringPiSetup     (void) ;
-extern int  wiringPiSetupSys  (void) ;
-extern int  wiringPiSetupGpio (void) ;
+// Basic wiringPi functions
 
-extern void wiringPiGpioMode  (int mode) ;
+extern int  wiringPiSetup       (void) ;
+extern int  wiringPiSetupSys    (void) ;
+extern int  wiringPiSetupGpio   (void) ;
+extern int  wiringPiSetupPiFace (void) ;
 
-extern void pullUpDnControl   (int pin, int pud) ;
-extern void pinMode           (int pin, int mode) ;
-extern void digitalWrite      (int pin, int value) ;
-extern void pwmWrite          (int pin, int value) ;
-extern int  digitalRead       (int pin) ;
+extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio program only
+
+extern void (*pinMode)          (int pin, int mode) ;
+extern void (*pullUpDnControl)  (int pin, int pud) ;
+extern void (*digitalWrite)     (int pin, int value) ;
+extern void (*pwmWrite)         (int pin, int value) ;
+extern int  (*digitalRead)      (int pin) ;
+
+// Interrupts
+
+extern int  (*waitForInterrupt) (int pin, int mS) ;
+
+// Threads
+
+#define	PI_THREAD(X)	void *X (void *dummy)
+
+extern int  piThreadCreate (void *(*fn)(void *)) ;
+extern void piLock         (int key) ;
+extern void piUnlock       (int key) ;
+
+// Schedulling priority
+
+extern int piHiPri (int pri) ;
+
+
+// Extras from arduino land
 
 extern void         delay             (unsigned int howLong) ;
 extern void         delayMicroseconds (unsigned int howLong) ;

@@ -1,15 +1,23 @@
-.TH "GPIO" "14 June 2012" "Command-Line access to Raspberry Pi GPIO"
+.TH "GPIO" "14 June 2012" "Command-Line access to Raspberry Pi and PiFace GPIO"
 
 .SH NAME
-gpio \- Command-line access to Raspberry Pi GPIO
+gpio \- Command-line access to Raspberry Pi and PiFace GPIO
 
 .SH SYNOPSIS
+.TP
+.B gpio
+.RB [ \-v ]
+.TP
 .B gpio
 .RB [ \-g ]
 .RB < read/write/pwm/mode ...>
 .TP
 .B gpio
-.RB < export/unexport/exports ...>
+.RB [ \-p ]
+.RB < read/write/mode ...>
+.TP
+.B gpio
+.RB < export/edge/unexport/unexportall/exports ...>
 
 .SH DESCRIPTION
 
@@ -19,15 +27,23 @@ on the Raspberry Pi. It's designed for simple testing and diagnostic
 purposes, but can be used in shell scripts for general if somewhat slow
 control of the GPIO pins.
 
-Additionally, it can be used to set the exports in the /sys/class/gpio
-system directory to allow subsequent programs to use the /sys/class/gpio
+Additionally, it can be used to set the exports in the \fI/sys/class/gpio\fR
+system directory to allow subsequent programs to use the \fR/sys/class/gpio\fR
 interface without needing to be run as root.
 
 .SH OPTIONS
 
 .TP
+.B \-v
+Output the current version
+
+.TP
 .B \-g
-Use the BCM_GPIO pins numbers rather than WiringPi pin numbers.
+Use the BCM_GPIO pins numbers rather than wiringPi pin numbers.
+
+.TP
+.B \-p
+Use the PiFace interface board and its corresponding pin numbers.
 
 .TP
 .B read
@@ -44,26 +60,44 @@ Write a PWM value (0-1023) to the given pin.
 
 .TP
 .B mode
-Set a pin into input, output or pwm mode. Can also use the literals up, down or tri
-to set the internal pull-up, pull-down or tristate controls.
+Set a pin into \fIinput\fR, \fIoutput\fR or \fIpwm\fR mode. Can also
+use the literals \fIup\fR, \fIdown\fR or \fItri\fR to set the internal
+pull-up, pull-down or tristate (off) controls.
 
 .TP
 .B export
-Export a GPIO pin in the /sys/class/gpio directory. Use like the mode command above
-however only in and out are supported at this time.
+Export a GPIO pin in the \fI/sys/class/gpio\fR directory. Use like the
+mode command above however only \fIin\fR and \fIout\fR are supported at
+this time. Note that the pin number is the \fBBCM_GPIO\fR number and
+not the wiringPi number.
 
-Once a GPIO pin has been exported, the
-.B gpio
-program changes the ownership of the /sys/class/gpio/gpioX/value pseudo file to
-that of the user running the
-.B gpio
-program. This means that you can have a small script of gpio exports to setup
-the gpio pins as your program requires without the need to run anything as
-root, or with the sudo command.
+Once a GPIO pin has been exported, the \fBgpio\fR program changes the
+ownership of the \fI/sys/class/gpio/gpioX/value\fR and if present in
+later kernels, the \fI/sys/class/gpio/gpioX/edge\fR pseudo files to
+that of the user running the \fBgpio\fR program. This means that you
+can have a small script of gpio exports to setup the gpio pins as your
+program requires without the need to run anything as root, or with the
+sudo command.
+
+.TP
+.B edge
+This exports a GPIO pin in the \fI/sys/class/gpio\fR directory, set
+the direction to input and set the edge interrupt method to \fInone\fR,
+\fIrising\fR, \fIfalling\fR or \fIboth\fR.  Use like the export command
+above and note that \fBBCM_GPIO\fR pin number is used not not wiringPi pin
+numbering.
+
+Like the export commands abovem ownership is set to that of the 
+calling user, allowing subsequent access from user programs without
+requiring root/sudo.
 
 .TP
 .B unexport
 Un-Export a GPIO pin in the /sys/class/gpio directory.
+
+.TP
+.B unexportall
+Un-Export all the GPIO pins in the /sys/class/gpio directory.
 
 .TP
 .B exports
@@ -119,9 +153,9 @@ gpio -g read 0 # Read GPIO Pin 0 (SDA0)
 
 .SH "NOTES"
 
-When using the export or unexport commands, the pin numbers are
-.B always
-native GPIO numbers and never wiringPi pin numbers.
+When using the \fIexport\fR, \fIedge\fR or \fIunexport\fR commands, the
+pin numbers are \fBalways\fR native BCM_GPIO numbers and never wiringPi
+pin numbers.
 
 .SH "SEE ALSO"
 

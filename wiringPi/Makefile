@@ -8,16 +8,16 @@
 #	https://projects.drogon.net/raspberry-pi/wiringpi/
 #
 #    wiringPi is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
+#    it under the terms of the GNU Lesser General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
 #    wiringPi is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+#    GNU Lesser General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
+#    You should have received a copy of the GNU Lesser General Public License
 #    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
 #################################################################################
 
@@ -35,16 +35,17 @@ LIBS    =
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	wiringPi.c serial.c wiringShift.c lcd.c
+SRC	=	wiringPi.c wiringPiFace.c wiringSerial.c wiringShift.c lcd.c piHiPri.c piThread.c
 
-OBJ	=	wiringPi.o serial.o wiringShift.o lcd.o
+OBJ	=	wiringPi.o wiringPiFace.o wiringSerial.o wiringShift.o lcd.o piHiPri.o piThread.o
 
 all:		$(TARGET)
 
 $(TARGET):	$(OBJ)
 	@echo [AR] $(OBJ)
 	@ar rcs $(TARGET) $(OBJ)
-	@size $(TARGET)
+	@ranlib $(TARGET)
+	@size   $(TARGET)
 
 .c.o:
 	@echo [CC] $<
@@ -64,13 +65,16 @@ install:	$(TARGET)
 	@echo [install]
 	install -m 0755 -d /usr/local/lib
 	install -m 0755 -d /usr/local/include
-	install -m 0644 wiringPi.h /usr/local/include
-	install -m 0644 serial.h /usr/local/include
-	install -m 0644 wiringShift.h /usr/local/include
-	install -m 0644 libwiringPi.a /usr/local/lib
+	install -m 0644 wiringPi.h	/usr/local/include
+	install -m 0644 wiringSerial.h	/usr/local/include
+	install -m 0644 wiringShift.h	/usr/local/include
+	install -m 0644 lcd.h		/usr/local/include
+	install -m 0644 libwiringPi.a	/usr/local/lib
 
 uninstall:
 	@echo [uninstall]
+	rm -f /usr/local/include/lcd.h
+	rm -f /usr/local/include/wiringShift.h
 	rm -f /usr/local/include/wiringPi.h
 	rm -f /usr/local/lib/libwiringPi.a
 
@@ -79,5 +83,9 @@ uninstall:
 # DO NOT DELETE
 
 wiringPi.o: wiringPi.h
-serial.o: serial.h
+wiringPiFace.o: wiringPi.h
+wiringSerial.o: wiringSerial.h
 wiringShift.o: wiringPi.h wiringShift.h
+lcd.o: wiringPi.h lcd.h
+piHiPri.o: wiringPi.h
+piThread.o: wiringPi.h

@@ -52,7 +52,8 @@ int main (void)
 
   printf ("Native GPIO method: (%8d iterations)\n", FAST_COUNT) ;
 
-  wiringPiGpioMode (WPI_MODE_GPIO) ;
+  if (wiringPiSetupGpio () == -1)
+    exit (1) ;
 
   pinMode (17, OUTPUT) ;
 
@@ -77,7 +78,8 @@ int main (void)
 
 // Switch to SYS mode:
 
-  wiringPiSetupSys () ;
+  if (wiringPiSetupSys () == -1)
+    exit (1) ;
 
   printf ("/sys/class/gpio method: (%8d iterations)\n", SLOW_COUNT) ;
 

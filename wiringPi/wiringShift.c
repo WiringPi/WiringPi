@@ -8,16 +8,16 @@
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
  *
  *    wiringPi is free software: you can redistribute it and/or modify
- *    it under the terms of the GNU General Public License as published by
+ *    it under the terms of the GNU Lesser General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
  *
  *    wiringPi is distributed in the hope that it will be useful,
  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *    GNU General Public License for more details.
+ *    GNU Lesser General Public License for more details.
  *
- *    You should have received a copy of the GNU General Public License
+ *    You should have received a copy of the GNU Lesser General Public License
  *    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
  ***********************************************************************
  */
@@ -80,38 +80,5 @@ void shiftOut (uint8_t dPin, uint8_t cPin, uint8_t order, uint8_t val)
       digitalWrite (dPin, val & (1 << i)) ;
       digitalWrite (cPin, HIGH) ;
       digitalWrite (cPin, LOW) ;
-    }
-}
-
-
-/*
- * shiftOut:
- *	Shift data out to a clocked source
- *********************************************************************************
- */
-
-void shiftOutWithDelay (uint8_t dPin, uint8_t cPin, uint8_t order, uint8_t val, int delay)
-{
-  int8_t i;
-
-  if (order == MSBFIRST)
-    for (i = 7 ; i >= 0 ; --i)
-    {
-      digitalWrite (dPin, val & (1 << i)) ;
-      delayMicroseconds (delay) ;
-      digitalWrite (cPin, HIGH) ;
-      delayMicroseconds (delay) ;
-      digitalWrite (cPin, LOW) ;
-      delayMicroseconds (delay) ;
-    }
-  else
-    for (i = 0 ; i < 8 ; ++i)
-    {
-      digitalWrite (dPin, val & (1 << i)) ;
-      delayMicroseconds (delay) ;
-      digitalWrite (cPin, HIGH) ;
-      delayMicroseconds (delay) ;
-      digitalWrite (cPin, LOW) ;
-      delayMicroseconds (delay) ;
     }
 }

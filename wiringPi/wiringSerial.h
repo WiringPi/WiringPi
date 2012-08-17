@@ -1,10 +1,6 @@
 /*
- * lcd.h:
- *	Text-based LCD driver.
- *	This is designed to drive the parallel interface LCD drivers
- *	based in the Hitachi HD44780U controller and compatables.
- *
- * Copyright (c) 2012 Gordon Henderson.
+ * wiringSerial.h:
+ *	Handle a serial port
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -24,14 +20,18 @@
  ***********************************************************************
  */
 
-#define	MAX_LCDS	8
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-extern void lcdHome     (int fd) ;
-extern void lcdClear    (int fd) ;
-extern void lcdPosition (int fd, int x, int y) ;
-extern void lcdPutchar  (int fd, uint8_t data) ;
-extern void lcdPuts     (int fd, char *string) ;
-extern void lcdPrintf   (int fd, char *message, ...) ;
+extern int   serialOpen      (char *device, int baud) ;
+extern void  serialClose     (int fd) ;
+extern void  serialPutchar   (int fd, unsigned char c) ;
+extern void  serialPuts      (int fd, char *s) ;
+extern void  serialPrintf    (int fd, char *message, ...) ;
+extern int   serialDataAvail (int fd) ;
+extern int   serialGetchar   (int fd) ;
 
-extern int  lcdInit (int rows, int cols, int bits, int rs, int strb,
-	int d0, int d1, int d2, int d3, int d4, int d5, int d6, int d7) ;
+#ifdef __cplusplus
+}
+#endif
