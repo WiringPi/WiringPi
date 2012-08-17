@@ -86,8 +86,6 @@ extern int piHiPri (int pri) ;
 // Extras from arduino land
 
 extern void         delay             (unsigned int howLong) ;
-//extern void         delayMicroseconds (unsigned int howLong) ;
-//extern void     delayMicrosecondsHard (unsigned int howLong) ;
 extern unsigned int millis            (void) ;
 
 #ifdef __cplusplus

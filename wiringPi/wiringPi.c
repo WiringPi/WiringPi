@@ -402,7 +402,8 @@ void pinModeGpio (int pin, int mode)
 
 // When we change mode of any pin, we remove the pull up/downs
 
-  pullUpDnControl (pin, PUD_OFF) ;
+//  delayMicroseconds (300) ;
+//  pullUpDnControl (pin, PUD_OFF) ;
 }
 
 void pinModeWPi (int pin, int mode)
@@ -479,16 +480,6 @@ void digitalWriteSys (int pin, int value)
  *********************************************************************************
  */
 
-void pwmWriteWPi (int pin, int value)
-{
-  int port ;
-
-  pin  = pinToGpio [pin & 63] ;
-  port = gpioToPwmPort [pin] ;
-
-  *(pwm + port) = value & 0x3FF ;
-}
-
 void pwmWriteGpio (int pin, int value)
 {
   int port ;
@@ -497,6 +488,11 @@ void pwmWriteGpio (int pin, int value)
   port = gpioToPwmPort [pin] ;
 
   *(pwm + port) = value & 0x3FF ;
+}
+
+void pwmWriteWPi (int pin, int value)
+{
+  pwmWriteGpio (pinToGpio [pin & 63], value) ;
 }
 
 void pwmWriteSys (int pin, int value)
@@ -588,28 +584,21 @@ int digitalReadSys (int pin)
  *********************************************************************************
  */
 
-void pullUpDnControlWPi (int pin, int pud)
-{
-  pin  = pinToGpio [pin & 63] ;
-  pud &=  3 ;
-
-  *(gpio + GPPUD)              = pud ;			delayMicroseconds (10) ;
-  *(gpio + gpioToPUDCLK [pin]) = 1 << (pin & 31) ;	delayMicroseconds (10) ;
-  
-  *(gpio + GPPUD)              = 0 ;
-  *(gpio + gpioToPUDCLK [pin]) = 0 ;
-}
-
 void pullUpDnControlGpio (int pin, int pud)
 {
   pin &= 63 ;
   pud &=  3 ;
 
-  *(gpio + GPPUD)              = pud ;			delayMicroseconds (10) ;
-  *(gpio + gpioToPUDCLK [pin]) = 1 << (pin & 31) ;	delayMicroseconds (10) ;
+  *(gpio + GPPUD)              = pud ;			delayMicroseconds (5) ;
+  *(gpio + gpioToPUDCLK [pin]) = 1 << (pin & 31) ;	delayMicroseconds (5) ;
   
-  *(gpio + GPPUD)              = 0 ;
-  *(gpio + gpioToPUDCLK [pin]) = 0 ;
+  *(gpio + GPPUD)              = 0 ;			delayMicroseconds (5) ;
+  *(gpio + gpioToPUDCLK [pin]) = 0 ;			delayMicroseconds (5) ;
+}
+
+void pullUpDnControlWPi (int pin, int pud)
+{
+  pullUpDnControlGpio (pinToGpio [pin & 63], pud) ;
 }
 
 void pullUpDnControlSys (int pin, int pud)
@@ -684,6 +673,7 @@ void delay (unsigned int howLong)
 
   nanosleep (&sleeper, &dummy) ;
 }
+
 
 /*
  * delayMicroseconds:
@@ -977,5 +967,3 @@ int wiringPiSetupSys (void)
 
   return 0 ;
 }
-
-
