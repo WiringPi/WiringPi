@@ -1,0 +1,28 @@
+#!/bin/bash
+
+if [ x$1 = "xclean" ]; then
+  echo Cleaning
+  echo
+  cd wiringPi
+  make clean
+  cd ../gpio
+  make clean
+  cd ../examples
+  make clean
+  cd ..
+else
+  echo wiringPi Build script - please wait...
+  echo
+  cd wiringPi
+  make 
+  sudo make install
+  cd ../gpio
+  make
+  sudo make install
+  cd ../examples
+  make
+  cd ..
+fi
+
+echo
+echo All Done.
