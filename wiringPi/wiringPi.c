@@ -401,9 +401,15 @@ void pinModeGpio (int pin, int mode)
   }
 
 // When we change mode of any pin, we remove the pull up/downs
-
-//  delayMicroseconds (300) ;
+//	Or we used to... Hm. Commented out now because for some wieird reason,
+//	it seems to block subsequent attempts to set the pull up/downs and I've
+//	not quite gotten to the bottom of why this happens
+//	The down-side is that the pull up/downs are rememberd in the SoC between
+//	power cycles, so it's going to be a good idea to explicitly set them in
+//	any new code.
+//
 //  pullUpDnControl (pin, PUD_OFF) ;
+
 }
 
 void pinModeWPi (int pin, int mode)
