@@ -20,8 +20,6 @@
  ***********************************************************************
  */
 
-#undef	DEBUG
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -48,10 +46,6 @@ int serialOpen (char *device, int baud)
   struct termios options ;
   speed_t myBaud ;
   int     status, fd ;
-
-#ifdef	DEBUG
-  printf ("openSerialPort: <%s> baud: $d\n", device, baud) ;
-#endif
 
   switch (baud)
   {
