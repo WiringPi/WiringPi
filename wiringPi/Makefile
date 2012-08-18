@@ -82,10 +82,12 @@ install:	$(TARGET)
 uninstall:
 	@echo [uninstall]
 	rm -f /usr/local/include/lcd.h
+	rm -f /usr/local/include/lpiNes.h
+	rm -f /usr/local/include/gertboard.h
 	rm -f /usr/local/include/wiringShift.h
+	rm -f /usr/local/include/wiringSerial.h
 	rm -f /usr/local/include/wiringPi.h
 	rm -f /usr/local/lib/libwiringPi.a
-
 
 
 # DO NOT DELETE
