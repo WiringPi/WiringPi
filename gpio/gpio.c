@@ -42,12 +42,12 @@
 static int wpMode ;
 
 char *usage = "Usage: gpio -v\n"
+              "       gpio -h\n"
               "       gpio [-g] <read/write/pwm/mode> ...\n"
               "       gpio [-p] <read/write/mode> ...\n"
 	      "       gpio export/edge/unexport/unexportall/exports ...\n"
 	      "       gpio drive <group> <value>\n"
 	      "       gpio load spi/i2c" ;
-
 
 
 /*
@@ -171,7 +171,7 @@ static void doLoad (int argc, char *argv [])
  *********************************************************************************
  */
 
-void doExports (void)
+static void doExports (int argc, char *argv [])
 {
   int fd ;
   int i, l, first ;
@@ -326,8 +326,6 @@ void doEdge (int argc, char *argv [])
   int pin ;
   char *mode ;
   char fName [128] ;
-  uid_t uid ;
-  gid_t gid ;
 
   if (argc != 4)
   {
@@ -335,8 +333,7 @@ void doEdge (int argc, char *argv [])
     exit (1) ;
   }
 
-  pin = atoi (argv [2]) ;
-
+  pin  = atoi (argv [2]) ;
   mode = argv [3] ;
 
 // Export the pin and set direction to input
@@ -367,40 +364,23 @@ void doEdge (int argc, char *argv [])
     exit (1) ;
   }
 
-  /**/ if (strcasecmp (mode, "none")    == 0)
-    fprintf (fd, "none\n") ;
-  else if (strcasecmp (mode, "rising")  == 0)
-    fprintf (fd, "rising\n") ;
-  else if (strcasecmp (mode, "falling") == 0)
-    fprintf (fd, "falling\n") ;
-  else if (strcasecmp (mode, "both")    == 0)
-    fprintf (fd, "both\n") ;
+  /**/ if (strcasecmp (mode, "none")    == 0) fprintf (fd, "none\n") ;
+  else if (strcasecmp (mode, "rising")  == 0) fprintf (fd, "rising\n") ;
+  else if (strcasecmp (mode, "falling") == 0) fprintf (fd, "falling\n") ;
+  else if (strcasecmp (mode, "both")    == 0) fprintf (fd, "both\n") ;
   else
   {
     fprintf (stderr, "%s: Invalid mode: %s. Should be none, rising, falling or both\n", argv [1], mode) ;
     exit (1) ;
   }
 
-// Change ownership so the current user can actually use it!
-
-  uid = getuid () ;
-  gid = getgid () ;
+// Change ownership of the value and edge files, so the current user can actually use it!
 
   sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
-  if (chown (fName, uid, gid) != 0)
-  {
-    fprintf (stderr, "%s: Unable to change ownership of the value file: %s\n", argv [1], strerror (errno)) ;
-    exit (1) ;
-  }
-
-// Also change ownership of the edge file
+  changeOwner (argv [0], fName) ;
 
   sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin) ;
-  if (chown (fName, uid, gid) != 0)
-  {
-    fprintf (stderr, "%s: Unable to change ownership of the value file: %s\n", argv [1], strerror (errno)) ;
-    exit (1) ;
-  }
+  changeOwner (argv [0], fName) ;
 
   fclose (fd) ;
 }
@@ -487,18 +467,12 @@ void doMode (int argc, char *argv [])
 
   mode = argv [3] ;
 
-  /**/ if (strcasecmp (mode, "in")   == 0)
-    pinMode (pin, INPUT) ;
-  else if (strcasecmp (mode, "out")  == 0)
-    pinMode (pin, OUTPUT) ;
-  else if (strcasecmp (mode, "pwm")  == 0)
-    pinMode (pin, PWM_OUTPUT) ;
-  else if (strcasecmp (mode, "up")   == 0)
-    pullUpDnControl (pin, PUD_UP) ;
-  else if (strcasecmp (mode, "down") == 0)
-    pullUpDnControl (pin, PUD_DOWN) ;
-  else if (strcasecmp (mode, "tri") == 0)
-    pullUpDnControl (pin, PUD_OFF) ;
+  /**/ if (strcasecmp (mode, "in")   == 0) pinMode         (pin, INPUT) ;
+  else if (strcasecmp (mode, "out")  == 0) pinMode         (pin, OUTPUT) ;
+  else if (strcasecmp (mode, "pwm")  == 0) pinMode         (pin, PWM_OUTPUT) ;
+  else if (strcasecmp (mode, "up")   == 0) pullUpDnControl (pin, PUD_UP) ;
+  else if (strcasecmp (mode, "down") == 0) pullUpDnControl (pin, PUD_DOWN) ;
+  else if (strcasecmp (mode, "tri")  == 0) pullUpDnControl (pin, PUD_OFF) ;
   else
   {
     fprintf (stderr, "%s: Invalid mode: %s. Should be in/out/pwm/up/down/tri\n", argv [1], mode) ;
@@ -645,6 +619,12 @@ int main (int argc, char *argv [])
     return 1 ;
   }
 
+  if (strcasecmp (argv [1], "-h") == 0)
+  {
+    printf ("%s: %s\n", argv [0], usage) ;
+    return 0 ;
+  }
+
   if (strcasecmp (argv [1], "-v") == 0)
   {
     printf ("gpio version: %s\n", VERSION) ;
@@ -683,12 +663,16 @@ int main (int argc, char *argv [])
 
 // Initial test for /sys/class/gpio operations:
 
-  /**/ if (strcasecmp (argv [1], "exports"    ) == 0)	{ doExports () ;		return 0 ; }
-  else if (strcasecmp (argv [1], "export"     ) == 0)	{ doExport (argc, argv) ;	return 0 ; }
-  else if (strcasecmp (argv [1], "edge"       ) == 0)	{ doEdge (argc, argv) ;		return 0 ; }
+  /**/ if (strcasecmp (argv [1], "exports"    ) == 0)	{ doExports     (argc, argv) ;	return 0 ; }
+  else if (strcasecmp (argv [1], "export"     ) == 0)	{ doExport      (argc, argv) ;	return 0 ; }
+  else if (strcasecmp (argv [1], "edge"       ) == 0)	{ doEdge        (argc, argv) ;	return 0 ; }
   else if (strcasecmp (argv [1], "unexportall") == 0)	{ doUnexportall (argc, argv) ;	return 0 ; }
-  else if (strcasecmp (argv [1], "unexport"   ) == 0)	{ doUnexport (argc, argv) ;	return 0 ; }
-  else if (strcasecmp (argv [1], "load"       ) == 0)	{ doLoad (argc, argv) ;		return 0 ; }
+  else if (strcasecmp (argv [1], "unexport"   ) == 0)	{ doUnexport    (argc, argv) ;	return 0 ; }
+
+// Check for drive or load commands:
+
+  if (strcasecmp (argv [1], "drive") == 0)	{ doPadDrive (argc, argv) ; return 0 ; }
+  if (strcasecmp (argv [1], "load" ) == 0)	{ doLoad     (argc, argv) ; return 0 ; }
 
 // Check for -g argument
 
@@ -696,7 +680,7 @@ int main (int argc, char *argv [])
   {
     if (wiringPiSetupGpio () == -1)
     {
-      fprintf (stderr, "%s: Unable to initialise GPIO in GPIO mode.\n", argv [0]) ;
+      fprintf (stderr, "%s: Unable to initialise GPIO mode.\n", argv [0]) ;
       exit (1) ;
     }
 
@@ -728,7 +712,7 @@ int main (int argc, char *argv [])
   {
     if (wiringPiSetup () == -1)
     {
-      fprintf (stderr, "%s: Unable to initialise GPIO in wiringPi mode\n", argv [0]) ;
+      fprintf (stderr, "%s: Unable to initialise wiringPi mode\n", argv [0]) ;
       exit (1) ;
     }
     wpMode = WPI_MODE_PINS ;
@@ -736,19 +720,13 @@ int main (int argc, char *argv [])
 
 // Check for wiring commands
 
-  /**/ if (strcasecmp (argv [1], "write"   ) == 0)
-    doWrite  (argc, argv) ;
-  else if (strcasecmp (argv [1], "read"    ) == 0)
-    doRead   (argc, argv) ;
-  else if (strcasecmp (argv [1], "mode"    ) == 0)
-    doMode   (argc, argv) ;
-  else if (strcasecmp (argv [1], "pwm"     ) == 0)
-    doPwm    (argc, argv) ;
-  else if (strcasecmp (argv [1], "drive"   ) == 0)
-    doPadDrive (argc, argv) ;
+  /**/ if (strcasecmp (argv [1], "read" ) == 0) doRead     (argc, argv) ;
+  else if (strcasecmp (argv [1], "write") == 0) doWrite    (argc, argv) ;
+  else if (strcasecmp (argv [1], "pwm"  ) == 0) doPwm      (argc, argv) ;
+  else if (strcasecmp (argv [1], "mode" ) == 0) doMode     (argc, argv) ;
   else
   {
-    fprintf (stderr, "%s: Unknown command: %s. (read/write/pwm/mode/drive expected)\n", argv [0], argv [1]) ;
+    fprintf (stderr, "%s: Unknown command: %s.\n", argv [0], argv [1]) ;
     exit (1) ;
   }
   return 0 ;
