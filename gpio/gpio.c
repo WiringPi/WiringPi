@@ -46,6 +46,8 @@ char *usage = "Usage: gpio -v\n"
               "       gpio [-p] <read/write/mode> ...\n"
 	      "       gpio export/edge/unexport/unexportall/exports ...\n"
 	      "       gpio drive <group> <value>\n"
+	      "       gpio pwm-bal/pwm-ms \n"
+	      "       gpio pwmr <range> \n"
 	      "       gpio load spi/i2c" ;
 
 
@@ -487,18 +489,12 @@ void doMode (int argc, char *argv [])
 
   mode = argv [3] ;
 
-  /**/ if (strcasecmp (mode, "in")   == 0)
-    pinMode (pin, INPUT) ;
-  else if (strcasecmp (mode, "out")  == 0)
-    pinMode (pin, OUTPUT) ;
-  else if (strcasecmp (mode, "pwm")  == 0)
-    pinMode (pin, PWM_OUTPUT) ;
-  else if (strcasecmp (mode, "up")   == 0)
-    pullUpDnControl (pin, PUD_UP) ;
-  else if (strcasecmp (mode, "down") == 0)
-    pullUpDnControl (pin, PUD_DOWN) ;
-  else if (strcasecmp (mode, "tri") == 0)
-    pullUpDnControl (pin, PUD_OFF) ;
+  /**/ if (strcasecmp (mode, "in")   == 0) pinMode         (pin, INPUT) ;
+  else if (strcasecmp (mode, "out")  == 0) pinMode         (pin, OUTPUT) ;
+  else if (strcasecmp (mode, "pwm")  == 0) pinMode         (pin, PWM_OUTPUT) ;
+  else if (strcasecmp (mode, "up")   == 0) pullUpDnControl (pin, PUD_UP) ;
+  else if (strcasecmp (mode, "down") == 0) pullUpDnControl (pin, PUD_DOWN) ;
+  else if (strcasecmp (mode, "tri")  == 0) pullUpDnControl (pin, PUD_OFF) ;
   else
   {
     fprintf (stderr, "%s: Invalid mode: %s. Should be in/out/pwm/up/down/tri\n", argv [1], mode) ;
@@ -630,6 +626,39 @@ void doPwm (int argc, char *argv [])
 
 
 /*
+ * doPwmMode: doPwmRange:
+ *	Change the PWM mode and Range values
+ *********************************************************************************
+ */
+
+static void doPwmMode (int mode)
+{
+  pwmSetMode (mode) ;
+}
+
+static void doPwmRange (int argc, char *argv [])
+{
+  unsigned int range ;
+
+  if (argc != 3)
+  {
+    fprintf (stderr, "Usage: %s pwmr <range>\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  range = (unsigned int)strtoul (argv [2], NULL, 10) ;
+
+  if (range == 0)
+  {
+    fprintf (stderr, "%s: range must be > 0\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  pwmSetRange (range) ;
+}
+
+
+/*
  * main:
  *	Start here
  *********************************************************************************
@@ -734,18 +763,22 @@ int main (int argc, char *argv [])
     wpMode = WPI_MODE_PINS ;
   }
 
+// Check for PWM operations
+
+  if (wpMode != WPI_MODE_PIFACE)
+  {
+    if (strcasecmp (argv [1], "pwm-bal") == 0)	{ doPwmMode  (PWM_MODE_BAL) ; return 0 ; }
+    if (strcasecmp (argv [1], "pwm-ms")  == 0)	{ doPwmMode  (PWM_MODE_MS) ;  return 0 ; }
+    if (strcasecmp (argv [1], "pwmr")    == 0)	{ doPwmRange (argc, argv) ;   return 0 ; }
+  }
+
 // Check for wiring commands
 
-  /**/ if (strcasecmp (argv [1], "write"   ) == 0)
-    doWrite  (argc, argv) ;
-  else if (strcasecmp (argv [1], "read"    ) == 0)
-    doRead   (argc, argv) ;
-  else if (strcasecmp (argv [1], "mode"    ) == 0)
-    doMode   (argc, argv) ;
-  else if (strcasecmp (argv [1], "pwm"     ) == 0)
-    doPwm    (argc, argv) ;
-  else if (strcasecmp (argv [1], "drive"   ) == 0)
-    doPadDrive (argc, argv) ;
+  /**/ if (strcasecmp (argv [1], "write"   ) == 0) doWrite    (argc, argv) ;
+  else if (strcasecmp (argv [1], "read"    ) == 0) doRead     (argc, argv) ;
+  else if (strcasecmp (argv [1], "mode"    ) == 0) doMode     (argc, argv) ;
+  else if (strcasecmp (argv [1], "pwm"     ) == 0) doPwm      (argc, argv) ;
+  else if (strcasecmp (argv [1], "drive"   ) == 0) doPadDrive (argc, argv) ;
   else
   {
     fprintf (stderr, "%s: Unknown command: %s. (read/write/pwm/mode/drive expected)\n", argv [0], argv [1]) ;
