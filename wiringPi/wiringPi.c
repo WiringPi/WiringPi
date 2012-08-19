@@ -530,7 +530,7 @@ void pwmWriteGpio (int pin, int value)
   pin  = pin & 63 ;
   port = gpioToPwmPort [pin] ;
 
-  *(pwm + port) = value & 0x3FF ;
+  *(pwm + port) = value ;
 }
 
 void pwmWriteWPi (int pin, int value)
