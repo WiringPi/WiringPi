@@ -4,20 +4,38 @@
 gpio \- Command-line access to Raspberry Pi and PiFace GPIO
 
 .SH SYNOPSIS
-.TP
 .B gpio
-.RB [ \-v ]
-.TP
+.B \-v
+.PP
 .B gpio
-.RB [ \-g ]
-.RB < read/write/pwm/mode ...>
-.TP
+.B [ \-g ]
+.B read/write/pwm/mode ...
+.PP
 .B gpio
-.RB [ \-p ]
-.RB < read/write/mode ...>
-.TP
+.B [ \-p ]
+.B read/write/mode
+.B ...
+.PP
 .B gpio
-.RB < export/edge/unexport/unexportall/exports ...>
+.B unexportall/exports
+.PP
+.B gpio
+.B export/edge/unexport
+.B ...
+.PP
+.B gpio
+.B drive
+group value
+.PP
+.B gpio
+.B pwm-bal/pwm-ms
+.PP
+.B gpio
+.B pwmr
+range
+.PP
+.B gpio
+.B load \ i2c/spi
 
 .SH DESCRIPTION
 
@@ -65,6 +83,14 @@ use the literals \fIup\fR, \fIdown\fR or \fItri\fR to set the internal
 pull-up, pull-down or tristate (off) controls.
 
 .TP
+.B unexportall
+Un-Export all the GPIO pins in the /sys/class/gpio directory.
+
+.TP
+.B exports
+Print a list (if any) of all the exported GPIO pins and their current values.
+
+.TP
 .B export
 Export a GPIO pin in the \fI/sys/class/gpio\fR directory. Use like the
 mode command above however only \fIin\fR and \fIout\fR are supported at
@@ -96,12 +122,26 @@ requiring root/sudo.
 Un-Export a GPIO pin in the /sys/class/gpio directory.
 
 .TP
-.B unexportall
-Un-Export all the GPIO pins in the /sys/class/gpio directory.
+.B drive
+group value
+
+Change the pad driver value for the given pad group to the supplied drive
+value. Group is 0, 1 or 2 and value is 0-7. Do not use unless you are
+absolutely sure you know what you're doing.
 
 .TP
-.B exports
-Print a list (if any) of all the exported GPIO pins and their current values.
+.B pwm-bal/pwm-ms 
+Change the PWM mode to balanced (the default) or mark:space ratio (traditional)
+
+.TP
+.B pwmr
+Change the PWM range register. The default is 1024.
+
+.TP
+.B load i2c/spi
+This loads the i2c or the spi drivers into the system and changes the permissions on
+the associated /dev/ entries so that the current user has access to them.
+
 
 .SH "WiringPi vs. GPIO Pin numbering"
 
@@ -170,7 +210,7 @@ Gordon Henderson
 
 .SH "REPORTING BUGS"
 
-Report bugs to <gordon@drogon.net>
+Report bugs to <projects@drogon.net>
 
 .SH COPYRIGHT
 

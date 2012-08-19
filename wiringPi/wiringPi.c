@@ -79,6 +79,8 @@ void (*setPadDrive)       (int group, int value) ;
 int  (*digitalRead)       (int pin) ;
 int  (*waitForInterrupt)  (int pin, int mS) ;
 void (*delayMicroseconds) (unsigned int howLong) ;
+void (*pwmSetMode)        (int mode) ;
+void (*pwmSetRange)       (unsigned int range) ;
 
 
 #ifndef	TRUE
@@ -377,21 +379,24 @@ void pinModeGpio (int pin, int mode)
     if (!pwmRunning)
     {
 
+      *(pwm + PWM_CONTROL) = 0 ;			// Stop PWM
+      delayMicroseconds (10) ;
+	
 //	Gert/Doms Values
-      *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (32<<12) ;	// set pwm div to 32 (19.2/3 = 600KHz)
+      *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (32<<12) ;	// set pwm div to 32 (19.2/32 = 600KHz)
       *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// Source=osc and enable
-      digitalWrite (pin, LOW) ;
-      *(pwm + PWM_CONTROL) = 0 ;			// Disable PWM
+
       delayMicroseconds (10) ;
-      *(pwm + PWM0_RANGE) = 0x400 ;
-      delayMicroseconds (10) ;
-      *(pwm + PWM1_RANGE) = 0x400 ;
-      delayMicroseconds (10) ;
+
+      *(pwm + PWM0_RANGE) = 0x400 ; delayMicroseconds (10) ;
+      *(pwm + PWM1_RANGE) = 0x400 ; delayMicroseconds (10) ;
 
 // Enable PWMs
 
       *(pwm + PWM0_DATA) = 512 ;
       *(pwm + PWM1_DATA) = 512 ;
+
+// Balanced mode (default)
 
       *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
 
@@ -418,6 +423,38 @@ void pinModeWPi (int pin, int mode)
 }
 
 void pinModeSys (int pin, int mode)
+{
+  return ;
+}
+
+
+/*
+ * pwmControl:
+ *	Allow the user to control some of the PWM functions
+ *********************************************************************************
+ */
+
+void pwmSetModeWPi (int mode)
+{
+  if (mode == PWM_MODE_MS)
+    *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE | PWM0_MS_MODE | PWM1_MS_MODE ;
+  else
+    *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
+}
+
+void pwmSetModeSys (int mode)
+{
+  return ;
+}
+
+
+void pwmSetRangeWPi (unsigned int range)
+{
+  *(pwm + PWM0_RANGE) = range ; delayMicroseconds (10) ;
+  *(pwm + PWM1_RANGE) = range ; delayMicroseconds (10) ;
+}
+
+void pwmSetRangeSys (unsigned int range)
 {
   return ;
 }
@@ -774,6 +811,8 @@ int wiringPiSetup (void)
         digitalRead =       digitalReadWPi ;
    waitForInterrupt =  waitForInterruptWPi ;
   delayMicroseconds = delayMicrosecondsWPi ;
+         pwmSetMode =        pwmSetModeWPi ;
+        pwmSetRange =       pwmSetRangeWPi ;
   
 // Open the master /dev/memory device
 
@@ -928,6 +967,8 @@ int wiringPiSetupGpio (void)
         digitalRead =       digitalReadGpio ;
    waitForInterrupt =  waitForInterruptGpio ;
   delayMicroseconds = delayMicrosecondsWPi ;	// Same
+         pwmSetMode =        pwmSetModeWPi ;
+        pwmSetRange =       pwmSetRangeWPi ;
 
   return 0 ;
 }
@@ -956,6 +997,9 @@ int wiringPiSetupSys (void)
         digitalRead =       digitalReadSys ;
    waitForInterrupt =  waitForInterruptSys ;
   delayMicroseconds = delayMicrosecondsSys ;
+         pwmSetMode =        pwmSetModeSys ;
+        pwmSetRange =       pwmSetRangeSys ;
+
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open
 //	the 'value' interface to speed things up for later

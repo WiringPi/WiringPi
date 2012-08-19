@@ -41,7 +41,7 @@ OBJ	=	gpio.o
 
 all:		gpio
 
-gpio:	gpio.o
+gpio:	gpio.o /usr/local/lib/libwiringPi.a
 	@echo [LD]
 	@$(CC) -o $@ gpio.o $(LDFLAGS) $(LIBS)
 	

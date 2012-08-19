@@ -47,6 +47,8 @@ char *usage = "Usage: gpio -v\n"
               "       gpio [-p] <read/write/mode> ...\n"
 	      "       gpio export/edge/unexport/unexportall/exports ...\n"
 	      "       gpio drive <group> <value>\n"
+	      "       gpio pwm-bal/pwm-ms \n"
+	      "       gpio pwmr <range> \n"
 	      "       gpio load spi/i2c" ;
 
 
@@ -487,7 +489,7 @@ void doMode (int argc, char *argv [])
  *********************************************************************************
  */
 
-void doPadDrive (int argc, char *argv [])
+static void doPadDrive (int argc, char *argv [])
 {
   int group, val ;
 
@@ -522,7 +524,7 @@ void doPadDrive (int argc, char *argv [])
  *********************************************************************************
  */
 
-void doWrite (int argc, char *argv [])
+static void doWrite (int argc, char *argv [])
 {
   int pin, val ;
 
@@ -600,6 +602,39 @@ void doPwm (int argc, char *argv [])
   val = atoi (argv [3]) ;
 
   pwmWrite (pin, val) ;
+}
+
+
+/*
+ * doPwmMode: doPwmRange:
+ *	Change the PWM mode and Range values
+ *********************************************************************************
+ */
+
+static void doPwmMode (int mode)
+{
+  pwmSetMode (mode) ;
+}
+
+static void doPwmRange (int argc, char *argv [])
+{
+  unsigned int range ;
+
+  if (argc != 3)
+  {
+    fprintf (stderr, "Usage: %s pwmr <range>\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  range = (unsigned int)strtoul (argv [2], NULL, 10) ;
+
+  if (range == 0)
+  {
+    fprintf (stderr, "%s: range must be > 0\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  pwmSetRange (range) ;
 }
 
 
@@ -716,6 +751,15 @@ int main (int argc, char *argv [])
       exit (1) ;
     }
     wpMode = WPI_MODE_PINS ;
+  }
+
+// Check for PWM operations
+
+  if (wpMode != WPI_MODE_PIFACE)
+  {
+    if (strcasecmp (argv [1], "pwm-bal") == 0)	{ doPwmMode  (PWM_MODE_BAL) ; return 0 ; }
+    if (strcasecmp (argv [1], "pwm-ms")  == 0)	{ doPwmMode  (PWM_MODE_MS) ;  return 0 ; }
+    if (strcasecmp (argv [1], "pwmr")    == 0)	{ doPwmRange (argc, argv) ;   return 0 ; }
   }
 
 // Check for wiring commands
