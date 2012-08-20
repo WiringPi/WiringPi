@@ -38,6 +38,8 @@
 #define	NES_A		0x80
 
 
+#define	PULSE_TIME	25
+
 // Data to store the pins for each controller
 
 struct nesPinsStruct
@@ -91,10 +93,8 @@ unsigned int readNesJoystick (int joystick)
  
 // Toggle Latch - which presents the first bit
 
-  digitalWrite (pins->lPin, HIGH) ;
-  delayMicroseconds (1) ;
-  digitalWrite (pins->lPin, LOW) ;
-  delayMicroseconds (1) ;
+  digitalWrite (pins->lPin, HIGH) ; delayMicroseconds (PULSE_TIME) ;
+  digitalWrite (pins->lPin, LOW)  ; delayMicroseconds (PULSE_TIME) ;
 
 // Read first bit
 
@@ -104,12 +104,10 @@ unsigned int readNesJoystick (int joystick)
 
   for (i = 0 ; i < 7 ; ++i)
   {
-    digitalWrite (pins->cPin, HIGH) ;
-    delayMicroseconds (1) ;
-    digitalWrite (pins->cPin, LOW) ;
-    delayMicroseconds (1) ;
+    digitalWrite (pins->cPin, HIGH) ; delayMicroseconds (PULSE_TIME) ;
+    digitalWrite (pins->cPin, LOW)  ; delayMicroseconds (PULSE_TIME) ;
     value = (value << 1) | digitalRead (pins->dPin) ;
   }
 
-  return ~value ;
+  return value ^ 0xFF ;
 }
