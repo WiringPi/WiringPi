@@ -35,11 +35,11 @@ LIBS    = -lwiringPi
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	test1.c test2.c speed.c lcd.c wfi.c piface.c gertboard.c nes.c delayTest.c
+SRC	=	test1.c test2.c speed.c lcd.c wfi.c piface.c gertboard.c nes.c delayTest.c softPwm.c
 
-OBJ	=	test1.o test2.o speed.o lcd.o wfi.o piface.o gertboard.o nes.o delayTest.o
+OBJ	=	test1.o test2.o speed.o lcd.o wfi.o piface.o gertboard.o nes.o delayTest.o softPwm.o
 
-all:		test1 test2 speed lcd wfi piface gertboard nes
+all:		test1 test2 speed lcd wfi piface gertboard nes softPwm
 
 test1:	test1.o
 	@echo [link]
@@ -73,6 +73,10 @@ nes:	nes.o
 	@echo [link]
 	$(CC) -o $@ nes.o $(LDFLAGS) $(LIBS) -lm
 
+softPwm:	softPwm.o
+	@echo [link]
+	$(CC) -o $@ softPwm.o $(LDFLAGS) $(LIBS) -lm -lpthread
+
 
 delayTest:	delayTest.o
 	@echo [link]
@@ -84,7 +88,7 @@ delayTest:	delayTest.o
 	@$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(OBJ) *~ core tags test1 test2 speed lcd wfi piface gertboard nes delayTest
+	rm -f $(OBJ) *~ core tags test1 test2 speed lcd wfi piface gertboard nes delayTest softPwm
 
 tags:	$(SRC)
 	@echo [ctags]
