@@ -84,8 +84,22 @@ static PI_THREAD (softPwmThread)
   return NULL ;
 }
 
+
+/*
+ * softPwmWrite:
+ *	Write a PWM value to the given pin
+ *********************************************************************************
+ */
+
 void softPwmWrite (int pin, int value)
 {
+  pin &= 63 ;
+
+  /**/ if (value < 0)
+    value = 0 ;
+  else if (value > range [pin])
+    value = range [pin] ;
+
   marks [pin] = value ;
 }
 
