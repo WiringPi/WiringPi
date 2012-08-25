@@ -16,6 +16,7 @@ int values [NUM_LEDS] = { 0, 17, 32, 50, 67, 85, 100, 85, 67, 50, 32, 17 } ;
 int main ()
 {
   int i, j ;
+  char buf [80] ;
 
   if (wiringPiSetup () == -1)
   {
@@ -28,6 +29,30 @@ int main ()
     softPwmCreate (ledMap [i], 0, RANGE) ;
     printf ("%3d, %3d, %3d\n", i, ledMap [i], values [i]) ;
   }
+
+  fgets (buf, 80, stdin) ;
+
+// Bring all up one by one:
+
+  for (i = 0 ; i < NUM_LEDS ; ++i)
+    for (j = 0 ; j <= 100 ; ++j)
+    {
+      softPwmWrite (ledMap [i], j) ;
+      delay (10) ;
+    }
+
+  fgets (buf, 80, stdin) ;
+
+// Down fast
+
+  for (i = 100 ; i > 0 ; --i)
+  {
+    for (j = 0 ; j < NUM_LEDS ; ++j)
+      softPwmWrite (ledMap [j], i) ;
+    delay (10) ;
+  }
+
+  fgets (buf, 80, stdin) ;
 
   for (;;)
   {

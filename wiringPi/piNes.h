@@ -33,5 +33,13 @@
 #define	NES_B		0x40
 #define	NES_A		0x80
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int          setupNesJoystick (int dPin, int cPin, int lPin) ;
 extern unsigned int  readNesJoystick (int joystick) ;
+
+#ifdef __cplusplus
+}
+#endif
