@@ -36,14 +36,23 @@ range
 .PP
 .B gpio
 .B load \ i2c/spi
+.PP
+.B gpio
+.B gbr
+channel
+.PP
+.B gpio
+.B gbw
+channel value
 
 .SH DESCRIPTION
 
 .B GPIO
-is a command line tool to allow the user easy access to the GPIO pins
-on the Raspberry Pi. It's designed for simple testing and diagnostic
-purposes, but can be used in shell scripts for general if somewhat slow
-control of the GPIO pins.
+is a swiss army knofe of a command line tool to allow the user easy
+access to the GPIO pins on the Raspberry Pi and the SPI A/D and D/A
+convertors on the Gertboard. It's designed for simple testing and
+diagnostic purposes, but can be used in shell scripts for general if
+somewhat slow control of the GPIO pins.
 
 Additionally, it can be used to set the exports in the \fI/sys/class/gpio\fR
 system directory to allow subsequent programs to use the \fR/sys/class/gpio\fR
@@ -141,6 +150,21 @@ Change the PWM range register. The default is 1024.
 .B load i2c/spi
 This loads the i2c or the spi drivers into the system and changes the permissions on
 the associated /dev/ entries so that the current user has access to them.
+
+.TP
+.B gbr
+channel
+
+This reads the analog to digital convertor on the Gertboard on the given
+channel. The board jumpers need to be in-place to do this operation.
+
+.TP
+.B gbw
+channel value
+
+This writes the supplied value to the output channel on the Gertboards
+SPI digital to analogue convertor.
+The board jumpers need to be in-place to do this operation.
 
 
 .SH "WiringPi vs. GPIO Pin numbering"

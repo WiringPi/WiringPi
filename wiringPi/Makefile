@@ -38,12 +38,12 @@ LIBS    =
 SRC	=	wiringPi.c wiringPiFace.c wiringSerial.c wiringShift.c	\
 		gertboard.c						\
 		piNes.c							\
-		lcd.c piHiPri.c piThread.c softPwm.c
+		lcd.c piHiPri.c piThread.c softPwm.c wiringPiSPI.c
 
 OBJ	=	wiringPi.o wiringPiFace.o wiringSerial.o wiringShift.o	\
 		gertboard.o						\
 		piNes.o							\
-		lcd.o piHiPri.o piThread.o softPwm.o
+		lcd.o piHiPri.o piThread.o softPwm.o wiringPiSPI.o
 
 all:		$(TARGET)
 
@@ -78,6 +78,7 @@ install:	$(TARGET)
 	install -m 0644 piNes.h		/usr/local/include
 	install -m 0644 softPwm.h	/usr/local/include
 	install -m 0644 lcd.h		/usr/local/include
+	install -m 0644 wiringPiSPI.h	/usr/local/include
 	install -m 0644 libwiringPi.a	/usr/local/lib
 
 uninstall:

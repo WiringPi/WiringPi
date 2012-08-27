@@ -38,23 +38,16 @@
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
 
+#include "wiringPiSPI.h"
+
 #include "gertboard.h"
 
+// The A-D convertor won't run at more than 1MHz @ 3.3v
 
-// The SPI bus parameters
-//	Variables as they need to be passed as pointers later on
-
-static char       *spiA2D = "/dev/spidev0.0" ;
-static char       *spiD2A = "/dev/spidev0.1" ;
-static uint8_t     spiMode   = 0 ;
-static uint8_t     spiBPW    = 8 ;
-static uint32_t    spiSpeed  = 100000 ;	// 1MHz
-static uint16_t    spiDelay  = 0;
-
-// Locals here to keep track of everything
-
-static int spiFdA2D ;
-static int spiFdD2A ;
+#define	SPI_ADC_SPEED	 1000000
+#define	SPI_DAC_SPEED	 1000000
+#define	SPI_A2D		0
+#define	SPI_D2A		1
 
 
 /*
@@ -66,10 +59,7 @@ static int spiFdD2A ;
 
 void gertboardAnalogWrite (int chan, int value)
 {
-  uint8_t spiBufTx [2] ;
-  uint8_t spiBufRx [2] ;
-  struct spi_ioc_transfer spi ;
-
+  uint8_t spiData [2] ;
   uint8_t chanBits, dataBits ;
 
   if (chan == 0)
@@ -80,17 +70,10 @@ void gertboardAnalogWrite (int chan, int value)
   chanBits |= ((value >> 4) & 0x0F) ;
   dataBits  = ((value << 4) & 0xF0) ;
 
-  spiBufTx [0] = chanBits ;
-  spiBufTx [1] = dataBits ;
+  spiData [0] = chanBits ;
+  spiData [1] = dataBits ;
 
-  spi.tx_buf        = (unsigned long)spiBufTx ;
-  spi.rx_buf        = (unsigned long)spiBufRx ;
-  spi.len           = 2 ;
-  spi.delay_usecs   = spiDelay ;
-  spi.speed_hz      = spiSpeed ;
-  spi.bits_per_word = spiBPW ;
-
-  ioctl (spiFdD2A, SPI_IOC_MESSAGE(1), &spi) ;
+  wiringPiSPIDataRW (SPI_D2A, spiData, 2) ;
 }
 
 
@@ -103,60 +86,21 @@ void gertboardAnalogWrite (int chan, int value)
 
 int gertboardAnalogRead (int chan)
 {
-  uint8_t spiBufTx [4] ;
-  uint8_t spiBufRx [4] ;
-  struct spi_ioc_transfer spi ;
+  uint8_t spiData [2] ;
 
   uint8_t chanBits ;
 
   if (chan == 0)
-    chanBits = 0b0110100 ;
+    chanBits = 0b11010000 ;
   else
-    chanBits = 0b0111100 ;
+    chanBits = 0b11110000 ;
 
-  spiBufTx [0] = chanBits ;
-  spiBufTx [1] = 0 ;
+  spiData [0] = chanBits ;
+  spiData [1] = 0 ;
 
-  spi.tx_buf        = (unsigned long)spiBufTx ;
-  spi.rx_buf        = (unsigned long)spiBufRx ;
-  spi.len           = 4 ;
-  spi.delay_usecs   = spiDelay ;
-  spi.speed_hz      = spiSpeed ;
-  spi.bits_per_word = spiBPW ;
+  wiringPiSPIDataRW (SPI_A2D, spiData, 2) ;
 
-  ioctl (spiFdA2D, SPI_IOC_MESSAGE(1), &spi) ;
-
-  return spiBufRx [0] << 8 | spiBufRx [1] ;
-}
-
-
-/*
- * setParams:
- *	Output the SPI bus parameters to the given device
- *********************************************************************************
- */
-
-static int setParams (int fd)
-{
-  if (ioctl (fd, SPI_IOC_WR_MODE, &spiMode) < 0)
-    return -1 ;
-
-  if (ioctl (fd, SPI_IOC_RD_MODE, &spiMode) < 0)
-    return -1 ;
-
-  if (ioctl (fd, SPI_IOC_WR_BITS_PER_WORD, &spiBPW) < 0)
-    return -1 ;
-
-  if (ioctl (fd, SPI_IOC_RD_BITS_PER_WORD, &spiBPW) < 0)
-    return -1 ;
-
-  if (ioctl (fd, SPI_IOC_WR_MAX_SPEED_HZ, &spiSpeed) < 0)
-    return -1 ;
-
-  if (ioctl (fd, SPI_IOC_RD_MAX_SPEED_HZ, &spiSpeed) < 0)
-    return -1 ;
-
-  return 0 ;
+  return ((spiData [0] << 7) | (spiData [1] >> 1)) & 0x3FF ;
 }
 
 
@@ -168,16 +112,10 @@ static int setParams (int fd)
 
 int gertboardSPISetup (void)
 {
-  if ((spiFdA2D = open (spiA2D, O_RDWR)) < 0)
+  if (wiringPiSPISetup (SPI_A2D, SPI_ADC_SPEED) < 0)
     return -1 ;
 
-  if (setParams (spiFdA2D) != 0)
-    return -1 ;
-
-  if ((spiFdD2A = open (spiD2A, O_RDWR)) < 0)
-    return -1 ;
-
-  if (setParams (spiFdD2A) != 0)
+  if (wiringPiSPISetup (SPI_D2A, SPI_DAC_SPEED) < 0)
     return -1 ;
 
   return 0 ;

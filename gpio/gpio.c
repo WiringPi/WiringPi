@@ -1,6 +1,7 @@
 /*
  * gpio.c:
- *	Set-UID command-line interface to the Raspberry Pi's GPIO
+ *	Swiss-Army-Knife, Set-UID command-line interface to the Raspberry
+ *	Pi's GPIO.
  *	Copyright (c) 2012 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
@@ -21,7 +22,6 @@
  ***********************************************************************
  */
 
-#include <wiringPi.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,12 +32,15 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
+#include <wiringPi.h>
+#include <gertboard.h>
+
 #ifndef TRUE
 #  define	TRUE	(1==1)
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION	"1.1"
+#define	VERSION	"1.2"
 
 static int wpMode ;
 
@@ -49,7 +52,9 @@ char *usage = "Usage: gpio -v\n"
 	      "       gpio drive <group> <value>\n"
 	      "       gpio pwm-bal/pwm-ms \n"
 	      "       gpio pwmr <range> \n"
-	      "       gpio load spi/i2c" ;
+	      "       gpio load spi/i2c\n"
+	      "       gpio gbr <channel>\n"
+	      "       gpio gbw <channel> <value>\n" ;
 
 
 /*
@@ -519,6 +524,82 @@ static void doPadDrive (int argc, char *argv [])
 
 
 /*
+ * doGbw:
+ *	gpio gbw channel value
+ *********************************************************************************
+ */
+
+static void doGbw (int argc, char *argv [])
+{
+  int channel, value ;
+
+  if (argc != 4)
+  {
+    fprintf (stderr, "Usage: %s gbr <channel> <value>\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  channel = atoi (argv [2]) ;
+  value   = atoi (argv [3]) ;
+
+  if ((channel < 0) || (channel > 1))
+  {
+    fprintf (stderr, "%s: channel must be 0 or 1\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  if ((value < 0) || (value > 1023))
+  {
+    fprintf (stderr, "%s: value must be from 0 to 255\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  if (gertboardSPISetup () == -1)
+  {
+    fprintf (stderr, "Unable to initialise the Gertboard SPI interface: %s\n", strerror (errno)) ;
+    exit (1) ;
+  }
+
+  gertboardAnalogWrite (channel, value) ;
+}
+
+
+/*
+ * doGbr:
+ *	gpio gbr channel
+ *********************************************************************************
+ */
+
+static void doGbr (int argc, char *argv [])
+{
+  int channel ;
+
+  if (argc != 3)
+  {
+    fprintf (stderr, "Usage: %s gbr <channel>\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  channel = atoi (argv [2]) ;
+
+  if ((channel < 0) || (channel > 1))
+  {
+    fprintf (stderr, "%s: channel must be 0 or 1\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  if (gertboardSPISetup () == -1)
+  {
+    fprintf (stderr, "Unable to initialise the Gertboard SPI interface: %s\n", strerror (errno)) ;
+    exit (1) ;
+  }
+
+  printf ("%d\n",gertboardAnalogRead (channel)) ;
+}
+
+
+
+/*
  * doWrite:
  *	gpio write pin value
  *********************************************************************************
@@ -708,6 +789,11 @@ int main (int argc, char *argv [])
 
   if (strcasecmp (argv [1], "drive") == 0)	{ doPadDrive (argc, argv) ; return 0 ; }
   if (strcasecmp (argv [1], "load" ) == 0)	{ doLoad     (argc, argv) ; return 0 ; }
+
+// Gertboard commands
+
+  if (strcasecmp (argv [1], "gbr" ) == 0)	{ doGbr (argc, argv) ; return 0 ; }
+  if (strcasecmp (argv [1], "gbw" ) == 0)	{ doGbw (argc, argv) ; return 0 ; }
 
 // Check for -g argument
 
