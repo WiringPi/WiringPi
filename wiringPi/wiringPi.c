@@ -71,18 +71,27 @@
 
 // Function stubs
 
-void (*pinMode)          (int pin, int mode) ;
-void (*pullUpDnControl)  (int pin, int pud) ;
-void (*digitalWrite)     (int pin, int value) ;
-void (*pwmWrite)         (int pin, int value) ;
-int  (*digitalRead)      (int pin) ;
-int  (*waitForInterrupt) (int pin, int mS) ;
+void (*pinMode)           (int pin, int mode) ;
+void (*pullUpDnControl)   (int pin, int pud) ;
+void (*digitalWrite)      (int pin, int value) ;
+void (*pwmWrite)          (int pin, int value) ;
+void (*setPadDrive)       (int group, int value) ;
+int  (*digitalRead)       (int pin) ;
+int  (*waitForInterrupt)  (int pin, int mS) ;
+void (*delayMicroseconds) (unsigned int howLong) ;
+void (*pwmSetMode)        (int mode) ;
+void (*pwmSetRange)       (unsigned int range) ;
 
 
 #ifndef	TRUE
 #define	TRUE	(1==1)
 #define	FALSE	(1==2)
 #endif
+
+// BCM Magic
+
+#define	BCM_PASSWORD		0x5A000000
+
 
 // Port function select bits
 
@@ -100,10 +109,11 @@ int  (*waitForInterrupt) (int pin, int mS) ;
 //	Take from Gert/Doms code. Some of this is not in the manual
 //	that I can find )-:
 
-#define BCM2708_PERI_BASE	0x20000000
+#define BCM2708_PERI_BASE	                   0x20000000
 #define GPIO_PADS		(BCM2708_PERI_BASE + 0x100000)
 #define CLOCK_BASE		(BCM2708_PERI_BASE + 0x101000)
 #define GPIO_BASE		(BCM2708_PERI_BASE + 0x200000)
+#define GPIO_TIMER		(BCM2708_PERI_BASE + 0x00B000)
 #define GPIO_PWM		(BCM2708_PERI_BASE + 0x20C000)
 
 #define	PAGE_SIZE		(4*1024)
@@ -137,12 +147,27 @@ int  (*waitForInterrupt) (int pin, int mS) ;
 #define	PWM0_SERIAL     0x0002  // Run in serial mode
 #define	PWM0_ENABLE     0x0001  // Channel Enable
 
+// Timer
+
+#define	TIMER_LOAD	(0x400 >> 2)
+#define	TIMER_VALUE	(0x404 >> 2)
+#define	TIMER_CONTROL	(0x408 >> 2)
+#define	TIMER_IRQ_CLR	(0x40C >> 2)
+#define	TIMER_IRQ_RAW	(0x410 >> 2)
+#define	TIMER_IRQ_MASK	(0x414 >> 2)
+#define	TIMER_RELOAD	(0x418 >> 2)
+#define	TIMER_PRE_DIV	(0x41C >> 2)
+#define	TIMER_COUNTER	(0x420 >> 2)
 
 // Locals to hold pointers to the hardware
 
 static volatile uint32_t *gpio ;
 static volatile uint32_t *pwm ;
 static volatile uint32_t *clk ;
+static volatile uint32_t *pads ;
+static volatile uint32_t *timer ;
+
+static volatile uint32_t *timerIrqRaw ;
 
 // The BCM2835 has 54 GPIO pins.
 //	BCM2835 data sheet, Page 90 onwards.
@@ -273,6 +298,8 @@ static uint8_t gpioToFEN [] =
 // gpioToPUDCLK
 //	(Word) offset to the Pull Up Down Clock regsiter
 
+#define	GPPUD	37
+
 static uint8_t gpioToPUDCLK [] =
 {
   38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,
@@ -352,30 +379,42 @@ void pinModeGpio (int pin, int mode)
     if (!pwmRunning)
     {
 
+      *(pwm + PWM_CONTROL) = 0 ;			// Stop PWM
+      delayMicroseconds (10) ;
+	
 //	Gert/Doms Values
-      *(clk + PWMCLK_DIV)  = 0x5A000000 | (32<<12) ;	// set pwm div to 32 (19.2/3 = 600KHz)
-      *(clk + PWMCLK_CNTL) = 0x5A000011 ;		// Source=osc and enable
-      digitalWrite (pin, LOW) ;
-      *(pwm + PWM_CONTROL) = 0 ;			// Disable PWM
+      *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (32<<12) ;	// set pwm div to 32 (19.2/32 = 600KHz)
+      *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// Source=osc and enable
+
       delayMicroseconds (10) ;
-      *(pwm + PWM0_RANGE) = 0x400 ;
-      delayMicroseconds (10) ;
-      *(pwm + PWM1_RANGE) = 0x400 ;
-      delayMicroseconds (10) ;
+
+      *(pwm + PWM0_RANGE) = 0x400 ; delayMicroseconds (10) ;
+      *(pwm + PWM1_RANGE) = 0x400 ; delayMicroseconds (10) ;
 
 // Enable PWMs
 
       *(pwm + PWM0_DATA) = 512 ;
       *(pwm + PWM1_DATA) = 512 ;
 
+// Balanced mode (default)
+
       *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
+
+      pwmRunning = TRUE ;
     }
 
   }
 
 // When we change mode of any pin, we remove the pull up/downs
+//	Or we used to... Hm. Commented out now because for some wieird reason,
+//	it seems to block subsequent attempts to set the pull up/downs and I've
+//	not quite gotten to the bottom of why this happens
+//	The down-side is that the pull up/downs are rememberd in the SoC between
+//	power cycles, so it's going to be a good idea to explicitly set them in
+//	any new code.
+//
+//  pullUpDnControl (pin, PUD_OFF) ;
 
-  pullUpDnControl (pin, PUD_OFF) ;
 }
 
 void pinModeWPi (int pin, int mode)
@@ -384,6 +423,38 @@ void pinModeWPi (int pin, int mode)
 }
 
 void pinModeSys (int pin, int mode)
+{
+  return ;
+}
+
+
+/*
+ * pwmControl:
+ *	Allow the user to control some of the PWM functions
+ *********************************************************************************
+ */
+
+void pwmSetModeWPi (int mode)
+{
+  if (mode == PWM_MODE_MS)
+    *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE | PWM0_MS_MODE | PWM1_MS_MODE ;
+  else
+    *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
+}
+
+void pwmSetModeSys (int mode)
+{
+  return ;
+}
+
+
+void pwmSetRangeWPi (unsigned int range)
+{
+  *(pwm + PWM0_RANGE) = range ; delayMicroseconds (10) ;
+  *(pwm + PWM1_RANGE) = range ; delayMicroseconds (10) ;
+}
+
+void pwmSetRangeSys (unsigned int range)
 {
   return ;
 }
@@ -414,12 +485,12 @@ void pinEnableED01Pi (int pin)
 
 void digitalWriteWPi (int pin, int value)
 {
-  int gpioPin = pinToGpio [pin & 63] ;
+  pin = pinToGpio [pin & 63] ;
 
   if (value == LOW)
-    *(gpio + gpioToGPCLR [gpioPin]) = 1 << gpioPin ;
+    *(gpio + gpioToGPCLR [pin]) = 1 << (pin & 31) ;
   else
-    *(gpio + gpioToGPSET [gpioPin]) = 1 << gpioPin ;
+    *(gpio + gpioToGPSET [pin]) = 1 << (pin & 31) ;
 }
 
 void digitalWriteGpio (int pin, int value)
@@ -427,9 +498,9 @@ void digitalWriteGpio (int pin, int value)
   pin &= 63 ;
 
   if (value == LOW)
-    *(gpio + gpioToGPCLR [pin]) = 1 << pin ;
+    *(gpio + gpioToGPCLR [pin]) = 1 << (pin & 31) ;
   else
-    *(gpio + gpioToGPSET [pin]) = 1 << pin ;
+    *(gpio + gpioToGPSET [pin]) = 1 << (pin & 31) ;
 }
 
 void digitalWriteSys (int pin, int value)
@@ -452,28 +523,55 @@ void digitalWriteSys (int pin, int value)
  *********************************************************************************
  */
 
-void pwmWriteWPi (int pin, int value)
-{
-  int port, gpioPin ;
-
-  gpioPin = pinToGpio [pin & 63] ;
-  port    = gpioToPwmPort [gpioPin] ;
-
-  *(pwm + port) = value & 0x3FF ;
-}
-
 void pwmWriteGpio (int pin, int value)
 {
-  int port, gpioPin ;
+  int port ;
 
-  gpioPin = pin & 63 ;
-  port    = gpioToPwmPort [gpioPin] ;
+  pin  = pin & 63 ;
+  port = gpioToPwmPort [pin] ;
 
-  *(pwm + port) = value & 0x3FF ;
+  *(pwm + port) = value ;
+}
+
+void pwmWriteWPi (int pin, int value)
+{
+  pwmWriteGpio (pinToGpio [pin & 63], value) ;
+}
+
+void pwmWriteSys (int pin, int value)
+{
+  return ;
 }
 
 
-void pwmWriteSys (int pin, int value)
+/*
+ * setPadDrive:
+ *	Set the PAD driver value
+ *********************************************************************************
+ */
+
+void setPadDriveWPi (int group, int value)
+{
+  uint32_t wrVal ;
+
+  if ((group < 0) || (group > 2))
+    return ;
+
+  wrVal = BCM_PASSWORD | 0x18 | (value & 7) ;
+  *(pads + group + 11) = wrVal ;
+
+#ifdef	DEBUG_PADS
+  printf ("setPadDrive: Group: %d, value: %d (%08X)\n", group, value, wrVal) ;
+  printf ("Read : %08X\n", *(pads + group + 11)) ;
+#endif
+}
+
+void setPadDriveGpio (int group, int value)
+{
+  setPadDriveWPi (group, value) ;
+}
+
+void setPadDriveSys (int group, int value)
 {
   return ;
 }
@@ -487,13 +585,9 @@ void pwmWriteSys (int pin, int value)
 
 int digitalReadWPi (int pin)
 {
-  int gpioPin ;
+  pin = pinToGpio [pin & 63] ;
 
-  pin &= 63 ;
-
-  gpioPin = pinToGpio [pin] ;
-
-  if ((*(gpio + gpioToGPLEV [gpioPin]) & (1 << gpioPin)) != 0)
+  if ((*(gpio + gpioToGPLEV [pin]) & (1 << (pin & 31))) != 0)
     return HIGH ;
   else
     return LOW ;
@@ -503,7 +597,7 @@ int digitalReadGpio (int pin)
 {
   pin &= 63 ;
 
-  if ((*(gpio + gpioToGPLEV [pin]) & (1 << pin)) != 0)
+  if ((*(gpio + gpioToGPLEV [pin]) & (1 << (pin & 31))) != 0)
     return HIGH ;
   else
     return LOW ;
@@ -533,30 +627,21 @@ int digitalReadSys (int pin)
  *********************************************************************************
  */
 
-void pullUpDnControlWPi (int pin, int pud)
-{
-  pin = pinToGpio [pin & 63] ;
-
-  *(gpio + 37) = pud ;
-  delayMicroseconds (10) ;
-  *(gpio + gpioToPUDCLK [pin]) = 1 << pin ;
-  delayMicroseconds (10) ;
-  
-  *(gpio + 37) = 0 ;
-  *(gpio + gpioToPUDCLK [pin]) = 0 ;
-}
-
 void pullUpDnControlGpio (int pin, int pud)
 {
   pin &= 63 ;
+  pud &=  3 ;
 
-  *(gpio + 37) = pud ;
-  delayMicroseconds (10) ;
-  *(gpio + gpioToPUDCLK [pin]) = 1 << pin ;
-  delayMicroseconds (10) ;
+  *(gpio + GPPUD)              = pud ;			delayMicroseconds (5) ;
+  *(gpio + gpioToPUDCLK [pin]) = 1 << (pin & 31) ;	delayMicroseconds (5) ;
   
-  *(gpio + 37) = 0 ;
-  *(gpio + gpioToPUDCLK [pin]) = 0 ;
+  *(gpio + GPPUD)              = 0 ;			delayMicroseconds (5) ;
+  *(gpio + gpioToPUDCLK [pin]) = 0 ;			delayMicroseconds (5) ;
+}
+
+void pullUpDnControlWPi (int pin, int pud)
+{
+  pullUpDnControlGpio (pinToGpio [pin & 63], pud) ;
 }
 
 void pullUpDnControlSys (int pin, int pud)
@@ -615,6 +700,94 @@ int waitForInterruptGpio (int pin, int mS)
 
 
 
+
+/*
+ * delay:
+ *	Wait for some number of milli seconds
+ *********************************************************************************
+ */
+
+void delay (unsigned int howLong)
+{
+  struct timespec sleeper, dummy ;
+
+  sleeper.tv_sec  = (time_t)(howLong / 1000) ;
+  sleeper.tv_nsec = (long)(howLong % 1000) * 1000000 ;
+
+  nanosleep (&sleeper, &dummy) ;
+}
+
+
+/*
+ * delayMicroseconds:
+ *	This is somewhat intersting. It seems that on the Pi, a single call
+ *	to nanosleep takes some 80 to 130 microseconds anyway, so while
+ *	obeying the standards (may take longer), it's not always what we
+ *	want!
+ *
+ *	So what I'll do now is if the delay is less than 100uS we'll do it
+ *	in a hard loop, watching a built-in counter on the ARM chip. This is
+ *	somewhat sub-optimal in that it uses 100% CPU, something not an issue
+ *	in a microcontroller, but under a multi-tasking, multi-user OS, it's
+ *	wastefull, however we've no real choice )-:
+ *********************************************************************************
+ */
+
+void delayMicrosecondsSys (unsigned int howLong)
+{
+  struct timespec sleeper, dummy ;
+
+  sleeper.tv_sec  = 0 ;
+  sleeper.tv_nsec = (long)(howLong * 1000) ;
+
+  nanosleep (&sleeper, &dummy) ;
+}
+
+void delayMicrosecondsHard (unsigned int howLong)
+{
+  *(timer + TIMER_LOAD)    = howLong ;
+  *(timer + TIMER_IRQ_CLR) = 0 ;
+
+  while (*timerIrqRaw == 0)
+    ;
+}
+
+void delayMicrosecondsWPi (unsigned int howLong)
+{
+  struct timespec sleeper, dummy ;
+
+  /**/ if (howLong ==   0)
+    return ;
+  else if (howLong  < 100)
+    delayMicrosecondsHard (howLong) ;
+  else
+  {
+    sleeper.tv_sec  = 0 ;
+    sleeper.tv_nsec = (long)(howLong * 1000) ;
+    nanosleep (&sleeper, &dummy) ;
+  }
+}
+
+
+/*
+ * millis:
+ *	Return a number of milliseconds as an unsigned int.
+ *********************************************************************************
+ */
+
+unsigned int millis (void)
+{
+  struct timeval tv ;
+  unsigned long long t1 ;
+
+  gettimeofday (&tv, NULL) ;
+
+  t1 = (tv.tv_sec * 1000000 + tv.tv_usec) / 1000 ;
+
+  return (uint32_t)(t1 - epoch) ;
+}
+
+
 /*
  * wiringPiSetup:
  *	Must be called once at the start of your program execution.
@@ -627,20 +800,19 @@ int waitForInterruptGpio (int pin, int mS)
 int wiringPiSetup (void)
 {
   int      fd ;
-  uint8_t *gpioMem, *pwmMem, *clkMem ;
+  uint8_t *gpioMem, *pwmMem, *clkMem, *padsMem, *timerMem ;
   struct timeval tv ;
 
-#ifdef	DEBUG_PADS
-  uint8_t *gpioMem, *padsMem, *pwmMem, *clkMem ;
-  uint32_t *pads ;
-#endif
-
-           pinMode =          pinModeWPi ;
-   pullUpDnControl =  pullUpDnControlWPi ;
-      digitalWrite =     digitalWriteWPi ;
-          pwmWrite =         pwmWriteWPi ;
-       digitalRead =      digitalReadWPi ;
-  waitForInterrupt = waitForInterruptWPi ;
+            pinMode =           pinModeWPi ;
+    pullUpDnControl =   pullUpDnControlWPi ;
+       digitalWrite =      digitalWriteWPi ;
+           pwmWrite =          pwmWriteWPi ;
+        setPadDrive =       setPadDriveWPi ;
+        digitalRead =       digitalReadWPi ;
+   waitForInterrupt =  waitForInterruptWPi ;
+  delayMicroseconds = delayMicrosecondsWPi ;
+         pwmSetMode =        pwmSetModeWPi ;
+        pwmSetRange =       pwmSetRangeWPi ;
   
 // Open the master /dev/memory device
 
@@ -711,7 +883,8 @@ int wiringPiSetup (void)
     return -1 ;
   }
  
-#ifdef	DEBUG_PADS
+// The drive pads
+
   if ((padsMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
   {
     fprintf (stderr, "wiringPiSetup: padsMem malloc failed: %s\n", strerror (errno)) ;
@@ -728,13 +901,40 @@ int wiringPiSetup (void)
     fprintf (stderr, "wiringPiSetup: mmap failed (pads): %s\n", strerror (errno)) ;
     return -1 ;
   }
- 
-  printf ("Checking pads @ 0x%08X\n", (unsigned int)pads) ;
 
-  printf ("%08X %08X %08X\n", *(pads + 11), *(pads + 12), *(pads + 13)) ;
-//  *(pads + 11) = 0x1F ;
-  printf ("%08X %08X %08X\n", *(pads + 11), *(pads + 12), *(pads + 13)) ;
+#ifdef	DEBUG_PADS
+  printf ("Checking pads @ 0x%08X\n", (unsigned int)pads) ;
+  printf (" -> %08X %08X %08X\n", *(pads + 11), *(pads + 12), *(pads + 13)) ;
 #endif
+
+// The system timer
+
+  if ((timerMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
+  {
+    fprintf (stderr, "wiringPiSetup: timerMem malloc failed: %s\n", strerror (errno)) ;
+    return -1 ;
+  }
+
+  if (((uint32_t)timerMem % PAGE_SIZE) != 0)
+    timerMem += PAGE_SIZE - ((uint32_t)timerMem % PAGE_SIZE) ;
+
+  timer = (uint32_t *)mmap(timerMem, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, fd, GPIO_TIMER) ;
+
+  if ((int32_t)timer < 0)
+  {
+    fprintf (stderr, "wiringPiSetup: mmap failed (timer): %s\n", strerror (errno)) ;
+    return -1 ;
+  }
+
+// Set the timer to free-running, 1MHz.
+//	0xF9 is 249, the timer divide is base clock / (divide+1)
+//	so base clock is 250MHz / 250 = 1MHz.
+
+  *(timer + TIMER_CONTROL) = 0x0000280 ;
+  *(timer + TIMER_PRE_DIV) = 0x00000F9 ;
+  timerIrqRaw = timer + TIMER_IRQ_RAW ;
+
+// Initialise our epoch for millis()
 
   gettimeofday (&tv, NULL) ;
   epoch = (tv.tv_sec * 1000000 + tv.tv_usec) / 1000 ;
@@ -759,12 +959,16 @@ int wiringPiSetupGpio (void)
   if (x != 0)
     return x ;
 
-           pinMode =          pinModeGpio ;
-   pullUpDnControl =  pullUpDnControlGpio ;
-      digitalWrite =     digitalWriteGpio ;
-          pwmWrite =         pwmWriteGpio ;
-       digitalRead =      digitalReadGpio ;
-  waitForInterrupt = waitForInterruptGpio ;
+            pinMode =           pinModeGpio ;
+    pullUpDnControl =   pullUpDnControlGpio ;
+       digitalWrite =      digitalWriteGpio ;
+           pwmWrite =          pwmWriteGpio ;
+        setPadDrive =       setPadDriveGpio ;
+        digitalRead =       digitalReadGpio ;
+   waitForInterrupt =  waitForInterruptGpio ;
+  delayMicroseconds = delayMicrosecondsWPi ;	// Same
+         pwmSetMode =        pwmSetModeWPi ;
+        pwmSetRange =       pwmSetRangeWPi ;
 
   return 0 ;
 }
@@ -785,12 +989,17 @@ int wiringPiSetupSys (void)
   struct timeval tv ;
   char fName [128] ;
 
-           pinMode =          pinModeSys ;
-   pullUpDnControl =  pullUpDnControlSys ;
-      digitalWrite =     digitalWriteSys ;
-          pwmWrite =         pwmWriteSys ;
-       digitalRead =      digitalReadSys ;
-  waitForInterrupt = waitForInterruptSys ;
+            pinMode =           pinModeSys ;
+    pullUpDnControl =   pullUpDnControlSys ;
+       digitalWrite =      digitalWriteSys ;
+           pwmWrite =          pwmWriteSys ;
+        setPadDrive =       setPadDriveSys ;
+        digitalRead =       digitalReadSys ;
+   waitForInterrupt =  waitForInterruptSys ;
+  delayMicroseconds = delayMicrosecondsSys ;
+         pwmSetMode =        pwmSetModeSys ;
+        pwmSetRange =       pwmSetRangeSys ;
+
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open
 //	the 'value' interface to speed things up for later
@@ -807,52 +1016,4 @@ int wiringPiSetupSys (void)
   epoch = (tv.tv_sec * 1000000 + tv.tv_usec) / 1000 ;
 
   return 0 ;
-}
-
-
-
-
-
-/*
- * delay: delayMicroseconds
- *	Wait for some number of milli/micro seconds
- *********************************************************************************
- */
-
-void delay (unsigned int howLong)
-{
-  struct timespec sleeper, dummy ;
-
-  sleeper.tv_sec  = (time_t)(howLong / 1000) ;
-  sleeper.tv_nsec = (long)(howLong % 1000) * 1000000 ;
-
-  nanosleep (&sleeper, &dummy) ;
-}
-
-void delayMicroseconds (unsigned int howLong)
-{
-  struct timespec sleeper, dummy ;
-
-  sleeper.tv_sec  = 0 ;
-  sleeper.tv_nsec = (long)(howLong * 1000) ;
-
-  nanosleep (&sleeper, &dummy) ;
-}
-
-/*
- * millis:
- *	Return a number of milliseconds as an unsigned int.
- *********************************************************************************
- */
-
-unsigned int millis (void)
-{
-  struct timeval tv ;
-  unsigned long long t1 ;
-
-  gettimeofday (&tv, NULL) ;
-
-  t1 = (tv.tv_sec * 1000000 + tv.tv_usec) / 1000 ;
-
-  return (uint32_t)(t1 - epoch) ;
 }

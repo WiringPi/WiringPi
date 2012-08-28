@@ -20,8 +20,6 @@
  ***********************************************************************
  */
 
-#undef	DEBUG
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -48,10 +46,6 @@ int serialOpen (char *device, int baud)
   struct termios options ;
   speed_t myBaud ;
   int     status, fd ;
-
-#ifdef	DEBUG
-  printf ("openSerialPort: <%s> baud: $d\n", device, baud) ;
-#endif
 
   switch (baud)
   {
@@ -86,22 +80,22 @@ int serialOpen (char *device, int baud)
 
   tcgetattr (fd, &options) ;
 
-  cfmakeraw   (&options) ;
-  cfsetispeed (&options, myBaud) ;
-  cfsetospeed (&options, myBaud) ;
+    cfmakeraw   (&options) ;
+    cfsetispeed (&options, myBaud) ;
+    cfsetospeed (&options, myBaud) ;
 
-  options.c_cflag |= (CLOCAL | CREAD) ;
-  options.c_cflag &= ~PARENB ;
-  options.c_cflag &= ~CSTOPB ;
-  options.c_cflag &= ~CSIZE ;
-  options.c_cflag |= CS8 ;
-  options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG) ;
-  options.c_oflag &= ~OPOST ;
+    options.c_cflag |= (CLOCAL | CREAD) ;
+    options.c_cflag &= ~PARENB ;
+    options.c_cflag &= ~CSTOPB ;
+    options.c_cflag &= ~CSIZE ;
+    options.c_cflag |= CS8 ;
+    options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG) ;
+    options.c_oflag &= ~OPOST ;
 
-  options.c_cc [VMIN]  =   0 ;
-  options.c_cc [VTIME] = 100 ;	// Ten seconds (100 deciseconds)
+    options.c_cc [VMIN]  =   0 ;
+    options.c_cc [VTIME] = 100 ;	// Ten seconds (100 deciseconds)
 
-  tcsetattr (fd, TCSANOW, &options) ;
+  tcsetattr (fd, TCSANOW | TCSAFLUSH, &options) ;
 
   ioctl (fd, TIOCMGET, &status);
 
@@ -113,6 +107,18 @@ int serialOpen (char *device, int baud)
   usleep (10000) ;	// 10mS
 
   return fd ;
+}
+
+
+/*
+ * serialFlush:
+ *	Flush the serial buffers (both tx & rx)
+ *********************************************************************************
+ */
+
+void serialFlush (int fd)
+{
+  tcflush (fd, TCIOFLUSH) ;
 }
 
 

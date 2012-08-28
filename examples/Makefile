@@ -35,11 +35,11 @@ LIBS    = -lwiringPi
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	test1.c test2.c speed.c lcd.c wfi.c piface.c
+SRC	=	test1.c test2.c speed.c lcd.c wfi.c piface.c gertboard.c nes.c delayTest.c softPwm.c
 
-OBJ	=	test1.o test2.o speed.o lcd.o wfi.o piface.o
+OBJ	=	test1.o test2.o speed.o lcd.o wfi.o piface.o gertboard.o nes.o delayTest.o softPwm.o
 
-all:		test1 test2 speed lcd wfi piface
+all:		test1 test2 speed lcd wfi piface gertboard nes softPwm
 
 test1:	test1.o
 	@echo [link]
@@ -65,13 +65,30 @@ piface:	piface.o
 	@echo [link]
 	$(CC) -o $@ piface.o $(LDFLAGS) $(LIBS) -lpthread
 
+gertboard:	gertboard.o
+	@echo [link]
+	$(CC) -o $@ gertboard.o $(LDFLAGS) $(LIBS) -lm
+
+nes:	nes.o
+	@echo [link]
+	$(CC) -o $@ nes.o $(LDFLAGS) $(LIBS) -lm
+
+softPwm:	softPwm.o
+	@echo [link]
+	$(CC) -o $@ softPwm.o $(LDFLAGS) $(LIBS) -lm -lpthread
+
+
+delayTest:	delayTest.o
+	@echo [link]
+	$(CC) -o $@ delayTest.o $(LDFLAGS) $(LIBS)
+
 
 .c.o:
 	@echo [CC] $<
 	@$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(OBJ) *~ core tags test1 test2 speed lcd wfi piface
+	rm -f $(OBJ) *~ core tags test1 test2 speed lcd wfi piface gertboard nes delayTest softPwm
 
 tags:	$(SRC)
 	@echo [ctags]

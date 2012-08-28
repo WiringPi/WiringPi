@@ -26,6 +26,7 @@ extern "C" {
 
 extern int   serialOpen      (char *device, int baud) ;
 extern void  serialClose     (int fd) ;
+extern void  serialFlush     (int fd) ;
 extern void  serialPutchar   (int fd, unsigned char c) ;
 extern void  serialPuts      (int fd, char *s) ;
 extern void  serialPrintf    (int fd, char *message, ...) ;

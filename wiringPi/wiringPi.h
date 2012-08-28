@@ -41,6 +41,12 @@
 #define	PUD_DOWN	 1
 #define	PUD_UP		 2
 
+// PWM
+
+#define	PWM_MODE_MS	0
+#define	PWM_MODE_BAL	1
+
+
 // Function prototypes
 //	c++ wrappers thanks to a commend by Nick Lott
 //	(and others on the Raspberry Pi forums)
@@ -58,11 +64,15 @@ extern int  wiringPiSetupPiFace (void) ;
 
 extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio program only
 
-extern void (*pinMode)          (int pin, int mode) ;
-extern void (*pullUpDnControl)  (int pin, int pud) ;
-extern void (*digitalWrite)     (int pin, int value) ;
-extern void (*pwmWrite)         (int pin, int value) ;
-extern int  (*digitalRead)      (int pin) ;
+extern void (*pinMode)           (int pin, int mode) ;
+extern void (*pullUpDnControl)   (int pin, int pud) ;
+extern void (*digitalWrite)      (int pin, int value) ;
+extern void (*pwmWrite)          (int pin, int value) ;
+extern void (*setPadDrive)       (int group, int value) ;
+extern int  (*digitalRead)       (int pin) ;
+extern void (*delayMicroseconds) (unsigned int howLong) ;
+extern void (*pwmSetMode)        (int mode) ;
+extern void (*pwmSetRange)       (unsigned int range) ;
 
 // Interrupts
 
@@ -84,7 +94,6 @@ extern int piHiPri (int pri) ;
 // Extras from arduino land
 
 extern void         delay             (unsigned int howLong) ;
-extern void         delayMicroseconds (unsigned int howLong) ;
 extern unsigned int millis            (void) ;
 
 #ifdef __cplusplus

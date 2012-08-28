@@ -33,5 +33,13 @@ extern void lcdPutchar  (int fd, uint8_t data) ;
 extern void lcdPuts     (int fd, char *string) ;
 extern void lcdPrintf   (int fd, char *message, ...) ;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int  lcdInit (int rows, int cols, int bits, int rs, int strb,
 	int d0, int d1, int d2, int d3, int d4, int d5, int d6, int d7) ;
+
+#ifdef __cplusplus
+}
+#endif
