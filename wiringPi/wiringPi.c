@@ -56,6 +56,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include <poll.h>
 #include <unistd.h>
 #include <errno.h>
@@ -169,6 +171,14 @@ static volatile uint32_t *timer ;
 
 static volatile uint32_t *timerIrqRaw ;
 
+// Raspberry Pi board revision
+
+static int boardRevision = -1 ;
+
+// Debugging
+
+static int wiringPiDebug = FALSE ;
+
 // The BCM2835 has 54 GPIO pins.
 //	BCM2835 data sheet, Page 90 onwards.
 //	There are 6 control registers, each control the functions of a block
@@ -198,8 +208,11 @@ static int sysFds [64] ;
 
 // pinToGpio:
 //	Take a Wiring pin (0 through X) and re-map it to the BCM_GPIO pin
+//	Cope for 2 different board revieions here
 
-static int pinToGpio [64] =
+static int *pinToGpio ;
+
+static int pinToGpioR1 [64] =
 {
   17, 18, 21, 22, 23, 24, 25, 4,	// From the Original Wiki - GPIO 0 through 7
    0,  1,				// I2C  - SDA0, SCL0
@@ -209,7 +222,23 @@ static int pinToGpio [64] =
 
 // Padding:
 
-          -1, -1, -1,-1,-1,-1,-1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 31
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 31
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 47
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 63
+} ;
+
+static int pinToGpioR2 [64] =
+{
+  17, 18, 27, 22, 23, 24, 25, 4,	// From the Original Wiki - GPIO 0 through 7
+   2,  3,				// I2C  - SDA0, SCL0
+   8,  7,				// SPI  - CE1, CE0
+  10,  9, 11, 				// SPI  - MOSI, MISO, SCLK
+  14, 15,				// UART - Tx, Rx
+  28, 29, 30, 31,			// New GPIOs 8 though 11
+
+// Padding:
+
+                      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 31
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 47
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 63
 } ;
@@ -800,8 +829,18 @@ unsigned int millis (void)
 int wiringPiSetup (void)
 {
   int      fd ;
+  FILE    *cpuFd ;
+  char     line [80] ;
+  char    *c ;
+  int      revision = -1 ;
   uint8_t *gpioMem, *pwmMem, *clkMem, *padsMem, *timerMem ;
   struct timeval tv ;
+
+  if (getenv ("WIRINGPI_DEBUG") != NULL)
+    wiringPiDebug = TRUE ;
+
+  if (wiringPiDebug)
+    printf ("wiringPiSetup called\n") ;
 
             pinMode =           pinModeWPi ;
     pullUpDnControl =   pullUpDnControlWPi ;
@@ -814,6 +853,52 @@ int wiringPiSetup (void)
          pwmSetMode =        pwmSetModeWPi ;
         pwmSetRange =       pwmSetRangeWPi ;
   
+// Find board revision
+
+  if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
+  {
+    fprintf (stderr, "wiringPiSetup: Unable to open /proc/cpuinfo: %s\n", strerror (errno)) ;
+    return -1 ;
+  }
+
+  while (fgets (line, 80, cpuFd) != NULL)
+    if (strncmp (line, "Revision", 8) == 0)
+      for (c = line ; *c ; ++c)
+      {
+	if (!isdigit (*c))
+	  continue ;
+	revision = atoi (c) ;
+	break ;
+      }
+
+  fclose (cpuFd) ;
+  if (revision == -1)
+  {
+    fprintf (stderr, "wiringPiSetup: Unable to determine board revision\n") ;
+    errno = 0 ;
+    return -1 ;
+  }
+
+  /**/ if ((revision == 2) || (revision == 3))
+    boardRevision = 1 ;
+  else if ((revision == 4) || (revision == 5) || (revision == 6))
+    boardRevision = 2 ;
+  else
+  {
+    fprintf (stderr, "wiringPiSetup: Unable to determine board revision: %d\n", revision) ;
+    errno = 0 ;
+    return -1 ;
+  }
+
+
+  if (boardRevision == 1)
+    pinToGpio = pinToGpioR1 ;
+  else
+    pinToGpio = pinToGpioR2 ;
+
+  if (wiringPiDebug)
+    printf ("Revision: %d, board revision: %d\n", revision, boardRevision) ;
+
 // Open the master /dev/memory device
 
   if ((fd = open ("/dev/mem", O_RDWR | O_SYNC) ) < 0)
@@ -954,9 +1039,12 @@ int wiringPiSetup (void)
 
 int wiringPiSetupGpio (void)
 {
-  int x = wiringPiSetup () ;
+  int x  ;
 
-  if (x != 0)
+  if (wiringPiDebug)
+    printf ("wiringPiSetupGpio called\n") ;
+
+  if ((x = wiringPiSetup ()) < 0)
     return x ;
 
             pinMode =           pinModeGpio ;
@@ -988,6 +1076,9 @@ int wiringPiSetupSys (void)
   int pin ;
   struct timeval tv ;
   char fName [128] ;
+
+  if (wiringPiDebug)
+    printf ("wiringPiSetupSys called\n") ;
 
             pinMode =           pinModeSys ;
     pullUpDnControl =   pullUpDnControlSys ;
