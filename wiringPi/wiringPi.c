@@ -840,7 +840,7 @@ int wiringPiSetup (void)
     wiringPiDebug = TRUE ;
 
   if (wiringPiDebug)
-    printf ("wiringPiSetup called\n") ;
+    printf ("wiringPi: wiringPiSetup called\n") ;
 
             pinMode =           pinModeWPi ;
     pullUpDnControl =   pullUpDnControlWPi ;
@@ -879,6 +879,15 @@ int wiringPiSetup (void)
     return -1 ;
   }
 
+// If you have overvolted the Pi, then it appears that the revision
+//	has 100000 added to it!
+
+  if (wiringPiDebug)
+    if (revision > 1000)
+      printf ("wiringPi: This Pi has/is overvolted!\n") ;
+
+  revision %= 100 ;
+
   /**/ if ((revision == 2) || (revision == 3))
     boardRevision = 1 ;
   else if ((revision == 4) || (revision == 5) || (revision == 6))
@@ -897,7 +906,7 @@ int wiringPiSetup (void)
     pinToGpio = pinToGpioR2 ;
 
   if (wiringPiDebug)
-    printf ("Revision: %d, board revision: %d\n", revision, boardRevision) ;
+    printf ("wiringPi: Revision: %d, board revision: %d\n", revision, boardRevision) ;
 
 // Open the master /dev/memory device
 
@@ -1042,7 +1051,7 @@ int wiringPiSetupGpio (void)
   int x  ;
 
   if (wiringPiDebug)
-    printf ("wiringPiSetupGpio called\n") ;
+    printf ("wiringPi: wiringPiSetupGpio called\n") ;
 
   if ((x = wiringPiSetup ()) < 0)
     return x ;
@@ -1078,7 +1087,7 @@ int wiringPiSetupSys (void)
   char fName [128] ;
 
   if (wiringPiDebug)
-    printf ("wiringPiSetupSys called\n") ;
+    printf ("wiringPi: wiringPiSetupSys called\n") ;
 
             pinMode =           pinModeSys ;
     pullUpDnControl =   pullUpDnControlSys ;
