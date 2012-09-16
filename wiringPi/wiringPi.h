@@ -62,6 +62,9 @@ extern int  wiringPiSetupSys    (void) ;
 extern int  wiringPiSetupGpio   (void) ;
 extern int  wiringPiSetupPiFace (void) ;
 
+extern int  piBoardRev          (void) ;
+extern int  wpiPinToGpio        (int wpiPin) ;
+
 extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio program only
 
 extern void (*pinMode)           (int pin, int mode) ;

@@ -170,12 +170,7 @@ static volatile uint32_t *pwm ;
 static volatile uint32_t *clk ;
 static volatile uint32_t *pads ;
 static volatile uint32_t *timer ;
-
 static volatile uint32_t *timerIrqRaw ;
-
-// Raspberry Pi board revision
-
-static int boardRevision = -1 ;
 
 // Debugging
 
@@ -231,12 +226,12 @@ static int pinToGpioR1 [64] =
 
 static int pinToGpioR2 [64] =
 {
-  17, 18, 27, 22, 23, 24, 25, 4,	// From the Original Wiki - GPIO 0 through 7
-   2,  3,				// I2C  - SDA0, SCL0
-   8,  7,				// SPI  - CE1, CE0
-  10,  9, 11, 				// SPI  - MOSI, MISO, SCLK
-  14, 15,				// UART - Tx, Rx
-  28, 29, 30, 31,			// New GPIOs 8 though 11
+  17, 18, 27, 22, 23, 24, 25, 4,	// From the Original Wiki - GPIO 0 through 7:	wpi  0 -  7
+   2,  3,				// I2C  - SDA0, SCL0				wpi  8 -  9
+   8,  7,				// SPI  - CE1, CE0				wpi 10 - 11
+  10,  9, 11, 				// SPI  - MOSI, MISO, SCLK			wpi 12 - 14
+  14, 15,				// UART - Tx, Rx				wpi 15 - 16
+  28, 29, 30, 31,			// New GPIOs 8 though 11			wpi 17 - 20
 
 // Padding:
 
@@ -244,6 +239,7 @@ static int pinToGpioR2 [64] =
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 47
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 63
 } ;
+
 
 // gpioToGPFSEL:
 //	Map a BCM_GPIO pin to it's control port. (GPFSEL 0-5)
@@ -258,6 +254,7 @@ static uint8_t gpioToGPFSEL [] =
   5,5,5,5,5,5,5,5,5,5,
 } ;
 
+
 // gpioToShift
 //	Define the shift up for the 3 bits per pin in each GPFSEL port
 
@@ -270,6 +267,7 @@ static uint8_t gpioToShift [] =
   0,3,6,9,12,15,18,21,24,27,
 } ;
 
+
 // gpioToGPSET:
 //	(Word) offset to the GPIO Set registers for each GPIO pin
 
@@ -278,6 +276,7 @@ static uint8_t gpioToGPSET [] =
    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
 } ;
+
 
 // gpioToGPCLR:
 //	(Word) offset to the GPIO Clear registers for each GPIO pin
@@ -288,6 +287,7 @@ static uint8_t gpioToGPCLR [] =
   11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
 } ;
 
+
 // gpioToGPLEV:
 //	(Word) offset to the GPIO Input level registers for each GPIO pin
 
@@ -296,6 +296,7 @@ static uint8_t gpioToGPLEV [] =
   13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
   14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,
 } ;
+
 
 #ifdef notYetReady
 // gpioToEDS
@@ -326,6 +327,7 @@ static uint8_t gpioToFEN [] =
 } ;
 #endif
 
+
 // gpioToPUDCLK
 //	(Word) offset to the Pull Up Down Clock regsiter
 
@@ -336,6 +338,7 @@ static uint8_t gpioToPUDCLK [] =
   38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,
   39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,
 } ;
+
 
 // gpioToPwmALT
 //	the ALT value to put a GPIO pin into PWM mode
@@ -370,7 +373,93 @@ static uint8_t gpioToPwmPort [] =
 
 static unsigned long long epoch ;
 
-//////////////////////////////////////////////////////////////////////////////////
+/*
+ * Functions
+ *********************************************************************************
+ */
+
+
+/*
+ * wpiPinToGpio:
+ *	Translate a wiringPi Pin number to native GPIO pin number.
+ *	(We don't use this here, prefering to just do the lookup directly,
+ *	but it's been requested!)
+ *********************************************************************************
+ */
+
+int wpiPinToGpio (int wpiPin)
+{
+  return pinToGpio [wpiPin & 63] ;
+}
+
+
+/*
+ * piBoardRev:
+ *	Return a number representing the hardware revision of the board.
+ *	Revision is currently 1 or 2. -1 is returned on error.
+ *********************************************************************************
+ */
+
+int piBoardRev (void)
+{
+  FILE *cpuFd ;
+  char line [80] ;
+  char *c ;
+  int  r = -1 ;
+  static int  boardRev = -1 ;
+
+// No point checking twice...
+
+  if (boardRev != -1)
+    return boardRev ;
+
+  if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
+    return -1 ;
+
+  while (fgets (line, 80, cpuFd) != NULL)
+    if (strncmp (line, "Revision", 8) == 0)
+      for (c = line ; *c ; ++c)
+      {
+	if (!isdigit (*c))
+	  continue ;
+	r = atoi (c) ;
+	break ;
+      }
+
+  fclose (cpuFd) ;
+  if (r == -1)
+  {
+    fprintf (stderr, "piBoardRev: Unable to determine board revision from /proc/cpuinfo\n") ;
+    errno = 0 ;
+    return -1 ;
+  }
+
+// If you have overvolted the Pi, then it appears that the revision
+//	has 100000 added to it!
+
+  if (wiringPiDebug)
+    if (r > 1000)
+      printf ("piboardRev: This Pi has/is overvolted!\n") ;
+
+  r %= 100 ;
+
+  /**/ if ((r == 2) || (r == 3))
+    boardRev = 1 ;
+  else if ((r == 4) || (r == 5) || (r == 6))
+    boardRev = 2 ;
+  else
+  {
+    fprintf (stderr, "piBoardRev: Unable to determine board revision from %d\n", r) ;
+    errno = 0 ;
+    return -1 ;
+  }
+
+  if (wiringPiDebug)
+    printf ("piboardRev: Revision: %d, board revision: %d\n", r, boardRev) ;
+
+  return boardRev ;
+}
+
 
 
 /*
@@ -529,8 +618,6 @@ void pwmSetClockSys (int divisor)
 }
 
 
-
-
 #ifdef notYetReady
 /*
  * pinED01:
@@ -589,7 +676,7 @@ void digitalWriteSys (int pin, int value)
 
 
 /*
- * pwnWrite:
+ * pwmWrite:
  *	Set an output PWM value
  *********************************************************************************
  */
@@ -770,8 +857,6 @@ int waitForInterruptGpio (int pin, int mS)
 }
 
 
-
-
 /*
  * delay:
  *	Wait for some number of milli seconds
@@ -871,10 +956,7 @@ unsigned int millis (void)
 int wiringPiSetup (void)
 {
   int      fd ;
-  FILE    *cpuFd ;
-  char     line [80] ;
-  char    *c ;
-  int      revision = -1 ;
+  int      boardRev ;
   uint8_t *gpioMem, *pwmMem, *clkMem, *padsMem, *timerMem ;
   struct timeval tv ;
 
@@ -896,60 +978,13 @@ int wiringPiSetup (void)
         pwmSetRange =       pwmSetRangeWPi ;
         pwmSetClock =       pwmSetClockWPi ;
   
-// Find board revision
-
-  if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
-  {
-    fprintf (stderr, "wiringPiSetup: Unable to open /proc/cpuinfo: %s\n", strerror (errno)) ;
+  if ((boardRev = piBoardRev ()) < 0)
     return -1 ;
-  }
 
-  while (fgets (line, 80, cpuFd) != NULL)
-    if (strncmp (line, "Revision", 8) == 0)
-      for (c = line ; *c ; ++c)
-      {
-	if (!isdigit (*c))
-	  continue ;
-	revision = atoi (c) ;
-	break ;
-      }
-
-  fclose (cpuFd) ;
-  if (revision == -1)
-  {
-    fprintf (stderr, "wiringPiSetup: Unable to determine board revision\n") ;
-    errno = 0 ;
-    return -1 ;
-  }
-
-// If you have overvolted the Pi, then it appears that the revision
-//	has 100000 added to it!
-
-  if (wiringPiDebug)
-    if (revision > 1000)
-      printf ("wiringPi: This Pi has/is overvolted!\n") ;
-
-  revision %= 100 ;
-
-  /**/ if ((revision == 2) || (revision == 3))
-    boardRevision = 1 ;
-  else if ((revision == 4) || (revision == 5) || (revision == 6))
-    boardRevision = 2 ;
-  else
-  {
-    fprintf (stderr, "wiringPiSetup: Unable to determine board revision: %d\n", revision) ;
-    errno = 0 ;
-    return -1 ;
-  }
-
-
-  if (boardRevision == 1)
+  if (boardRev == 1)
     pinToGpio = pinToGpioR1 ;
   else
     pinToGpio = pinToGpioR2 ;
-
-  if (wiringPiDebug)
-    printf ("wiringPi: Revision: %d, board revision: %d\n", revision, boardRevision) ;
 
 // Open the master /dev/memory device
 
