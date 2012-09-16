@@ -2,6 +2,7 @@
  * wiringPi:
  *	Arduino compatable (ish) Wiring library for the Raspberry Pi
  *	Copyright (c) 2012 Gordon Henderson
+ *	Additional code for pwmSetClock by Chris Hall <chris@kchall.plus.com>
  *
  *	Thanks to code samples from Gert Jan van Loo and the
  *	BCM2835 ARM Peripherals manual, however it's missing
@@ -83,6 +84,7 @@ int  (*waitForInterrupt)  (int pin, int mS) ;
 void (*delayMicroseconds) (unsigned int howLong) ;
 void (*pwmSetMode)        (int mode) ;
 void (*pwmSetRange)       (unsigned int range) ;
+void (*pwmSetClock)       (int divisor) ;
 
 
 #ifndef	TRUE
@@ -379,7 +381,6 @@ static unsigned long long epoch ;
 
 void pinModeGpio (int pin, int mode)
 {
-  static int pwmRunning  = FALSE ;
   int fSel, shift, alt ;
 
   pin &= 63 ;
@@ -400,38 +401,28 @@ void pinModeGpio (int pin, int mode)
 
     *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
 
-// We didn't initialise the PWM hardware at setup time - because it's possible that
-//	something else is using the PWM - e.g. the Audio systems! So if we use PWM
-//	here, then we're assuming that nothing else is, otherwise things are going
-//	to sound a bit funny...
+//  Page 107 of the BCM Peripherals manual talks about the GPIO clocks,
+//	but I'm assuming (hoping!) that this applies to other clocks too.
 
-    if (!pwmRunning)
-    {
+    *(pwm + PWM_CONTROL) = 0 ;				// Stop PWM
+    *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
+      delayMicroseconds (110) ; // See comments in pwmSetClockWPi
 
-      *(pwm + PWM_CONTROL) = 0 ;			// Stop PWM
-      delayMicroseconds (10) ;
-	
-//	Gert/Doms Values
-      *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (32<<12) ;	// set pwm div to 32 (19.2/32 = 600KHz)
-      *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// Source=osc and enable
+    (void)*(pwm + PWM_CONTROL) ;
+    while ((*(pwm + PWM_CONTROL) & 0x80) != 0)	// Wait for clock to be !BUSY
+      delayMicroseconds (1) ;
 
-      delayMicroseconds (10) ;
+    *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (32 << 12) ;	// set pwm div to 32 (19.2/32 = 600KHz)
+    *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// enable clk
 
-      *(pwm + PWM0_RANGE) = 0x400 ; delayMicroseconds (10) ;
-      *(pwm + PWM1_RANGE) = 0x400 ; delayMicroseconds (10) ;
+// Default range regsiter of 1024
 
-// Enable PWMs
+    *(pwm + PWM0_DATA) = 0 ; *(pwm + PWM0_RANGE) = 1024 ;
+    *(pwm + PWM1_DATA) = 0 ; *(pwm + PWM1_RANGE) = 1024 ;
 
-      *(pwm + PWM0_DATA) = 512 ;
-      *(pwm + PWM1_DATA) = 512 ;
+// Enable PWMs in balanced mode (default)
 
-// Balanced mode (default)
-
-      *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
-
-      pwmRunning = TRUE ;
-    }
-
+    *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
   }
 
 // When we change mode of any pin, we remove the pull up/downs
@@ -487,6 +478,57 @@ void pwmSetRangeSys (unsigned int range)
 {
   return ;
 }
+
+/*
+ * pwmSetClockWPi:
+ *	Set/Change the PWM clock. Originally my code, but changed
+ *	(for the better!) by Chris Hall, <chris@kchall.plus.com>
+ *	after further study of the manual and testing with a 'scope
+ *********************************************************************************
+ */
+
+void pwmSetClockWPi (int divisor)
+{
+  unsigned int pwm_control ;
+  divisor &= 4095 ;
+
+  if (wiringPiDebug)
+    printf ("Setting to: %d. Current: 0x%08X\n", divisor, *(clk + PWMCLK_DIV)) ;
+
+  pwm_control = *(pwm + PWM_CONTROL) ;		// preserve PWM_CONTROL
+
+// We need to stop PWM prior to stopping PWM clock in MS mode otherwise BUSY
+// stays high.
+
+  *(pwm + PWM_CONTROL) = 0 ;			// Stop PWM
+
+// Stop PWM clock before changing divisor. The delay after this does need to
+// this big (95uS occasionally fails, 100uS OK), it's almost as though the BUSY
+// flag is not working properly in balanced mode. Without the delay when DIV is
+// adjusted the clock sometimes switches to very slow, once slow further DIV
+// adjustments do nothing and it's difficult to get out of this mode.
+
+  *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
+    delayMicroseconds (110) ;			// prevents clock going sloooow
+
+  while ((*(pwm + PWM_CONTROL) & 0x80) != 0)	// Wait for clock to be !BUSY
+    delayMicroseconds (1) ;
+
+  *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (divisor << 12) ;
+
+  *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// Start PWM clock
+  *(pwm + PWM_CONTROL) = pwm_control ;		// restore PWM_CONTROL
+
+  if (wiringPiDebug)
+    printf ("Set     to: %d. Now    : 0x%08X\n", divisor, *(clk + PWMCLK_DIV)) ;
+}
+
+void pwmSetClockSys (int divisor)
+{
+  return ;
+}
+
+
 
 
 #ifdef notYetReady
@@ -852,6 +894,7 @@ int wiringPiSetup (void)
   delayMicroseconds = delayMicrosecondsWPi ;
          pwmSetMode =        pwmSetModeWPi ;
         pwmSetRange =       pwmSetRangeWPi ;
+        pwmSetClock =       pwmSetClockWPi ;
   
 // Find board revision
 
@@ -1066,6 +1109,7 @@ int wiringPiSetupGpio (void)
   delayMicroseconds = delayMicrosecondsWPi ;	// Same
          pwmSetMode =        pwmSetModeWPi ;
         pwmSetRange =       pwmSetRangeWPi ;
+        pwmSetClock =       pwmSetClockWPi ;
 
   return 0 ;
 }
@@ -1099,6 +1143,7 @@ int wiringPiSetupSys (void)
   delayMicroseconds = delayMicrosecondsSys ;
          pwmSetMode =        pwmSetModeSys ;
         pwmSetRange =       pwmSetRangeSys ;
+        pwmSetClock =       pwmSetClockSys ;
 
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open

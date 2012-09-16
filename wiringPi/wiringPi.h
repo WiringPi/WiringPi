@@ -73,6 +73,7 @@ extern int  (*digitalRead)       (int pin) ;
 extern void (*delayMicroseconds) (unsigned int howLong) ;
 extern void (*pwmSetMode)        (int mode) ;
 extern void (*pwmSetRange)       (unsigned int range) ;
+extern void (*pwmSetClock)       (int divisor) ;
 
 // Interrupts
 

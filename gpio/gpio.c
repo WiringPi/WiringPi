@@ -52,9 +52,10 @@ char *usage = "Usage: gpio -v\n"
 	      "       gpio drive <group> <value>\n"
 	      "       gpio pwm-bal/pwm-ms \n"
 	      "       gpio pwmr <range> \n"
+	      "       gpio pwmc <divider> \n"
 	      "       gpio load spi/i2c\n"
 	      "       gpio gbr <channel>\n"
-	      "       gpio gbw <channel> <value>\n" ;
+	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
 
 
 /*
@@ -687,8 +688,8 @@ void doPwm (int argc, char *argv [])
 
 
 /*
- * doPwmMode: doPwmRange:
- *	Change the PWM mode and Range values
+ * doPwmMode: doPwmRange: doPwmClock:
+ *	Change the PWM mode, range and clock divider values
  *********************************************************************************
  */
 
@@ -716,6 +717,27 @@ static void doPwmRange (int argc, char *argv [])
   }
 
   pwmSetRange (range) ;
+}
+
+static void doPwmClock (int argc, char *argv [])
+{
+  unsigned int clock ;
+
+  if (argc != 3)
+  {
+    fprintf (stderr, "Usage: %s pwmc <clock>\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  clock = (unsigned int)strtoul (argv [2], NULL, 10) ;
+
+  if ((clock < 1) || (clock > 4095))
+  {
+    fprintf (stderr, "%s: clock must be between 0 and 4096\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  pwmSetClock (clock) ;
 }
 
 
@@ -846,6 +868,7 @@ int main (int argc, char *argv [])
     if (strcasecmp (argv [1], "pwm-bal") == 0)	{ doPwmMode  (PWM_MODE_BAL) ; return 0 ; }
     if (strcasecmp (argv [1], "pwm-ms")  == 0)	{ doPwmMode  (PWM_MODE_MS) ;  return 0 ; }
     if (strcasecmp (argv [1], "pwmr")    == 0)	{ doPwmRange (argc, argv) ;   return 0 ; }
+    if (strcasecmp (argv [1], "pwmc")    == 0)	{ doPwmClock (argc, argv) ;   return 0 ; }
   }
 
 // Check for wiring commands
