@@ -41,7 +41,7 @@ OBJ	=	gpio.o
 
 all:		gpio
 
-gpio:	gpio.o /usr/local/lib/libwiringPi.a
+gpio:	gpio.o /usr/local/lib/libwiringPi.a /usr/local/lib/libwiringPi.so.1.0
 	@echo [LD]
 	@$(CC) -o $@ gpio.o $(LDFLAGS) $(LIBS)
 	
@@ -60,11 +60,14 @@ depend:
 	makedepend -Y $(SRC)
 
 install:
-	cp gpio /usr/local/bin
-	chown root.root /usr/local/bin/gpio
-	chmod 4755 /usr/local/bin/gpio
-	mkdir -p /usr/local/man/man1
-	cp gpio.1 /usr/local/man/man1
+	@echo -n "Installing... "
+	@cp gpio /usr/local/bin
+	@chown root.root /usr/local/bin/gpio
+	@chmod 4755 /usr/local/bin/gpio
+	@mkdir -p /usr/local/man/man1
+	@cp gpio.1 /usr/local/man/man1
+	@echo "Done."
+	
 
 uninstall:
 	rm -f /usr/local/bin/gpio

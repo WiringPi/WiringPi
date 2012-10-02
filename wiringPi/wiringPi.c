@@ -427,6 +427,7 @@ int piBoardRev (void)
       }
 
   fclose (cpuFd) ;
+
   if (r == -1)
   {
     fprintf (stderr, "piBoardRev: Unable to determine board revision from /proc/cpuinfo\n") ;
@@ -449,9 +450,11 @@ int piBoardRev (void)
     boardRev = 2 ;
   else
   {
-    fprintf (stderr, "piBoardRev: Unable to determine board revision from %d\n", r) ;
-    errno = 0 ;
-    return -1 ;
+    fprintf (stderr, "WARNING: wiringPi: Unable to determine board revision from \"%d\"\n", r) ;
+    fprintf (stderr, " -> You may want to check:\n") ;
+    fprintf (stderr, " -> http://www.raspberrypi.org/phpBB3/viewtopic.php?p=184410#p184410\n") ;
+    fprintf (stderr, " -> Assuming a Rev 1 board\n") ;
+    boardRev = 1 ;
   }
 
   if (wiringPiDebug)

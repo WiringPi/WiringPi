@@ -40,7 +40,7 @@
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION	"1.2"
+#define	VERSION	"1.3"
 
 static int wpMode ;
 
@@ -753,7 +753,7 @@ int main (int argc, char *argv [])
 
   if (argc == 1)
   {
-    fprintf (stderr, "%s: %s\n", argv [0], usage) ;
+    fprintf (stderr, "%s\n", usage) ;
     return 1 ;
   }
 
@@ -769,6 +769,8 @@ int main (int argc, char *argv [])
     printf ("Copyright (c) 2012 Gordon Henderson\n") ;
     printf ("This is free software with ABSOLUTELY NO WARRANTY.\n") ;
     printf ("For details type: %s -warranty\n", argv [0]) ;
+    printf ("\n") ;
+    printf ("This Raspberry Pi is a revision %d board.\n", piBoardRev ()) ;
     return 0 ;
   }
 
@@ -807,9 +809,8 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "unexportall") == 0)	{ doUnexportall (argc, argv) ;	return 0 ; }
   else if (strcasecmp (argv [1], "unexport"   ) == 0)	{ doUnexport    (argc, argv) ;	return 0 ; }
 
-// Check for drive or load commands:
+// Check for load command:
 
-  if (strcasecmp (argv [1], "drive") == 0)	{ doPadDrive (argc, argv) ; return 0 ; }
   if (strcasecmp (argv [1], "load" ) == 0)	{ doLoad     (argc, argv) ; return 0 ; }
 
 // Gertboard commands
@@ -861,14 +862,15 @@ int main (int argc, char *argv [])
     wpMode = WPI_MODE_PINS ;
   }
 
-// Check for PWM operations
+// Check for PWM or Pad Drive operations
 
   if (wpMode != WPI_MODE_PIFACE)
   {
-    if (strcasecmp (argv [1], "pwm-bal") == 0)	{ doPwmMode  (PWM_MODE_BAL) ; return 0 ; }
-    if (strcasecmp (argv [1], "pwm-ms")  == 0)	{ doPwmMode  (PWM_MODE_MS) ;  return 0 ; }
-    if (strcasecmp (argv [1], "pwmr")    == 0)	{ doPwmRange (argc, argv) ;   return 0 ; }
-    if (strcasecmp (argv [1], "pwmc")    == 0)	{ doPwmClock (argc, argv) ;   return 0 ; }
+    if (strcasecmp (argv [1], "pwm-bal") == 0)	{ doPwmMode  (PWM_MODE_BAL) ;	return 0 ; }
+    if (strcasecmp (argv [1], "pwm-ms")  == 0)	{ doPwmMode  (PWM_MODE_MS) ;	return 0 ; }
+    if (strcasecmp (argv [1], "pwmr")    == 0)	{ doPwmRange (argc, argv) ;	return 0 ; }
+    if (strcasecmp (argv [1], "pwmc")    == 0)	{ doPwmClock (argc, argv) ;	return 0 ; }
+    if (strcasecmp (argv [1], "drive")   == 0)	{ doPadDrive (argc, argv) ;	return 0 ; }
   }
 
 // Check for wiring commands

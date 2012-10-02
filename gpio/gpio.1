@@ -48,9 +48,9 @@ channel value
 .SH DESCRIPTION
 
 .B GPIO
-is a swiss army knofe of a command line tool to allow the user easy
+is a swiss army knife of a command line tool to allow the user easy
 access to the GPIO pins on the Raspberry Pi and the SPI A/D and D/A
-convertors on the Gertboard. It's designed for simple testing and
+converters on the Gertboard. It's designed for simple testing and
 diagnostic purposes, but can be used in shell scripts for general if
 somewhat slow control of the GPIO pins.
 
@@ -122,7 +122,7 @@ the direction to input and set the edge interrupt method to \fInone\fR,
 above and note that \fBBCM_GPIO\fR pin number is used not not wiringPi pin
 numbering.
 
-Like the export commands abovem ownership is set to that of the 
+Like the export commands above, ownership is set to that of the 
 calling user, allowing subsequent access from user programs without
 requiring root/sudo.
 
@@ -155,7 +155,7 @@ the associated /dev/ entries so that the current user has access to them.
 .B gbr
 channel
 
-This reads the analog to digital convertor on the Gertboard on the given
+This reads the analog to digital converter on the Gertboard on the given
 channel. The board jumpers need to be in-place to do this operation.
 
 .TP
@@ -163,7 +163,7 @@ channel. The board jumpers need to be in-place to do this operation.
 channel value
 
 This writes the supplied value to the output channel on the Gertboards
-SPI digital to analogue convertor.
+SPI digital to analogue converter.
 The board jumpers need to be in-place to do this operation.
 
 
@@ -171,26 +171,30 @@ The board jumpers need to be in-place to do this operation.
 
 .PP
 .TS
-r r l.
-WiringPi	GPIO	Function
+r r r l.
+WiringPi	GPIO-r1	GPIO-r2	Function
 _
-0	17
-1	18	(PWM)
-2	21
-3	22
-4	23
-5	24
-6	25
-7	4
-8	0	SDA0
-9	1	SCL0
-10	8	SPI CE0
-11	7	SPI CE1
-12	10	SPI MOSI
-13	9	SPI MISO
-14	11	SPI SCLK
-15	14	TxD
-16	15	RxD
+0	17	17
+1	18	18	(PWM)
+2	21	27
+3	22	22
+4	23	23
+5	24	24
+6	25	25
+7	4	4
+8	0	2	I2C: SDA0
+9	1	3	I2C: SCL0
+10	8	8	SPI: CE0
+11	7	7	SPI: CE1
+12	10	10	SPI: MOSI
+13	9	9	SPI: MISO
+14	11	11	SPI: SCLK
+15	14	14	TxD
+16	15	16	RxD
+17	-	28
+18	-	29
+19	-	30
+20	-	31
 .TE
 
 .SH FILES
