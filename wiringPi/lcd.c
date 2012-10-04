@@ -180,8 +180,17 @@ void lcdClear (int fd)
 
 void lcdPosition (int fd, int x, int y)
 {
-  static uint8_t rowOff [4] = { 0x00, 0x40, 0x14, 0x54 } ;
+  static uint8_t rowOff [4] ;
   struct lcdDataStruct *lcd = lcds [fd] ;
+
+  if (lcd->rows == 4 && lcd->cols == 16)
+  {
+    rowOff[0] = 0x00; rowOff[1] = 0x40; rowOff[2] = 0x10; rowOff[3] = 0x50;
+  }
+  else
+  {
+    rowOff[0] = 0x00; rowOff[1] = 0x40; rowOff[2] = 0x14; rowOff[3] = 0x54;
+  }
 
   putCommand (lcd, x + (LCD_DGRAM | rowOff [y])) ;
 }
