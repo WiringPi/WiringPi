@@ -1,4 +1,4 @@
-.TH "GPIO" "14 June 2012" "Command-Line access to Raspberry Pi and PiFace GPIO"
+.TH "GPIO" "21st October 2012" "Command-Line access to Raspberry Pi and PiFace GPIO"
 
 .SH NAME
 gpio \- Command-line access to Raspberry Pi and PiFace GPIO
@@ -15,6 +15,9 @@ gpio \- Command-line access to Raspberry Pi and PiFace GPIO
 .B [ \-p ]
 .B read/write/mode
 .B ...
+.PP
+.B gpio
+.B readall
 .PP
 .B gpio
 .B unexportall/exports
@@ -62,7 +65,7 @@ interface without needing to be run as root.
 
 .TP
 .B \-v
-Output the current version
+Output the current version including the board revision of the Raspberry Pi.
 
 .TP
 .B \-g
@@ -73,20 +76,26 @@ Use the BCM_GPIO pins numbers rather than wiringPi pin numbers.
 Use the PiFace interface board and its corresponding pin numbers.
 
 .TP
-.B read
+.B read <pin>
 Read the digital value of the given pin and print 0 or 1 to represent the
 respective logic levels.
 
 .TP
-.B write
+.B write <pin> <value>
 Write the given value (0 or 1) to the pin.
 
 .TP
-.B pwm
+.B readall
+Output a table of all GPIO pins values. The values represent the actual values read
+if the pin is in input mode, or the last value written if the pin is in output
+mode.
+
+.TP
+.B pwm <pin> <value>
 Write a PWM value (0-1023) to the given pin.
 
 .TP
-.B mode
+.B mode <pin> <mode>
 Set a pin into \fIinput\fR, \fIoutput\fR or \fIpwm\fR mode. Can also
 use the literals \fIup\fR, \fIdown\fR or \fItri\fR to set the internal
 pull-up, pull-down or tristate (off) controls.
@@ -238,10 +247,14 @@ Gordon Henderson
 
 .SH "REPORTING BUGS"
 
-Report bugs to <projects@drogon.net>
+Please report bugs to <projects@drogon.net>
 
 .SH COPYRIGHT
 
 Copyright (c) 2012 Gordon Henderson
 This is free software; see the source for copying conditions. There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+.SH TRADEMARKS AND ACKNOWLEDGEMENTS
+
+Raspberry Pi is a trademark of the Raspberry Pi Foundation.

@@ -397,15 +397,31 @@ int wpiPinToGpio (int wpiPin)
  * piBoardRev:
  *	Return a number representing the hardware revision of the board.
  *	Revision is currently 1 or 2. -1 is returned on error.
+ *
+ *	Much confusion here )-:
+ *	Seems there ar esome boards with 0000 in them (mistake in manufacture)
+ *	and some board with 0005 in them (another mistake in manufacture).
+ *	So the distinction between boards that I can see is:
+ *	0000 - Error
+ *	0001 - Not used
+ *	0002 - Rev 1
+ *	0003 - Rev 1
+ *	0004 - Rev 2
+ *	0005 - Rev 2
+ *	0006 - Rev 2
+ *	000f - Rev 2 + 512MB
+ *
+ *	A small thorn is the olde style overvolting - that will add in
+ *		1000000
+ *
  *********************************************************************************
  */
 
 int piBoardRev (void)
 {
   FILE *cpuFd ;
-  char line [80] ;
-  char *c ;
-  int  r = -1 ;
+  char line [120] ;
+  char *c, lastChar ;
   static int  boardRev = -1 ;
 
 // No point checking twice...
@@ -416,21 +432,28 @@ int piBoardRev (void)
   if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
     return -1 ;
 
-  while (fgets (line, 80, cpuFd) != NULL)
+  while (fgets (line, 120, cpuFd) != NULL)
     if (strncmp (line, "Revision", 8) == 0)
-      for (c = line ; *c ; ++c)
-      {
-	if (!isdigit (*c))
-	  continue ;
-	r = atoi (c) ;
-	break ;
-      }
+      break ;
 
   fclose (cpuFd) ;
 
-  if (r == -1)
+  if (line == NULL)
   {
     fprintf (stderr, "piBoardRev: Unable to determine board revision from /proc/cpuinfo\n") ;
+    fprintf (stderr, "  (No \"Revision\" line)\n") ;
+    errno = 0 ;
+    return -1 ;
+  }
+  
+  for (c = line ; *c ; ++c)
+    if (isdigit (*c))
+      break ;
+
+  if (!isdigit (*c))
+  {
+    fprintf (stderr, "piBoardRev: Unable to determine board revision from /proc/cpuinfo\n") ;
+    fprintf (stderr, "  (No numeric revision string in: \"%s\"\n", line) ;
     errno = 0 ;
     return -1 ;
   }
@@ -439,15 +462,17 @@ int piBoardRev (void)
 //	has 100000 added to it!
 
   if (wiringPiDebug)
-    if (r > 1000)
+    if (strlen (c) != 4)
       printf ("piboardRev: This Pi has/is overvolted!\n") ;
 
-  r %= 100 ;
+  lastChar = c [strlen (c) - 2] ;
 
-  /**/ if ((r == 2) || (r == 3))
+  /**/ if ((lastChar == '2') || (lastChar == '3'))
     boardRev = 1 ;
-  else if ((r == 4) || (r == 5) || (r == 6))
+  else
     boardRev = 2 ;
+
+#ifdef	DO_WE_CARE_ABOUT_THIS_NOW
   else
   {
     fprintf (stderr, "WARNING: wiringPi: Unable to determine board revision from \"%d\"\n", r) ;
@@ -456,9 +481,10 @@ int piBoardRev (void)
     fprintf (stderr, " -> Assuming a Rev 1 board\n") ;
     boardRev = 1 ;
   }
+#endif
 
   if (wiringPiDebug)
-    printf ("piboardRev: Revision: %d, board revision: %d\n", r, boardRev) ;
+    printf ("piboardRev: Revision string: %s, board revision: %d\n", c, boardRev) ;
 
   return boardRev ;
 }

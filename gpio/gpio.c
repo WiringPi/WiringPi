@@ -40,7 +40,7 @@
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION	"1.3"
+#define	VERSION	"1.4"
 
 static int wpMode ;
 
@@ -48,7 +48,9 @@ char *usage = "Usage: gpio -v\n"
               "       gpio -h\n"
               "       gpio [-g] <read/write/pwm/mode> ...\n"
               "       gpio [-p] <read/write/mode> ...\n"
-	      "       gpio export/edge/unexport/unexportall/exports ...\n"
+	      "       gpio readall\n"
+	      "       gpio unexportall/exports ...\n"
+	      "       gpio export/edge/unexport ...\n"
 	      "       gpio drive <group> <value>\n"
 	      "       gpio pwm-bal/pwm-ms \n"
 	      "       gpio pwmr <range> \n"
@@ -171,6 +173,65 @@ static void doLoad (int argc, char *argv [])
   changeOwner (argv [0], file2) ;
 }
 
+
+/*
+ * doReadall:
+ *	Read all the GPIO pins
+ *********************************************************************************
+ */
+
+static char *pinNames [] =
+{
+  "GPIO 0",
+  "GPIO 1",
+  "GPIO 2",
+  "GPIO 3",
+  "GPIO 4",
+  "GPIO 5",
+  "GPIO 6",
+  "GPIO 7",
+  "SDA   ",
+  "SCL   ",
+  "CE0   ",
+  "CE1   ",
+  "MOSI  ",
+  "MISO  ",
+  "SCLK  ",
+  "TxD   ",
+  "RxD   ",
+  "GPIO 8",
+  "GPIO 9",
+  "GPIO10",
+  "GPIO11",
+} ;
+
+static void doReadall (void)
+{
+  int pin ;
+
+  printf ("+----------+------+--------+-------+\n") ;
+  printf ("| wiringPi | GPIO | Name   | Value |\n") ;
+  printf ("+----------+------+--------+-------+\n") ;
+
+  for (pin = 0 ; pin < NUM_PINS ; ++pin)
+    printf ("| %6d   | %3d  | %s | %s  |\n",
+	pin, wpiPinToGpio (pin),
+	pinNames [pin], 
+	digitalRead (pin) == HIGH ? "High" : "Low ") ;
+
+  printf ("+----------+------+--------+-------+\n") ;
+
+  if (piBoardRev () == 1)
+    return ;
+
+  for (pin = 17 ; pin <= 20 ; ++pin)
+    printf ("| %6d   | %3d  | %s | %s  |\n",
+	pin, wpiPinToGpio (pin),
+	pinNames [pin], 
+	digitalRead (pin) == HIGH ? "High" : "Low ") ;
+
+  printf ("+----------+------+--------+-------+\n") ;
+}
 
 
 /*
@@ -875,10 +936,11 @@ int main (int argc, char *argv [])
 
 // Check for wiring commands
 
-  /**/ if (strcasecmp (argv [1], "read" ) == 0) doRead     (argc, argv) ;
-  else if (strcasecmp (argv [1], "write") == 0) doWrite    (argc, argv) ;
-  else if (strcasecmp (argv [1], "pwm"  ) == 0) doPwm      (argc, argv) ;
-  else if (strcasecmp (argv [1], "mode" ) == 0) doMode     (argc, argv) ;
+  /**/ if (strcasecmp (argv [1], "readall" ) == 0) doReadall  () ;
+  else if (strcasecmp (argv [1], "read" )    == 0) doRead     (argc, argv) ;
+  else if (strcasecmp (argv [1], "write")    == 0) doWrite    (argc, argv) ;
+  else if (strcasecmp (argv [1], "pwm"  )    == 0) doPwm      (argc, argv) ;
+  else if (strcasecmp (argv [1], "mode" )    == 0) doMode     (argc, argv) ;
   else
   {
     fprintf (stderr, "%s: Unknown command: %s.\n", argv [0], argv [1]) ;

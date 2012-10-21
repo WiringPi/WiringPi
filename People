@@ -1,0 +1,10 @@
+
+Just a quick note to some people who've provided help, suggestions,
+bug-fixes, etc. along the way...
+
+Nick Lott: (And others)
+  Hints about making it work with C++
+
+Philipp Stefan Neininger:
+  Minor bug in the Makefile to do with cross compiling
+

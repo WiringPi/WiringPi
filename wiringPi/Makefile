@@ -43,40 +43,37 @@ SRC	=	wiringPi.c wiringPiFace.c wiringSerial.c wiringShift.c	\
 		piNes.c							\
 		lcd.c piHiPri.c piThread.c softPwm.c wiringPiSPI.c
 
-OBJ	=	wiringPi.o wiringPiFace.o wiringSerial.o wiringShift.o	\
-		gertboard.o						\
-		piNes.o							\
-		lcd.o piHiPri.o piThread.o softPwm.o wiringPiSPI.o
+OBJ	=	$(SRC:.c=.o)
 
-all:		$(STATIC) $(DYNAMIC)
+#all:		$(STATIC) $(DYNAMIC)
+all:		$(DYNAMIC)
 
 $(STATIC):	$(OBJ)
-	@echo [STATIC]
+	@echo [Link (Static)]
 	@ar rcs $(STATIC) $(OBJ)
 	@ranlib $(STATIC)
-
-#	@size   $(STATIC)
+	@size   $(STATIC)
 
 $(DYNAMIC):	$(OBJ)
-	@echo [DYNAMIC]
-	@gcc -shared -Wl,-soname,libwiringPi.so.1 -o libwiringPi.so.1.0 -lpthread $(OBJ)
+	@echo [Link]
+	@$(CC) -shared -Wl,-soname,libwiringPi.so.1 -o libwiringPi.so.1.0 -lpthread $(OBJ)
 
 .c.o:
-	@echo [CC] $<
+	@echo [Compile] $<
 	@$(CC) -c $(CFLAGS) $< -o $@
 
+.PHONEY:	clean
 clean:
 	rm -f $(OBJ) *~ core tags Makefile.bak libwiringPi.*
 
+.PHONEY:	tags
 tags:	$(SRC)
 	@echo [ctags]
 	@ctags $(SRC)
 
-depend:
-	makedepend -Y $(SRC)
-
+.PHONEY:	install
 install:	$(TARGET)
-	@echo [install]
+	@echo "[Install]"
 	@install -m 0755 -d /usr/local/lib
 	@install -m 0755 -d /usr/local/include
 	@install -m 0644 wiringPi.h	/usr/local/include
@@ -87,14 +84,15 @@ install:	$(TARGET)
 	@install -m 0644 softPwm.h	/usr/local/include
 	@install -m 0644 lcd.h		/usr/local/include
 	@install -m 0644 wiringPiSPI.h	/usr/local/include
-	@install -m 0644 libwiringPi.a	/usr/local/lib
+#	@install -m 0644 libwiringPi.a	/usr/local/lib
 	@install	-m 0755 libwiringPi.so.1.0 /usr/local/lib
 	@ln -sf /usr/local/lib/libwiringPi.so.1.0 /usr/local/lib/libwiringPi.so
 	@ln -sf /usr/local/lib/libwiringPi.so.1.0 /usr/local/lib/libwiringPi.so.1
 	@ldconfig
 
+.PHONEY:	uninstall
 uninstall:
-	@echo [uninstall]
+	@echo "[UnInstall]"
 	@rm -f /usr/local/include/wiringPi.h
 	@rm -f /usr/local/include/wiringSerial.h
 	@rm -f /usr/local/include/wiringShift.h
@@ -106,6 +104,10 @@ uninstall:
 	@rm -f /usr/local/lib/libwiringPi.*
 	@ldconfig
 
+
+.PHONEY:	depend
+depend:
+	makedepend -Y $(SRC)
 
 # DO NOT DELETE
 
