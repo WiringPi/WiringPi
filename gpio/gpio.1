@@ -1,4 +1,4 @@
-.TH "GPIO" "14 June 2012" "Command-Line access to Raspberry Pi and PiFace GPIO"
+.TH "GPIO" "21st October 2012" "Command-Line access to Raspberry Pi and PiFace GPIO"
 
 .SH NAME
 gpio \- Command-line access to Raspberry Pi and PiFace GPIO
@@ -15,6 +15,9 @@ gpio \- Command-line access to Raspberry Pi and PiFace GPIO
 .B [ \-p ]
 .B read/write/mode
 .B ...
+.PP
+.B gpio
+.B readall
 .PP
 .B gpio
 .B unexportall/exports
@@ -48,9 +51,9 @@ channel value
 .SH DESCRIPTION
 
 .B GPIO
-is a swiss army knofe of a command line tool to allow the user easy
+is a swiss army knife of a command line tool to allow the user easy
 access to the GPIO pins on the Raspberry Pi and the SPI A/D and D/A
-convertors on the Gertboard. It's designed for simple testing and
+converters on the Gertboard. It's designed for simple testing and
 diagnostic purposes, but can be used in shell scripts for general if
 somewhat slow control of the GPIO pins.
 
@@ -62,7 +65,7 @@ interface without needing to be run as root.
 
 .TP
 .B \-v
-Output the current version
+Output the current version including the board revision of the Raspberry Pi.
 
 .TP
 .B \-g
@@ -73,20 +76,26 @@ Use the BCM_GPIO pins numbers rather than wiringPi pin numbers.
 Use the PiFace interface board and its corresponding pin numbers.
 
 .TP
-.B read
+.B read <pin>
 Read the digital value of the given pin and print 0 or 1 to represent the
 respective logic levels.
 
 .TP
-.B write
+.B write <pin> <value>
 Write the given value (0 or 1) to the pin.
 
 .TP
-.B pwm
+.B readall
+Output a table of all GPIO pins values. The values represent the actual values read
+if the pin is in input mode, or the last value written if the pin is in output
+mode.
+
+.TP
+.B pwm <pin> <value>
 Write a PWM value (0-1023) to the given pin.
 
 .TP
-.B mode
+.B mode <pin> <mode>
 Set a pin into \fIinput\fR, \fIoutput\fR or \fIpwm\fR mode. Can also
 use the literals \fIup\fR, \fIdown\fR or \fItri\fR to set the internal
 pull-up, pull-down or tristate (off) controls.
@@ -122,7 +131,7 @@ the direction to input and set the edge interrupt method to \fInone\fR,
 above and note that \fBBCM_GPIO\fR pin number is used not not wiringPi pin
 numbering.
 
-Like the export commands abovem ownership is set to that of the 
+Like the export commands above, ownership is set to that of the 
 calling user, allowing subsequent access from user programs without
 requiring root/sudo.
 
@@ -155,7 +164,7 @@ the associated /dev/ entries so that the current user has access to them.
 .B gbr
 channel
 
-This reads the analog to digital convertor on the Gertboard on the given
+This reads the analog to digital converter on the Gertboard on the given
 channel. The board jumpers need to be in-place to do this operation.
 
 .TP
@@ -163,7 +172,7 @@ channel. The board jumpers need to be in-place to do this operation.
 channel value
 
 This writes the supplied value to the output channel on the Gertboards
-SPI digital to analogue convertor.
+SPI digital to analogue converter.
 The board jumpers need to be in-place to do this operation.
 
 
@@ -171,26 +180,30 @@ The board jumpers need to be in-place to do this operation.
 
 .PP
 .TS
-r r l.
-WiringPi	GPIO	Function
+r r r l.
+WiringPi	GPIO-r1	GPIO-r2	Function
 _
-0	17
-1	18	(PWM)
-2	21
-3	22
-4	23
-5	24
-6	25
-7	4
-8	0	SDA0
-9	1	SCL0
-10	8	SPI CE0
-11	7	SPI CE1
-12	10	SPI MOSI
-13	9	SPI MISO
-14	11	SPI SCLK
-15	14	TxD
-16	15	RxD
+0	17	17
+1	18	18	(PWM)
+2	21	27
+3	22	22
+4	23	23
+5	24	24
+6	25	25
+7	4	4
+8	0	2	I2C: SDA0
+9	1	3	I2C: SCL0
+10	8	8	SPI: CE0
+11	7	7	SPI: CE1
+12	10	10	SPI: MOSI
+13	9	9	SPI: MISO
+14	11	11	SPI: SCLK
+15	14	14	TxD
+16	15	16	RxD
+17	-	28
+18	-	29
+19	-	30
+20	-	31
 .TE
 
 .SH FILES
@@ -234,10 +247,14 @@ Gordon Henderson
 
 .SH "REPORTING BUGS"
 
-Report bugs to <projects@drogon.net>
+Please report bugs to <projects@drogon.net>
 
 .SH COPYRIGHT
 
 Copyright (c) 2012 Gordon Henderson
 This is free software; see the source for copying conditions. There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+.SH TRADEMARKS AND ACKNOWLEDGEMENTS
+
+Raspberry Pi is a trademark of the Raspberry Pi Foundation.

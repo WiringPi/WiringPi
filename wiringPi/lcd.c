@@ -75,7 +75,10 @@ struct lcdDataStruct *lcds [MAX_LCDS] ;
 
 static void strobe (struct lcdDataStruct *lcd)
 {
-  digitalWrite (lcd->strbPin, 1) ; delayMicroseconds  (1) ;
+
+// Note timing changes for new version of delayMicroseconds ()
+
+  digitalWrite (lcd->strbPin, 1) ; delayMicroseconds (50) ;
   digitalWrite (lcd->strbPin, 0) ; delayMicroseconds (50) ;
 }
 

@@ -2,6 +2,7 @@
  * wiringPi:
  *	Arduino compatable (ish) Wiring library for the Raspberry Pi
  *	Copyright (c) 2012 Gordon Henderson
+ *	Additional code for pwmSetClock by Chris Hall <chris@kchall.plus.com>
  *
  *	Thanks to code samples from Gert Jan van Loo and the
  *	BCM2835 ARM Peripherals manual, however it's missing
@@ -56,6 +57,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <ctype.h>
 #include <poll.h>
 #include <unistd.h>
 #include <errno.h>
@@ -81,6 +84,7 @@ int  (*waitForInterrupt)  (int pin, int mS) ;
 void (*delayMicroseconds) (unsigned int howLong) ;
 void (*pwmSetMode)        (int mode) ;
 void (*pwmSetRange)       (unsigned int range) ;
+void (*pwmSetClock)       (int divisor) ;
 
 
 #ifndef	TRUE
@@ -166,8 +170,11 @@ static volatile uint32_t *pwm ;
 static volatile uint32_t *clk ;
 static volatile uint32_t *pads ;
 static volatile uint32_t *timer ;
-
 static volatile uint32_t *timerIrqRaw ;
+
+// Debugging
+
+static int wiringPiDebug = FALSE ;
 
 // The BCM2835 has 54 GPIO pins.
 //	BCM2835 data sheet, Page 90 onwards.
@@ -198,8 +205,11 @@ static int sysFds [64] ;
 
 // pinToGpio:
 //	Take a Wiring pin (0 through X) and re-map it to the BCM_GPIO pin
+//	Cope for 2 different board revieions here
 
-static int pinToGpio [64] =
+static int *pinToGpio ;
+
+static int pinToGpioR1 [64] =
 {
   17, 18, 21, 22, 23, 24, 25, 4,	// From the Original Wiki - GPIO 0 through 7
    0,  1,				// I2C  - SDA0, SCL0
@@ -209,10 +219,27 @@ static int pinToGpio [64] =
 
 // Padding:
 
-          -1, -1, -1,-1,-1,-1,-1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 31
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 31
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 47
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 63
 } ;
+
+static int pinToGpioR2 [64] =
+{
+  17, 18, 27, 22, 23, 24, 25, 4,	// From the Original Wiki - GPIO 0 through 7:	wpi  0 -  7
+   2,  3,				// I2C  - SDA0, SCL0				wpi  8 -  9
+   8,  7,				// SPI  - CE1, CE0				wpi 10 - 11
+  10,  9, 11, 				// SPI  - MOSI, MISO, SCLK			wpi 12 - 14
+  14, 15,				// UART - Tx, Rx				wpi 15 - 16
+  28, 29, 30, 31,			// New GPIOs 8 though 11			wpi 17 - 20
+
+// Padding:
+
+                      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 31
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 47
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 63
+} ;
+
 
 // gpioToGPFSEL:
 //	Map a BCM_GPIO pin to it's control port. (GPFSEL 0-5)
@@ -227,6 +254,7 @@ static uint8_t gpioToGPFSEL [] =
   5,5,5,5,5,5,5,5,5,5,
 } ;
 
+
 // gpioToShift
 //	Define the shift up for the 3 bits per pin in each GPFSEL port
 
@@ -239,6 +267,7 @@ static uint8_t gpioToShift [] =
   0,3,6,9,12,15,18,21,24,27,
 } ;
 
+
 // gpioToGPSET:
 //	(Word) offset to the GPIO Set registers for each GPIO pin
 
@@ -247,6 +276,7 @@ static uint8_t gpioToGPSET [] =
    7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
 } ;
+
 
 // gpioToGPCLR:
 //	(Word) offset to the GPIO Clear registers for each GPIO pin
@@ -257,6 +287,7 @@ static uint8_t gpioToGPCLR [] =
   11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,
 } ;
 
+
 // gpioToGPLEV:
 //	(Word) offset to the GPIO Input level registers for each GPIO pin
 
@@ -265,6 +296,7 @@ static uint8_t gpioToGPLEV [] =
   13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
   14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,
 } ;
+
 
 #ifdef notYetReady
 // gpioToEDS
@@ -295,6 +327,7 @@ static uint8_t gpioToFEN [] =
 } ;
 #endif
 
+
 // gpioToPUDCLK
 //	(Word) offset to the Pull Up Down Clock regsiter
 
@@ -305,6 +338,7 @@ static uint8_t gpioToPUDCLK [] =
   38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,38,
   39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,39,
 } ;
+
 
 // gpioToPwmALT
 //	the ALT value to put a GPIO pin into PWM mode
@@ -339,7 +373,122 @@ static uint8_t gpioToPwmPort [] =
 
 static unsigned long long epoch ;
 
-//////////////////////////////////////////////////////////////////////////////////
+/*
+ * Functions
+ *********************************************************************************
+ */
+
+
+/*
+ * wpiPinToGpio:
+ *	Translate a wiringPi Pin number to native GPIO pin number.
+ *	(We don't use this here, prefering to just do the lookup directly,
+ *	but it's been requested!)
+ *********************************************************************************
+ */
+
+int wpiPinToGpio (int wpiPin)
+{
+  return pinToGpio [wpiPin & 63] ;
+}
+
+
+/*
+ * piBoardRev:
+ *	Return a number representing the hardware revision of the board.
+ *	Revision is currently 1 or 2. -1 is returned on error.
+ *
+ *	Much confusion here )-:
+ *	Seems there ar esome boards with 0000 in them (mistake in manufacture)
+ *	and some board with 0005 in them (another mistake in manufacture).
+ *	So the distinction between boards that I can see is:
+ *	0000 - Error
+ *	0001 - Not used
+ *	0002 - Rev 1
+ *	0003 - Rev 1
+ *	0004 - Rev 2
+ *	0005 - Rev 2
+ *	0006 - Rev 2
+ *	000f - Rev 2 + 512MB
+ *
+ *	A small thorn is the olde style overvolting - that will add in
+ *		1000000
+ *
+ *********************************************************************************
+ */
+
+int piBoardRev (void)
+{
+  FILE *cpuFd ;
+  char line [120] ;
+  char *c, lastChar ;
+  static int  boardRev = -1 ;
+
+// No point checking twice...
+
+  if (boardRev != -1)
+    return boardRev ;
+
+  if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
+    return -1 ;
+
+  while (fgets (line, 120, cpuFd) != NULL)
+    if (strncmp (line, "Revision", 8) == 0)
+      break ;
+
+  fclose (cpuFd) ;
+
+  if (line == NULL)
+  {
+    fprintf (stderr, "piBoardRev: Unable to determine board revision from /proc/cpuinfo\n") ;
+    fprintf (stderr, "  (No \"Revision\" line)\n") ;
+    errno = 0 ;
+    return -1 ;
+  }
+  
+  for (c = line ; *c ; ++c)
+    if (isdigit (*c))
+      break ;
+
+  if (!isdigit (*c))
+  {
+    fprintf (stderr, "piBoardRev: Unable to determine board revision from /proc/cpuinfo\n") ;
+    fprintf (stderr, "  (No numeric revision string in: \"%s\"\n", line) ;
+    errno = 0 ;
+    return -1 ;
+  }
+
+// If you have overvolted the Pi, then it appears that the revision
+//	has 100000 added to it!
+
+  if (wiringPiDebug)
+    if (strlen (c) != 4)
+      printf ("piboardRev: This Pi has/is overvolted!\n") ;
+
+  lastChar = c [strlen (c) - 2] ;
+
+  /**/ if ((lastChar == '2') || (lastChar == '3'))
+    boardRev = 1 ;
+  else
+    boardRev = 2 ;
+
+#ifdef	DO_WE_CARE_ABOUT_THIS_NOW
+  else
+  {
+    fprintf (stderr, "WARNING: wiringPi: Unable to determine board revision from \"%d\"\n", r) ;
+    fprintf (stderr, " -> You may want to check:\n") ;
+    fprintf (stderr, " -> http://www.raspberrypi.org/phpBB3/viewtopic.php?p=184410#p184410\n") ;
+    fprintf (stderr, " -> Assuming a Rev 1 board\n") ;
+    boardRev = 1 ;
+  }
+#endif
+
+  if (wiringPiDebug)
+    printf ("piboardRev: Revision string: %s, board revision: %d\n", c, boardRev) ;
+
+  return boardRev ;
+}
+
 
 
 /*
@@ -350,7 +499,6 @@ static unsigned long long epoch ;
 
 void pinModeGpio (int pin, int mode)
 {
-  static int pwmRunning  = FALSE ;
   int fSel, shift, alt ;
 
   pin &= 63 ;
@@ -371,38 +519,28 @@ void pinModeGpio (int pin, int mode)
 
     *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
 
-// We didn't initialise the PWM hardware at setup time - because it's possible that
-//	something else is using the PWM - e.g. the Audio systems! So if we use PWM
-//	here, then we're assuming that nothing else is, otherwise things are going
-//	to sound a bit funny...
+//  Page 107 of the BCM Peripherals manual talks about the GPIO clocks,
+//	but I'm assuming (hoping!) that this applies to other clocks too.
 
-    if (!pwmRunning)
-    {
+    *(pwm + PWM_CONTROL) = 0 ;				// Stop PWM
+    *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
+      delayMicroseconds (110) ; // See comments in pwmSetClockWPi
 
-      *(pwm + PWM_CONTROL) = 0 ;			// Stop PWM
-      delayMicroseconds (10) ;
-	
-//	Gert/Doms Values
-      *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (32<<12) ;	// set pwm div to 32 (19.2/32 = 600KHz)
-      *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// Source=osc and enable
+    (void)*(pwm + PWM_CONTROL) ;
+    while ((*(pwm + PWM_CONTROL) & 0x80) != 0)	// Wait for clock to be !BUSY
+      delayMicroseconds (1) ;
 
-      delayMicroseconds (10) ;
+    *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (32 << 12) ;	// set pwm div to 32 (19.2/32 = 600KHz)
+    *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// enable clk
 
-      *(pwm + PWM0_RANGE) = 0x400 ; delayMicroseconds (10) ;
-      *(pwm + PWM1_RANGE) = 0x400 ; delayMicroseconds (10) ;
+// Default range regsiter of 1024
 
-// Enable PWMs
+    *(pwm + PWM0_DATA) = 0 ; *(pwm + PWM0_RANGE) = 1024 ;
+    *(pwm + PWM1_DATA) = 0 ; *(pwm + PWM1_RANGE) = 1024 ;
 
-      *(pwm + PWM0_DATA) = 512 ;
-      *(pwm + PWM1_DATA) = 512 ;
+// Enable PWMs in balanced mode (default)
 
-// Balanced mode (default)
-
-      *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
-
-      pwmRunning = TRUE ;
-    }
-
+    *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
   }
 
 // When we change mode of any pin, we remove the pull up/downs
@@ -455,6 +593,55 @@ void pwmSetRangeWPi (unsigned int range)
 }
 
 void pwmSetRangeSys (unsigned int range)
+{
+  return ;
+}
+
+/*
+ * pwmSetClockWPi:
+ *	Set/Change the PWM clock. Originally my code, but changed
+ *	(for the better!) by Chris Hall, <chris@kchall.plus.com>
+ *	after further study of the manual and testing with a 'scope
+ *********************************************************************************
+ */
+
+void pwmSetClockWPi (int divisor)
+{
+  unsigned int pwm_control ;
+  divisor &= 4095 ;
+
+  if (wiringPiDebug)
+    printf ("Setting to: %d. Current: 0x%08X\n", divisor, *(clk + PWMCLK_DIV)) ;
+
+  pwm_control = *(pwm + PWM_CONTROL) ;		// preserve PWM_CONTROL
+
+// We need to stop PWM prior to stopping PWM clock in MS mode otherwise BUSY
+// stays high.
+
+  *(pwm + PWM_CONTROL) = 0 ;			// Stop PWM
+
+// Stop PWM clock before changing divisor. The delay after this does need to
+// this big (95uS occasionally fails, 100uS OK), it's almost as though the BUSY
+// flag is not working properly in balanced mode. Without the delay when DIV is
+// adjusted the clock sometimes switches to very slow, once slow further DIV
+// adjustments do nothing and it's difficult to get out of this mode.
+
+  *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
+    delayMicroseconds (110) ;			// prevents clock going sloooow
+
+  while ((*(pwm + PWM_CONTROL) & 0x80) != 0)	// Wait for clock to be !BUSY
+    delayMicroseconds (1) ;
+
+  *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (divisor << 12) ;
+
+  *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// Start PWM clock
+  *(pwm + PWM_CONTROL) = pwm_control ;		// restore PWM_CONTROL
+
+  if (wiringPiDebug)
+    printf ("Set     to: %d. Now    : 0x%08X\n", divisor, *(clk + PWMCLK_DIV)) ;
+}
+
+void pwmSetClockSys (int divisor)
 {
   return ;
 }
@@ -518,7 +705,7 @@ void digitalWriteSys (int pin, int value)
 
 
 /*
- * pwnWrite:
+ * pwmWrite:
  *	Set an output PWM value
  *********************************************************************************
  */
@@ -699,8 +886,6 @@ int waitForInterruptGpio (int pin, int mS)
 }
 
 
-
-
 /*
  * delay:
  *	Wait for some number of milli seconds
@@ -800,8 +985,15 @@ unsigned int millis (void)
 int wiringPiSetup (void)
 {
   int      fd ;
+  int      boardRev ;
   uint8_t *gpioMem, *pwmMem, *clkMem, *padsMem, *timerMem ;
   struct timeval tv ;
+
+  if (getenv ("WIRINGPI_DEBUG") != NULL)
+    wiringPiDebug = TRUE ;
+
+  if (wiringPiDebug)
+    printf ("wiringPi: wiringPiSetup called\n") ;
 
             pinMode =           pinModeWPi ;
     pullUpDnControl =   pullUpDnControlWPi ;
@@ -813,7 +1005,16 @@ int wiringPiSetup (void)
   delayMicroseconds = delayMicrosecondsWPi ;
          pwmSetMode =        pwmSetModeWPi ;
         pwmSetRange =       pwmSetRangeWPi ;
+        pwmSetClock =       pwmSetClockWPi ;
   
+  if ((boardRev = piBoardRev ()) < 0)
+    return -1 ;
+
+  if (boardRev == 1)
+    pinToGpio = pinToGpioR1 ;
+  else
+    pinToGpio = pinToGpioR2 ;
+
 // Open the master /dev/memory device
 
   if ((fd = open ("/dev/mem", O_RDWR | O_SYNC) ) < 0)
@@ -954,9 +1155,12 @@ int wiringPiSetup (void)
 
 int wiringPiSetupGpio (void)
 {
-  int x = wiringPiSetup () ;
+  int x  ;
 
-  if (x != 0)
+  if (wiringPiDebug)
+    printf ("wiringPi: wiringPiSetupGpio called\n") ;
+
+  if ((x = wiringPiSetup ()) < 0)
     return x ;
 
             pinMode =           pinModeGpio ;
@@ -969,6 +1173,7 @@ int wiringPiSetupGpio (void)
   delayMicroseconds = delayMicrosecondsWPi ;	// Same
          pwmSetMode =        pwmSetModeWPi ;
         pwmSetRange =       pwmSetRangeWPi ;
+        pwmSetClock =       pwmSetClockWPi ;
 
   return 0 ;
 }
@@ -989,6 +1194,9 @@ int wiringPiSetupSys (void)
   struct timeval tv ;
   char fName [128] ;
 
+  if (wiringPiDebug)
+    printf ("wiringPi: wiringPiSetupSys called\n") ;
+
             pinMode =           pinModeSys ;
     pullUpDnControl =   pullUpDnControlSys ;
        digitalWrite =      digitalWriteSys ;
@@ -999,6 +1207,7 @@ int wiringPiSetupSys (void)
   delayMicroseconds = delayMicrosecondsSys ;
          pwmSetMode =        pwmSetModeSys ;
         pwmSetRange =       pwmSetRangeSys ;
+        pwmSetClock =       pwmSetClockSys ;
 
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open

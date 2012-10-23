@@ -40,7 +40,7 @@
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION	"1.2"
+#define	VERSION	"1.4"
 
 static int wpMode ;
 
@@ -48,13 +48,16 @@ char *usage = "Usage: gpio -v\n"
               "       gpio -h\n"
               "       gpio [-g] <read/write/pwm/mode> ...\n"
               "       gpio [-p] <read/write/mode> ...\n"
-	      "       gpio export/edge/unexport/unexportall/exports ...\n"
+	      "       gpio readall\n"
+	      "       gpio unexportall/exports ...\n"
+	      "       gpio export/edge/unexport ...\n"
 	      "       gpio drive <group> <value>\n"
 	      "       gpio pwm-bal/pwm-ms \n"
 	      "       gpio pwmr <range> \n"
+	      "       gpio pwmc <divider> \n"
 	      "       gpio load spi/i2c\n"
 	      "       gpio gbr <channel>\n"
-	      "       gpio gbw <channel> <value>\n" ;
+	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
 
 
 /*
@@ -170,6 +173,65 @@ static void doLoad (int argc, char *argv [])
   changeOwner (argv [0], file2) ;
 }
 
+
+/*
+ * doReadall:
+ *	Read all the GPIO pins
+ *********************************************************************************
+ */
+
+static char *pinNames [] =
+{
+  "GPIO 0",
+  "GPIO 1",
+  "GPIO 2",
+  "GPIO 3",
+  "GPIO 4",
+  "GPIO 5",
+  "GPIO 6",
+  "GPIO 7",
+  "SDA   ",
+  "SCL   ",
+  "CE0   ",
+  "CE1   ",
+  "MOSI  ",
+  "MISO  ",
+  "SCLK  ",
+  "TxD   ",
+  "RxD   ",
+  "GPIO 8",
+  "GPIO 9",
+  "GPIO10",
+  "GPIO11",
+} ;
+
+static void doReadall (void)
+{
+  int pin ;
+
+  printf ("+----------+------+--------+-------+\n") ;
+  printf ("| wiringPi | GPIO | Name   | Value |\n") ;
+  printf ("+----------+------+--------+-------+\n") ;
+
+  for (pin = 0 ; pin < NUM_PINS ; ++pin)
+    printf ("| %6d   | %3d  | %s | %s  |\n",
+	pin, wpiPinToGpio (pin),
+	pinNames [pin], 
+	digitalRead (pin) == HIGH ? "High" : "Low ") ;
+
+  printf ("+----------+------+--------+-------+\n") ;
+
+  if (piBoardRev () == 1)
+    return ;
+
+  for (pin = 17 ; pin <= 20 ; ++pin)
+    printf ("| %6d   | %3d  | %s | %s  |\n",
+	pin, wpiPinToGpio (pin),
+	pinNames [pin], 
+	digitalRead (pin) == HIGH ? "High" : "Low ") ;
+
+  printf ("+----------+------+--------+-------+\n") ;
+}
 
 
 /*
@@ -687,8 +749,8 @@ void doPwm (int argc, char *argv [])
 
 
 /*
- * doPwmMode: doPwmRange:
- *	Change the PWM mode and Range values
+ * doPwmMode: doPwmRange: doPwmClock:
+ *	Change the PWM mode, range and clock divider values
  *********************************************************************************
  */
 
@@ -718,6 +780,27 @@ static void doPwmRange (int argc, char *argv [])
   pwmSetRange (range) ;
 }
 
+static void doPwmClock (int argc, char *argv [])
+{
+  unsigned int clock ;
+
+  if (argc != 3)
+  {
+    fprintf (stderr, "Usage: %s pwmc <clock>\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  clock = (unsigned int)strtoul (argv [2], NULL, 10) ;
+
+  if ((clock < 1) || (clock > 4095))
+  {
+    fprintf (stderr, "%s: clock must be between 0 and 4096\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  pwmSetClock (clock) ;
+}
+
 
 /*
  * main:
@@ -731,7 +814,7 @@ int main (int argc, char *argv [])
 
   if (argc == 1)
   {
-    fprintf (stderr, "%s: %s\n", argv [0], usage) ;
+    fprintf (stderr, "%s\n", usage) ;
     return 1 ;
   }
 
@@ -747,6 +830,8 @@ int main (int argc, char *argv [])
     printf ("Copyright (c) 2012 Gordon Henderson\n") ;
     printf ("This is free software with ABSOLUTELY NO WARRANTY.\n") ;
     printf ("For details type: %s -warranty\n", argv [0]) ;
+    printf ("\n") ;
+    printf ("This Raspberry Pi is a revision %d board.\n", piBoardRev ()) ;
     return 0 ;
   }
 
@@ -785,9 +870,8 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "unexportall") == 0)	{ doUnexportall (argc, argv) ;	return 0 ; }
   else if (strcasecmp (argv [1], "unexport"   ) == 0)	{ doUnexport    (argc, argv) ;	return 0 ; }
 
-// Check for drive or load commands:
+// Check for load command:
 
-  if (strcasecmp (argv [1], "drive") == 0)	{ doPadDrive (argc, argv) ; return 0 ; }
   if (strcasecmp (argv [1], "load" ) == 0)	{ doLoad     (argc, argv) ; return 0 ; }
 
 // Gertboard commands
@@ -839,21 +923,24 @@ int main (int argc, char *argv [])
     wpMode = WPI_MODE_PINS ;
   }
 
-// Check for PWM operations
+// Check for PWM or Pad Drive operations
 
   if (wpMode != WPI_MODE_PIFACE)
   {
-    if (strcasecmp (argv [1], "pwm-bal") == 0)	{ doPwmMode  (PWM_MODE_BAL) ; return 0 ; }
-    if (strcasecmp (argv [1], "pwm-ms")  == 0)	{ doPwmMode  (PWM_MODE_MS) ;  return 0 ; }
-    if (strcasecmp (argv [1], "pwmr")    == 0)	{ doPwmRange (argc, argv) ;   return 0 ; }
+    if (strcasecmp (argv [1], "pwm-bal") == 0)	{ doPwmMode  (PWM_MODE_BAL) ;	return 0 ; }
+    if (strcasecmp (argv [1], "pwm-ms")  == 0)	{ doPwmMode  (PWM_MODE_MS) ;	return 0 ; }
+    if (strcasecmp (argv [1], "pwmr")    == 0)	{ doPwmRange (argc, argv) ;	return 0 ; }
+    if (strcasecmp (argv [1], "pwmc")    == 0)	{ doPwmClock (argc, argv) ;	return 0 ; }
+    if (strcasecmp (argv [1], "drive")   == 0)	{ doPadDrive (argc, argv) ;	return 0 ; }
   }
 
 // Check for wiring commands
 
-  /**/ if (strcasecmp (argv [1], "read" ) == 0) doRead     (argc, argv) ;
-  else if (strcasecmp (argv [1], "write") == 0) doWrite    (argc, argv) ;
-  else if (strcasecmp (argv [1], "pwm"  ) == 0) doPwm      (argc, argv) ;
-  else if (strcasecmp (argv [1], "mode" ) == 0) doMode     (argc, argv) ;
+  /**/ if (strcasecmp (argv [1], "readall" ) == 0) doReadall  () ;
+  else if (strcasecmp (argv [1], "read" )    == 0) doRead     (argc, argv) ;
+  else if (strcasecmp (argv [1], "write")    == 0) doWrite    (argc, argv) ;
+  else if (strcasecmp (argv [1], "pwm"  )    == 0) doPwm      (argc, argv) ;
+  else if (strcasecmp (argv [1], "mode" )    == 0) doMode     (argc, argv) ;
   else
   {
     fprintf (stderr, "%s: Unknown command: %s.\n", argv [0], argv [1]) ;

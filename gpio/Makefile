@@ -24,7 +24,7 @@
 
 
 #DEBUG	= -g -O0
-DEBUG	= -O3
+DEBUG	= -O2
 CC	= gcc
 INCLUDE	= -I/usr/local/include
 CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
@@ -32,42 +32,49 @@ CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 LDFLAGS	= -L/usr/local/lib
 LIBS    = -lwiringPi
 
-# Should not alter anything below this line
+# May not need to  alter anything below this line
 ###############################################################################
 
 SRC	=	gpio.c
 
-OBJ	=	gpio.o
+OBJ	=	$(SRC:.c=.o)
 
 all:		gpio
 
-gpio:	gpio.o /usr/local/lib/libwiringPi.a
-	@echo [LD]
+gpio:	gpio.o
+	@echo [Link]
 	@$(CC) -o $@ gpio.o $(LDFLAGS) $(LIBS)
 	
 .c.o:
-	@echo [CC] $<
+	@echo [Compile] $<
 	@$(CC) -c $(CFLAGS) $< -o $@
 
+.PHONEY:	clean
 clean:
-	rm -f $(OBJ) gpio *~ core tags
+	rm -f $(OBJ) gpio *~ core tags *.bak
 
+.PHONEY:	tags
 tags:	$(SRC)
 	@echo [ctags]
 	@ctags $(SRC)
 
-depend:
-	makedepend -Y $(SRC)
-
+.PHONEY:	install
 install:
-	cp gpio /usr/local/bin
-	chown root.root /usr/local/bin/gpio
-	chmod 4755 /usr/local/bin/gpio
-	mkdir -p /usr/local/man/man1
-	cp gpio.1 /usr/local/man/man1
+	@echo "[Install]"
+	@cp gpio /usr/local/bin
+	@chown root.root /usr/local/bin/gpio
+	@chmod 4755 /usr/local/bin/gpio
+	@mkdir -p /usr/local/man/man1
+	@cp gpio.1 /usr/local/man/man1
 
+.PHONEY:	uninstall
 uninstall:
+	@echo "[UnInstall]"
 	rm -f /usr/local/bin/gpio
 	rm -f /usr/local/man/man1/gpio.1
+
+.PHONEY:	depend
+depend:
+	makedepend -Y $(SRC)
 
 # DO NOT DELETE
