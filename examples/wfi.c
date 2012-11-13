@@ -112,7 +112,9 @@ void setup (void)
 // Use the gpio program to initialise the hardware
 //	(This is the crude, but effective bit)
 
-  system ("gpio   edge  0 falling") ;
+  char cmd[80] ;
+  sprintf (cmd, "gpio edge %d falling", BUTTON_PIN) ;
+  system (cmd) ;
   system ("gpio export 17 out") ;
   system ("gpio export 18 out") ;
 
