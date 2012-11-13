@@ -89,7 +89,7 @@ PI_THREAD (waitForIt)
 
 // Wait for key to be released
 
-      while (digitalRead (0) == LOW)
+      while (digitalRead (BUTTON_PIN) == LOW)
 	delay (1) ;
 
       debounceTime = millis () + DEBOUNCE_TIME ;
