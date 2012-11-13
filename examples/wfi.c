@@ -35,7 +35,9 @@
 // What BCM_GPIO input are we using?
 //	GPIO 0 is one of the I2C pins with an on-board pull-up
 
+// Please note that on PCB REV2.0 GPIO0 is now GPIO2
 #define	BUTTON_PIN	0
+//#define BUTTON_PIN  2
 
 // Debounce time in mS
 
