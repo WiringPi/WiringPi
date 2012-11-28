@@ -526,8 +526,8 @@ void pinModeGpio (int pin, int mode)
     *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
       delayMicroseconds (110) ; // See comments in pwmSetClockWPi
 
-    (void)*(pwm + PWM_CONTROL) ;
-    while ((*(pwm + PWM_CONTROL) & 0x80) != 0)	// Wait for clock to be !BUSY
+    (void)*(clk + PWMCLK_CNTL) ;
+    while ((*(clk + PWMCLK_CNTL) & 0x80) != 0)	// Wait for clock to be !BUSY
       delayMicroseconds (1) ;
 
     *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (32 << 12) ;	// set pwm div to 32 (19.2/32 = 600KHz)
