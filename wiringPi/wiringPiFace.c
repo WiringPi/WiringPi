@@ -182,6 +182,11 @@ void digitalWritePiFace (int pin, int value)
   writeByte (GPIOA, dataOutRegister) ;
 }
 
+void digitalWriteBytePiFace (int value)
+{
+  writeByte (GPIOA, value) ;
+}
+
 
 void digitalWritePiFaceSpecial (int pin, int value)
 {
@@ -318,12 +323,13 @@ int wiringPiSetupPiFace (void)
   writeByte (GPIOA, 0x00) ;	// Set all outptus off
   writeByte (GPPUB, 0x00) ;	// Disable any pull-ups on port B
 
-           pinMode =          pinModePiFace ;
-   pullUpDnControl =  pullUpDnControlPiFace ;
-      digitalWrite =     digitalWritePiFace ;
-          pwmWrite =         pwmWritePiFace ;
-       digitalRead =      digitalReadPiFace ;
-  waitForInterrupt = waitForInterruptPiFace ;
+           pinMode =              pinModePiFace ;
+   pullUpDnControl =      pullUpDnControlPiFace ;
+      digitalWrite =         digitalWritePiFace ;
+  digitalWriteByte =     digitalWriteBytePiFace ;
+          pwmWrite =             pwmWritePiFace ;
+       digitalRead =          digitalReadPiFace ;
+  waitForInterrupt =     waitForInterruptPiFace ;
 
   return 0 ;
 }
@@ -344,12 +350,13 @@ int wiringPiSetupPiFaceForGpioProg (void)
   if (x != 0)
     return x ;
 
-           pinMode =          pinModePiFace ;
+           pinMode =                 pinModePiFace ;
    pullUpDnControl =  pullUpDnControlPiFaceSpecial ;
       digitalWrite =     digitalWritePiFaceSpecial ;
-          pwmWrite =         pwmWritePiFace ;
-       digitalRead =      digitalReadPiFace ;
-  waitForInterrupt = waitForInterruptPiFace ;
+  digitalWriteByte =        digitalWriteBytePiFace ;
+          pwmWrite =                pwmWritePiFace ;
+       digitalRead =             digitalReadPiFace ;
+  waitForInterrupt =        waitForInterruptPiFace ;
 
   return 0 ;
 }

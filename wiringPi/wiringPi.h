@@ -70,6 +70,7 @@ extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio
 extern void (*pinMode)           (int pin, int mode) ;
 extern void (*pullUpDnControl)   (int pin, int pud) ;
 extern void (*digitalWrite)      (int pin, int value) ;
+extern void (*digitalWriteByte)  (int value) ;
 extern void (*pwmWrite)          (int pin, int value) ;
 extern void (*setPadDrive)       (int group, int value) ;
 extern int  (*digitalRead)       (int pin) ;

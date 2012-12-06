@@ -52,7 +52,7 @@ static int         spiFds [2] ;
 
 int wiringPiSPIGetFd (int channel)
 {
-  return spiFds [channel &1] ;
+  return spiFds [channel & 1] ;
 }
 
 

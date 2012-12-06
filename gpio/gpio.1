@@ -9,11 +9,11 @@ gpio \- Command-line access to Raspberry Pi and PiFace GPIO
 .PP
 .B gpio
 .B [ \-g ]
-.B read/write/pwm/mode ...
+.B read/write/wb/pwm/mode ...
 .PP
 .B gpio
 .B [ \-p ]
-.B read/write/mode
+.B read/write/wb
 .B ...
 .PP
 .B gpio
@@ -82,7 +82,14 @@ respective logic levels.
 
 .TP
 .B write <pin> <value>
-Write the given value (0 or 1) to the pin.
+Write the given value (0 or 1) to the pin. You need to set the pin
+to output mode first.
+
+.TP
+.B wb <value>
+Write the given byte to the 8 main GPIO pins. You can prefix it with 0x
+to specify a hexadecimal number. You need to set pins to output mode
+first.
 
 .TP
 .B readall

@@ -8,3 +8,8 @@ Nick Lott: (And others)
 Philipp Stefan Neininger:
   Minor bug in the Makefile to do with cross compiling
 
+Chris McSweeny
+  Hints and tips about the use of arithmetic in gettimeofday()
+    inside the dealyMicrosecondsHard() function.
+  And spotting a couple of schoolboy errors in the (experimental)
+  softServo code, prompting me to completely re-write it.

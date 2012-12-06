@@ -3,30 +3,24 @@
 #include <unistd.h>
 #include <wiringPi.h>
 
-#include <time.h>
-#include <sys/types.h>
 #include <sys/time.h>
 
 #define	CYCLES	1000
-#define	DELAY	99
 
 int main()
 {
   int x ;
   struct timeval t1, t2 ;
-  long long    t ;
-  unsigned int max, min ;
-
-  unsigned int values [CYCLES] ;
-
-  max = 0 ;
-  min = 1000000 ;
+  int t ;
+  int max, min ;
+  int del ;
+  int underRuns, overRuns, exactRuns, total ;
+  int descheds ;
 
   if (wiringPiSetup () == -1)
     return 1 ;
 
-  piHiPri (10) ;
-  sleep (1) ;
+  piHiPri (10) ; sleep (1) ;
 
 // Baseline test
 
@@ -34,35 +28,56 @@ int main()
   gettimeofday (&t2, NULL) ;
 
   t = t2.tv_usec - t1.tv_usec ;
-  printf ("Baseline test: %lld\n", t);
+  printf ("Baseline test: %d\n", t);
 
-  for (x = 0 ; x < CYCLES ; ++x)
+  for (del = 1 ; del < 200 ; ++del)
   {
-    gettimeofday (&t1, NULL) ;
-    delayMicroseconds (DELAY) ;
-    gettimeofday (&t2, NULL) ;
-      
-    t = t2.tv_usec - t1.tv_usec ;
-    if (t > max) max = t ;
-    if (t < min) min = t ;
-    values [x] = t ;
-  }
+    underRuns = overRuns = exactRuns = total = 0 ;
+    descheds = 0 ;
+    max = del ;
+    min = del ;
 
-  printf ("Done: Max: %d, min: %d\n", max, min) ;
+    for (x = 0 ; x < CYCLES ; ++x)
+    {
+      for (;;)				// Repeat this if we get a delay over 999uS
+      {					// -> High probability Linux has deschedulled us
+	gettimeofday (&t1, NULL) ;
+	  delayMicroseconds (del) ;
+	gettimeofday (&t2, NULL) ;
 
-  for (x = 0 ; x < CYCLES ; ++x)
-  {
-    printf ("%4d", values [x]) ;
-    if (values [x] > DELAY)
-      printf (".") ;
-    else if (values [x] < DELAY)
-      printf ("-") ;
-    else
-      printf (" ") ;
-    if (((x + 1) % 20) == 0)
-      printf ("\n") ;
+	if (t2.tv_usec < t1.tv_usec)	// Counter wrapped
+	  t = (1000000 + t2.tv_usec) - t1.tv_usec;
+	else
+	  t = t2.tv_usec - t1.tv_usec ;
+	if (t > 999)
+	{
+	  ++descheds ;
+	  continue ;
+	}
+	else
+	  break ;
+      }
+
+      if (t > max)
+      {
+        max = t ;
+	++overRuns ;
+      }
+      else if (t < min)
+      {
+	min = t ;
+	++underRuns ;
+      }
+      else
+	++exactRuns ;
+
+      total += t ;
+    }
+    printf ("Delay: %3d. Min: %3d, Max: %3d, Unders: %3d, Overs: %3d, Exacts: %3d, Average: %3d,  Descheds: %2d\n",
+	del, min, max, underRuns, overRuns, exactRuns, total / CYCLES,  descheds) ;
+    fflush (stdout) ;
+    delay (1) ;
   }
-  printf ("\n") ;
 
   return 0 ;
 }
