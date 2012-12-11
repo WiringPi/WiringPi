@@ -30,16 +30,19 @@ INCLUDE	= -I/usr/local/include
 CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 
 LDFLAGS	= -L/usr/local/lib
-LIBS    = -lwiringPi
+LDLIBS    = -lwiringPi
 
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	test1.c test2.c speed.c lcd.c wfi.c piface.c gertboard.c nes.c delayTest.c softPwm.c
+SRC	=	test1.c test2.c speed.c lcd.c wfi.c		\
+		piface.c gertboard.c nes.c			\
+		pwm.c tone.c servo.c				\
+		delayTest.c serialRead.c okLed.c
 
-OBJ	=	test1.o test2.o speed.o lcd.o wfi.o piface.o gertboard.o nes.o delayTest.o softPwm.o
+OBJ	=	$(SRC:.c=.o)
 
-BINS	=	test1 test2 speed lcd wfi piface gertboard nes delayTest softPwm
+BINS	=	$(SRC:.c=)
 
 all:	
 	@cat README.TXT
@@ -48,43 +51,59 @@ all:
 
 test1:	test1.o
 	@echo [link]
-	$(CC) -o $@ test1.o $(LDFLAGS) $(LIBS)
+	@$(CC) -o $@ test1.o $(LDFLAGS) $(LDLIBS)
 	
 test2:	test2.o
 	@echo [link]
-	$(CC) -o $@ test2.o $(LDFLAGS) $(LIBS)
+	@$(CC) -o $@ test2.o $(LDFLAGS) $(LDLIBS)
 
 speed:	speed.o
 	@echo [link]
-	$(CC) -o $@ speed.o $(LDFLAGS) $(LIBS)
+	@$(CC) -o $@ speed.o $(LDFLAGS) $(LDLIBS)
 
 lcd:	lcd.o
 	@echo [link]
-	$(CC) -o $@ lcd.o $(LDFLAGS) $(LIBS)
+	@$(CC) -o $@ lcd.o $(LDFLAGS) $(LDLIBS)
 
 wfi:	wfi.o
 	@echo [link]
-	$(CC) -o $@ wfi.o $(LDFLAGS) $(LIBS) -lpthread
+	@$(CC) -o $@ wfi.o $(LDFLAGS) $(LDLIBS)
 
 piface:	piface.o
 	@echo [link]
-	$(CC) -o $@ piface.o $(LDFLAGS) $(LIBS) -lpthread
+	@$(CC) -o $@ piface.o $(LDFLAGS) $(LDLIBS) -lpthread
 
 gertboard:	gertboard.o
 	@echo [link]
-	$(CC) -o $@ gertboard.o $(LDFLAGS) $(LIBS) -lm
+	@$(CC) -o $@ gertboard.o $(LDFLAGS) $(LDLIBS) -lm
 
 nes:	nes.o
 	@echo [link]
-	$(CC) -o $@ nes.o $(LDFLAGS) $(LIBS) -lm
+	@$(CC) -o $@ nes.o $(LDFLAGS) $(LDLIBS) -lm
 
-softPwm:	softPwm.o
+pwm:	pwm.o
 	@echo [link]
-	$(CC) -o $@ softPwm.o $(LDFLAGS) $(LIBS) -lm -lpthread
+	@$(CC) -o $@ pwm.o $(LDFLAGS) $(LDLIBS) -lm -lpthread
 
 delayTest:	delayTest.o
 	@echo [link]
-	$(CC) -o $@ delayTest.o $(LDFLAGS) $(LIBS)
+	@$(CC) -o $@ delayTest.o $(LDFLAGS) $(LDLIBS)
+
+serialRead:	serialRead.o
+	@echo [link]
+	@$(CC) -o $@ serialRead.o $(LDFLAGS) $(LDLIBS)
+
+okLed:	okLed.o
+	@echo [link]
+	@$(CC) -o $@ okLed.o $(LDFLAGS) $(LDLIBS)
+
+tone:	tone.o
+	@echo [link]
+	@$(CC) -o $@ tone.o $(LDFLAGS) $(LDLIBS)
+
+servo:	servo.o
+	@echo [link]
+	@$(CC) -o $@ servo.o $(LDFLAGS) $(LDLIBS)
 
 
 .c.o:
@@ -92,7 +111,7 @@ delayTest:	delayTest.o
 	@$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(OBJ) *~ core tags test1 test2 speed lcd wfi piface gertboard nes delayTest softPwm
+	rm -f $(OBJ) *~ core tags $(BINS)
 
 tags:	$(SRC)
 	@echo [ctags]

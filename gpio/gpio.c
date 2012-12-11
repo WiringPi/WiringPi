@@ -40,14 +40,14 @@
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION	"1.4"
+#define	VERSION	"1.5"
 
 static int wpMode ;
 
 char *usage = "Usage: gpio -v\n"
               "       gpio -h\n"
-              "       gpio [-g] <read/write/pwm/mode> ...\n"
-              "       gpio [-p] <read/write/mode> ...\n"
+              "       gpio [-g] <read/write/wb/pwm/mode> ...\n"
+              "       gpio [-p] <read/write/wb> ...\n"
 	      "       gpio readall\n"
 	      "       gpio unexportall/exports ...\n"
 	      "       gpio export/edge/unexport ...\n"
@@ -133,7 +133,7 @@ static void _doLoadUsage (char *argv [])
 
 static void doLoad (int argc, char *argv [])
 {
-  char *module ;
+  char *module1, *module2 ;
   char cmd [80] ;
   char *file1, *file2 ;
 
@@ -142,28 +142,36 @@ static void doLoad (int argc, char *argv [])
 
   /**/ if (strcasecmp (argv [2], "spi") == 0)
   {
-    module = "spi_bcm2708" ;
+    module1 = "spidev" ;
+    module2 = "spi_bcm2708" ;
     file1  = "/dev/spidev0.0" ;
     file2  = "/dev/spidev0.1" ;
   }
   else if (strcasecmp (argv [2], "i2c") == 0)
   {
-    module = "i2c_bcm2708" ;
+    module1 = "i2c_dev" ;
+    module2 = "i2c_bcm2708" ;
     file1  = "/dev/i2c-0" ;
     file2  = "/dev/i2c-1" ;
   }
   else
     _doLoadUsage (argv) ;
 
-  if (!moduleLoaded (module))
+  if (!moduleLoaded (module1))
   {
-    sprintf (cmd, "modprobe %s", module) ;
+    sprintf (cmd, "modprobe %s", module1) ;
     system (cmd) ;
   }
 
-  if (!moduleLoaded (module))
+  if (!moduleLoaded (module2))
   {
-    fprintf (stderr, "%s: Unable to load %s\n", argv [0], module) ;
+    sprintf (cmd, "modprobe %s", module2) ;
+    system (cmd) ;
+  }
+
+  if (!moduleLoaded (module2))
+  {
+    fprintf (stderr, "%s: Unable to load %s\n", argv [0], module2) ;
     exit (1) ;
   }
 
@@ -588,6 +596,7 @@ static void doPadDrive (int argc, char *argv [])
 /*
  * doGbw:
  *	gpio gbw channel value
+ *	Gertboard Write - To the Analog output
  *********************************************************************************
  */
 
@@ -629,6 +638,7 @@ static void doGbw (int argc, char *argv [])
 /*
  * doGbr:
  *	gpio gbr channel
+ *	From the analog input
  *********************************************************************************
  */
 
@@ -682,12 +692,38 @@ static void doWrite (int argc, char *argv [])
   if ((wpMode == WPI_MODE_PINS) && ((pin < 0) || (pin >= NUM_PINS)))
     return ;
 
-  val = atoi (argv [3]) ;
+  /**/ if ((strcasecmp (argv [3], "up") == 0) || (strcasecmp (argv [3], "on") == 0))
+    val = 1 ;
+  else if ((strcasecmp (argv [3], "down") == 0) || (strcasecmp (argv [3], "off") == 0))
+    val = 0 ;
+  else
+    val = atoi (argv [3]) ;
 
   /**/ if (val == 0)
     digitalWrite (pin, LOW) ;
   else
     digitalWrite (pin, HIGH) ;
+}
+
+/*
+ * doWriteByte:
+ *	gpio write value
+ *********************************************************************************
+ */
+
+static void doWriteByte (int argc, char *argv [])
+{
+  int val ;
+
+  if (argc != 3)
+  {
+    fprintf (stderr, "Usage: %s wb value\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  val = (int)strtol (argv [2], NULL, 0) ;
+
+  digitalWriteByte (val) ;
 }
 
 
@@ -936,11 +972,12 @@ int main (int argc, char *argv [])
 
 // Check for wiring commands
 
-  /**/ if (strcasecmp (argv [1], "readall" ) == 0) doReadall  () ;
-  else if (strcasecmp (argv [1], "read" )    == 0) doRead     (argc, argv) ;
-  else if (strcasecmp (argv [1], "write")    == 0) doWrite    (argc, argv) ;
-  else if (strcasecmp (argv [1], "pwm"  )    == 0) doPwm      (argc, argv) ;
-  else if (strcasecmp (argv [1], "mode" )    == 0) doMode     (argc, argv) ;
+  /**/ if (strcasecmp (argv [1], "readall" ) == 0) doReadall   () ;
+  else if (strcasecmp (argv [1], "read" )    == 0) doRead      (argc, argv) ;
+  else if (strcasecmp (argv [1], "write")    == 0) doWrite     (argc, argv) ;
+  else if (strcasecmp (argv [1], "wb")       == 0) doWriteByte (argc, argv) ;
+  else if (strcasecmp (argv [1], "pwm"  )    == 0) doPwm       (argc, argv) ;
+  else if (strcasecmp (argv [1], "mode" )    == 0) doMode      (argc, argv) ;
   else
   {
     fprintf (stderr, "%s: Unknown command: %s.\n", argv [0], argv [1]) ;

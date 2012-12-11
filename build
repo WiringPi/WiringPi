@@ -1,0 +1,44 @@
+#!/bin/bash
+
+if [ x$1 = "xclean" ]; then
+  echo Cleaning
+  echo
+  cd wiringPi
+  make clean
+  cd ../gpio
+  make clean
+  cd ../examples
+  make clean
+  cd ..
+elif [ x$1 = "xuninstall" ]; then
+  echo Uninstalling
+  echo
+  echo "WiringPi library"
+  cd wiringPi
+  sudo make uninstall
+  echo
+  echo "GPIO Utility"
+  cd ../gpio
+  sudo make uninstall
+  cd ..
+else
+  echo wiringPi Build script - please wait...
+  echo
+  echo "WiringPi library"
+  cd wiringPi
+  make 
+  sudo make install
+  echo
+  echo "GPIO Utility"
+  cd ../gpio
+  make
+  sudo make install
+  echo
+  echo "Examples"
+  cd ../examples
+  make
+  cd ..
+fi
+
+echo
+echo All Done.

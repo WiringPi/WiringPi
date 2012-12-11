@@ -77,6 +77,7 @@
 void (*pinMode)           (int pin, int mode) ;
 void (*pullUpDnControl)   (int pin, int pud) ;
 void (*digitalWrite)      (int pin, int value) ;
+void (*digitalWriteByte)  (int value) ;
 void (*pwmWrite)          (int pin, int value) ;
 void (*setPadDrive)       (int group, int value) ;
 int  (*digitalRead)       (int pin) ;
@@ -399,15 +400,15 @@ int wpiPinToGpio (int wpiPin)
  *	Revision is currently 1 or 2. -1 is returned on error.
  *
  *	Much confusion here )-:
- *	Seems there ar esome boards with 0000 in them (mistake in manufacture)
- *	and some board with 0005 in them (another mistake in manufacture).
+ *	Seems there are some boards with 0000 in them (mistake in manufacture)
+ *	and some board with 0005 in them (another mistake in manufacture?)
  *	So the distinction between boards that I can see is:
  *	0000 - Error
  *	0001 - Not used
  *	0002 - Rev 1
  *	0003 - Rev 1
  *	0004 - Rev 2
- *	0005 - Rev 2
+ *	0005 - Rev 2 (but error)
  *	0006 - Rev 2
  *	000f - Rev 2 + 512MB
  *
@@ -499,6 +500,8 @@ int piBoardRev (void)
 
 void pinModeGpio (int pin, int mode)
 {
+//  register int barrier ;
+
   int fSel, shift, alt ;
 
   pin &= 63 ;
@@ -519,29 +522,39 @@ void pinModeGpio (int pin, int mode)
 
     *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
 
+    delayMicroseconds (110) ;				// See comments in pwmSetClockWPi
+    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
+
 //  Page 107 of the BCM Peripherals manual talks about the GPIO clocks,
 //	but I'm assuming (hoping!) that this applies to other clocks too.
 
     *(pwm + PWM_CONTROL) = 0 ;				// Stop PWM
-    *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
-      delayMicroseconds (110) ; // See comments in pwmSetClockWPi
 
-    (void)*(pwm + PWM_CONTROL) ;
-    while ((*(pwm + PWM_CONTROL) & 0x80) != 0)	// Wait for clock to be !BUSY
+    *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
+    delayMicroseconds (110) ;				// See comments in pwmSetClockWPi
+
+    while ((*(clk + PWMCLK_CNTL) & 0x80) != 0)		// Wait for clock to be !BUSY
       delayMicroseconds (1) ;
 
     *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (32 << 12) ;	// set pwm div to 32 (19.2/32 = 600KHz)
     *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// enable clk
 
-// Default range regsiter of 1024
+    delayMicroseconds (110) ;				// See comments in pwmSetClockWPi
 
-    *(pwm + PWM0_DATA) = 0 ; *(pwm + PWM0_RANGE) = 1024 ;
-    *(pwm + PWM1_DATA) = 0 ; *(pwm + PWM1_RANGE) = 1024 ;
+// Default range register of 1024
+
+    *(pwm + PWM0_RANGE) = 1024 ; delayMicroseconds (10) ;
+    *(pwm + PWM1_RANGE) = 1024 ; delayMicroseconds (10) ;
+    *(pwm + PWM0_DATA)  =    0 ; delayMicroseconds (10) ;
+    *(pwm + PWM1_DATA)  =    0 ; delayMicroseconds (10) ;
 
 // Enable PWMs in balanced mode (default)
 
     *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
+
+    delay (100) ;
   }
+
 
 // When we change mode of any pin, we remove the pull up/downs
 //	Or we used to... Hm. Commented out now because for some wieird reason,
@@ -629,7 +642,7 @@ void pwmSetClockWPi (int divisor)
   *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
     delayMicroseconds (110) ;			// prevents clock going sloooow
 
-  while ((*(pwm + PWM_CONTROL) & 0x80) != 0)	// Wait for clock to be !BUSY
+  while ((*(clk + PWMCLK_CNTL) & 0x80) != 0)	// Wait for clock to be !BUSY
     delayMicroseconds (1) ;
 
   *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (divisor << 12) ;
@@ -700,6 +713,50 @@ void digitalWriteSys (int pin, int value)
       write (sysFds [pin], "0\n", 2) ;
     else
       write (sysFds [pin], "1\n", 2) ;
+  }
+}
+
+
+/*
+ * digitalWriteByte:
+ *	Write an 8-bit byte to the first 8 GPIO pins - try to do it as
+ *	fast as possible.
+ *	However it still needs 2 operations to set the bits, so any external
+ *	hardware must not rely on seeing a change as there will be a change 
+ *	to set the outputs bits to zero, then another change to set the 1's
+ *********************************************************************************
+ */
+
+void digitalWriteByteGpio (int value)
+{
+  uint32_t pinSet = 0 ;
+  uint32_t pinClr = 0 ;
+  int mask = 1 ;
+  int pin ;
+
+  for (pin = 0 ; pin < 8 ; ++pin)
+  {
+    if ((value & mask) == 0)
+      pinClr |= (1 << pinToGpio [pin]) ;
+    else
+      pinSet |= (1 << pinToGpio [pin]) ;
+
+    *(gpio + gpioToGPCLR [0]) = pinClr ;
+    *(gpio + gpioToGPSET [0]) = pinSet ;
+
+    mask <<= 1 ;
+  }
+}
+
+void digitalWriteByteSys (int value)
+{
+  int mask = 1 ;
+  int pin ;
+
+  for (pin = 0 ; pin < 8 ; ++pin)
+  {
+    digitalWriteSys (pinToGpio [pin], value & mask) ;
+    mask <<= 1 ;
   }
 }
 
@@ -915,6 +972,9 @@ void delay (unsigned int howLong)
  *	somewhat sub-optimal in that it uses 100% CPU, something not an issue
  *	in a microcontroller, but under a multi-tasking, multi-user OS, it's
  *	wastefull, however we've no real choice )-:
+ *
+ *      Plan B: It seems all might not be well with that plan, so changing it
+ *      to use gettimeofday () and poll on that instead...
  *********************************************************************************
  */
 
@@ -930,16 +990,31 @@ void delayMicrosecondsSys (unsigned int howLong)
 
 void delayMicrosecondsHard (unsigned int howLong)
 {
+#ifdef  HARD_TIMER
+  volatile unsigned int dummy ;
+
   *(timer + TIMER_LOAD)    = howLong ;
   *(timer + TIMER_IRQ_CLR) = 0 ;
 
-  while (*timerIrqRaw == 0)
-    ;
+  dummy = *timerIrqRaw ;
+  while (dummy == 0)
+    dummy = *timerIrqRaw ;
+#else
+  struct timeval tNow, tLong, tEnd ;
+
+  gettimeofday (&tNow, NULL) ;
+  tLong.tv_sec  = howLong / 1000000 ;
+  tLong.tv_usec = howLong % 1000000 ;
+  timeradd (&tNow, &tLong, &tEnd) ;
+
+  while (timercmp (&tNow, &tEnd, <))
+    gettimeofday (&tNow, NULL) ;
+#endif
 }
 
 void delayMicrosecondsWPi (unsigned int howLong)
 {
-  struct timespec sleeper, dummy ;
+  struct timespec sleeper ;
 
   /**/ if (howLong ==   0)
     return ;
@@ -949,7 +1024,7 @@ void delayMicrosecondsWPi (unsigned int howLong)
   {
     sleeper.tv_sec  = 0 ;
     sleeper.tv_nsec = (long)(howLong * 1000) ;
-    nanosleep (&sleeper, &dummy) ;
+    nanosleep (&sleeper, NULL) ;
   }
 }
 
@@ -998,6 +1073,7 @@ int wiringPiSetup (void)
             pinMode =           pinModeWPi ;
     pullUpDnControl =   pullUpDnControlWPi ;
        digitalWrite =      digitalWriteWPi ;
+   digitalWriteByte = digitalWriteByteGpio ;	// Same code
            pwmWrite =          pwmWriteWPi ;
         setPadDrive =       setPadDriveWPi ;
         digitalRead =       digitalReadWPi ;
@@ -1166,6 +1242,7 @@ int wiringPiSetupGpio (void)
             pinMode =           pinModeGpio ;
     pullUpDnControl =   pullUpDnControlGpio ;
        digitalWrite =      digitalWriteGpio ;
+   digitalWriteByte =  digitalWriteByteGpio ;
            pwmWrite =          pwmWriteGpio ;
         setPadDrive =       setPadDriveGpio ;
         digitalRead =       digitalReadGpio ;
@@ -1190,6 +1267,7 @@ int wiringPiSetupGpio (void)
 
 int wiringPiSetupSys (void)
 {
+  int boardRev ;
   int pin ;
   struct timeval tv ;
   char fName [128] ;
@@ -1200,6 +1278,7 @@ int wiringPiSetupSys (void)
             pinMode =           pinModeSys ;
     pullUpDnControl =   pullUpDnControlSys ;
        digitalWrite =      digitalWriteSys ;
+   digitalWriteByte =  digitalWriteByteSys ;
            pwmWrite =          pwmWriteSys ;
         setPadDrive =       setPadDriveSys ;
         digitalRead =       digitalReadSys ;
@@ -1208,6 +1287,14 @@ int wiringPiSetupSys (void)
          pwmSetMode =        pwmSetModeSys ;
         pwmSetRange =       pwmSetRangeSys ;
         pwmSetClock =       pwmSetClockSys ;
+
+  if ((boardRev = piBoardRev ()) < 0)
+    return -1 ;
+
+  if (boardRev == 1)
+    pinToGpio = pinToGpioR1 ;
+  else
+    pinToGpio = pinToGpioR2 ;
 
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open

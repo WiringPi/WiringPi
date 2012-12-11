@@ -24,8 +24,12 @@
 DYN_VERS_MAJ=1
 DYN_VERS_MIN=0
 
+VERSION=$(DYN_VERS_MAJ).$(DYN_VERS_MIN)
+DESTDIR=/usr
+PREFIX=/local
+
 STATIC=libwiringPi.a
-DYNAMIC=libwiringPi.so.$(DYN_VERS_MAJ).$(DYN_VERS_MIN)
+DYNAMIC=libwiringPi.so.$(VERSION)
 
 #DEBUG	= -g -O0
 DEBUG	= -O2
@@ -41,21 +45,22 @@ LIBS    =
 SRC	=	wiringPi.c wiringPiFace.c wiringSerial.c wiringShift.c	\
 		gertboard.c						\
 		piNes.c							\
-		lcd.c piHiPri.c piThread.c softPwm.c wiringPiSPI.c
+		lcd.c piHiPri.c piThread.c wiringPiSPI.c		\
+		softPwm.c softServo.c softTone.c
 
 OBJ	=	$(SRC:.c=.o)
 
-#all:		$(STATIC) $(DYNAMIC)
-all:		$(DYNAMIC)
+all:		$(STATIC) $(DYNAMIC)
+#all:		$(DYNAMIC)
 
 $(STATIC):	$(OBJ)
-	@echo [Link (Static)]
+	@echo "[Link (Static)]"
 	@ar rcs $(STATIC) $(OBJ)
 	@ranlib $(STATIC)
-	@size   $(STATIC)
+#	@size   $(STATIC)
 
 $(DYNAMIC):	$(OBJ)
-	@echo [Link]
+	@echo "[Link (Dynamic)]"
 	@$(CC) -shared -Wl,-soname,libwiringPi.so.1 -o libwiringPi.so.1.0 -lpthread $(OBJ)
 
 .c.o:
@@ -74,34 +79,38 @@ tags:	$(SRC)
 .PHONEY:	install
 install:	$(TARGET)
 	@echo "[Install]"
-	@install -m 0755 -d /usr/local/lib
-	@install -m 0755 -d /usr/local/include
-	@install -m 0644 wiringPi.h	/usr/local/include
-	@install -m 0644 wiringSerial.h	/usr/local/include
-	@install -m 0644 wiringShift.h	/usr/local/include
-	@install -m 0644 gertboard.h	/usr/local/include
-	@install -m 0644 piNes.h		/usr/local/include
-	@install -m 0644 softPwm.h	/usr/local/include
-	@install -m 0644 lcd.h		/usr/local/include
-	@install -m 0644 wiringPiSPI.h	/usr/local/include
-#	@install -m 0644 libwiringPi.a	/usr/local/lib
-	@install	-m 0755 libwiringPi.so.1.0 /usr/local/lib
-	@ln -sf /usr/local/lib/libwiringPi.so.1.0 /usr/local/lib/libwiringPi.so
-	@ln -sf /usr/local/lib/libwiringPi.so.1.0 /usr/local/lib/libwiringPi.so.1
+	@install -m 0755 -d			$(DESTDIR)$(PREFIX)/lib
+	@install -m 0755 -d			$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 wiringPi.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 wiringSerial.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 wiringShift.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 gertboard.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 piNes.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 softPwm.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 softServo.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 softTone.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 lcd.h			$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 wiringPiSPI.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0755 libwiringPi.a		$(DESTDIR)$(PREFIX)/lib
+	@install -m 0755 libwiringPi.so.$(VERSION)		  $(DESTDIR)$(PREFIX)/lib
+	@ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION) $(DESTDIR)/lib/libwiringPi.so
+	@ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION) $(DESTDIR)/lib/libwiringPi.so.1
 	@ldconfig
 
 .PHONEY:	uninstall
 uninstall:
 	@echo "[UnInstall]"
-	@rm -f /usr/local/include/wiringPi.h
-	@rm -f /usr/local/include/wiringSerial.h
-	@rm -f /usr/local/include/wiringShift.h
-	@rm -f /usr/local/include/gertboard.h
-	@rm -f /usr/local/include/piNes.h
-	@rm -f /usr/local/include/softPwm.h
-	@rm -f /usr/local/include/lcd.h
-	@rm -f /usr/local/include/wiringPiSPI.h
-	@rm -f /usr/local/lib/libwiringPi.*
+	@rm -f $(DESTDIR)$(PREFIX)/include/wiringPi.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/wiringSerial.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/wiringShift.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/gertboard.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/piNes.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/softPwm.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/softServo.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/softTone.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/lcd.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/wiringPiSPI.h
+	@rm -f $(DESTDIR)$(PREFIX)/lib/libwiringPi.*
 	@ldconfig
 
 
