@@ -35,7 +35,9 @@
 // What BCM_GPIO input are we using?
 //	GPIO 0 is one of the I2C pins with an on-board pull-up
 
+// Please note that on PCB REV2.0 GPIO0 is now GPIO2
 #define	BUTTON_PIN	0
+//#define BUTTON_PIN  2
 
 // Debounce time in mS
 
@@ -89,7 +91,7 @@ PI_THREAD (waitForIt)
 
 // Wait for key to be released
 
-      while (digitalRead (0) == LOW)
+      while (digitalRead (BUTTON_PIN) == LOW)
 	delay (1) ;
 
       debounceTime = millis () + DEBOUNCE_TIME ;
@@ -110,7 +112,9 @@ void setup (void)
 // Use the gpio program to initialise the hardware
 //	(This is the crude, but effective bit)
 
-  system ("gpio   edge  0 falling") ;
+  char cmd[80] ;
+  sprintf (cmd, "gpio edge %d falling", BUTTON_PIN) ;
+  system (cmd) ;
   system ("gpio export 17 out") ;
   system ("gpio export 18 out") ;
 
