@@ -57,6 +57,9 @@ converters on the Gertboard. It's designed for simple testing and
 diagnostic purposes, but can be used in shell scripts for general if
 somewhat slow control of the GPIO pins.
 
+It can also control the IO's on the PiFace IO board and load the SPI and I2C
+kernel modules if required.
+
 Additionally, it can be used to set the exports in the \fI/sys/class/gpio\fR
 system directory to allow subsequent programs to use the \fR/sys/class/gpio\fR
 interface without needing to be run as root.
@@ -70,6 +73,8 @@ Output the current version including the board revision of the Raspberry Pi.
 .TP
 .B \-g
 Use the BCM_GPIO pins numbers rather than wiringPi pin numbers.
+\fINOTE:\fR The BCM_GPIO pin numbers are always used with the 
+export and edge commands.
 
 .TP
 .B \-p
@@ -183,7 +188,7 @@ SPI digital to analogue converter.
 The board jumpers need to be in-place to do this operation.
 
 
-.SH "WiringPi vs. GPIO Pin numbering"
+.SH "WiringPi vs. BCM_GPIO Pin numbering"
 
 .PP
 .TS
@@ -212,6 +217,12 @@ _
 19	-	30
 20	-	31
 .TE
+
+Note that "r1" and "r2" above refers to the board revision. Normally
+wiringPi detects the correct board revision with use for it's own
+numbering scheme, but if you are using a Revision 2 board with some
+of the pins which change numbers between revisions you will need
+to alter your software.
 
 .SH FILES
 

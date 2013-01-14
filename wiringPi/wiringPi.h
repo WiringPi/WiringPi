@@ -23,32 +23,44 @@
 
 // Handy defines
 
+// Deprecated
 #define	NUM_PINS	17
 
 #define	WPI_MODE_PINS		 0
 #define	WPI_MODE_GPIO		 1
 #define	WPI_MODE_GPIO_SYS	 2
 #define	WPI_MODE_PIFACE		 3
+#define	WPI_MODE_UNINITIALISED	-1
 
-#define	INPUT		 0
-#define	OUTPUT		 1
-#define	PWM_OUTPUT	 2
+#define	INPUT			 0
+#define	OUTPUT			 1
+#define	PWM_OUTPUT		 2
 
-#define	LOW		 0
-#define	HIGH		 1
+#define	LOW			 0
+#define	HIGH			 1
 
-#define	PUD_OFF		 0
-#define	PUD_DOWN	 1
-#define	PUD_UP		 2
+#define	PUD_OFF			 0
+#define	PUD_DOWN		 1
+#define	PUD_UP			 2
 
 // PWM
 
-#define	PWM_MODE_MS	0
-#define	PWM_MODE_BAL	1
+#define	PWM_MODE_MS		0
+#define	PWM_MODE_BAL		1
+
+// Interrupt levels
+
+#define	INT_EDGE_SETUP		0
+#define	INT_EDGE_FALLING	1
+#define	INT_EDGE_RISING		2
+
+// Threads
+
+#define	PI_THREAD(X)	void *X (void *dummy)
 
 
 // Function prototypes
-//	c++ wrappers thanks to a commend by Nick Lott
+//	c++ wrappers thanks to a comment by Nick Lott
 //	(and others on the Raspberry Pi forums)
 
 #ifdef __cplusplus
@@ -82,10 +94,9 @@ extern void (*pwmSetClock)       (int divisor) ;
 // Interrupts
 
 extern int  (*waitForInterrupt) (int pin, int mS) ;
+extern int  wiringPiISR         (int pin, int mode, void (*function)(void)) ;
 
 // Threads
-
-#define	PI_THREAD(X)	void *X (void *dummy)
 
 extern int  piThreadCreate (void *(*fn)(void *)) ;
 extern void piLock         (int key) ;

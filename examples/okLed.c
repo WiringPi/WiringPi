@@ -17,6 +17,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <math.h>
 
 #include <wiringPi.h>
 #include <softPwm.h>

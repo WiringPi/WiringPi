@@ -35,10 +35,10 @@ LDLIBS    = -lwiringPi
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	test1.c test2.c speed.c lcd.c wfi.c		\
+SRC	=	test1.c test2.c speed.c lcd.c wfi.c isr.c	\
 		piface.c gertboard.c nes.c			\
 		pwm.c tone.c servo.c				\
-		delayTest.c serialRead.c okLed.c
+		delayTest.c serialRead.c serialTest.c okLed.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -69,6 +69,10 @@ wfi:	wfi.o
 	@echo [link]
 	@$(CC) -o $@ wfi.o $(LDFLAGS) $(LDLIBS)
 
+isr:	isr.o
+	@echo [link]
+	@$(CC) -o $@ isr.o $(LDFLAGS) $(LDLIBS)
+
 piface:	piface.o
 	@echo [link]
 	@$(CC) -o $@ piface.o $(LDFLAGS) $(LDLIBS) -lpthread
@@ -92,6 +96,10 @@ delayTest:	delayTest.o
 serialRead:	serialRead.o
 	@echo [link]
 	@$(CC) -o $@ serialRead.o $(LDFLAGS) $(LDLIBS)
+
+serialTest:	serialTest.o
+	@echo [link]
+	@$(CC) -o $@ serialTest.o $(LDFLAGS) $(LDLIBS)
 
 okLed:	okLed.o
 	@echo [link]

@@ -1,0 +1,36 @@
+
+How to install wiringPi
+=======================
+
+The easiest way is to use the supplied 'build' script:
+
+  ./build
+
+that should do a complete install or upgrade of wiringPi for you.
+
+That will install a dynamic library.
+
+Some distributions do not have /usr/local/lib in the default LD_LIBRARY_PATH. To
+fix this, you need to edit /etc/ld.so.conf and add in a single line:
+
+  /usr/local/lib
+
+then run the ldconfig command.
+
+  sudo ldconfig
+
+If you want to install a static library, you may need to do this manually:
+
+  cd wiringPi
+  make static
+  sudo make install-static
+
+
+To un-install wiringPi:
+
+  ./build uninstall
+
+Gordon Henderson
+
+projects@drogon.net
+https://projects.drogon.net/

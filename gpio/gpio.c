@@ -35,12 +35,14 @@
 #include <wiringPi.h>
 #include <gertboard.h>
 
+extern int wiringPiDebug ;
+
 #ifndef TRUE
 #  define	TRUE	(1==1)
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION	"1.5"
+#define	VERSION	"1.6"
 
 static int wpMode ;
 
@@ -127,7 +129,7 @@ static int moduleLoaded (char *modName)
 
 static void _doLoadUsage (char *argv [])
 {
-  fprintf (stderr, "Usage: %s load <spi/i2c>\n", argv [0]) ;
+  fprintf (stderr, "Usage: %s load <spi/i2c> [bufferSize in KB for spi]\n", argv [0]) ;
   exit (1) ;
 }
 
@@ -136,9 +138,12 @@ static void doLoad (int argc, char *argv [])
   char *module1, *module2 ;
   char cmd [80] ;
   char *file1, *file2 ;
+  char spiBuf [32] ;
 
-  if (argc != 3)
+  if (argc < 3)
     _doLoadUsage (argv) ;
+
+  spiBuf [0] = 0 ;
 
   /**/ if (strcasecmp (argv [2], "spi") == 0)
   {
@@ -146,6 +151,11 @@ static void doLoad (int argc, char *argv [])
     module2 = "spi_bcm2708" ;
     file1  = "/dev/spidev0.0" ;
     file2  = "/dev/spidev0.1" ;
+    if (argc == 4)
+      sprintf (spiBuf, " bufsize=%d", atoi (argv [3]) * 1024) ;
+    else if (argc > 4)
+      _doLoadUsage (argv) ;
+    
   }
   else if (strcasecmp (argv [2], "i2c") == 0)
   {
@@ -159,7 +169,7 @@ static void doLoad (int argc, char *argv [])
 
   if (!moduleLoaded (module1))
   {
-    sprintf (cmd, "modprobe %s", module1) ;
+    sprintf (cmd, "modprobe %s%s", module1, spiBuf) ;
     system (cmd) ;
   }
 
@@ -847,6 +857,12 @@ static void doPwmClock (int argc, char *argv [])
 int main (int argc, char *argv [])
 {
   int i ;
+
+  if (getenv ("WIRINGPI_DEBUG") != NULL)
+  {
+    printf ("gpio: wiringPi debug mode enabled\n") ;
+    wiringPiDebug = TRUE ;
+  }
 
   if (argc == 1)
   {

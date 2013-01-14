@@ -65,10 +65,12 @@
 #include <string.h>
 #include <time.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 
 #include "wiringPi.h"
 
@@ -173,9 +175,17 @@ static volatile uint32_t *pads ;
 static volatile uint32_t *timer ;
 static volatile uint32_t *timerIrqRaw ;
 
+// Time for easy calculations
+
+static unsigned long long epoch ;
+
+// Misc
+
+static int wiringPiMode = WPI_MODE_UNINITIALISED ;
+
 // Debugging
 
-static int wiringPiDebug = FALSE ;
+int wiringPiDebug = FALSE ;
 
 // The BCM2835 has 54 GPIO pins.
 //	BCM2835 data sheet, Page 90 onwards.
@@ -199,6 +209,11 @@ static int wiringPiDebug = FALSE ;
 //	Map a file descriptor from the /sys/class/gpio/gpioX/value
 
 static int sysFds [64] ;
+
+// ISR Data
+
+static void (*isrFunctions [64])(void) ;
+
 
 // Doing it the Arduino way with lookup tables...
 //	Yes, it's probably more innefficient than all the bit-twidling, but it
@@ -370,10 +385,6 @@ static uint8_t gpioToPwmPort [] =
 } ;
 
 
-// Time for easy calculations
-
-static unsigned long long epoch ;
-
 /*
  * Functions
  *********************************************************************************
@@ -418,6 +429,15 @@ int wpiPinToGpio (int wpiPin)
  *********************************************************************************
  */
 
+static void piBoardRevOops (char *why)
+{
+  fprintf (stderr, "piBoardRev: Unable to determine board revision from /proc/cpuinfo\n") ;
+  fprintf (stderr, " -> %s\n", why) ;
+  fprintf (stderr, " ->  You may want to check:\n") ;
+  fprintf (stderr, " ->  http://www.raspberrypi.org/phpBB3/viewtopic.php?p=184410#p184410\n") ;
+  exit (EXIT_FAILURE) ;
+}
+
 int piBoardRev (void)
 {
   FILE *cpuFd ;
@@ -440,24 +460,19 @@ int piBoardRev (void)
   fclose (cpuFd) ;
 
   if (line == NULL)
-  {
-    fprintf (stderr, "piBoardRev: Unable to determine board revision from /proc/cpuinfo\n") ;
-    fprintf (stderr, "  (No \"Revision\" line)\n") ;
-    errno = 0 ;
-    return -1 ;
-  }
+    piBoardRevOops ("No \"Revision\" line") ;
+
+  line [strlen (line) - 1] = 0 ; // Chomp LF
   
+  if (wiringPiDebug)
+    printf ("piboardRev: Revision string: %s\n", line) ;
+
   for (c = line ; *c ; ++c)
     if (isdigit (*c))
       break ;
 
   if (!isdigit (*c))
-  {
-    fprintf (stderr, "piBoardRev: Unable to determine board revision from /proc/cpuinfo\n") ;
-    fprintf (stderr, "  (No numeric revision string in: \"%s\"\n", line) ;
-    errno = 0 ;
-    return -1 ;
-  }
+    piBoardRevOops ("No numeric revision string") ;
 
 // If you have overvolted the Pi, then it appears that the revision
 //	has 100000 added to it!
@@ -466,26 +481,18 @@ int piBoardRev (void)
     if (strlen (c) != 4)
       printf ("piboardRev: This Pi has/is overvolted!\n") ;
 
-  lastChar = c [strlen (c) - 2] ;
+  lastChar = line [strlen (line) - 1] ;
+
+  if (wiringPiDebug)
+    printf ("piboardRev: lastChar is: '%c' (%d, 0x%02X)\n", lastChar, lastChar, lastChar) ;
 
   /**/ if ((lastChar == '2') || (lastChar == '3'))
     boardRev = 1 ;
   else
     boardRev = 2 ;
 
-#ifdef	DO_WE_CARE_ABOUT_THIS_NOW
-  else
-  {
-    fprintf (stderr, "WARNING: wiringPi: Unable to determine board revision from \"%d\"\n", r) ;
-    fprintf (stderr, " -> You may want to check:\n") ;
-    fprintf (stderr, " -> http://www.raspberrypi.org/phpBB3/viewtopic.php?p=184410#p184410\n") ;
-    fprintf (stderr, " -> Assuming a Rev 1 board\n") ;
-    boardRev = 1 ;
-  }
-#endif
-
   if (wiringPiDebug)
-    printf ("piboardRev: Revision string: %s, board revision: %d\n", c, boardRev) ;
+    printf ("piBoardRev: Returning revision: %d\n", boardRev) ;
 
   return boardRev ;
 }
@@ -741,11 +748,11 @@ void digitalWriteByteGpio (int value)
     else
       pinSet |= (1 << pinToGpio [pin]) ;
 
-    *(gpio + gpioToGPCLR [0]) = pinClr ;
-    *(gpio + gpioToGPSET [0]) = pinSet ;
-
     mask <<= 1 ;
   }
+
+  *(gpio + gpioToGPCLR [0]) = pinClr ;
+  *(gpio + gpioToGPSET [0]) = pinSet ;
 }
 
 void digitalWriteByteSys (int value)
@@ -944,6 +951,99 @@ int waitForInterruptGpio (int pin, int mS)
 
 
 /*
+ * interruptHandler:
+ *	This is a thread and gets started to wait for the interrupt we're
+ *	hoping to catch. It will call the user-function when the interrupt
+ *	fires.
+ *********************************************************************************
+ */
+
+static void *interruptHandler (void *arg)
+{
+  int myPin = *(int *)arg ;
+
+  (void)piHiPri (55) ;	// Only effective if we run as root
+
+  for (;;)
+    if (waitForInterruptSys (myPin, -1) > 0)
+      isrFunctions [myPin] () ;
+
+  return NULL ;
+}
+
+
+/*
+ * wiringPiISR:
+ *	Take the details and create an interrupt handler that will do a call-
+ *	back to the user supplied function.
+ *********************************************************************************
+ */
+
+int wiringPiISR (int pin, int mode, void (*function)(void))
+{
+  pthread_t threadId ;
+  char fName   [64] ;
+  char *modeS ;
+  char  pinS [8] ;
+  pid_t pid ;
+
+  pin &= 63 ;
+
+  if (wiringPiMode == WPI_MODE_UNINITIALISED)
+  {
+    fprintf (stderr, "wiringPiISR: wiringPi has not been initialised. Unable to continue.\n") ;
+    exit (EXIT_FAILURE) ;
+  }
+  else if (wiringPiMode == WPI_MODE_PINS)
+    pin = pinToGpio [pin] ;
+
+// Now export the pin and set the right edge
+//	We're going to use the gpio program to do this, so it assumes
+//	a full installation of wiringPi. It's a bit 'clunky', but it
+//	is a way that will work when we're running in "Sys" mode, as
+//	a non-root user. (without sudo)
+
+  if (mode != INT_EDGE_SETUP)
+  {
+    /**/ if (mode == INT_EDGE_FALLING)
+      modeS = "falling" ;
+    else if (mode == INT_EDGE_RISING)
+      modeS = "rising" ;
+    else
+      modeS = "both" ;
+
+    sprintf (pinS, "%d", pin) ;
+
+    if ((pid = fork ()) < 0)	// Fail
+      return pid ;
+
+    if (pid == 0)	// Child, exec
+    {
+      execl ("/usr/local/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL) ;
+      return -1 ;	// Failure ...
+    }
+    else		// Parent, wait
+      wait (NULL) ;
+  }
+
+// Now pre-open the /sys/class node - it may already be open if
+//	we had set it up earlier, but this will do no harm.
+
+  sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
+  if ((sysFds [pin] = open (fName, O_RDWR)) < 0)
+    return -1 ;
+
+  isrFunctions [pin] = function ;
+
+  pthread_create (&threadId, NULL, interruptHandler, &pin) ;
+
+  delay (1) ;
+
+  return 0 ;
+}
+
+
+/*
  * delay:
  *	Wait for some number of milli seconds
  *********************************************************************************
@@ -1064,8 +1164,17 @@ int wiringPiSetup (void)
   uint8_t *gpioMem, *pwmMem, *clkMem, *padsMem, *timerMem ;
   struct timeval tv ;
 
+  if (geteuid () != 0)
+  {
+    fprintf (stderr, "Must be root to call wiringPiSetup(). (Did you forget sudo?)\n") ;
+    exit (EXIT_FAILURE) ;
+  }
+
   if (getenv ("WIRINGPI_DEBUG") != NULL)
+  {
+    printf ("wiringPi: Debug mode enabled\n") ;
     wiringPiDebug = TRUE ;
+  }
 
   if (wiringPiDebug)
     printf ("wiringPi: wiringPiSetup called\n") ;
@@ -1083,8 +1192,7 @@ int wiringPiSetup (void)
         pwmSetRange =       pwmSetRangeWPi ;
         pwmSetClock =       pwmSetClockWPi ;
   
-  if ((boardRev = piBoardRev ()) < 0)
-    return -1 ;
+  boardRev = piBoardRev () ;
 
   if (boardRev == 1)
     pinToGpio = pinToGpioR1 ;
@@ -1105,7 +1213,8 @@ int wiringPiSetup (void)
 
   if ((gpioMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
   {
-    fprintf (stderr, "wiringPiSetup: malloc failed: %s\n", strerror (errno)) ;
+    if (wiringPiDebug)
+      fprintf (stderr, "wiringPiSetup: malloc failed: %s\n", strerror (errno)) ;
     return -1 ;
   }
 
@@ -1118,7 +1227,8 @@ int wiringPiSetup (void)
 
   if ((int32_t)gpio < 0)
   {
-    fprintf (stderr, "wiringPiSetup: mmap failed: %s\n", strerror (errno)) ;
+    if (wiringPiDebug)
+      fprintf (stderr, "wiringPiSetup: mmap failed: %s\n", strerror (errno)) ;
     return -1 ;
   }
 
@@ -1126,7 +1236,8 @@ int wiringPiSetup (void)
 
   if ((pwmMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
   {
-    fprintf (stderr, "wiringPiSetup: pwmMem malloc failed: %s\n", strerror (errno)) ;
+    if (wiringPiDebug)
+      fprintf (stderr, "wiringPiSetup: pwmMem malloc failed: %s\n", strerror (errno)) ;
     return -1 ;
   }
 
@@ -1137,7 +1248,8 @@ int wiringPiSetup (void)
 
   if ((int32_t)pwm < 0)
   {
-    fprintf (stderr, "wiringPiSetup: mmap failed (pwm): %s\n", strerror (errno)) ;
+    if (wiringPiDebug)
+      fprintf (stderr, "wiringPiSetup: mmap failed (pwm): %s\n", strerror (errno)) ;
     return -1 ;
   }
  
@@ -1145,7 +1257,8 @@ int wiringPiSetup (void)
 
   if ((clkMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
   {
-    fprintf (stderr, "wiringPiSetup: clkMem malloc failed: %s\n", strerror (errno)) ;
+    if (wiringPiDebug)
+      fprintf (stderr, "wiringPiSetup: clkMem malloc failed: %s\n", strerror (errno)) ;
     return -1 ;
   }
 
@@ -1156,7 +1269,8 @@ int wiringPiSetup (void)
 
   if ((int32_t)clk < 0)
   {
-    fprintf (stderr, "wiringPiSetup: mmap failed (clk): %s\n", strerror (errno)) ;
+    if (wiringPiDebug)
+      fprintf (stderr, "wiringPiSetup: mmap failed (clk): %s\n", strerror (errno)) ;
     return -1 ;
   }
  
@@ -1164,7 +1278,8 @@ int wiringPiSetup (void)
 
   if ((padsMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
   {
-    fprintf (stderr, "wiringPiSetup: padsMem malloc failed: %s\n", strerror (errno)) ;
+    if (wiringPiDebug)
+      fprintf (stderr, "wiringPiSetup: padsMem malloc failed: %s\n", strerror (errno)) ;
     return -1 ;
   }
 
@@ -1175,7 +1290,8 @@ int wiringPiSetup (void)
 
   if ((int32_t)pads < 0)
   {
-    fprintf (stderr, "wiringPiSetup: mmap failed (pads): %s\n", strerror (errno)) ;
+    if (wiringPiDebug)
+      fprintf (stderr, "wiringPiSetup: mmap failed (pads): %s\n", strerror (errno)) ;
     return -1 ;
   }
 
@@ -1188,7 +1304,8 @@ int wiringPiSetup (void)
 
   if ((timerMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
   {
-    fprintf (stderr, "wiringPiSetup: timerMem malloc failed: %s\n", strerror (errno)) ;
+    if (wiringPiDebug)
+      fprintf (stderr, "wiringPiSetup: timerMem malloc failed: %s\n", strerror (errno)) ;
     return -1 ;
   }
 
@@ -1199,7 +1316,8 @@ int wiringPiSetup (void)
 
   if ((int32_t)timer < 0)
   {
-    fprintf (stderr, "wiringPiSetup: mmap failed (timer): %s\n", strerror (errno)) ;
+    if (wiringPiDebug)
+      fprintf (stderr, "wiringPiSetup: mmap failed (timer): %s\n", strerror (errno)) ;
     return -1 ;
   }
 
@@ -1215,6 +1333,8 @@ int wiringPiSetup (void)
 
   gettimeofday (&tv, NULL) ;
   epoch = (tv.tv_sec * 1000000 + tv.tv_usec) / 1000 ;
+
+  wiringPiMode = WPI_MODE_PINS ;
 
   return 0 ;
 }
@@ -1233,11 +1353,17 @@ int wiringPiSetupGpio (void)
 {
   int x  ;
 
-  if (wiringPiDebug)
-    printf ("wiringPi: wiringPiSetupGpio called\n") ;
+  if (geteuid () != 0)
+  {
+    fprintf (stderr, "Must be root to call wiringPiSetupGpio(). (Did you forget sudo?)\n") ;
+    exit (EXIT_FAILURE) ;
+  }
 
   if ((x = wiringPiSetup ()) < 0)
     return x ;
+
+  if (wiringPiDebug)
+    printf ("wiringPi: wiringPiSetupGpio called\n") ;
 
             pinMode =           pinModeGpio ;
     pullUpDnControl =   pullUpDnControlGpio ;
@@ -1251,6 +1377,8 @@ int wiringPiSetupGpio (void)
          pwmSetMode =        pwmSetModeWPi ;
         pwmSetRange =       pwmSetRangeWPi ;
         pwmSetClock =       pwmSetClockWPi ;
+
+  wiringPiMode = WPI_MODE_GPIO ;
 
   return 0 ;
 }
@@ -1272,6 +1400,9 @@ int wiringPiSetupSys (void)
   struct timeval tv ;
   char fName [128] ;
 
+  if (getenv ("WIRINGPI_DEBUG") != NULL)
+    wiringPiDebug = TRUE ;
+
   if (wiringPiDebug)
     printf ("wiringPi: wiringPiSetupSys called\n") ;
 
@@ -1288,14 +1419,12 @@ int wiringPiSetupSys (void)
         pwmSetRange =       pwmSetRangeSys ;
         pwmSetClock =       pwmSetClockSys ;
 
-  if ((boardRev = piBoardRev ()) < 0)
-    return -1 ;
+  boardRev = piBoardRev () ;
 
   if (boardRev == 1)
     pinToGpio = pinToGpioR1 ;
   else
     pinToGpio = pinToGpioR2 ;
-
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open
 //	the 'value' interface to speed things up for later
@@ -1310,6 +1439,8 @@ int wiringPiSetupSys (void)
 
   gettimeofday (&tv, NULL) ;
   epoch = (tv.tv_sec * 1000000 + tv.tv_usec) / 1000 ;
+
+  wiringPiMode = WPI_MODE_GPIO_SYS ;
 
   return 0 ;
 }
