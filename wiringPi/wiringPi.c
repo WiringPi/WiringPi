@@ -1161,7 +1161,7 @@ int wiringPiSetup (void)
 {
   int      fd ;
   int      boardRev ;
-  uint8_t *gpioMem, *pwmMem, *clkMem, *padsMem, *timerMem ;
+  //uint8_t *gpioMem, *pwmMem, *clkMem, *padsMem, *timerMem ;
   struct timeval tv ;
 
   if (geteuid () != 0)
@@ -1210,23 +1210,8 @@ int wiringPiSetup (void)
 
 // GPIO:
 
-// Allocate 2 pages - 1 ...
-
-  if ((gpioMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
-  {
-    if (wiringPiDebug)
-      fprintf (stderr, "wiringPiSetup: malloc failed: %s\n", strerror (errno)) ;
-    return -1 ;
-  }
-
-// ... presumably to make sure we can round it up to a whole page size
-
-  if (((uint32_t)gpioMem % PAGE_SIZE) != 0)
-    gpioMem += PAGE_SIZE - ((uint32_t)gpioMem % PAGE_SIZE) ;
-
-  gpio = (uint32_t *)mmap((caddr_t)gpioMem, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, fd, GPIO_BASE) ;
-
-  if ((int32_t)gpio < 0)
+  gpio = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_BASE) ;
+  if ((int32_t)gpio == -1)
   {
     if (wiringPiDebug)
       fprintf (stderr, "wiringPiSetup: mmap failed: %s\n", strerror (errno)) ;
@@ -1235,19 +1220,8 @@ int wiringPiSetup (void)
 
 // PWM
 
-  if ((pwmMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
-  {
-    if (wiringPiDebug)
-      fprintf (stderr, "wiringPiSetup: pwmMem malloc failed: %s\n", strerror (errno)) ;
-    return -1 ;
-  }
-
-  if (((uint32_t)pwmMem % PAGE_SIZE) != 0)
-    pwmMem += PAGE_SIZE - ((uint32_t)pwmMem % PAGE_SIZE) ;
-
-  pwm = (uint32_t *)mmap(pwmMem, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, fd, GPIO_PWM) ;
-
-  if ((int32_t)pwm < 0)
+  pwm = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PWM) ;
+  if ((int32_t)pwm == -1)
   {
     if (wiringPiDebug)
       fprintf (stderr, "wiringPiSetup: mmap failed (pwm): %s\n", strerror (errno)) ;
@@ -1256,18 +1230,7 @@ int wiringPiSetup (void)
  
 // Clock control (needed for PWM)
 
-  if ((clkMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
-  {
-    if (wiringPiDebug)
-      fprintf (stderr, "wiringPiSetup: clkMem malloc failed: %s\n", strerror (errno)) ;
-    return -1 ;
-  }
-
-  if (((uint32_t)clkMem % PAGE_SIZE) != 0)
-    clkMem += PAGE_SIZE - ((uint32_t)clkMem % PAGE_SIZE) ;
-
-  clk = (uint32_t *)mmap(clkMem, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, fd, CLOCK_BASE) ;
-
+  clk = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, CLOCK_BASE) ;
   if ((int32_t)clk < 0)
   {
     if (wiringPiDebug)
@@ -1277,18 +1240,7 @@ int wiringPiSetup (void)
  
 // The drive pads
 
-  if ((padsMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
-  {
-    if (wiringPiDebug)
-      fprintf (stderr, "wiringPiSetup: padsMem malloc failed: %s\n", strerror (errno)) ;
-    return -1 ;
-  }
-
-  if (((uint32_t)padsMem % PAGE_SIZE) != 0)
-    padsMem += PAGE_SIZE - ((uint32_t)padsMem % PAGE_SIZE) ;
-
-  pads = (uint32_t *)mmap(padsMem, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, fd, GPIO_PADS) ;
-
+  pads = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PADS) ;
   if ((int32_t)pads < 0)
   {
     if (wiringPiDebug)
@@ -1303,18 +1255,7 @@ int wiringPiSetup (void)
 
 // The system timer
 
-  if ((timerMem = malloc (BLOCK_SIZE + (PAGE_SIZE-1))) == NULL)
-  {
-    if (wiringPiDebug)
-      fprintf (stderr, "wiringPiSetup: timerMem malloc failed: %s\n", strerror (errno)) ;
-    return -1 ;
-  }
-
-  if (((uint32_t)timerMem % PAGE_SIZE) != 0)
-    timerMem += PAGE_SIZE - ((uint32_t)timerMem % PAGE_SIZE) ;
-
-  timer = (uint32_t *)mmap(timerMem, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED|MAP_FIXED, fd, GPIO_TIMER) ;
-
+  timer = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_TIMER) ;
   if ((int32_t)timer < 0)
   {
     if (wiringPiDebug)
