@@ -23,7 +23,22 @@ elif [ x$1 = "xuninstall" ]; then
   cd ..
 else
   echo wiringPi Build script - please wait...
+
   echo
+  if [ ! -f /usr/include/linux/i2c-dev.h ]; then
+    echo "* wiringPi needs the I2C Development Libraires installing."
+    echo ""
+    echo "If using Debian/Raspbian, then type this command:"
+    echo "  sudo apt-get install libi2c-dev"
+    echo "then run ./build again."
+    echo ""
+    echo "If using another Linux distribution, then you will have to"
+    echo "work out how to install the I2C Developmen Libraries for your"
+    echo "system."
+    echo ""
+    exit 1
+  fi
+
   echo "WiringPi library"
   cd wiringPi
   sudo make uninstall
