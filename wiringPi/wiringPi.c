@@ -1166,7 +1166,7 @@ int wiringPiSetup (void)
 
   if (geteuid () != 0)
   {
-    fprintf (stderr, "Must be root to call wiringPiSetup(). (Did you forget sudo?)\n") ;
+    fprintf (stderr, "wiringPi:\n  Must be root to call wiringPiSetup().\n  (Did you forget sudo?)\n") ;
     exit (EXIT_FAILURE) ;
   }
 
@@ -1203,7 +1203,8 @@ int wiringPiSetup (void)
 
   if ((fd = open ("/dev/mem", O_RDWR | O_SYNC) ) < 0)
   {
-    fprintf (stderr, "wiringPiSetup: Unable to open /dev/mem: %s\n", strerror (errno)) ;
+    if (wiringPiDebug)
+      fprintf (stderr, "wiringPiSetup: Unable to open /dev/mem: %s\n", strerror (errno)) ;
     return -1 ;
   }
 

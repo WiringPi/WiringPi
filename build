@@ -26,6 +26,7 @@ else
   echo
   echo "WiringPi library"
   cd wiringPi
+  sudo make uninstall
   make 
   sudo make install
   echo
