@@ -69,6 +69,10 @@ static PI_THREAD (softToneThread)
       digitalWrite (pin, LOW) ;
       delayMicroseconds (halfPeriod) ;
     }
+    else
+    {
+      delayMicroseconds(1000);
+    }
   }
 
   return NULL ;
@@ -114,6 +118,6 @@ int softToneCreate (int pin)
 
   while (newPin != -1)
     delay (1) ;
-
+  
   return res ;
 }
