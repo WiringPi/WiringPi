@@ -44,10 +44,8 @@ OBJ	=	$(SRC:.c=.o)
 
 BINS	=	$(SRC:.c=)
 
-all:	
-	@cat README.TXT
-	@echo "    $(BINS)" | fmt
-	@echo ""
+all:	test1 test2 speed lcd wfi piface gertboard nes pwm delayTest serialRead okLed tone servo
+	
 
 test1:	test1.o
 	@echo [link]
@@ -67,7 +65,7 @@ lcd:	lcd.o
 
 wfi:	wfi.o
 	@echo [link]
-	@$(CC) -o $@ wfi.o $(LDFLAGS) $(LDLIBS)
+	@$(CC) -o $@ wfi.o $(LDFLAGS) $(LDLIBS) -lpthread
 
 piface:	piface.o
 	@echo [link]
@@ -95,15 +93,15 @@ serialRead:	serialRead.o
 
 okLed:	okLed.o
 	@echo [link]
-	@$(CC) -o $@ okLed.o $(LDFLAGS) $(LDLIBS)
+	@$(CC) -o $@ okLed.o $(LDFLAGS) $(LDLIBS) -lpthread
 
 tone:	tone.o
 	@echo [link]
-	@$(CC) -o $@ tone.o $(LDFLAGS) $(LDLIBS)
+	@$(CC) -o $@ tone.o $(LDFLAGS) $(LDLIBS) -lpthread
 
 servo:	servo.o
 	@echo [link]
-	@$(CC) -o $@ servo.o $(LDFLAGS) $(LDLIBS)
+	@$(CC) -o $@ servo.o $(LDFLAGS) $(LDLIBS) -lpthread
 
 
 .c.o:
