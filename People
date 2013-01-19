@@ -19,3 +19,6 @@ Armin (Via projects website)
 
 Arno Wagner
   Suggestions for the mmap calls in wiringPiSetup()
+
+CHARLES Thibaut:
+  A small issue in softTone

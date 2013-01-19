@@ -1204,7 +1204,11 @@ int wiringPiSetup (void)
   if ((fd = open ("/dev/mem", O_RDWR | O_SYNC) ) < 0)
   {
     if (wiringPiDebug)
-      fprintf (stderr, "wiringPiSetup: Unable to open /dev/mem: %s\n", strerror (errno)) ;
+    {
+      int serr = errno ;
+	fprintf (stderr, "wiringPiSetup: Unable to open /dev/mem: %s\n", strerror (errno)) ;
+      errno = serr ;
+    }
     return -1 ;
   }
 
@@ -1214,7 +1218,11 @@ int wiringPiSetup (void)
   if ((int32_t)gpio == -1)
   {
     if (wiringPiDebug)
-      fprintf (stderr, "wiringPiSetup: mmap failed: %s\n", strerror (errno)) ;
+    {
+      int serr = errno ;
+	fprintf (stderr, "wiringPiSetup: mmap failed: %s\n", strerror (errno)) ;
+      errno = serr ;
+    }
     return -1 ;
   }
 
@@ -1224,27 +1232,39 @@ int wiringPiSetup (void)
   if ((int32_t)pwm == -1)
   {
     if (wiringPiDebug)
-      fprintf (stderr, "wiringPiSetup: mmap failed (pwm): %s\n", strerror (errno)) ;
+    {
+      int serr = errno ;
+	fprintf (stderr, "wiringPiSetup: mmap failed (pwm): %s\n", strerror (errno)) ;
+      errno = serr ;
+    }
     return -1 ;
   }
  
 // Clock control (needed for PWM)
 
   clk = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, CLOCK_BASE) ;
-  if ((int32_t)clk < 0)
+  if ((int32_t)clk == -1)
   {
     if (wiringPiDebug)
-      fprintf (stderr, "wiringPiSetup: mmap failed (clk): %s\n", strerror (errno)) ;
+    {
+      int serr = errno ;
+	fprintf (stderr, "wiringPiSetup: mmap failed (clk): %s\n", strerror (errno)) ;
+      errno = serr ;
+    }
     return -1 ;
   }
  
 // The drive pads
 
   pads = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PADS) ;
-  if ((int32_t)pads < 0)
+  if ((int32_t)pads == -1)
   {
     if (wiringPiDebug)
-      fprintf (stderr, "wiringPiSetup: mmap failed (pads): %s\n", strerror (errno)) ;
+    {
+      int serr = errno ;
+	fprintf (stderr, "wiringPiSetup: mmap failed (pads): %s\n", strerror (errno)) ;
+      errno = serr ;
+    }
     return -1 ;
   }
 
@@ -1256,10 +1276,14 @@ int wiringPiSetup (void)
 // The system timer
 
   timer = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_TIMER) ;
-  if ((int32_t)timer < 0)
+  if ((int32_t)timer == -1)
   {
     if (wiringPiDebug)
-      fprintf (stderr, "wiringPiSetup: mmap failed (timer): %s\n", strerror (errno)) ;
+    {
+      int serr = errno ;
+	fprintf (stderr, "wiringPiSetup: mmap failed (timer): %s\n", strerror (errno)) ;
+      errno = serr ;
+    }
     return -1 ;
   }
 

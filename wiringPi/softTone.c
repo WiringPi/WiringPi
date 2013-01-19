@@ -59,7 +59,9 @@ static PI_THREAD (softToneThread)
   for (;;)
   {
     frewq = frewqs [pin] ;
-    if (frewq != 0)
+    if (frewq == 0)
+      delay (1) ;
+    else
     {
       halfPeriod = 500000 / frewq ;
 

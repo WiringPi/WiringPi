@@ -53,6 +53,7 @@
 #define	INT_EDGE_SETUP		0
 #define	INT_EDGE_FALLING	1
 #define	INT_EDGE_RISING		2
+#define	INT_EDGE_BOTH		3
 
 // Threads
 

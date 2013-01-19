@@ -2,17 +2,17 @@
 
 i2c-install()
 {
-  echo "* wiringPi needs the I2C Development Libraires installing."
-  echo ""
-  echo "If using Debian/Raspbian, then type this command:"
-  echo "  sudo apt-get install libi2c-dev"
-  echo "then run ./build again."
-  echo ""
-  echo "If using another Linux distribution, then you will have to"
-  echo "work out how to install the I2C Developmen Libraries for your"
-  echo "system. (Sorry - I don't know - do let me know though!)"
-  echo ""
-  exit 1
+ echo "* wiringPi needs the I2C Development Libraires installing."
+ echo ""
+ echo "If using Debian/Raspbian, then type this command:"
+ echo "  sudo apt-get install libi2c-dev"
+ echo "then run ./build again."
+ echo ""
+ echo "If using another Linux distribution, then you will have to"
+ echo "work out how to install the I2C Developmen Libraries for your"
+ echo "system. (Sorry - I don't know - do let me know though!)"
+ echo ""
+ exit 1
 }
 
 check-make-ok()

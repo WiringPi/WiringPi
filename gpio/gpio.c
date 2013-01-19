@@ -42,7 +42,7 @@ extern int wiringPiDebug ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION	"1.7"
+#define	VERSION	"1.8"
 
 static int wpMode ;
 

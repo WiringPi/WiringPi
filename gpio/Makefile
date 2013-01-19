@@ -30,7 +30,7 @@ INCLUDE	= -I/usr/local/include
 CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 
 LDFLAGS	= -L/usr/local/lib
-LIBS    = -lwiringPi -lpthread
+LIBS    = -lwiringPi -lpthread -lm
 
 # May not need to  alter anything below this line
 ###############################################################################

@@ -30,7 +30,7 @@ INCLUDE	= -I/usr/local/include
 CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 
 LDFLAGS	= -L/usr/local/lib
-LDLIBS    = -lwiringPi
+LDLIBS    = -lwiringPi -lpthread -lm
 
 # Should not alter anything below this line
 ###############################################################################
@@ -43,6 +43,13 @@ SRC	=	test1.c test2.c speed.c lcd.c wfi.c isr.c	\
 OBJ	=	$(SRC:.c=.o)
 
 BINS	=	$(SRC:.c=)
+
+# Note:
+#	Please don't waste your time by emailling me or doing a
+#	pull request with changes to make all these targets. It
+#	is intentional that I do it this way as it now takes too
+#	long to compile them all and most people will not run
+#	them anyway... -GH-
 
 all:	
 	@cat README.TXT
@@ -75,19 +82,19 @@ isr:	isr.o
 
 piface:	piface.o
 	@echo [link]
-	@$(CC) -o $@ piface.o $(LDFLAGS) $(LDLIBS) -lpthread
+	@$(CC) -o $@ piface.o $(LDFLAGS) $(LDLIBS)
 
 gertboard:	gertboard.o
 	@echo [link]
-	@$(CC) -o $@ gertboard.o $(LDFLAGS) $(LDLIBS) -lm
+	@$(CC) -o $@ gertboard.o $(LDFLAGS) $(LDLIBS)
 
 nes:	nes.o
 	@echo [link]
-	@$(CC) -o $@ nes.o $(LDFLAGS) $(LDLIBS) -lm
+	@$(CC) -o $@ nes.o $(LDFLAGS) $(LDLIBS) 
 
 pwm:	pwm.o
 	@echo [link]
-	@$(CC) -o $@ pwm.o $(LDFLAGS) $(LDLIBS) -lm -lpthread
+	@$(CC) -o $@ pwm.o $(LDFLAGS) $(LDLIBS)
 
 delayTest:	delayTest.o
 	@echo [link]
