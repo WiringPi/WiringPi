@@ -49,7 +49,11 @@ SRC	=	wiringPi.c wiringPiFace.c wiringSerial.c wiringShift.c	\
 		wiringPiSPI.c 						\
 		softPwm.c softServo.c softTone.c
 
+SRC_I2C	=	wiringPiI2C.c
+
 OBJ	=	$(SRC:.c=.o)
+
+OBJ_I2C	=	$(SRC_I2C:.c=.o)
 
 all:		$(DYNAMIC)
 
@@ -65,13 +69,17 @@ $(DYNAMIC):	$(OBJ)
 	@echo "[Link (Dynamic)]"
 	@$(CC) -shared -Wl,-soname,libwiringPi.so.1 -o libwiringPi.so.1.0 -lpthread $(OBJ)
 
+i2c:	$(OBJ) $(OBJ_I2C)
+	@echo "[Link (Dynamic + I2C)]"
+	@$(CC) -shared -Wl,-soname,libwiringPi.so.1 -o libwiringPi.so.1.0 -lpthread $(OBJ) $(OBJ_I2C)
+
 .c.o:
 	@echo [Compile] $<
 	@$(CC) -c $(CFLAGS) $< -o $@
 
 .PHONEY:	clean
 clean:
-	rm -f $(OBJ) *~ core tags Makefile.bak libwiringPi.*
+	rm -f $(OBJ) $(OBJ_I2C) *~ core tags Makefile.bak libwiringPi.*
 
 .PHONEY:	tags
 tags:	$(SRC)
@@ -124,7 +132,7 @@ uninstall:
 
 .PHONEY:	depend
 depend:
-	makedepend -Y $(SRC)
+	makedepend -Y $(SRC) $(SRC_I2C)
 
 # DO NOT DELETE
 
@@ -137,5 +145,8 @@ piNes.o: wiringPi.h piNes.h
 lcd.o: wiringPi.h lcd.h
 piHiPri.o: wiringPi.h
 piThread.o: wiringPi.h
-softPwm.o: wiringPi.h softPwm.h
 wiringPiSPI.o: wiringPiSPI.h
+softPwm.o: wiringPi.h softPwm.h
+softServo.o: wiringPi.h softServo.h
+softTone.o: wiringPi.h softTone.h
+wiringPiI2C.o: wiringPi.h wiringPiI2C.h
