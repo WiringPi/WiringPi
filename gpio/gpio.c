@@ -219,9 +219,9 @@ static void doReadall (void)
 {
   int pin ;
 
-  printf ("+----------+------+--------+------+------+\n") ;
+  printf ("+----------+------+--------+------+-------+\n") ;
   printf ("| wiringPi | GPIO | Name   | Mode | Value |\n") ;
-  printf ("+----------+------+--------+------+------+\n") ;
+  printf ("+----------+------+--------+------+-------+\n") ;
 
   for (pin = 0 ; pin < 64 ; ++pin)
   {
@@ -235,7 +235,7 @@ static void doReadall (void)
 	digitalRead (pin) == HIGH ? "High" : "Low ") ;
   }
 
-  printf ("+----------+------+--------+------+------+\n") ;
+  printf ("+----------+------+--------+------+-------+\n") ;
 }
 
 
