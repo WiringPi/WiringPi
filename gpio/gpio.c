@@ -42,7 +42,7 @@ extern int wiringPiDebug ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION	"1.8"
+#define	VERSION	"1.10"
 
 static int wpMode ;
 
@@ -129,7 +129,7 @@ static int moduleLoaded (char *modName)
 
 static void _doLoadUsage (char *argv [])
 {
-  fprintf (stderr, "Usage: %s load <spi/i2c> [bufferSize in KB for spi]\n", argv [0]) ;
+  fprintf (stderr, "Usage: %s load <spi/i2c> [SPI bufferSize in KB | I2C baudrate in Kb/sec]\n", argv [0]) ;
   exit (1) ;
 }
 
@@ -138,12 +138,12 @@ static void doLoad (int argc, char *argv [])
   char *module1, *module2 ;
   char cmd [80] ;
   char *file1, *file2 ;
-  char spiBuf [32] ;
+  char args1 [32], args2 [32] ;
 
   if (argc < 3)
     _doLoadUsage (argv) ;
 
-  spiBuf [0] = 0 ;
+  args1 [0] = args2 [0] = 0 ;
 
   /**/ if (strcasecmp (argv [2], "spi") == 0)
   {
@@ -152,10 +152,9 @@ static void doLoad (int argc, char *argv [])
     file1  = "/dev/spidev0.0" ;
     file2  = "/dev/spidev0.1" ;
     if (argc == 4)
-      sprintf (spiBuf, " bufsize=%d", atoi (argv [3]) * 1024) ;
+      sprintf (args1, " bufsize=%d", atoi (argv [3]) * 1024) ;
     else if (argc > 4)
       _doLoadUsage (argv) ;
-    
   }
   else if (strcasecmp (argv [2], "i2c") == 0)
   {
@@ -163,19 +162,23 @@ static void doLoad (int argc, char *argv [])
     module2 = "i2c_bcm2708" ;
     file1  = "/dev/i2c-0" ;
     file2  = "/dev/i2c-1" ;
+    if (argc == 4)
+      sprintf (args2, " baudrate=%d", atoi (argv [3]) * 1000) ;
+    else if (argc > 4)
+      _doLoadUsage (argv) ;
   }
   else
     _doLoadUsage (argv) ;
 
   if (!moduleLoaded (module1))
   {
-    sprintf (cmd, "modprobe %s%s", module1, spiBuf) ;
+    sprintf (cmd, "modprobe %s%s", module1, args1) ;
     system (cmd) ;
   }
 
   if (!moduleLoaded (module2))
   {
-    sprintf (cmd, "modprobe %s", module2) ;
+    sprintf (cmd, "modprobe %s%s", module2, args2) ;
     system (cmd) ;
   }
 
@@ -200,55 +203,39 @@ static void doLoad (int argc, char *argv [])
 
 static char *pinNames [] =
 {
-  "GPIO 0",
-  "GPIO 1",
-  "GPIO 2",
-  "GPIO 3",
-  "GPIO 4",
-  "GPIO 5",
-  "GPIO 6",
-  "GPIO 7",
-  "SDA   ",
-  "SCL   ",
-  "CE0   ",
-  "CE1   ",
-  "MOSI  ",
-  "MISO  ",
-  "SCLK  ",
-  "TxD   ",
-  "RxD   ",
-  "GPIO 8",
-  "GPIO 9",
-  "GPIO10",
-  "GPIO11",
+  "GPIO 0", "GPIO 1", "GPIO 2", "GPIO 3", "GPIO 4", "GPIO 5", "GPIO 6", "GPIO 7",
+  "SDA   ", "SCL   ",
+  "CE0   ", "CE1   ", "MOSI  ", "MISO  ", "SCLK  ",
+  "TxD   ", "RxD   ",
+  "GPIO 8", "GPIO 9", "GPIO10", "GPIO11",
+} ;
+
+static char *alts [] =
+{
+  "IN  ", "OUT ", "ALT0", "ALT1", "ALT2", "ALT3", "ALT4", "ALT5", "XXXX"
 } ;
 
 static void doReadall (void)
 {
   int pin ;
 
-  printf ("+----------+------+--------+-------+\n") ;
-  printf ("| wiringPi | GPIO | Name   | Value |\n") ;
-  printf ("+----------+------+--------+-------+\n") ;
+  printf ("+----------+------+--------+------+------+\n") ;
+  printf ("| wiringPi | GPIO | Name   | Mode | Value |\n") ;
+  printf ("+----------+------+--------+------+------+\n") ;
 
-  for (pin = 0 ; pin < NUM_PINS ; ++pin)
-    printf ("| %6d   | %3d  | %s | %s  |\n",
+  for (pin = 0 ; pin < 64 ; ++pin)
+  {
+    if (wpiPinToGpio (pin) == -1)
+      continue ;
+
+    printf ("| %6d   | %3d  | %s | %s | %s  |\n",
 	pin, wpiPinToGpio (pin),
 	pinNames [pin], 
+	alts [getAlt (pin)], 
 	digitalRead (pin) == HIGH ? "High" : "Low ") ;
+  }
 
-  printf ("+----------+------+--------+-------+\n") ;
-
-  if (piBoardRev () == 1)
-    return ;
-
-  for (pin = 17 ; pin <= 20 ; ++pin)
-    printf ("| %6d   | %3d  | %s | %s  |\n",
-	pin, wpiPinToGpio (pin),
-	pinNames [pin], 
-	digitalRead (pin) == HIGH ? "High" : "Low ") ;
-
-  printf ("+----------+------+--------+-------+\n") ;
+  printf ("+----------+------+--------+------+------+\n") ;
 }
 
 

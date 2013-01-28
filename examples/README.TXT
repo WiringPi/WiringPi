@@ -10,5 +10,9 @@ To compile an individual example, just type
 
     make exampleName
 
-Where exampleName is one of:
+To really compile everything:
+
+    make really-all
+
+The individual tests are:
 

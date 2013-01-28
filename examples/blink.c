@@ -1,7 +1,7 @@
 /*
- * serialTest.c:
- *	Very simple program to test the serial port. Expects
- *	the port to be looped back to itself
+ * blink.c:
+ *	Standard "blink" program in wiringPi. Blinks an LED connected
+ *	to the first GPIO pin.
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -24,52 +24,27 @@
  */
 
 #include <stdio.h>
-#include <string.h>
-#include <errno.h>
-
 #include <wiringPi.h>
-#include <wiringSerial.h>
 
-int main ()
+// LED Pin - wiringPi pin 0 is BCM_GPIO 17.
+
+#define	LED	0
+
+int main (void)
 {
-  int fd ;
-  int count ;
-  unsigned int nextTime ;
-
-  if ((fd = serialOpen ("/dev/ttyAMA0", 115200)) < 0)
-  {
-    fprintf (stderr, "Unable to open serial device: %s\n", strerror (errno)) ;
-    return 1 ;
-  }
+  printf ("Raspberry Pi blink\n") ;
 
   if (wiringPiSetup () == -1)
-  {
-    fprintf (stdout, "Unable to start wiringPi: %s\n", strerror (errno)) ;
     return 1 ;
-  }
 
-  nextTime = millis () + 300 ;
+  pinMode (LED, OUTPUT) ;
 
-  for (count = 0 ; count < 256 ; )
+  for (;;)
   {
-    if (millis () > nextTime)
-    {
-      printf ("\nOut: %3d: ", count) ;
-      fflush (stdout) ;
-      serialPutchar (fd, count) ;
-      nextTime += 300 ;
-      ++count ;
-    }
-
-    delay (3) ;
-
-    while (serialDataAvail (fd))
-    {
-      printf (" -> %3d", serialGetchar (fd)) ;
-      fflush (stdout) ;
-    }
+    digitalWrite (LED, 1) ;	// On
+    delay (500) ;		// mS
+    digitalWrite (LED, 0) ;	// Off
+    delay (500) ;
   }
-
-  printf ("\n") ;
   return 0 ;
 }

@@ -35,26 +35,25 @@ LDLIBS    = -lwiringPi -lpthread -lm
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	test1.c test2.c speed.c lcd.c wfi.c isr.c	\
-		piface.c gertboard.c nes.c			\
-		pwm.c tone.c servo.c				\
+SRC	=	blink.c test1.c test2.c speed.c lcd.c wfi.c isr.c isr-osc.c	\
+		piface.c gertboard.c nes.c					\
+		pwm.c tone.c servo.c						\
 		delayTest.c serialRead.c serialTest.c okLed.c
 
 OBJ	=	$(SRC:.c=.o)
 
 BINS	=	$(SRC:.c=)
 
-# Note:
-#	Please don't waste your time by emailling me or doing a
-#	pull request with changes to make all these targets. It
-#	is intentional that I do it this way as it now takes too
-#	long to compile them all and most people will not run
-#	them anyway... -GH-
-
 all:	
 	@cat README.TXT
 	@echo "    $(BINS)" | fmt
 	@echo ""
+
+really-all:	$(BINS)
+
+blink:	blink.o
+	@echo [link]
+	@$(CC) -o $@ blink.o $(LDFLAGS) $(LDLIBS)
 
 test1:	test1.o
 	@echo [link]
@@ -79,6 +78,10 @@ wfi:	wfi.o
 isr:	isr.o
 	@echo [link]
 	@$(CC) -o $@ isr.o $(LDFLAGS) $(LDLIBS)
+
+isr-osc:	isr-osc.o
+	@echo [link]
+	@$(CC) -o $@ isr-osc.o $(LDFLAGS) $(LDLIBS)
 
 piface:	piface.o
 	@echo [link]

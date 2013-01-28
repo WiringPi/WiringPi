@@ -81,13 +81,13 @@ extern int  wpiPinToGpio        (int wpiPin) ;
 extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio program only
 
 extern void (*pinMode)           (int pin, int mode) ;
+extern int  (*getAlt)            (int pin) ;
 extern void (*pullUpDnControl)   (int pin, int pud) ;
 extern void (*digitalWrite)      (int pin, int value) ;
 extern void (*digitalWriteByte)  (int value) ;
 extern void (*pwmWrite)          (int pin, int value) ;
 extern void (*setPadDrive)       (int group, int value) ;
 extern int  (*digitalRead)       (int pin) ;
-extern void (*delayMicroseconds) (unsigned int howLong) ;
 extern void (*pwmSetMode)        (int mode) ;
 extern void (*pwmSetRange)       (unsigned int range) ;
 extern void (*pwmSetClock)       (int divisor) ;
@@ -111,7 +111,9 @@ extern int piHiPri (int pri) ;
 // Extras from arduino land
 
 extern void         delay             (unsigned int howLong) ;
+extern void         delayMicroseconds (unsigned int howLong) ;
 extern unsigned int millis            (void) ;
+extern unsigned int micros            (void) ;
 
 #ifdef __cplusplus
 }

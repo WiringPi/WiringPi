@@ -70,8 +70,8 @@ install:
 .PHONEY:	uninstall
 uninstall:
 	@echo "[UnInstall]"
-	rm -f /usr/local/bin/gpio
-	rm -f /usr/local/man/man1/gpio.1
+	@rm -f /usr/local/bin/gpio
+	@rm -f /usr/local/man/man1/gpio.1
 
 .PHONEY:	depend
 depend:

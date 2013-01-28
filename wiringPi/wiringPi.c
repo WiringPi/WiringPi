@@ -51,9 +51,6 @@
 //		Added in the 2 UART pins
 //		Change maxPins to numPins to more accurately reflect purpose
 
-// Pad drive current fiddling
-
-#undef	DEBUG_PADS
 
 #include <stdio.h>
 #include <stdint.h>
@@ -68,15 +65,16 @@
 #include <pthread.h>
 #include <sys/time.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 
 #include "wiringPi.h"
 
 // Function stubs
 
 void (*pinMode)           (int pin, int mode) ;
+int  (*getAlt)            (int pin) ;
 void (*pullUpDnControl)   (int pin, int pud) ;
 void (*digitalWrite)      (int pin, int value) ;
 void (*digitalWriteByte)  (int value) ;
@@ -84,7 +82,6 @@ void (*pwmWrite)          (int pin, int value) ;
 void (*setPadDrive)       (int group, int value) ;
 int  (*digitalRead)       (int pin) ;
 int  (*waitForInterrupt)  (int pin, int mS) ;
-void (*delayMicroseconds) (unsigned int howLong) ;
 void (*pwmSetMode)        (int mode) ;
 void (*pwmSetRange)       (unsigned int range) ;
 void (*pwmSetClock)       (int divisor) ;
@@ -177,7 +174,7 @@ static volatile uint32_t *timerIrqRaw ;
 
 // Time for easy calculations
 
-static unsigned long long epoch ;
+static uint64_t epochMilli, epochMicro ;
 
 // Misc
 
@@ -587,6 +584,38 @@ void pinModeSys (int pin, int mode)
 
 
 /*
+ * getAlt:
+ *	Returns the ALT bits for a given port. Only really of-use
+ *	for the gpio readall command (I think)
+ *********************************************************************************
+ */
+
+int getAltGpio (int pin)
+{
+  int fSel, shift, alt ;
+
+  pin &= 63 ;
+
+  fSel    = gpioToGPFSEL [pin] ;
+  shift   = gpioToShift  [pin] ;
+
+  alt = (*(gpio + fSel) >> shift) & 7 ;
+
+  return alt ;
+}
+
+int getAltWPi (int pin)
+{
+  return getAltGpio (pinToGpio [pin & 63]) ;
+}
+
+int getAltSys (int pin)
+{
+  return 0 ;
+}
+
+
+/*
  * pwmControl:
  *	Allow the user to control some of the PWM functions
  *********************************************************************************
@@ -627,7 +656,7 @@ void pwmSetRangeSys (unsigned int range)
 
 void pwmSetClockWPi (int divisor)
 {
-  unsigned int pwm_control ;
+  uint32_t pwm_control ;
   divisor &= 4095 ;
 
   if (wiringPiDebug)
@@ -811,10 +840,11 @@ void setPadDriveWPi (int group, int value)
   wrVal = BCM_PASSWORD | 0x18 | (value & 7) ;
   *(pads + group + 11) = wrVal ;
 
-#ifdef	DEBUG_PADS
-  printf ("setPadDrive: Group: %d, value: %d (%08X)\n", group, value, wrVal) ;
-  printf ("Read : %08X\n", *(pads + group + 11)) ;
-#endif
+  if (wiringPiDebug)
+  {
+    printf ("setPadDrive: Group: %d, value: %d (%08X)\n", group, value, wrVal) ;
+    printf ("Read : %08X\n", *(pads + group + 11)) ;
+  }
 }
 
 void setPadDriveGpio (int group, int value)
@@ -913,21 +943,11 @@ void pullUpDnControlSys (int pin, int pud)
 int waitForInterruptSys (int pin, int mS)
 {
   int fd, x ;
-  char buf [8] ;
+  uint8_t c ;
   struct pollfd polls ;
 
   if ((fd = sysFds [pin & 63]) == -1)
     return -2 ;
-
-// Do a dummy read
-
-  x = read (fd, buf, 6) ;
-  if (x < 0)
-    return x ;
-
-// And seek
-
-  lseek (fd, 0, SEEK_SET) ;
 
 // Setup poll structure
 
@@ -936,7 +956,14 @@ int waitForInterruptSys (int pin, int mS)
 
 // Wait for it ...
 
-  return poll (&polls, 1, mS) ;
+  x = poll (&polls, 1, mS) ;
+
+// Do a dummy read to clear the interrupt
+//	A one character read appars to be enough.
+
+  (void)read (fd, &c, 1) ;
+
+  return x ;
 }
 
 int waitForInterruptWPi (int pin, int mS)
@@ -986,6 +1013,8 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
   char *modeS ;
   char  pinS [8] ;
   pid_t pid ;
+  int   count, i ;
+  uint8_t c ;
 
   pin &= 63 ;
 
@@ -1027,11 +1056,17 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
   }
 
 // Now pre-open the /sys/class node - it may already be open if
-//	we had set it up earlier, but this will do no harm.
+//	we are in Sys mode, but this will do no harm.
 
   sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
   if ((sysFds [pin] = open (fName, O_RDWR)) < 0)
     return -1 ;
+
+// Clear any initial pending interrupt
+
+  ioctl (sysFds [pin], FIONREAD, &count) ;
+  for (i = 0 ; i < count ; ++i)
+    read (sysFds [pin], &c, 1) ;
 
   isrFunctions [pin] = function ;
 
@@ -1042,6 +1077,22 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
   return 0 ;
 }
 
+
+/*
+ * initialiseEpoch:
+ *	Initialise our start-of-time variable to be the current unix
+ *	time in milliseconds.
+ *********************************************************************************
+ */
+
+static void initialiseEpoch (void)
+{
+  struct timeval tv ;
+
+  gettimeofday (&tv, NULL) ;
+  epochMilli = (uint64_t)tv.tv_sec * (uint64_t)1000    + (uint64_t)(tv.tv_usec / 1000) ;
+  epochMicro = (uint64_t)tv.tv_sec * (uint64_t)1000000 + (uint64_t)(tv.tv_usec) ;
+}
 
 /*
  * delay:
@@ -1078,28 +1129,8 @@ void delay (unsigned int howLong)
  *********************************************************************************
  */
 
-void delayMicrosecondsSys (unsigned int howLong)
-{
-  struct timespec sleeper, dummy ;
-
-  sleeper.tv_sec  = 0 ;
-  sleeper.tv_nsec = (long)(howLong * 1000) ;
-
-  nanosleep (&sleeper, &dummy) ;
-}
-
 void delayMicrosecondsHard (unsigned int howLong)
 {
-#ifdef  HARD_TIMER
-  volatile unsigned int dummy ;
-
-  *(timer + TIMER_LOAD)    = howLong ;
-  *(timer + TIMER_IRQ_CLR) = 0 ;
-
-  dummy = *timerIrqRaw ;
-  while (dummy == 0)
-    dummy = *timerIrqRaw ;
-#else
   struct timeval tNow, tLong, tEnd ;
 
   gettimeofday (&tNow, NULL) ;
@@ -1109,10 +1140,9 @@ void delayMicrosecondsHard (unsigned int howLong)
 
   while (timercmp (&tNow, &tEnd, <))
     gettimeofday (&tNow, NULL) ;
-#endif
 }
 
-void delayMicrosecondsWPi (unsigned int howLong)
+void delayMicroseconds (unsigned int howLong)
 {
   struct timespec sleeper ;
 
@@ -1138,13 +1168,30 @@ void delayMicrosecondsWPi (unsigned int howLong)
 unsigned int millis (void)
 {
   struct timeval tv ;
-  unsigned long long t1 ;
+  uint64_t now ;
 
   gettimeofday (&tv, NULL) ;
+  now  = (uint64_t)tv.tv_sec * (uint64_t)1000 + (uint64_t)(tv.tv_usec / 1000) ;
 
-  t1 = (tv.tv_sec * 1000000 + tv.tv_usec) / 1000 ;
+  return (uint32_t)(now - epochMilli) ;
+}
 
-  return (uint32_t)(t1 - epoch) ;
+
+/*
+ * micros:
+ *	Return a number of microseconds as an unsigned int.
+ *********************************************************************************
+ */
+
+unsigned int micros (void)
+{
+  struct timeval tv ;
+  uint64_t now ;
+
+  gettimeofday (&tv, NULL) ;
+  now  = (uint64_t)tv.tv_sec * (uint64_t)1000000 + (uint64_t)tv.tv_usec ;
+
+  return (uint32_t)(now - epochMicro) ;
 }
 
 
@@ -1161,8 +1208,6 @@ int wiringPiSetup (void)
 {
   int      fd ;
   int      boardRev ;
-  //uint8_t *gpioMem, *pwmMem, *clkMem, *padsMem, *timerMem ;
-  struct timeval tv ;
 
   if (geteuid () != 0)
   {
@@ -1180,6 +1225,7 @@ int wiringPiSetup (void)
     printf ("wiringPi: wiringPiSetup called\n") ;
 
             pinMode =           pinModeWPi ;
+             getAlt =            getAltWPi ;
     pullUpDnControl =   pullUpDnControlWPi ;
        digitalWrite =      digitalWriteWPi ;
    digitalWriteByte = digitalWriteByteGpio ;	// Same code
@@ -1187,7 +1233,6 @@ int wiringPiSetup (void)
         setPadDrive =       setPadDriveWPi ;
         digitalRead =       digitalReadWPi ;
    waitForInterrupt =  waitForInterruptWPi ;
-  delayMicroseconds = delayMicrosecondsWPi ;
          pwmSetMode =        pwmSetModeWPi ;
         pwmSetRange =       pwmSetRangeWPi ;
         pwmSetClock =       pwmSetClockWPi ;
@@ -1268,11 +1313,6 @@ int wiringPiSetup (void)
     return -1 ;
   }
 
-#ifdef	DEBUG_PADS
-  printf ("Checking pads @ 0x%08X\n", (unsigned int)pads) ;
-  printf (" -> %08X %08X %08X\n", *(pads + 11), *(pads + 12), *(pads + 13)) ;
-#endif
-
 // The system timer
 
   timer = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_TIMER) ;
@@ -1295,10 +1335,7 @@ int wiringPiSetup (void)
   *(timer + TIMER_PRE_DIV) = 0x00000F9 ;
   timerIrqRaw = timer + TIMER_IRQ_RAW ;
 
-// Initialise our epoch for millis()
-
-  gettimeofday (&tv, NULL) ;
-  epoch = (tv.tv_sec * 1000000 + tv.tv_usec) / 1000 ;
+  initialiseEpoch () ;
 
   wiringPiMode = WPI_MODE_PINS ;
 
@@ -1332,6 +1369,7 @@ int wiringPiSetupGpio (void)
     printf ("wiringPi: wiringPiSetupGpio called\n") ;
 
             pinMode =           pinModeGpio ;
+             getAlt =            getAltGpio ;
     pullUpDnControl =   pullUpDnControlGpio ;
        digitalWrite =      digitalWriteGpio ;
    digitalWriteByte =  digitalWriteByteGpio ;
@@ -1339,7 +1377,6 @@ int wiringPiSetupGpio (void)
         setPadDrive =       setPadDriveGpio ;
         digitalRead =       digitalReadGpio ;
    waitForInterrupt =  waitForInterruptGpio ;
-  delayMicroseconds = delayMicrosecondsWPi ;	// Same
          pwmSetMode =        pwmSetModeWPi ;
         pwmSetRange =       pwmSetRangeWPi ;
         pwmSetClock =       pwmSetClockWPi ;
@@ -1363,7 +1400,6 @@ int wiringPiSetupSys (void)
 {
   int boardRev ;
   int pin ;
-  struct timeval tv ;
   char fName [128] ;
 
   if (getenv ("WIRINGPI_DEBUG") != NULL)
@@ -1373,6 +1409,7 @@ int wiringPiSetupSys (void)
     printf ("wiringPi: wiringPiSetupSys called\n") ;
 
             pinMode =           pinModeSys ;
+             getAlt =            getAltSys ;
     pullUpDnControl =   pullUpDnControlSys ;
        digitalWrite =      digitalWriteSys ;
    digitalWriteByte =  digitalWriteByteSys ;
@@ -1380,7 +1417,6 @@ int wiringPiSetupSys (void)
         setPadDrive =       setPadDriveSys ;
         digitalRead =       digitalReadSys ;
    waitForInterrupt =  waitForInterruptSys ;
-  delayMicroseconds = delayMicrosecondsSys ;
          pwmSetMode =        pwmSetModeSys ;
         pwmSetRange =       pwmSetRangeSys ;
         pwmSetClock =       pwmSetClockSys ;
@@ -1401,10 +1437,7 @@ int wiringPiSetupSys (void)
     sysFds [pin] = open (fName, O_RDWR) ;
   }
 
-// Initialise the epoch for mills() ...
-
-  gettimeofday (&tv, NULL) ;
-  epoch = (tv.tv_sec * 1000000 + tv.tv_usec) / 1000 ;
+  initialiseEpoch () ;
 
   wiringPiMode = WPI_MODE_GPIO_SYS ;
 
