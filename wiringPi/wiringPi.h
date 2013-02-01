@@ -32,12 +32,17 @@
 #define	WPI_MODE_PIFACE		 3
 #define	WPI_MODE_UNINITIALISED	-1
 
+// Pin modes
+
 #define	INPUT			 0
 #define	OUTPUT			 1
 #define	PWM_OUTPUT		 2
+#define	GPIO_CLOCK		 3
 
 #define	LOW			 0
 #define	HIGH			 1
+
+// Pull up/down/none
 
 #define	PUD_OFF			 0
 #define	PUD_DOWN		 1
@@ -85,6 +90,7 @@ extern int  (*getAlt)            (int pin) ;
 extern void (*pullUpDnControl)   (int pin, int pud) ;
 extern void (*digitalWrite)      (int pin, int value) ;
 extern void (*digitalWriteByte)  (int value) ;
+extern void (*gpioClockSet)      (int pin, int freq) ;
 extern void (*pwmWrite)          (int pin, int value) ;
 extern void (*setPadDrive)       (int group, int value) ;
 extern int  (*digitalRead)       (int pin) ;

@@ -9,7 +9,7 @@ gpio \- Command-line access to Raspberry Pi and PiFace GPIO
 .PP
 .B gpio
 .B [ \-g ]
-.B read/write/wb/pwm/mode ...
+.B read/write/wb/pwm/clock/mode ...
 .PP
 .B gpio
 .B [ \-p ]
@@ -104,7 +104,13 @@ mode.
 
 .TP
 .B pwm <pin> <value>
-Write a PWM value (0-1023) to the given pin.
+Write a PWM value (0-1023) to the given pin. The pin needs to be put
+into PWM mode first.
+
+.TP
+.B clock <pin> <frequency>
+Set the output frequency on the given pin. The pin needs to be put into
+clock mode first.
 
 .TP
 .B mode <pin> <mode>

@@ -42,13 +42,13 @@ extern int wiringPiDebug ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION	"1.10"
+#define	VERSION	"1.11"
 
 static int wpMode ;
 
 char *usage = "Usage: gpio -v\n"
               "       gpio -h\n"
-              "       gpio [-g] <read/write/wb/pwm/mode> ...\n"
+              "       gpio [-g] <read/write/wb/pwm/clock/mode> ...\n"
               "       gpio [-p] <read/write/wb> ...\n"
 	      "       gpio readall\n"
 	      "       gpio unexportall/exports ...\n"
@@ -541,15 +541,16 @@ void doMode (int argc, char *argv [])
 
   mode = argv [3] ;
 
-  /**/ if (strcasecmp (mode, "in")   == 0) pinMode         (pin, INPUT) ;
-  else if (strcasecmp (mode, "out")  == 0) pinMode         (pin, OUTPUT) ;
-  else if (strcasecmp (mode, "pwm")  == 0) pinMode         (pin, PWM_OUTPUT) ;
-  else if (strcasecmp (mode, "up")   == 0) pullUpDnControl (pin, PUD_UP) ;
-  else if (strcasecmp (mode, "down") == 0) pullUpDnControl (pin, PUD_DOWN) ;
-  else if (strcasecmp (mode, "tri")  == 0) pullUpDnControl (pin, PUD_OFF) ;
+  /**/ if (strcasecmp (mode, "in")     == 0) pinMode         (pin, INPUT) ;
+  else if (strcasecmp (mode, "out")    == 0) pinMode         (pin, OUTPUT) ;
+  else if (strcasecmp (mode, "pwm")    == 0) pinMode         (pin, PWM_OUTPUT) ;
+  else if (strcasecmp (mode, "clock")  == 0) pinMode         (pin, GPIO_CLOCK) ;
+  else if (strcasecmp (mode, "up")     == 0) pullUpDnControl (pin, PUD_UP) ;
+  else if (strcasecmp (mode, "down")   == 0) pullUpDnControl (pin, PUD_DOWN) ;
+  else if (strcasecmp (mode, "tri")    == 0) pullUpDnControl (pin, PUD_OFF) ;
   else
   {
-    fprintf (stderr, "%s: Invalid mode: %s. Should be in/out/pwm/up/down/tri\n", argv [1], mode) ;
+    fprintf (stderr, "%s: Invalid mode: %s. Should be in/out/pwm/clock/up/down/tri\n", argv [1], mode) ;
     exit (1) ;
   }
 }
@@ -751,6 +752,33 @@ void doRead (int argc, char *argv [])
   val = digitalRead (pin) ;
 
   printf ("%s\n", val == 0 ? "0" : "1") ;
+}
+
+
+/*
+ * doClock:
+ *	Output a clock on a pin
+ *********************************************************************************
+ */
+
+void doClock (int argc, char *argv [])
+{
+  int pin, freq ;
+
+  if (argc != 4)
+  {
+    fprintf (stderr, "Usage: %s clock <pin> <freq>\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  pin = atoi (argv [2]) ;
+
+  if ((wpMode == WPI_MODE_PINS) && ((pin < 0) || (pin >= NUM_PINS)))
+    return ;
+
+  freq = atoi (argv [3]) ;
+
+  gpioClockSet (pin, freq) ;
 }
 
 
@@ -980,6 +1008,7 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "write")    == 0) doWrite     (argc, argv) ;
   else if (strcasecmp (argv [1], "wb")       == 0) doWriteByte (argc, argv) ;
   else if (strcasecmp (argv [1], "pwm"  )    == 0) doPwm       (argc, argv) ;
+  else if (strcasecmp (argv [1], "clock")    == 0) doClock     (argc, argv) ;
   else if (strcasecmp (argv [1], "mode" )    == 0) doMode      (argc, argv) ;
   else
   {

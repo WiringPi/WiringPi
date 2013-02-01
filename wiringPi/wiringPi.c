@@ -79,6 +79,7 @@ void (*pullUpDnControl)   (int pin, int pud) ;
 void (*digitalWrite)      (int pin, int value) ;
 void (*digitalWriteByte)  (int value) ;
 void (*pwmWrite)          (int pin, int value) ;
+void (*gpioClockSet)      (int pin, int value) ;
 void (*setPadDrive)       (int group, int value) ;
 int  (*digitalRead)       (int pin) ;
 int  (*waitForInterrupt)  (int pin, int mS) ;
@@ -97,6 +98,24 @@ void (*pwmSetClock)       (int divisor) ;
 #define	BCM_PASSWORD		0x5A000000
 
 
+// The BCM2835 has 54 GPIO pins.
+//	BCM2835 data sheet, Page 90 onwards.
+//	There are 6 control registers, each control the functions of a block
+//	of 10 pins.
+//	Each control register has 10 sets of 3 bits per GPIO pin - the ALT values
+//
+//	000 = GPIO Pin X is an input
+//	001 = GPIO Pin X is an output
+//	100 = GPIO Pin X takes alternate function 0
+//	101 = GPIO Pin X takes alternate function 1
+//	110 = GPIO Pin X takes alternate function 2
+//	111 = GPIO Pin X takes alternate function 3
+//	011 = GPIO Pin X takes alternate function 4
+//	010 = GPIO Pin X takes alternate function 5
+//
+// So the 3 bits for port X are:
+//	X / 10 + ((X % 10) * 3)
+
 // Port function select bits
 
 #define	FSEL_INPT		0b000
@@ -110,20 +129,21 @@ void (*pwmSetClock)       (int divisor) ;
 #define	FSEL_ALT5		0b010
 
 // Access from ARM Running Linux
-//	Take from Gert/Doms code. Some of this is not in the manual
+//	Taken from Gert/Doms code. Some of this is not in the manual
 //	that I can find )-:
 
-#define BCM2708_PERI_BASE	                   0x20000000
-#define GPIO_PADS		(BCM2708_PERI_BASE + 0x100000)
-#define CLOCK_BASE		(BCM2708_PERI_BASE + 0x101000)
-#define GPIO_BASE		(BCM2708_PERI_BASE + 0x200000)
-#define GPIO_TIMER		(BCM2708_PERI_BASE + 0x00B000)
-#define GPIO_PWM		(BCM2708_PERI_BASE + 0x20C000)
+#define BCM2708_PERI_BASE	                     0x20000000
+#define GPIO_PADS		(BCM2708_PERI_BASE + 0x00100000)
+#define CLOCK_BASE		(BCM2708_PERI_BASE + 0x00101000)
+#define GPIO_BASE		(BCM2708_PERI_BASE + 0x00200000)
+#define GPIO_TIMER		(BCM2708_PERI_BASE + 0x0000B000)
+#define GPIO_PWM		(BCM2708_PERI_BASE + 0x0020C000)
 
 #define	PAGE_SIZE		(4*1024)
 #define	BLOCK_SIZE		(4*1024)
 
 // PWM
+//	Word offsets into the PWM control region
 
 #define	PWM_CONTROL 0
 #define	PWM_STATUS  1
@@ -132,16 +152,10 @@ void (*pwmSetClock)       (int divisor) ;
 #define	PWM1_RANGE  8
 #define	PWM1_DATA   9
 
+//	Clock regsiter offsets
+
 #define	PWMCLK_CNTL	40
 #define	PWMCLK_DIV	41
-
-#define	PWM1_MS_MODE    0x8000  // Run in MS mode
-#define	PWM1_USEFIFO    0x2000  // Data from FIFO
-#define	PWM1_REVPOLAR   0x1000  // Reverse polarity
-#define	PWM1_OFFSTATE   0x0800  // Ouput Off state
-#define	PWM1_REPEATFF   0x0400  // Repeat last value if FIFO empty
-#define	PWM1_SERIAL     0x0200  // Run in serial mode
-#define	PWM1_ENABLE     0x0100  // Channel Enable
 
 #define	PWM0_MS_MODE    0x0080  // Run in MS mode
 #define	PWM0_USEFIFO    0x0020  // Data from FIFO
@@ -151,7 +165,16 @@ void (*pwmSetClock)       (int divisor) ;
 #define	PWM0_SERIAL     0x0002  // Run in serial mode
 #define	PWM0_ENABLE     0x0001  // Channel Enable
 
+#define	PWM1_MS_MODE    0x8000  // Run in MS mode
+#define	PWM1_USEFIFO    0x2000  // Data from FIFO
+#define	PWM1_REVPOLAR   0x1000  // Reverse polarity
+#define	PWM1_OFFSTATE   0x0800  // Ouput Off state
+#define	PWM1_REPEATFF   0x0400  // Repeat last value if FIFO empty
+#define	PWM1_SERIAL     0x0200  // Run in serial mode
+#define	PWM1_ENABLE     0x0100  // Channel Enable
+
 // Timer
+//	Word offsets
 
 #define	TIMER_LOAD	(0x400 >> 2)
 #define	TIMER_VALUE	(0x404 >> 2)
@@ -183,24 +206,6 @@ static int wiringPiMode = WPI_MODE_UNINITIALISED ;
 // Debugging
 
 int wiringPiDebug = FALSE ;
-
-// The BCM2835 has 54 GPIO pins.
-//	BCM2835 data sheet, Page 90 onwards.
-//	There are 6 control registers, each control the functions of a block
-//	of 10 pins.
-//	Each control register has 10 sets of 3 bits per GPIO pin:
-//
-//	000 = GPIO Pin X is an input
-//	001 = GPIO Pin X is an output
-//	100 = GPIO Pin X takes alternate function 0
-//	101 = GPIO Pin X takes alternate function 1
-//	110 = GPIO Pin X takes alternate function 2
-//	111 = GPIO Pin X takes alternate function 3
-//	011 = GPIO Pin X takes alternate function 4
-//	010 = GPIO Pin X takes alternate function 5
-//
-// So the 3 bits for port X are:
-//	X / 10 + ((X % 10) * 3)
 
 // sysFds:
 //	Map a file descriptor from the /sys/class/gpio/gpioX/value
@@ -341,10 +346,13 @@ static uint8_t gpioToFEN [] =
 #endif
 
 
-// gpioToPUDCLK
-//	(Word) offset to the Pull Up Down Clock regsiter
+// GPPUD:
+//	GPIO Pin pull up/down register
 
 #define	GPPUD	37
+
+// gpioToPUDCLK
+//	(Word) offset to the Pull Up Down Clock regsiter
 
 static uint8_t gpioToPUDCLK [] =
 {
@@ -368,6 +376,9 @@ static uint8_t gpioToPwmALT [] =
           0,         0,         0,         0,         0,         0,         0,         0,	// 56 -> 63
 } ;
 
+// gpioToPwmPort
+//	The port value to put a GPIO pin into PWM mode
+
 static uint8_t gpioToPwmPort [] =
 {
           0,         0,         0,         0,         0,         0,         0,         0,	//  0 ->  7
@@ -379,6 +390,55 @@ static uint8_t gpioToPwmPort [] =
           0,         0,         0,         0,         0,         0,         0,         0,	// 48 -> 55
           0,         0,         0,         0,         0,         0,         0,         0,	// 56 -> 63
 
+} ;
+
+// gpioToGpClkALT:
+//	ALT value to put a GPIO pin into GP Clock mode.
+//	On the Pi we can really only use BCM_GPIO_4 and BCM_GPIO_21
+//	for clocks 0 and 1 respectivey, however I'll include the full
+//	list for completeness - maybe one day...
+
+#define	GPIO_CLOCK_SOURCE	1
+
+// gpioToGpClkALT0:
+
+static uint8_t gpioToGpClkALT0 [] =
+{
+          0,         0,         0,         0, FSEL_ALT0, FSEL_ALT0, FSEL_ALT0,         0,	//  0 ->  7
+          0,         0,         0,         0,         0,         0,         0,         0, 	//  8 -> 15
+          0,         0,         0,         0, FSEL_ALT5, FSEL_ALT5,         0,         0, 	// 16 -> 23
+          0,         0,         0,         0,         0,         0,         0,         0,	// 24 -> 31
+  FSEL_ALT0,         0, FSEL_ALT0,         0,         0,         0,         0,         0,	// 32 -> 39
+          0,         0, FSEL_ALT0, FSEL_ALT0, FSEL_ALT0,         0,         0,         0,	// 40 -> 47
+          0,         0,         0,         0,         0,         0,         0,         0,	// 48 -> 55
+          0,         0,         0,         0,         0,         0,         0,         0,	// 56 -> 63
+} ;
+
+// gpioToClk:
+//	(word) Offsets to the clock Control and Divisor register
+
+static uint8_t gpioToClkCon [] =
+{
+         -1,        -1,        -1,        -1,        28,        30,        32,        -1,	//  0 ->  7
+         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1, 	//  8 -> 15
+         -1,        -1,        -1,        -1,        28,        30,        -1,        -1, 	// 16 -> 23
+         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,	// 24 -> 31
+         28,        -1,        28,        -1,        -1,        -1,        -1,        -1,	// 32 -> 39
+         -1,        -1,        28,        30,        28,        -1,        -1,        -1,	// 40 -> 47
+         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,	// 48 -> 55
+         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,	// 56 -> 63
+} ;
+
+static uint8_t gpioToClkDiv [] =
+{
+         -1,        -1,        -1,        -1,        29,        31,        33,        -1,	//  0 ->  7
+         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1, 	//  8 -> 15
+         -1,        -1,        -1,        -1,        29,        31,        -1,        -1, 	// 16 -> 23
+         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,	// 24 -> 31
+         29,        -1,        29,        -1,        -1,        -1,        -1,        -1,	// 32 -> 39
+         -1,        -1,        29,        31,        29,        -1,        -1,        -1,	// 40 -> 47
+         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,	// 48 -> 55
+         -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1,	// 56 -> 63
 } ;
 
 
@@ -494,93 +554,6 @@ int piBoardRev (void)
   return boardRev ;
 }
 
-
-
-/*
- * pinMode:
- *	Sets the mode of a pin to be input, output or PWM output
- *********************************************************************************
- */
-
-void pinModeGpio (int pin, int mode)
-{
-//  register int barrier ;
-
-  int fSel, shift, alt ;
-
-  pin &= 63 ;
-
-  fSel    = gpioToGPFSEL [pin] ;
-  shift   = gpioToShift  [pin] ;
-
-  /**/ if (mode == INPUT)
-    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) ; // Sets bits to zero = input
-  else if (mode == OUTPUT)
-    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (1 << shift) ;
-  else if (mode == PWM_OUTPUT)
-  {
-    if ((alt = gpioToPwmALT [pin]) == 0)	// Not a PWM pin
-      return ;
-
-// Set pin to PWM mode
-
-    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
-
-    delayMicroseconds (110) ;				// See comments in pwmSetClockWPi
-    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
-
-//  Page 107 of the BCM Peripherals manual talks about the GPIO clocks,
-//	but I'm assuming (hoping!) that this applies to other clocks too.
-
-    *(pwm + PWM_CONTROL) = 0 ;				// Stop PWM
-
-    *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x01 ;	// Stop PWM Clock
-    delayMicroseconds (110) ;				// See comments in pwmSetClockWPi
-
-    while ((*(clk + PWMCLK_CNTL) & 0x80) != 0)		// Wait for clock to be !BUSY
-      delayMicroseconds (1) ;
-
-    *(clk + PWMCLK_DIV)  = BCM_PASSWORD | (32 << 12) ;	// set pwm div to 32 (19.2/32 = 600KHz)
-    *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// enable clk
-
-    delayMicroseconds (110) ;				// See comments in pwmSetClockWPi
-
-// Default range register of 1024
-
-    *(pwm + PWM0_RANGE) = 1024 ; delayMicroseconds (10) ;
-    *(pwm + PWM1_RANGE) = 1024 ; delayMicroseconds (10) ;
-    *(pwm + PWM0_DATA)  =    0 ; delayMicroseconds (10) ;
-    *(pwm + PWM1_DATA)  =    0 ; delayMicroseconds (10) ;
-
-// Enable PWMs in balanced mode (default)
-
-    *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
-
-    delay (100) ;
-  }
-
-
-// When we change mode of any pin, we remove the pull up/downs
-//	Or we used to... Hm. Commented out now because for some wieird reason,
-//	it seems to block subsequent attempts to set the pull up/downs and I've
-//	not quite gotten to the bottom of why this happens
-//	The down-side is that the pull up/downs are rememberd in the SoC between
-//	power cycles, so it's going to be a good idea to explicitly set them in
-//	any new code.
-//
-//  pullUpDnControl (pin, PUD_OFF) ;
-
-}
-
-void pinModeWPi (int pin, int mode)
-{
-  pinModeGpio (pinToGpio [pin & 63], mode) ;
-}
-
-void pinModeSys (int pin, int mode)
-{
-  return ;
-}
 
 
 /*
@@ -825,6 +798,44 @@ void pwmWriteSys (int pin, int value)
 
 
 /*
+ * gpioClockSet:
+ *	Set the freuency on a GPIO clock pin
+ *********************************************************************************
+ */
+
+void gpioClockSetGpio (int pin, int freq)
+{
+  int divi, divr, divf ;
+
+  pin &= 63 ;
+  
+  divi = 19200000 / freq ;
+  divr = 19200000 % freq ;
+  divf = (int)((double)divr * 4096.0 / 19200000.0) ;
+
+  if (divi > 4095)
+    divi = 4095 ;
+
+  *(clk + gpioToClkCon [pin]) = BCM_PASSWORD | GPIO_CLOCK_SOURCE ;		// Stop GPIO Clock
+  while ((*(clk + gpioToClkCon [pin]) & 0x80) != 0)				// ... and wait
+    ;
+
+  *(clk + gpioToClkDiv [pin]) = BCM_PASSWORD | (divi << 12) | divf ;		// Set dividers
+  *(clk + gpioToClkCon [pin]) = BCM_PASSWORD | 0x10 | GPIO_CLOCK_SOURCE ;	// Start Clock
+}
+
+void gpioClockSetWPi (int pin, int freq)
+{
+  gpioClockSetGpio (pinToGpio [pin & 63], freq) ;
+}
+
+void gpioClockSetSys (int pin, int freq)
+{
+  return ;
+}
+
+
+/*
  * setPadDrive:
  *	Set the PAD driver value
  *********************************************************************************
@@ -926,6 +937,65 @@ void pullUpDnControlWPi (int pin, int pud)
 }
 
 void pullUpDnControlSys (int pin, int pud)
+{
+  return ;
+}
+
+
+/*
+ * pinMode:
+ *	Sets the mode of a pin to be input, output or PWM output
+ *********************************************************************************
+ */
+
+void pinModeGpio (int pin, int mode)
+{
+//  register int barrier ;
+
+  int fSel, shift, alt ;
+
+  pin &= 63 ;
+
+  fSel    = gpioToGPFSEL [pin] ;
+  shift   = gpioToShift  [pin] ;
+
+  /**/ if (mode == INPUT)
+    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) ; // Sets bits to zero = input
+  else if (mode == OUTPUT)
+    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (1 << shift) ;
+  else if (mode == PWM_OUTPUT)
+  {
+    if ((alt = gpioToPwmALT [pin]) == 0)	// Not a PWM pin
+      return ;
+
+// Set pin to PWM mode
+
+    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
+    delayMicroseconds (110) ;		// See comments in pwmSetClockWPi
+
+    pwmSetModeWPi  (PWM_MODE_BAL) ;	// Pi default mode
+    pwmSetRangeWPi (1024) ;		// Default range of 1024
+    pwmSetClockWPi (32) ;		// 19.2 / 32 = 600KHz - Also starts the PWM
+  }
+  else if (mode == GPIO_CLOCK)
+  {
+    if ((alt = gpioToGpClkALT0 [pin]) == 0)	// Not a GPIO_CLOCK pin
+      return ;
+
+// Set pin to GPIO_CLOCK mode and set the clock frequency to 100KHz
+
+    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
+    delayMicroseconds (110) ;
+    gpioClockSetGpio (pin, 100000) ;
+  }
+}
+
+void pinModeWPi (int pin, int mode)
+{
+  pinModeGpio (pinToGpio [pin & 63], mode) ;
+}
+
+void pinModeSys (int pin, int mode)
 {
   return ;
 }
@@ -1229,6 +1299,7 @@ int wiringPiSetup (void)
     pullUpDnControl =   pullUpDnControlWPi ;
        digitalWrite =      digitalWriteWPi ;
    digitalWriteByte = digitalWriteByteGpio ;	// Same code
+       gpioClockSet =      gpioClockSetWPi ;
            pwmWrite =          pwmWriteWPi ;
         setPadDrive =       setPadDriveWPi ;
         digitalRead =       digitalReadWPi ;
@@ -1373,6 +1444,7 @@ int wiringPiSetupGpio (void)
     pullUpDnControl =   pullUpDnControlGpio ;
        digitalWrite =      digitalWriteGpio ;
    digitalWriteByte =  digitalWriteByteGpio ;
+       gpioClockSet =      gpioClockSetGpio ;
            pwmWrite =          pwmWriteGpio ;
         setPadDrive =       setPadDriveGpio ;
         digitalRead =       digitalReadGpio ;
@@ -1413,6 +1485,7 @@ int wiringPiSetupSys (void)
     pullUpDnControl =   pullUpDnControlSys ;
        digitalWrite =      digitalWriteSys ;
    digitalWriteByte =  digitalWriteByteSys ;
+       gpioClockSet =      gpioClockSetSys ;
            pwmWrite =          pwmWriteSys ;
         setPadDrive =       setPadDriveSys ;
         digitalRead =       digitalReadSys ;
