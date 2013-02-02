@@ -212,7 +212,7 @@ static char *pinNames [] =
 
 static char *alts [] =
 {
-  "IN  ", "OUT ", "ALT0", "ALT1", "ALT2", "ALT3", "ALT4", "ALT5", "XXXX"
+  "IN  ", "OUT ", "ALT5", "ALT4", "ALT0", "ALT1", "ALT2", "ALT3"
 } ;
 
 static void doReadall (void)
