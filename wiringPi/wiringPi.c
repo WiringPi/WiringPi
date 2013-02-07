@@ -475,9 +475,11 @@ int wpiPinToGpio (int wpiPin)
  *	0001 - Not used
  *	0002 - Rev 1
  *	0003 - Rev 1
- *	0004 - Rev 2
- *	0005 - Rev 2 (but error)
+ *	0004 - Rev 2 (Early reports?
+ *	0005 - Rev 2 (but error?)
  *	0006 - Rev 2
+ *	0008 - Rev 2 - Model A
+ *	000e - Rev 2 + 512MB
  *	000f - Rev 2 + 512MB
  *
  *	A small thorn is the olde style overvolting - that will add in
@@ -502,13 +504,11 @@ int piBoardRev (void)
   char *c, lastChar ;
   static int  boardRev = -1 ;
 
-// No point checking twice...
-
-  if (boardRev != -1)
+  if (boardRev != -1)	// No point checking twice
     return boardRev ;
 
   if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
-    return -1 ;
+    piBoardRevOops ("Unable to open /proc/cpuinfo") ;
 
   while (fgets (line, 120, cpuFd) != NULL)
     if (strncmp (line, "Revision", 8) == 0)
@@ -516,10 +516,11 @@ int piBoardRev (void)
 
   fclose (cpuFd) ;
 
-  if (line == NULL)
+  if (strncmp (line, "Revision", 8) != 0)
     piBoardRevOops ("No \"Revision\" line") ;
 
-  line [strlen (line) - 1] = 0 ; // Chomp LF
+  for (c = &line [strlen (line) - 1] ; (*c == '\n') || (*c == '\r') ; --c)
+    *c = 0 ;
   
   if (wiringPiDebug)
     printf ("piboardRev: Revision string: %s\n", line) ;

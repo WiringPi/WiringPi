@@ -42,7 +42,7 @@ extern int wiringPiDebug ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION	"1.11"
+#define	VERSION	"1.12"
 
 static int wpMode ;
 
@@ -152,7 +152,7 @@ static void doLoad (int argc, char *argv [])
     file1  = "/dev/spidev0.0" ;
     file2  = "/dev/spidev0.1" ;
     if (argc == 4)
-      sprintf (args1, " bufsize=%d", atoi (argv [3]) * 1024) ;
+      sprintf (args1, " bufsiz=%d", atoi (argv [3]) * 1024) ;
     else if (argc > 4)
       _doLoadUsage (argv) ;
   }
