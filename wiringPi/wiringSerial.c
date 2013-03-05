@@ -115,6 +115,14 @@ int serialOpen (char *device, int baud)
   return fd ;
 }
 
+void serialParity(int fd, int parity) { //0=even, 1=odd
+  struct termios options ;
+  tcgetattr (fd, &options) ;   // Read current options
+  options.c_cflag |= PARENB ;  // Enable Parity - even by default
+  if(parity)  options.c_cflag |= PARODD;
+  else options.c_cflag &= ~PARODD;
+  tcsetattr (fd, TCSANOW, &options) ;
+}
 
 /*
  * serialClose:
