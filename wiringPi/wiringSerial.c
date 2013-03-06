@@ -122,6 +122,7 @@ void serialParity(int fd, int parity) { //0=even, 1=odd
   if(parity)  options.c_cflag |= PARODD;
   else options.c_cflag &= ~PARODD;
   tcsetattr (fd, TCSANOW, &options) ;
+  usleep (100) ;	// .1mS
 }
 
 /*
