@@ -148,31 +148,6 @@ void serialPutchar (int fd, unsigned char c)
   write (fd, &c, 1) ;
 }
 
-unsigned isOdd(unsigned char x)
-{
-      x = x ^ (x >> 4);
-      x = x ^ (x >> 2);
-      x = x ^ (x >> 1);
-
-      return ((unsigned)(x & 1));
-}
-
-int sendByte(int fh, unsigned char byte, unsigned int parityBit) {
-        struct termios options;
-        tcgetattr(fh, &options);
-
-        /* precompute parity and set paritymode so that the paritybit will be parityBit */
-        if(isOdd(byte) != parityBit) {
-                options.c_cflag |= PARODD;
-        printf( "8o1\n");
-        }
-        else {
-                options.c_cflag &= ~PARODD;
-        printf ("8e1\n");
-        }
-        tcsetattr(fh, TCSADRAIN, &options);
-        return write(fh,&byte,1);
-}
 
 /*
  * serialPuts:
