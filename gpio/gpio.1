@@ -9,7 +9,7 @@ gpio \- Command-line access to Raspberry Pi and PiFace GPIO
 .PP
 .B gpio
 .B [ \-g ]
-.B read/write/wb/pwm/mode ...
+.B read/write/wb/pwm/clock/mode ...
 .PP
 .B gpio
 .B [ \-p ]
@@ -38,7 +38,7 @@ group value
 range
 .PP
 .B gpio
-.B load \ i2c/spi
+.B load \ i2c/spi ...
 .PP
 .B gpio
 .B gbr
@@ -57,6 +57,9 @@ converters on the Gertboard. It's designed for simple testing and
 diagnostic purposes, but can be used in shell scripts for general if
 somewhat slow control of the GPIO pins.
 
+It can also control the IO's on the PiFace IO board and load the SPI and I2C
+kernel modules if required.
+
 Additionally, it can be used to set the exports in the \fI/sys/class/gpio\fR
 system directory to allow subsequent programs to use the \fR/sys/class/gpio\fR
 interface without needing to be run as root.
@@ -70,6 +73,8 @@ Output the current version including the board revision of the Raspberry Pi.
 .TP
 .B \-g
 Use the BCM_GPIO pins numbers rather than wiringPi pin numbers.
+\fINOTE:\fR The BCM_GPIO pin numbers are always used with the 
+export and edge commands.
 
 .TP
 .B \-p
@@ -99,7 +104,13 @@ mode.
 
 .TP
 .B pwm <pin> <value>
-Write a PWM value (0-1023) to the given pin.
+Write a PWM value (0-1023) to the given pin. The pin needs to be put
+into PWM mode first.
+
+.TP
+.B clock <pin> <frequency>
+Set the output frequency on the given pin. The pin needs to be put into
+clock mode first.
 
 .TP
 .B mode <pin> <mode>
@@ -163,9 +174,18 @@ Change the PWM mode to balanced (the default) or mark:space ratio (traditional)
 Change the PWM range register. The default is 1024.
 
 .TP
-.B load i2c/spi
-This loads the i2c or the spi drivers into the system and changes the permissions on
-the associated /dev/ entries so that the current user has access to them.
+.B load i2c [baudrate]
+This loads the i2c or drivers into the kernel and changes the permissions
+on the associated /dev/ entries so that the current user has access to
+them. Optionally it will set the I2C baudrate to that supplied (or as
+close as the Pi can manage) The default speed is 100Kb/sec.
+
+.TP
+.B load spi [buffer size in KB]
+This loads the spi drivers into the kernel and changes the permissions
+on the associated /dev/ entries so that the current user has access to
+them. Optionally it will set the SPI buffer size to that supplied. The
+default is 4KB.
 
 .TP
 .B gbr
@@ -183,7 +203,7 @@ SPI digital to analogue converter.
 The board jumpers need to be in-place to do this operation.
 
 
-.SH "WiringPi vs. GPIO Pin numbering"
+.SH "WiringPi vs. BCM_GPIO Pin numbering"
 
 .PP
 .TS
@@ -212,6 +232,12 @@ _
 19	-	30
 20	-	31
 .TE
+
+Note that "r1" and "r2" above refers to the board revision. Normally
+wiringPi detects the correct board revision with use for it's own
+numbering scheme, but if you are using a Revision 2 board with some
+of the pins which change numbers between revisions you will need
+to alter your software.
 
 .SH FILES
 
@@ -264,4 +290,5 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 .SH TRADEMARKS AND ACKNOWLEDGEMENTS
 
-Raspberry Pi is a trademark of the Raspberry Pi Foundation.
+Raspberry Pi is a trademark of the Raspberry Pi Foundation. See
+http://raspberrypi.org/ for full details.

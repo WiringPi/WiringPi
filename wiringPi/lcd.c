@@ -175,6 +175,18 @@ void lcdClear (int fd)
 
 
 /*
+ * lcdSendCommand:
+ *	Send any arbitary command to the display
+ *********************************************************************************
+ */
+
+void lcdSendCommand (int fd, uint8_t command)
+{
+  struct lcdDataStruct *lcd = lcds [fd] ;
+  putCommand (lcd, command) ;
+}
+
+/*
  * lcdPosition:
  *	Update the position of the cursor on the display
  *********************************************************************************

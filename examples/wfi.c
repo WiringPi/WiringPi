@@ -2,7 +2,17 @@
  * wfi.c:
  *	Wait for Interrupt test program
  *
- * Copyright (c) 2012 Gordon Henderson.
+ *	This program demonstrates the use of the waitForInterrupt()
+ *	function in wiringPi. It listens to a button input on
+ *	BCM_GPIO pin 17 (wiringPi pin 0)
+ *
+ *	The biggest issue with this method is that it really only works
+ *	well in Sys mode.
+ *
+ *	Jan 2013: This way of doing things is sort of deprecated now, see
+ *	the wiringPiISR() function instead and the isr.c test program here.
+ *
+ * Copyright (c) 2012-2013 Gordon Henderson.
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -33,9 +43,8 @@
 #define	COUNT_KEY	0
 
 // What BCM_GPIO input are we using?
-//	GPIO 0 is one of the I2C pins with an on-board pull-up
 
-#define	BUTTON_PIN	0
+#define	BUTTON_PIN	17
 
 // Debounce time in mS
 
@@ -63,13 +72,11 @@ PI_THREAD (waitForIt)
   int debounceTime = 0 ;
 
   (void)piHiPri (10) ;	// Set this thread to be high priority
-  digitalWrite (18, 1) ;
 
   for (;;)
   {
     if (waitForInterrupt (BUTTON_PIN, -1) > 0)	// Got it
     {
-
 // Bouncing?
 
       if (millis () < debounceTime)
@@ -80,7 +87,6 @@ PI_THREAD (waitForIt)
 
 // We have a valid one
 
-      digitalWrite (17, state) ;
       state ^= 1 ;
 
       piLock (COUNT_KEY) ;
@@ -89,7 +95,7 @@ PI_THREAD (waitForIt)
 
 // Wait for key to be released
 
-      while (digitalRead (0) == LOW)
+      while (digitalRead (BUTTON_PIN) == LOW)
 	delay (1) ;
 
       debounceTime = millis () + DEBOUNCE_TIME ;
@@ -108,11 +114,9 @@ void setup (void)
 {
 
 // Use the gpio program to initialise the hardware
-//	(This is the crude, but effective bit)
+//	(This is the crude, but effective)
 
-  system ("gpio   edge  0 falling") ;
-  system ("gpio export 17 out") ;
-  system ("gpio export 18 out") ;
+  system ("gpio edge 17 falling") ;
 
 // Setup wiringPi
 
@@ -120,9 +124,8 @@ void setup (void)
 
 // Fire off our interrupt handler
 
-  piThreadCreate   (waitForIt) ;
+  piThreadCreate (waitForIt) ;
 
-  digitalWrite (17, 0) ;
 }
 
 
@@ -147,7 +150,7 @@ int main (void)
       piLock (COUNT_KEY) ;
 	myCounter = globalCounter ;
       piUnlock (COUNT_KEY) ;
-      delay (5000) ;
+      delay (500) ;
     }
 
     printf (" Done. myCounter: %5d\n", myCounter) ;

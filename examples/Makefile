@@ -30,15 +30,15 @@ INCLUDE	= -I/usr/local/include
 CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 
 LDFLAGS	= -L/usr/local/lib
-LDLIBS    = -lwiringPi
+LDLIBS    = -lwiringPi -lpthread -lm
 
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	test1.c test2.c speed.c lcd.c wfi.c		\
-		piface.c gertboard.c nes.c			\
-		pwm.c tone.c servo.c				\
-		delayTest.c serialRead.c okLed.c
+SRC	=	blink.c test1.c test2.c speed.c lcd.c wfi.c isr.c isr-osc.c	\
+		piface.c gertboard.c nes.c					\
+		pwm.c tone.c servo.c						\
+		delayTest.c serialRead.c serialTest.c okLed.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -48,6 +48,12 @@ all:
 	@cat README.TXT
 	@echo "    $(BINS)" | fmt
 	@echo ""
+
+really-all:	$(BINS)
+
+blink:	blink.o
+	@echo [link]
+	@$(CC) -o $@ blink.o $(LDFLAGS) $(LDLIBS)
 
 test1:	test1.o
 	@echo [link]
@@ -69,21 +75,29 @@ wfi:	wfi.o
 	@echo [link]
 	@$(CC) -o $@ wfi.o $(LDFLAGS) $(LDLIBS)
 
+isr:	isr.o
+	@echo [link]
+	@$(CC) -o $@ isr.o $(LDFLAGS) $(LDLIBS)
+
+isr-osc:	isr-osc.o
+	@echo [link]
+	@$(CC) -o $@ isr-osc.o $(LDFLAGS) $(LDLIBS)
+
 piface:	piface.o
 	@echo [link]
-	@$(CC) -o $@ piface.o $(LDFLAGS) $(LDLIBS) -lpthread
+	@$(CC) -o $@ piface.o $(LDFLAGS) $(LDLIBS)
 
 gertboard:	gertboard.o
 	@echo [link]
-	@$(CC) -o $@ gertboard.o $(LDFLAGS) $(LDLIBS) -lm
+	@$(CC) -o $@ gertboard.o $(LDFLAGS) $(LDLIBS)
 
 nes:	nes.o
 	@echo [link]
-	@$(CC) -o $@ nes.o $(LDFLAGS) $(LDLIBS) -lm
+	@$(CC) -o $@ nes.o $(LDFLAGS) $(LDLIBS) 
 
 pwm:	pwm.o
 	@echo [link]
-	@$(CC) -o $@ pwm.o $(LDFLAGS) $(LDLIBS) -lm -lpthread
+	@$(CC) -o $@ pwm.o $(LDFLAGS) $(LDLIBS)
 
 delayTest:	delayTest.o
 	@echo [link]
@@ -92,6 +106,10 @@ delayTest:	delayTest.o
 serialRead:	serialRead.o
 	@echo [link]
 	@$(CC) -o $@ serialRead.o $(LDFLAGS) $(LDLIBS)
+
+serialTest:	serialTest.o
+	@echo [link]
+	@$(CC) -o $@ serialTest.o $(LDFLAGS) $(LDLIBS)
 
 okLed:	okLed.o
 	@echo [link]

@@ -35,18 +35,20 @@
 #include <wiringPi.h>
 #include <gertboard.h>
 
+extern int wiringPiDebug ;
+
 #ifndef TRUE
 #  define	TRUE	(1==1)
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION	"1.5"
+#define	VERSION	"1.12"
 
 static int wpMode ;
 
 char *usage = "Usage: gpio -v\n"
               "       gpio -h\n"
-              "       gpio [-g] <read/write/wb/pwm/mode> ...\n"
+              "       gpio [-g] <read/write/wb/pwm/clock/mode> ...\n"
               "       gpio [-p] <read/write/wb> ...\n"
 	      "       gpio readall\n"
 	      "       gpio unexportall/exports ...\n"
@@ -127,7 +129,7 @@ static int moduleLoaded (char *modName)
 
 static void _doLoadUsage (char *argv [])
 {
-  fprintf (stderr, "Usage: %s load <spi/i2c>\n", argv [0]) ;
+  fprintf (stderr, "Usage: %s load <spi/i2c> [SPI bufferSize in KB | I2C baudrate in Kb/sec]\n", argv [0]) ;
   exit (1) ;
 }
 
@@ -136,9 +138,12 @@ static void doLoad (int argc, char *argv [])
   char *module1, *module2 ;
   char cmd [80] ;
   char *file1, *file2 ;
+  char args1 [32], args2 [32] ;
 
-  if (argc != 3)
+  if (argc < 3)
     _doLoadUsage (argv) ;
+
+  args1 [0] = args2 [0] = 0 ;
 
   /**/ if (strcasecmp (argv [2], "spi") == 0)
   {
@@ -146,6 +151,10 @@ static void doLoad (int argc, char *argv [])
     module2 = "spi_bcm2708" ;
     file1  = "/dev/spidev0.0" ;
     file2  = "/dev/spidev0.1" ;
+    if (argc == 4)
+      sprintf (args1, " bufsiz=%d", atoi (argv [3]) * 1024) ;
+    else if (argc > 4)
+      _doLoadUsage (argv) ;
   }
   else if (strcasecmp (argv [2], "i2c") == 0)
   {
@@ -153,19 +162,23 @@ static void doLoad (int argc, char *argv [])
     module2 = "i2c_bcm2708" ;
     file1  = "/dev/i2c-0" ;
     file2  = "/dev/i2c-1" ;
+    if (argc == 4)
+      sprintf (args2, " baudrate=%d", atoi (argv [3]) * 1000) ;
+    else if (argc > 4)
+      _doLoadUsage (argv) ;
   }
   else
     _doLoadUsage (argv) ;
 
   if (!moduleLoaded (module1))
   {
-    sprintf (cmd, "modprobe %s", module1) ;
+    sprintf (cmd, "modprobe %s%s", module1, args1) ;
     system (cmd) ;
   }
 
   if (!moduleLoaded (module2))
   {
-    sprintf (cmd, "modprobe %s", module2) ;
+    sprintf (cmd, "modprobe %s%s", module2, args2) ;
     system (cmd) ;
   }
 
@@ -190,55 +203,39 @@ static void doLoad (int argc, char *argv [])
 
 static char *pinNames [] =
 {
-  "GPIO 0",
-  "GPIO 1",
-  "GPIO 2",
-  "GPIO 3",
-  "GPIO 4",
-  "GPIO 5",
-  "GPIO 6",
-  "GPIO 7",
-  "SDA   ",
-  "SCL   ",
-  "CE0   ",
-  "CE1   ",
-  "MOSI  ",
-  "MISO  ",
-  "SCLK  ",
-  "TxD   ",
-  "RxD   ",
-  "GPIO 8",
-  "GPIO 9",
-  "GPIO10",
-  "GPIO11",
+  "GPIO 0", "GPIO 1", "GPIO 2", "GPIO 3", "GPIO 4", "GPIO 5", "GPIO 6", "GPIO 7",
+  "SDA   ", "SCL   ",
+  "CE0   ", "CE1   ", "MOSI  ", "MISO  ", "SCLK  ",
+  "TxD   ", "RxD   ",
+  "GPIO 8", "GPIO 9", "GPIO10", "GPIO11",
+} ;
+
+static char *alts [] =
+{
+  "IN  ", "OUT ", "ALT5", "ALT4", "ALT0", "ALT1", "ALT2", "ALT3"
 } ;
 
 static void doReadall (void)
 {
   int pin ;
 
-  printf ("+----------+------+--------+-------+\n") ;
-  printf ("| wiringPi | GPIO | Name   | Value |\n") ;
-  printf ("+----------+------+--------+-------+\n") ;
+  printf ("+----------+------+--------+------+-------+\n") ;
+  printf ("| wiringPi | GPIO | Name   | Mode | Value |\n") ;
+  printf ("+----------+------+--------+------+-------+\n") ;
 
-  for (pin = 0 ; pin < NUM_PINS ; ++pin)
-    printf ("| %6d   | %3d  | %s | %s  |\n",
+  for (pin = 0 ; pin < 64 ; ++pin)
+  {
+    if (wpiPinToGpio (pin) == -1)
+      continue ;
+
+    printf ("| %6d   | %3d  | %s | %s | %s  |\n",
 	pin, wpiPinToGpio (pin),
 	pinNames [pin], 
+	alts [getAlt (pin)], 
 	digitalRead (pin) == HIGH ? "High" : "Low ") ;
+  }
 
-  printf ("+----------+------+--------+-------+\n") ;
-
-  if (piBoardRev () == 1)
-    return ;
-
-  for (pin = 17 ; pin <= 20 ; ++pin)
-    printf ("| %6d   | %3d  | %s | %s  |\n",
-	pin, wpiPinToGpio (pin),
-	pinNames [pin], 
-	digitalRead (pin) == HIGH ? "High" : "Low ") ;
-
-  printf ("+----------+------+--------+-------+\n") ;
+  printf ("+----------+------+--------+------+-------+\n") ;
 }
 
 
@@ -544,15 +541,16 @@ void doMode (int argc, char *argv [])
 
   mode = argv [3] ;
 
-  /**/ if (strcasecmp (mode, "in")   == 0) pinMode         (pin, INPUT) ;
-  else if (strcasecmp (mode, "out")  == 0) pinMode         (pin, OUTPUT) ;
-  else if (strcasecmp (mode, "pwm")  == 0) pinMode         (pin, PWM_OUTPUT) ;
-  else if (strcasecmp (mode, "up")   == 0) pullUpDnControl (pin, PUD_UP) ;
-  else if (strcasecmp (mode, "down") == 0) pullUpDnControl (pin, PUD_DOWN) ;
-  else if (strcasecmp (mode, "tri")  == 0) pullUpDnControl (pin, PUD_OFF) ;
+  /**/ if (strcasecmp (mode, "in")     == 0) pinMode         (pin, INPUT) ;
+  else if (strcasecmp (mode, "out")    == 0) pinMode         (pin, OUTPUT) ;
+  else if (strcasecmp (mode, "pwm")    == 0) pinMode         (pin, PWM_OUTPUT) ;
+  else if (strcasecmp (mode, "clock")  == 0) pinMode         (pin, GPIO_CLOCK) ;
+  else if (strcasecmp (mode, "up")     == 0) pullUpDnControl (pin, PUD_UP) ;
+  else if (strcasecmp (mode, "down")   == 0) pullUpDnControl (pin, PUD_DOWN) ;
+  else if (strcasecmp (mode, "tri")    == 0) pullUpDnControl (pin, PUD_OFF) ;
   else
   {
-    fprintf (stderr, "%s: Invalid mode: %s. Should be in/out/pwm/up/down/tri\n", argv [1], mode) ;
+    fprintf (stderr, "%s: Invalid mode: %s. Should be in/out/pwm/clock/up/down/tri\n", argv [1], mode) ;
     exit (1) ;
   }
 }
@@ -758,6 +756,33 @@ void doRead (int argc, char *argv [])
 
 
 /*
+ * doClock:
+ *	Output a clock on a pin
+ *********************************************************************************
+ */
+
+void doClock (int argc, char *argv [])
+{
+  int pin, freq ;
+
+  if (argc != 4)
+  {
+    fprintf (stderr, "Usage: %s clock <pin> <freq>\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  pin = atoi (argv [2]) ;
+
+  if ((wpMode == WPI_MODE_PINS) && ((pin < 0) || (pin >= NUM_PINS)))
+    return ;
+
+  freq = atoi (argv [3]) ;
+
+  gpioClockSet (pin, freq) ;
+}
+
+
+/*
  * doPwm:
  *	Output a PWM value on a pin
  *********************************************************************************
@@ -847,6 +872,12 @@ static void doPwmClock (int argc, char *argv [])
 int main (int argc, char *argv [])
 {
   int i ;
+
+  if (getenv ("WIRINGPI_DEBUG") != NULL)
+  {
+    printf ("gpio: wiringPi debug mode enabled\n") ;
+    wiringPiDebug = TRUE ;
+  }
 
   if (argc == 1)
   {
@@ -977,6 +1008,7 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "write")    == 0) doWrite     (argc, argv) ;
   else if (strcasecmp (argv [1], "wb")       == 0) doWriteByte (argc, argv) ;
   else if (strcasecmp (argv [1], "pwm"  )    == 0) doPwm       (argc, argv) ;
+  else if (strcasecmp (argv [1], "clock")    == 0) doClock     (argc, argv) ;
   else if (strcasecmp (argv [1], "mode" )    == 0) doMode      (argc, argv) ;
   else
   {
