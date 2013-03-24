@@ -1,7 +1,7 @@
 /*
- * tone.c:
- *	Test of the softTone module in wiringPi
- *	Plays a scale out on pin 3 - connect pizeo disc to pin 3 & 0v
+ * blink.c:
+ *	Standard "blink" program in wiringPi. Blinks an LED connected
+ *	to the first GPIO pin.
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -24,36 +24,27 @@
  */
 
 #include <stdio.h>
-#include <errno.h>
-#include <string.h>
-
 #include <wiringPi.h>
-#include <softTone.h>
 
-#define	PIN	3
+// LED Pin - wiringPi pin 0 is BCM_GPIO 17.
 
-int scale [8] = { 262, 294, 330, 349, 392, 440, 494, 525 } ;
+#define	LED	0
 
-int main ()
+int main (void)
 {
-  int i ;
+  printf ("Raspberry Pi blink\n") ;
 
   if (wiringPiSetup () == -1)
-  {
-    fprintf (stdout, "oops: %s\n", strerror (errno)) ;
     return 1 ;
-  }
 
-  softToneCreate (PIN) ;
+  pinMode (LED, OUTPUT) ;
 
   for (;;)
   {
-    for (i = 0 ; i < 8 ; ++i)
-    {
-      printf ("%3d\n", i) ;
-      softToneWrite (PIN, scale [i]) ;
-      delay (500) ;
-    }
+    digitalWrite (LED, 1) ;	// On
+    delay (500) ;		// mS
+    digitalWrite (LED, 0) ;	// Off
+    delay (500) ;
   }
-
+  return 0 ;
 }

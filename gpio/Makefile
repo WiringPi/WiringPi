@@ -30,7 +30,7 @@ INCLUDE	= -I/usr/local/include
 CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 
 LDFLAGS	= -L/usr/local/lib
-LIBS    = -lwiringPi
+LIBS    = -lwiringPi -lpthread -lm
 
 # May not need to  alter anything below this line
 ###############################################################################
@@ -70,8 +70,8 @@ install:
 .PHONEY:	uninstall
 uninstall:
 	@echo "[UnInstall]"
-	rm -f /usr/local/bin/gpio
-	rm -f /usr/local/man/man1/gpio.1
+	@rm -f /usr/local/bin/gpio
+	@rm -f /usr/local/man/man1/gpio.1
 
 .PHONEY:	depend
 depend:

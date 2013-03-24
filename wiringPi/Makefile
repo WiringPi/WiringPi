@@ -1,4 +1,4 @@
-#
+# ;
 # Makefile:
 #	wiringPi - Wiring Compatable library for the Raspberry Pi
 #
@@ -45,13 +45,19 @@ LIBS    =
 SRC	=	wiringPi.c wiringPiFace.c wiringSerial.c wiringShift.c	\
 		gertboard.c						\
 		piNes.c							\
-		lcd.c piHiPri.c piThread.c wiringPiSPI.c		\
+		lcd.c piHiPri.c piThread.c				\
+		wiringPiSPI.c 						\
 		softPwm.c softServo.c softTone.c
+
+SRC_I2C	=	wiringPiI2C.c
 
 OBJ	=	$(SRC:.c=.o)
 
-all:		$(STATIC) $(DYNAMIC)
-#all:		$(DYNAMIC)
+OBJ_I2C	=	$(SRC_I2C:.c=.o)
+
+all:		$(DYNAMIC)
+
+static:		$(STATIC)
 
 $(STATIC):	$(OBJ)
 	@echo "[Link (Static)]"
@@ -63,13 +69,17 @@ $(DYNAMIC):	$(OBJ)
 	@echo "[Link (Dynamic)]"
 	@$(CC) -shared -Wl,-soname,libwiringPi.so.1 -o libwiringPi.so.1.0 -lpthread $(OBJ)
 
+i2c:	$(OBJ) $(OBJ_I2C)
+	@echo "[Link (Dynamic + I2C)]"
+	@$(CC) -shared -Wl,-soname,libwiringPi.so.1 -o libwiringPi.so.1.0 -lpthread $(OBJ) $(OBJ_I2C)
+
 .c.o:
 	@echo [Compile] $<
 	@$(CC) -c $(CFLAGS) $< -o $@
 
 .PHONEY:	clean
 clean:
-	rm -f $(OBJ) *~ core tags Makefile.bak libwiringPi.*
+	rm -f $(OBJ) $(OBJ_I2C) *~ core tags Makefile.bak libwiringPi.*
 
 .PHONEY:	tags
 tags:	$(SRC)
@@ -77,7 +87,7 @@ tags:	$(SRC)
 	@ctags $(SRC)
 
 .PHONEY:	install
-install:	$(TARGET)
+install:	$(DYNAMIC)
 	@echo "[Install]"
 	@install -m 0755 -d			$(DESTDIR)$(PREFIX)/lib
 	@install -m 0755 -d			$(DESTDIR)$(PREFIX)/include
@@ -91,11 +101,16 @@ install:	$(TARGET)
 	@install -m 0644 softTone.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 lcd.h			$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 wiringPiSPI.h		$(DESTDIR)$(PREFIX)/include
-	@install -m 0755 libwiringPi.a		$(DESTDIR)$(PREFIX)/lib
+	@install -m 0644 wiringPiI2C.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0755 libwiringPi.so.$(VERSION)		  $(DESTDIR)$(PREFIX)/lib
 	@ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION) $(DESTDIR)/lib/libwiringPi.so
 	@ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION) $(DESTDIR)/lib/libwiringPi.so.1
 	@ldconfig
+
+.PHONEY:	install-static
+install-static:	$(STATIC)
+	@echo "[Install Static]"
+	@install -m 0755 libwiringPi.a		$(DESTDIR)$(PREFIX)/lib
 
 .PHONEY:	uninstall
 uninstall:
@@ -110,13 +125,14 @@ uninstall:
 	@rm -f $(DESTDIR)$(PREFIX)/include/softTone.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/lcd.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/wiringPiSPI.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/wiringPiI2C.h
 	@rm -f $(DESTDIR)$(PREFIX)/lib/libwiringPi.*
 	@ldconfig
 
 
 .PHONEY:	depend
 depend:
-	makedepend -Y $(SRC)
+	makedepend -Y $(SRC) $(SRC_I2C)
 
 # DO NOT DELETE
 
@@ -129,5 +145,8 @@ piNes.o: wiringPi.h piNes.h
 lcd.o: wiringPi.h lcd.h
 piHiPri.o: wiringPi.h
 piThread.o: wiringPi.h
-softPwm.o: wiringPi.h softPwm.h
 wiringPiSPI.o: wiringPiSPI.h
+softPwm.o: wiringPi.h softPwm.h
+softServo.o: wiringPi.h softServo.h
+softTone.o: wiringPi.h softTone.h
+wiringPiI2C.o: wiringPi.h wiringPiI2C.h

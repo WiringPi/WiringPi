@@ -1,7 +1,7 @@
 /*
- * tone.c:
- *	Test of the softTone module in wiringPi
- *	Plays a scale out on pin 3 - connect pizeo disc to pin 3 & 0v
+ * serialTest.c:
+ *	Very simple program to test the serial port. Expects
+ *	the port to be looped back to itself
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -24,36 +24,52 @@
  */
 
 #include <stdio.h>
-#include <errno.h>
 #include <string.h>
+#include <errno.h>
 
 #include <wiringPi.h>
-#include <softTone.h>
-
-#define	PIN	3
-
-int scale [8] = { 262, 294, 330, 349, 392, 440, 494, 525 } ;
+#include <wiringSerial.h>
 
 int main ()
 {
-  int i ;
+  int fd ;
+  int count ;
+  unsigned int nextTime ;
 
-  if (wiringPiSetup () == -1)
+  if ((fd = serialOpen ("/dev/ttyAMA0", 115200)) < 0)
   {
-    fprintf (stdout, "oops: %s\n", strerror (errno)) ;
+    fprintf (stderr, "Unable to open serial device: %s\n", strerror (errno)) ;
     return 1 ;
   }
 
-  softToneCreate (PIN) ;
-
-  for (;;)
+  if (wiringPiSetup () == -1)
   {
-    for (i = 0 ; i < 8 ; ++i)
+    fprintf (stdout, "Unable to start wiringPi: %s\n", strerror (errno)) ;
+    return 1 ;
+  }
+
+  nextTime = millis () + 300 ;
+
+  for (count = 0 ; count < 256 ; )
+  {
+    if (millis () > nextTime)
     {
-      printf ("%3d\n", i) ;
-      softToneWrite (PIN, scale [i]) ;
-      delay (500) ;
+      printf ("\nOut: %3d: ", count) ;
+      fflush (stdout) ;
+      serialPutchar (fd, count) ;
+      nextTime += 300 ;
+      ++count ;
+    }
+
+    delay (3) ;
+
+    while (serialDataAvail (fd))
+    {
+      printf (" -> %3d", serialGetchar (fd)) ;
+      fflush (stdout) ;
     }
   }
 
+  printf ("\n") ;
+  return 0 ;
 }

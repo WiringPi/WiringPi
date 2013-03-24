@@ -54,6 +54,15 @@
 //	the multipexing, but it does need to be at least 10mS, and preferably 16
 //	from what I've been able to determine.
 
+// WARNING:
+//	This code is really experimental. It was written in response to some people
+//	asking for a servo driver, however while it works, there is too much
+//	jitter to successfully drive a small servo - I have tried it with a micro
+//	servo and it worked, but the servo ran hot due to the jitter in the signal
+//	being sent to it.
+//
+//	If you want servo control for the Pi, then use the servoblaster kernel
+//	module.
 
 #define	MAX_SERVOS	8
 
