@@ -48,7 +48,7 @@ static int wpMode ;
 
 char *usage = "Usage: gpio -v\n"
               "       gpio -h\n"
-              "       gpio [-g] <read/write/wb/pwm/clock/mode> ...\n"
+              "       gpio [-g] <read/write/wb/pwm/clock/mode/readmode> ...\n"
               "       gpio [-p] <read/write/wb> ...\n"
 	      "       gpio readall\n"
 	      "       gpio unexportall/exports ...\n"
@@ -754,6 +754,26 @@ void doRead (int argc, char *argv [])
   printf ("%s\n", val == 0 ? "0" : "1") ;
 }
 
+/*
+ * doReadMode:
+ *	Read a pin mode and return the value
+ *********************************************************************************
+ */
+static void doReadMode (int argc, char *argv [])
+{
+  int pin ;  
+
+  if (argc != 3)
+  {
+    fprintf (stderr, "Usage: %s readmode pin\n", argv [0]) ;
+    exit (1) ;
+  }
+  
+  pin = atoi (argv [2]) ;
+
+  printf ("%s\n", alts [getAlt (pin)]) ; 
+
+}
 
 /*
  * doClock:
@@ -1010,6 +1030,7 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "pwm"  )    == 0) doPwm       (argc, argv) ;
   else if (strcasecmp (argv [1], "clock")    == 0) doClock     (argc, argv) ;
   else if (strcasecmp (argv [1], "mode" )    == 0) doMode      (argc, argv) ;
+  else if (strcasecmp (argv [1], "readmode" )== 0) doReadMode  (argc, argv) ;
   else
   {
     fprintf (stderr, "%s: Unknown command: %s.\n", argv [0], argv [1]) ;
