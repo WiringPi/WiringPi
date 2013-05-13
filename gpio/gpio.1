@@ -1,15 +1,19 @@
-.TH "GPIO" "21st October 2012" "Command-Line access to Raspberry Pi and PiFace GPIO"
+.TH "GPIO" "March 2013" "Command-Line access to Raspberry Pi's GPIO"
 
 .SH NAME
-gpio \- Command-line access to Raspberry Pi and PiFace GPIO
+gpio \- Command-line access to Raspberry Pi's GPIO
 
 .SH SYNOPSIS
 .B gpio
 .B \-v
 .PP
 .B gpio
-.B [ \-g ]
-.B read/write/wb/pwm/clock/mode ...
+.B [ \-g | \-1 ]
+.B mode/read/write/aread/awrite/wb/pwm/clock ...
+.PP
+.B gpio
+.B [ \-x extension:params ]
+.B mode/read/write/aread/awrite/pwm ...
 .PP
 .B gpio
 .B [ \-p ]
@@ -17,13 +21,17 @@ gpio \- Command-line access to Raspberry Pi and PiFace GPIO
 .B ...
 .PP
 .B gpio
-.B readall
+.B readall/reset
 .PP
 .B gpio
 .B unexportall/exports
 .PP
 .B gpio
 .B export/edge/unexport
+.B ...
+.PP
+.B gpio
+.B wfi
 .B ...
 .PP
 .B gpio
@@ -73,12 +81,28 @@ Output the current version including the board revision of the Raspberry Pi.
 .TP
 .B \-g
 Use the BCM_GPIO pins numbers rather than wiringPi pin numbers.
-\fINOTE:\fR The BCM_GPIO pin numbers are always used with the 
+\fINote:\fR The BCM_GPIO pin numbers are always used with the 
 export and edge commands.
 
 .TP
+.B \-1
+Use the physical pin numbers rather than wiringPi pin numbers.
+\fINote:\fR that this applies to the P1 connector only. It is not possible to
+use pins on the Revision 2 P5 connector this way, and as with \-g the
+BCM_GPIO pin numbers are always used with the export and edge commands.
+
+.TP
+.B \-x extension
+This causes the named extension to be initialised. Extensions
+comprise of a name (e.g. mcp23017) followed by a colon, then the
+pin-base, then more optional parameters depending on the extension type.
+See the web page on http://wiringpi.com/the-gpio-utility/
+
+.TP
 .B \-p
-Use the PiFace interface board and its corresponding pin numbers.
+Use the PiFace interface board and its corresponding pin numbers. The PiFace
+will always appear at pin number 200 in the gpio command. You can assign any
+pin numbers you like in your own programs though.
 
 .TP
 .B read <pin>
@@ -101,6 +125,11 @@ first.
 Output a table of all GPIO pins values. The values represent the actual values read
 if the pin is in input mode, or the last value written if the pin is in output
 mode.
+
+.TP
+.B reset
+Resets the GPIO - As much as it's possible to do. All pins are set to input
+mode and all the internal pull-up/down resistors are disconnected (tristate mode).
 
 .TP
 .B pwm <pin> <value>
@@ -158,6 +187,12 @@ requiring root/sudo.
 Un-Export a GPIO pin in the /sys/class/gpio directory.
 
 .TP
+.B wfi <pin> <mode>
+This set the given pin to the supplied interrupt mode: rising, falling
+or both then waits for the interrupt to happen. It's a non-busy wait,
+so does not consume and CPU while it's waiting.
+
+.TP
 .B drive
 group value
 
@@ -207,26 +242,26 @@ The board jumpers need to be in-place to do this operation.
 
 .PP
 .TS
-r r r l.
-WiringPi	GPIO-r1	GPIO-r2	Function
+c c c c l.
+WiringPi	GPIO-r1	GPIO-r2	P1-Phys	Function
 _
-0	17	17
-1	18	18	(PWM)
-2	21	27
-3	22	22
-4	23	23
-5	24	24
-6	25	25
-7	4	4
-8	0	2	I2C: SDA0
-9	1	3	I2C: SCL0
-10	8	8	SPI: CE0
-11	7	7	SPI: CE1
-12	10	10	SPI: MOSI
-13	9	9	SPI: MISO
-14	11	11	SPI: SCLK
-15	14	14	TxD
-16	15	16	RxD
+ 0	17	17	11	
+ 1	18	18	12	(PWM)
+ 2	21	27	13
+ 3	22	22	15
+ 4	23	23	16
+ 5	24	24	18
+ 6	25	25	22
+ 7	4	4	7
+ 8	0	2	3	I2C: SDA0
+ 9	1	3	5	I2C: SCL0
+10	8	8	24	SPI: CE0
+11	7	7	26	SPI: CE1
+12	10	10	19	SPI: MOSI
+13	9	9	21	SPI: MISO
+14	11	11	23	SPI: SCLK
+15	14	14	8	TxD
+16	15	16	10	RxD
 17	-	28
 18	-	29
 19	-	30
@@ -272,7 +307,7 @@ pin numbers.
 .LP
 WiringPi's home page
 .IP
-https://projects.drogon.net/raspberry-pi/wiringpi/
+http://wiringpi.com/
 
 .SH AUTHOR
 
@@ -284,7 +319,7 @@ Please report bugs to <projects@drogon.net>
 
 .SH COPYRIGHT
 
-Copyright (c) 2012 Gordon Henderson
+Copyright (c) 2012-2013 Gordon Henderson
 This is free software; see the source for copying conditions. There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 

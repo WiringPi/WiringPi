@@ -1,6 +1,7 @@
 /*
- * test2.c:
- *	This tests the hardware PWM channel.
+ * softTone.c:
+ *	Test of the softTone module in wiringPi
+ *	Plays a scale out on pin 3 - connect pizeo disc to pin 3 & 0v
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -22,37 +23,32 @@
  ***********************************************************************
  */
 
-#include <wiringPi.h>
-
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include <errno.h>
+#include <string.h>
 
-int main (void)
+#include <wiringPi.h>
+#include <softTone.h>
+
+#define	PIN	3
+
+int scale [8] = { 262, 294, 330, 349, 392, 440, 494, 525 } ;
+
+int main ()
 {
-  int bright ;
+  int i ;
 
-  printf ("Raspberry Pi wiringPi PWM test program\n") ;
+  wiringPiSetup () ;
 
-  if (wiringPiSetup () == -1)
-    exit (1) ;
-
-  pinMode (1, PWM_OUTPUT) ;
+  softToneCreate (PIN) ;
 
   for (;;)
   {
-    for (bright = 0 ; bright < 1024 ; ++bright)
+    for (i = 0 ; i < 8 ; ++i)
     {
-      pwmWrite (1, bright) ;
-      delay (1) ;
-    }
-
-    for (bright = 1023 ; bright >= 0 ; --bright)
-    {
-      pwmWrite (1, bright) ;
-      delay (1) ;
+      printf ("%3d\n", i) ;
+      softToneWrite (PIN, scale [i]) ;
+      delay (500) ;
     }
   }
-
-  return 0 ;
 }

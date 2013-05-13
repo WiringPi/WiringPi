@@ -28,7 +28,7 @@
 #include "wiringPi.h"
 #include "softPwm.h"
 
-#define	MAX_PINS	64
+#define	MAX_PINS	1024
 
 // The PWM Frequency is derived from the "pulse time" below. Essentially,
 //	the frequency is a function of the range and this pulse time.
@@ -93,7 +93,7 @@ static PI_THREAD (softPwmThread)
 
 void softPwmWrite (int pin, int value)
 {
-  pin &= 63 ;
+  pin &= (MAX_PINS - 1) ;
 
   /**/ if (value < 0)
     value = 0 ;

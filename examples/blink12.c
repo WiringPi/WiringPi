@@ -1,8 +1,7 @@
 /*
- * test1.c:
- *	Simple test program to test the wiringPi functions
- *	This is a sequencer to make a patter appear on 8 LEDs
- *	connected to the GPIO pins.
+ * blink12.c:
+ *	Simple sequence over the first 12 GPIO pins - LEDs
+ *	Aimed at the Gertboard, but it's fairly generic.
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -24,17 +23,13 @@
  ***********************************************************************
  */
 
-#include <wiringPi.h>
-
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-
+#include <wiringPi.h>
 
 // Simple sequencer data
 //	Triplets of LED, On/Off and delay
 
-uint8_t data [] =
+int data [] =
 {
             0, 1, 1,
             1, 1, 1,
@@ -44,15 +39,23 @@ uint8_t data [] =
   3, 0, 0,  5, 1, 1,
   4, 0, 0,  6, 1, 1,
   5, 0, 0,  7, 1, 1,
-  6, 0, 1,
-  7, 0, 1,
+  6, 0, 0, 11, 1, 1,
+  7, 0, 0, 10, 1, 1,
+ 11, 0, 0, 13, 1, 1,
+ 10, 0, 0, 12, 1, 1,
+ 13, 0, 1,
+ 12, 0, 1,
 
   0, 0, 1,	// Extra delay
 
 // Back again
 
-            7, 1, 1,
-            6, 1, 1,
+           12, 1, 1,
+           13, 1, 1,
+ 12, 0, 0, 10, 1, 1,
+ 13, 0, 0, 11, 1, 1,
+ 10, 0, 0,  7, 1, 1,
+ 11, 0, 0,  6, 1, 1,
   7, 0, 0,  5, 1, 1,
   6, 0, 0,  4, 1, 1,
   5, 0, 0,  3, 1, 1,
@@ -64,7 +67,7 @@ uint8_t data [] =
 
   0, 0, 1,	// Extra delay
 
-  9, 9, 9,	// End marker
+  0, 9, 0,	// End marker
 
 } ;
 
@@ -75,15 +78,16 @@ int main (void)
   int dataPtr ;
   int l, s, d ;
 
-  printf ("Raspberry Pi wiringPi test program\n") ;
+  printf ("Raspberry Pi - 12-LED Sequence\n") ;
+  printf ("==============================\n") ;
+  printf ("\n") ;
+  printf ("Connect LEDs up to the first 8 GPIO pins, then pins 11, 10, 13, 12 in\n") ;
+  printf ("    that order, then sit back and watch the show!\n") ;
 
-  if (wiringPiSetup () == -1)
-    exit (1) ;
+  wiringPiSetup () ;
 
-  for (pin = 0 ; pin < 8 ; ++pin)
+  for (pin = 0 ; pin < 14 ; ++pin)
     pinMode (pin, OUTPUT) ;
-
-  pinMode (8, INPUT) ; 	// Pin 8 SDA0 - Has on-board 2k2 pull-up resistor
 
   dataPtr = 0 ;
 
@@ -93,18 +97,14 @@ int main (void)
     s = data [dataPtr++] ;	// State
     d = data [dataPtr++] ;	// Duration (10ths)
 
-    if ((l + s + d) == 27)
+    if (s == 9)			// 9 -> End Marker
     {
       dataPtr = 0 ;
       continue ;
     }
 
     digitalWrite (l, s) ;
-
-    if (digitalRead (8) == 0)	// Pressed as our switch shorts to ground
-      delay (d * 10) ;	// Faster!
-    else
-      delay (d * 100) ;
+    delay        (d * 100) ;
   }
 
   return 0 ;

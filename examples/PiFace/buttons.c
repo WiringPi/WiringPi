@@ -1,5 +1,5 @@
 /*
- * piFace.c:
+ * buttons.c:
  *	Simple test for the PiFace interface board.
  *
  *	Read the buttons and output the same to the LEDs
@@ -24,47 +24,79 @@
  ***********************************************************************
  */
 
-#include <wiringPi.h>
-
 #include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+
+#include <wiringPi.h>
+#include <piFace.h>
 
 int outputs [4] = { 0,0,0,0 } ;
 
+// Use 200 as the pin-base for the PiFace board
+
+#define	PIFACE_BASE	200
+
+
+/*
+ * scanButton:
+ *	Read the guiven button - if it's pressed, then flip the state
+ *	of the correspoinding output pin
+ *********************************************************************************
+ */
+
 void scanButton (int button)
 {
-  if (digitalRead (button) == LOW)
+  if (digitalRead (PIFACE_BASE + button) == LOW)
   {
     outputs [button] ^= 1 ;
-    digitalWrite (button, outputs [button]) ;
+    digitalWrite (PIFACE_BASE + button, outputs [button]) ;
+    printf ("Button %d pushed - output now: %s\n",
+		button, (outputs [button] == 0) ? "Off" : "On") ;
   }
 
-  while (digitalRead (button) == LOW)
+  while (digitalRead (PIFACE_BASE + button) == LOW)
     delay (1) ;
 }
 
+
+/*
+ * start here
+ *********************************************************************************
+ */
 
 int main (void)
 {
   int pin, button ;
 
-  printf ("Raspberry Pi wiringPiFace test program\n") ;
+  printf ("Raspberry Pi wiringPi + PiFace test program\n") ;
+  printf ("===========================================\n") ;
+  printf ("\n") ;
+  printf (
+"This program reads the buttons and uses them to toggle the first 4\n"
+"outputs. Push a button once to turn an output on, and push it again to\n"
+"turn it off again.\n\n") ;
 
-  if (wiringPiSetupPiFace () == -1)
-    exit (1) ;
+// Always initialise wiringPi. Use wiringPiSys() if you don't need
+//	(or want) to run as root
 
-// Enable internal pull-ups
+  wiringPiSetupSys () ;
+
+  piFaceSetup (PIFACE_BASE) ;
+
+// Enable internal pull-ups & start with all off
 
   for (pin = 0 ; pin < 8 ; ++pin)
-    pullUpDnControl (pin, PUD_UP) ;
+  {
+    pullUpDnControl (PIFACE_BASE + pin, PUD_UP) ;
+    digitalWrite    (PIFACE_BASE + pin, 0) ;
+  }
 
+// Loop, scanning the buttons
 
   for (;;)
   {
     for (button = 0 ; button < 4 ; ++button)
       scanButton (button) ;
-    delay (1) ;
+    delay (5) ;
   }
 
   return 0 ;

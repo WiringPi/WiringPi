@@ -29,7 +29,8 @@
 #define	WPI_MODE_PINS		 0
 #define	WPI_MODE_GPIO		 1
 #define	WPI_MODE_GPIO_SYS	 2
-#define	WPI_MODE_PIFACE		 3
+#define	WPI_MODE_PHYS		 3
+#define	WPI_MODE_PIFACE		 4
 #define	WPI_MODE_UNINITIALISED	-1
 
 // Pin modes
@@ -64,6 +65,42 @@
 
 #define	PI_THREAD(X)	void *X (void *dummy)
 
+// Failure modes
+
+#define	WPI_FATAL	(1==1)
+#define	WPI_ALMOST	(1==2)
+
+
+// wiringPiNodeStruct:
+//	This describes additional device nodes in the extended wiringPi
+//	2.0 scheme of things.
+//	It's a simple linked list for now, but will hopefully migrate to 
+//	a binary tree for efficiency reasons - but then again, the chances
+//	of more than 1 or 2 devices being added are fairly slim, so who
+//	knows....
+
+struct wiringPiNodeStruct
+{
+  int     pinBase ;
+  int     pinMax ;
+
+  int          fd ;	// Node specific
+  unsigned int data0 ;	//  ditto
+  unsigned int data1 ;	//  ditto
+  unsigned int data2 ;	//  ditto
+  unsigned int data3 ;	//  ditto
+
+  void   (*pinMode)         (struct wiringPiNodeStruct *node, int pin, int mode) ;
+  void   (*pullUpDnControl) (struct wiringPiNodeStruct *node, int pin, int mode) ;
+  int    (*digitalRead)     (struct wiringPiNodeStruct *node, int pin) ;
+  void   (*digitalWrite)    (struct wiringPiNodeStruct *node, int pin, int value) ;
+  void   (*pwmWrite)        (struct wiringPiNodeStruct *node, int pin, int value) ;
+  int    (*analogRead)      (struct wiringPiNodeStruct *node, int pin) ;
+  void   (*analogWrite)     (struct wiringPiNodeStruct *node, int pin, int value) ;
+
+  struct wiringPiNodeStruct *next ;
+} ;
+
 
 // Function prototypes
 //	c++ wrappers thanks to a comment by Nick Lott
@@ -73,46 +110,61 @@
 extern "C" {
 #endif
 
-// Basic wiringPi functions
+// Internal
+
+extern int wiringPiFailure (int fatal, const char *message, ...) ;
+
+// Core wiringPi functions
+
+extern struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins) ;
 
 extern int  wiringPiSetup       (void) ;
 extern int  wiringPiSetupSys    (void) ;
 extern int  wiringPiSetupGpio   (void) ;
+extern int  wiringPiSetupPhys   (void) ;
+
+extern void pinMode             (int pin, int mode) ;
+extern void pullUpDnControl     (int pin, int pud) ;
+extern int  digitalRead         (int pin) ;
+extern void digitalWrite        (int pin, int value) ;
+extern void pwmWrite            (int pin, int value) ;
+extern int  analogRead          (int pin) ;
+extern void analogWrite         (int pin, int value) ;
+
+// PiFace specifics 
+//	(Deprecated)
+
 extern int  wiringPiSetupPiFace (void) ;
+extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio program only
+
+// On-Board Raspberry Pi hardware specific stuff
 
 extern int  piBoardRev          (void) ;
 extern int  wpiPinToGpio        (int wpiPin) ;
-
-extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio program only
-
-extern void (*pinMode)           (int pin, int mode) ;
-extern int  (*getAlt)            (int pin) ;
-extern void (*pullUpDnControl)   (int pin, int pud) ;
-extern void (*digitalWrite)      (int pin, int value) ;
-extern void (*digitalWriteByte)  (int value) ;
-extern void (*gpioClockSet)      (int pin, int freq) ;
-extern void (*pwmWrite)          (int pin, int value) ;
-extern void (*setPadDrive)       (int group, int value) ;
-extern int  (*digitalRead)       (int pin) ;
-extern void (*pwmSetMode)        (int mode) ;
-extern void (*pwmSetRange)       (unsigned int range) ;
-extern void (*pwmSetClock)       (int divisor) ;
+extern int  physPinToGpio       (int physPin) ;
+extern void setPadDrive         (int group, int value) ;
+extern int  getAlt              (int pin) ;
+extern void digitalWriteByte    (int value) ;
+extern void pwmSetMode          (int mode) ;
+extern void pwmSetRange         (unsigned int range) ;
+extern void pwmSetClock         (int divisor) ;
+extern void gpioClockSet        (int pin, int freq) ;
 
 // Interrupts
+//	(Also Pi hardware specific)
 
-extern int  (*waitForInterrupt) (int pin, int mS) ;
+extern int  waitForInterrupt    (int pin, int mS) ;
 extern int  wiringPiISR         (int pin, int mode, void (*function)(void)) ;
 
 // Threads
 
-extern int  piThreadCreate (void *(*fn)(void *)) ;
-extern void piLock         (int key) ;
-extern void piUnlock       (int key) ;
+extern int  piThreadCreate      (void *(*fn)(void *)) ;
+extern void piLock              (int key) ;
+extern void piUnlock            (int key) ;
 
 // Schedulling priority
 
-extern int piHiPri (int pri) ;
-
+extern int piHiPri (const int pri) ;
 
 // Extras from arduino land
 

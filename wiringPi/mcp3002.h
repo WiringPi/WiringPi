@@ -1,11 +1,7 @@
 /*
- * gertboard.h:
- *	Access routines for the SPI devices on the Gertboard
- *	Copyright (c) 2012 Gordon Henderson
- *
- *	The Gertboard has an MCP4802 dual-channel D to A convertor
- *	connected to the SPI bus, selected via chip-select B.
- *
+ * mcp3002.c:
+ *	Extend wiringPi with the MCP3002 SPI Analog to Digital convertor
+ *	Copyright (c) 2012-2013 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -30,9 +26,7 @@
 extern "C" {
 #endif
 
-extern void gertboardAnalogWrite (int chan, int value) ;
-extern int  gertboardAnalogRead  (int chan) ;
-extern int  gertboardSPISetup    (void) ;
+extern int mcp3002Setup (int pinBase, int spiChannel) ;
 
 #ifdef __cplusplus
 }

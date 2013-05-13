@@ -14,28 +14,28 @@ check-make-ok()
 }
 
 if [ x$1 = "xclean" ]; then
-  echo Cleaning
-  echo
   cd wiringPi
-  make clean
+  echo -n "wiringPi:  "	; make clean
+  cd ../devLib
+  echo -n "DevLib:    "	; make clean
   cd ../gpio
-  make clean
+  echo -n "gpio:      "	; make clean
   cd ../examples
-  make clean
+  echo -n "Examples:  "	; make clean
+  cd Gertboard
+  echo -n "Gertboard: "	; make clean
+  cd ../PiFace
+  echo -n "PiFace:    "	; make clean
   exit
 fi
 
 if [ x$1 = "xuninstall" ]; then
-  echo Uninstalling
-  echo
-  echo "WiringPi library"
   cd wiringPi
-  sudo make uninstall
-  echo
-  echo "GPIO Utility"
+  echo -n "wiringPi: " ; sudo make uninstall
+  cd ../devLib
+  echo -n "DevLib:   " ; sudo make uninstall
   cd ../gpio
-  sudo make uninstall
-  cd ..
+  echo -n "gpio:     " ; sudo make uninstall
   exit
 fi
 
@@ -44,25 +44,20 @@ fi
   echo "====================="
   echo
 
-# Check for I2C being installed...
-#	... and if-so, then automatically make the I2C helpers
-
-  if [ -f /usr/include/linux/i2c-dev.h ]; then
-    grep -q i2c_smbus_read_byte /usr/include/linux/i2c-dev.h
-    if [ $? = 0 ]; then
-      target=i2c
-      echo "Building wiringPi with the I2C helper libraries."
-    else
-      target=all
-      echo "The wiringPi I2C helper libraries will not be built."
-    fi
-  fi
-
   echo
-  echo "WiringPi library"
+  echo "WiringPi Library"
   cd wiringPi
   sudo make uninstall
-  make $target
+  make
+  check-make-ok
+  sudo make install
+  check-make-ok
+
+  echo
+  echo "WiringPi Devices Library"
+  cd ../devLib
+  sudo make uninstall
+  make
   check-make-ok
   sudo make install
   check-make-ok

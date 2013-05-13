@@ -6,8 +6,8 @@
  *		D/A port 0 jumpered to A/D port 0.
  *
  *	We output a sine wave on D/A port 0 and sample A/D port 0. We then
- *	copy this value to D/A port 1 and use a 'scope on both D/A ports
- *	to check all's well.
+ *	plot the input value on the terminal as a sort of vertical scrolling
+ *	oscilloscipe.
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -30,11 +30,13 @@
  */
 
 #include <stdio.h>
-#include <stdint.h>
+#include <sys/ioctl.h>
+#include <stdlib.h>
 #include <math.h>
 
-#define	B_SIZE	200
-#undef	DO_TIMING
+// Gertboard D to A is an 8-bit unit.
+
+#define	B_SIZE	256
 
 #include <wiringPi.h>
 #include <gertboard.h>
@@ -42,23 +44,28 @@
 int main (void)
 {
   double angle ;
-  int i ;
-  uint32_t x1 ;
+  int i, inputValue ;
   int  buffer [B_SIZE] ;
+  int   cols ;
+  struct winsize w ;
 
-#ifdef	DO_TIMING
-  unsigned int now, then ;
-#endif
 
   printf ("Raspberry Pi Gertboard SPI test program\n") ;
+  printf ("=======================================\n") ;
 
-  if (wiringPiSetupSys () < 0)
-    return -1 ;
+  ioctl (fileno (stdin), TIOCGWINSZ, &w);
+  cols = w.ws_col - 2 ;
 
-  if (gertboardSPISetup () < 0)
-    return 1 ;
+// Always initialise wiringPi. Use wiringPiSys() if you don't need
+//	(or want) to run as root
 
-// Generate a Sine Wave
+  wiringPiSetupSys () ;
+
+// Initialise the Gertboard analog hardware at pin 100
+
+  gertboardAnalogSetup (100) ;
+
+// Generate a Sine Wave and store in our buffer
 
   for (i = 0 ; i < B_SIZE ; ++i)
   {
@@ -66,28 +73,23 @@ int main (void)
     buffer [i] = (int)rint ((sin (angle)) * 127.0 + 128.0) ;
   }
 
+// Loop, output the sine wave on analog out port 0, read it into A-D port 0
+//	and display it on the screen
 
   for (;;)
   {
-#ifdef	DO_TIMING
-    then = millis () ;
-#endif
-
     for (i = 0 ; i < B_SIZE ; ++i)
     {
-      gertboardAnalogWrite (0, buffer [i]) ;
+      analogWrite (100, buffer [i]) ;
 
-#ifndef	DO_TIMING
-      x1 = gertboardAnalogRead (0) ;
-      gertboardAnalogWrite (1, x1 >> 2) ;	// 10-bit A/D, 8-bit D/A
-#endif
+      inputValue = analogRead (100) ;
+
+// We don't need to wory about the scale or sign - the analog hardware is
+//	a 10-bit value, so 0-1023. Just scale this to our terminal
+
+      printf ("%*s\n", (inputValue * cols) / 1023, "*") ;
+      delay (2) ;
     }
-
-#ifdef	DO_TIMING
-    now = millis () ;
-    printf ("%4d mS, %9.7f S/sample", now - then, ((double)(now - then) / 1000.0) / (double)B_SIZE) ;
-    printf (" -> %9.4f samples/sec \n", 1 / (((double)(now - then) / 1000.0) / (double)B_SIZE)) ;
-#endif
   }
 
   return 0 ;

@@ -36,7 +36,7 @@
 
 #define	PULSE_TIME	100
 
-static int frewqs [MAX_PINS] ;
+static int freqs [MAX_PINS] ;
 
 static int newPin = -1 ;
 
@@ -49,7 +49,7 @@ static int newPin = -1 ;
 
 static PI_THREAD (softToneThread)
 {
-  int pin, frewq, halfPeriod ;
+  int pin, freq, halfPeriod ;
 
   pin    = newPin ;
   newPin = -1 ;
@@ -58,12 +58,12 @@ static PI_THREAD (softToneThread)
 
   for (;;)
   {
-    frewq = frewqs [pin] ;
-    if (frewq == 0)
+    freq = freqs [pin] ;
+    if (freq == 0)
       delay (1) ;
     else
     {
-      halfPeriod = 500000 / frewq ;
+      halfPeriod = 500000 / freq ;
 
       digitalWrite (pin, HIGH) ;
       delayMicroseconds (halfPeriod) ;
@@ -83,16 +83,16 @@ static PI_THREAD (softToneThread)
  *********************************************************************************
  */
 
-void softToneWrite (int pin, int frewq)
+void softToneWrite (int pin, int freq)
 {
   pin &= 63 ;
 
-  /**/ if (frewq < 0)
-    frewq = 0 ;
-  else if (frewq > 5000)	// Max 5KHz
-    frewq = 5000 ;
+  /**/ if (freq < 0)
+    freq = 0 ;
+  else if (freq > 5000)	// Max 5KHz
+    freq = 5000 ;
 
-  frewqs [pin] = frewq ;
+  freqs [pin] = freq ;
 }
 
 
@@ -109,7 +109,7 @@ int softToneCreate (int pin)
   pinMode      (pin, OUTPUT) ;
   digitalWrite (pin, LOW) ;
 
-  frewqs [pin] = 0 ;
+  freqs [pin] = 0 ;
 
   newPin = pin ;
   res = piThreadCreate (softToneThread) ;

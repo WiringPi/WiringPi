@@ -56,7 +56,6 @@ uint8_t shiftIn (uint8_t dPin, uint8_t cPin, uint8_t order)
   return value;
 }
 
-
 /*
  * shiftOut:
  *	Shift data out to a clocked source

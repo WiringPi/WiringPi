@@ -16,7 +16,7 @@ accepted to Github....
 
 Please see
 
-  https://projects.drogon.net/raspberry-pi/wiringpi/
+  http://wiringpi.com/
 
 for the official documentation, etc. and the best way to submit bug reports, etc.
 is by sending an email to projects@drogon.net

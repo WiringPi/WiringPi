@@ -30,15 +30,19 @@ INCLUDE	= -I/usr/local/include
 CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 
 LDFLAGS	= -L/usr/local/lib
-LDLIBS    = -lwiringPi -lpthread -lm
+LDLIBS    = -lwiringPi -lwiringPiDev -lpthread -lm
 
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	blink.c test1.c test2.c speed.c lcd.c wfi.c isr.c isr-osc.c	\
-		piface.c gertboard.c nes.c					\
-		pwm.c tone.c servo.c						\
-		delayTest.c serialRead.c serialTest.c okLed.c
+SRC	=	blink.c blink8.c blink12.c					\
+		pwm.c								\
+		speed.c wfi.c isr.c isr-osc.c					\
+		lcd.c clock.c							\
+		nes.c								\
+		softPwm.c softTone.c 						\
+		delayTest.c serialRead.c serialTest.c okLed.c ds1302.c		\
+		rht03.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -55,13 +59,13 @@ blink:	blink.o
 	@echo [link]
 	@$(CC) -o $@ blink.o $(LDFLAGS) $(LDLIBS)
 
-test1:	test1.o
+blink8:	blink8.o
 	@echo [link]
-	@$(CC) -o $@ test1.o $(LDFLAGS) $(LDLIBS)
-	
-test2:	test2.o
+	@$(CC) -o $@ blink8.o $(LDFLAGS) $(LDLIBS)
+
+blink12:	blink12.o
 	@echo [link]
-	@$(CC) -o $@ test2.o $(LDFLAGS) $(LDLIBS)
+	@$(CC) -o $@ blink12.o $(LDFLAGS) $(LDLIBS)
 
 speed:	speed.o
 	@echo [link]
@@ -70,6 +74,10 @@ speed:	speed.o
 lcd:	lcd.o
 	@echo [link]
 	@$(CC) -o $@ lcd.o $(LDFLAGS) $(LDLIBS)
+
+clock:	clock.o
+	@echo [link]
+	@$(CC) -o $@ clock.o $(LDFLAGS) $(LDLIBS)
 
 wfi:	wfi.o
 	@echo [link]
@@ -83,21 +91,25 @@ isr-osc:	isr-osc.o
 	@echo [link]
 	@$(CC) -o $@ isr-osc.o $(LDFLAGS) $(LDLIBS)
 
-piface:	piface.o
-	@echo [link]
-	@$(CC) -o $@ piface.o $(LDFLAGS) $(LDLIBS)
-
-gertboard:	gertboard.o
-	@echo [link]
-	@$(CC) -o $@ gertboard.o $(LDFLAGS) $(LDLIBS)
-
 nes:	nes.o
 	@echo [link]
 	@$(CC) -o $@ nes.o $(LDFLAGS) $(LDLIBS) 
 
+rht03:	rht03.o
+	@echo [link]
+	@$(CC) -o $@ rht03.o $(LDFLAGS) $(LDLIBS) 
+
 pwm:	pwm.o
 	@echo [link]
 	@$(CC) -o $@ pwm.o $(LDFLAGS) $(LDLIBS)
+
+softPwm:	softPwm.o
+	@echo [link]
+	@$(CC) -o $@ softPwm.o $(LDFLAGS) $(LDLIBS)
+
+softTone:	softTone.o
+	@echo [link]
+	@$(CC) -o $@ softTone.o $(LDFLAGS) $(LDLIBS)
 
 delayTest:	delayTest.o
 	@echo [link]
@@ -119,9 +131,9 @@ tone:	tone.o
 	@echo [link]
 	@$(CC) -o $@ tone.o $(LDFLAGS) $(LDLIBS)
 
-servo:	servo.o
+ds1302:	ds1302.o
 	@echo [link]
-	@$(CC) -o $@ servo.o $(LDFLAGS) $(LDLIBS)
+	@$(CC) -o $@ ds1302.o $(LDFLAGS) $(LDLIBS)
 
 
 .c.o:
@@ -129,7 +141,8 @@ servo:	servo.o
 	@$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	rm -f $(OBJ) *~ core tags $(BINS)
+	@echo "[Clean]"
+	@rm -f $(OBJ) *~ core tags $(BINS)
 
 tags:	$(SRC)
 	@echo [ctags]

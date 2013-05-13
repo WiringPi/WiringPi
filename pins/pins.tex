@@ -1,0 +1,116 @@
+\documentclass[12pt,a4paper]{article}
+\parskip 1ex
+\parindent 0em
+\thispagestyle{empty}
+\pagestyle{plain}
+\pagenumbering{arabic}
+\setlength{\topmargin}{0pt}
+\setlength{\headheight}{0pt}
+\setlength{\headsep}{0pt}
+\setlength{\topskip}{0pt}
+\setlength{\textheight}{240mm}
+\setlength{\footskip}{5ex}
+\setlength{\oddsidemargin}{0pt}
+\setlength{\evensidemargin}{0pt}
+\setlength{\textwidth}{160mm}
+\usepackage[dvips]{graphics,color}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\begin{document}
+\begin{sffamily}
+\definecolor{rtb-black}{rgb}  {0.0, 0.0, 0.0}
+\definecolor{rtb-navy}{rgb}   {0.0, 0.0, 0.5}
+\definecolor{rtb-green}{rgb}  {0.0, 0.5, 0.0}
+\definecolor{rtb-teal}{rgb}   {0.0, 0.5, 0.5}
+\definecolor{rtb-maroon}{rgb} {0.5, 0.0, 0.0}
+\definecolor{rtb-purple}{rgb} {0.5, 0.0, 0.5}
+\definecolor{rtb-olive}{rgb}  {0.5, 0.5, 0.0}
+\definecolor{rtb-silver}{rgb} {0.7, 0.7, 0.7}
+\definecolor{rtb-grey}{rgb}   {0.5, 0.5, 0.5}
+\definecolor{rtb-blue}{rgb}   {0.0, 0.0, 1.0}
+\definecolor{rtb-lime}{rgb}   {0.0, 1.0, 0.0}
+\definecolor{rtb-aqua}{rgb}   {0.0, 1.0, 1.0}
+\definecolor{rtb-red}{rgb}    {1.0, 0.0, 0.0}
+\definecolor{rtb-fuchsia}{rgb}{1.0, 0.0, 1.0}
+\definecolor{rtb-yellow}{rgb} {1.0, 1.0, 0.0}
+\definecolor{rtb-white}{rgb}  {1.0, 1.0, 1.0}
+
+\begin{center}
+\bfseries{WiringPi: GPIO Pin Numbering Tables}\\
+\tt{http://wiringpi.com/}
+\end{center}
+
+\begin{center}
+\begin{tabular}{|c|c|c||p{8mm}|p{8mm}||c|c|c|c|}
+\hline
+\multicolumn{8}{|c|}{\bfseries{P1: The Main GPIO connector}}\\
+\hline
+\hline
+WiringPi Pin	& BCM GPIO	& Name	& \multicolumn{2}{|c||}{Header}	& Name	& BCM GPIO	& WiringPi Pin\\
+\hline
+\hline
+	& 			& \textcolor{rtb-red}{3.3v}	& \raggedleft{1} &  2 & \textcolor{rtb-maroon}{5v}	& 	& \\
+\hline
+8	& Rv1:0 - Rv2:2		& \textcolor{rtb-aqua}{SDA}	& \raggedleft{3} &  4 & \textcolor{rtb-maroon}{5v}	& 	& \\
+\hline
+9	& Rv1:1 - Rv2:3		& \textcolor{rtb-aqua}{SCL}	& \raggedleft{5} &  6 & \textcolor{rtb-black}{0v}	& 	& \\
+\hline
+7	& 4			& \textcolor{rtb-green}{GPIO7}	& \raggedleft{7} &  8 & \textcolor{rtb-yellow}{TxD}	& 14    & 15\\
+\hline
+	& 			& \textcolor{rtb-black}{0v}	& \raggedleft{9} & 10 & \textcolor{rtb-yellow}{RxD}	& 15	& 16\\
+\hline
+0	& 17			& \textcolor{rtb-green}{GPIO0}	& \raggedleft{11} & 12 & \textcolor{rtb-green}{GPIO1}	& 18	& 1\\
+\hline
+2	& Rv1:21 - Rv2:27	& \textcolor{rtb-green}{GPIO2}	& \raggedleft{13} & 14 & \textcolor{rtb-black}{0v}	& 	& \\
+\hline
+3	& 22			& \textcolor{rtb-green}{GPIO3}	& \raggedleft{15} & 16 & \textcolor{rtb-green}{GPIO4}	& 23	& 4\\
+\hline
+	& 			& \textcolor{rtb-red}{3.3v}	& \raggedleft{17} & 18 & \textcolor{rtb-green}{GPIO5}	& 24	& 5\\
+\hline
+12	& 10			& \textcolor{rtb-teal}{MOSI}	& \raggedleft{19} & 20 & \textcolor{rtb-black}{0v}	& 	& \\
+\hline
+13	& 9			& \textcolor{rtb-teal}{MISO}	& \raggedleft{21} & 22 & \textcolor{rtb-green}{GPIO6}	& 25	& 6\\
+\hline
+14	& 11			& \textcolor{rtb-teal}{SCLK}	& \raggedleft{23} & 24 & \textcolor{rtb-teal}{CE0}	& 8	& 10\\
+\hline
+	& 			& \textcolor{rtb-black}{0v}	& \raggedleft{25} & 26 & \textcolor{rtb-teal}{CE1}	& 7	& 11\\
+\hline
+\hline
+WiringPi Pin	& BCM GPIO	& Name	& \multicolumn{2}{|c||}{Header}	& Name	& BCM GPIO	& WiringPi Pin\\
+\hline
+\end{tabular}
+\end{center}
+
+Note the differences between Revision 1 and Revision 2 Raspberry
+Pi's. The Revision 2 is readily identifiable by the presence of the 2
+mounting holes.
+
+The revision 2 Raspberry Pi has an additional GPIO connector, P5, which is next to the main P1 GPIO
+connector:
+
+\begin{center}
+\begin{tabular}{|c|c|c||p{8mm}|p{8mm}||c|c|c|c|}
+\hline
+\multicolumn{8}{|c|}{\bfseries{P5: Secondary GPIO connector (Rev. 2 Pi only)}}\\
+\hline
+\hline
+WiringPi Pin	& BCM GPIO	& Name	& \multicolumn{2}{|c||}{Header}	& Name	& BCM GPIO	& WiringPi Pin\\
+\hline
+\hline
+	& 		& \textcolor{rtb-maroon}{5v}	& \raggedleft{1} &  2 & \textcolor{rtb-red}{3.3v}	& 	&	\\
+\hline
+17	& 28		& \textcolor{rtb-green}{GPIO8}	& \raggedleft{3} &  4 & \textcolor{rtb-green}{GPIO9}	& 29	& 18	\\
+\hline
+19	& 30		& \textcolor{rtb-green}{GPIO10}	& \raggedleft{5} &  6 & \textcolor{rtb-green}{GPIO11}	& 31	& 20	\\
+\hline
+	& 		& \textcolor{rtb-black}{0v}	& \raggedleft{7} &  8 & \textcolor{rtb-black}{0v}	& 	&	\\
+\hline
+\hline
+WiringPi Pin	& BCM GPIO	& Name	& \multicolumn{2}{|c||}{Header}	& Name	& BCM GPIO	& WiringPi Pin\\
+\hline
+\end{tabular}
+\end{center}
+
+
+\end{sffamily}
+\end{document}

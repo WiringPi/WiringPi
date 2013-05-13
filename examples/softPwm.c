@@ -1,7 +1,7 @@
 /*
- * tone.c:
- *	Test of the softTone module in wiringPi
- *	Plays a scale out on pin 3 - connect pizeo disc to pin 3 & 0v
+ * softPwm.c:
+ *	Test of the software PWM driver. Needs 8 LEDs connected
+ *	to the Pi - e.g. Ladder board.
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -28,32 +28,62 @@
 #include <string.h>
 
 #include <wiringPi.h>
-#include <softTone.h>
+#include <softPwm.h>
 
-#define	PIN	3
+#define RANGE		100
+#define	NUM_LEDS	  8
 
-int scale [8] = { 262, 294, 330, 349, 392, 440, 494, 525 } ;
+int ledMap [NUM_LEDS] = { 0, 1, 2, 3, 4, 5, 6, 7 } ;
+
+int values [NUM_LEDS] = { 0, 25, 50, 75, 100, 75, 50, 25 } ;
 
 int main ()
 {
-  int i ;
+  int i, j ;
+  char buf [80] ;
 
-  if (wiringPiSetup () == -1)
+  wiringPiSetup ()  ;
+
+  for (i = 0 ; i < NUM_LEDS ; ++i)
   {
-    fprintf (stdout, "oops: %s\n", strerror (errno)) ;
-    return 1 ;
+    softPwmCreate (ledMap [i], 0, RANGE) ;
+    printf ("%3d, %3d, %3d\n", i, ledMap [i], values [i]) ;
   }
 
-  softToneCreate (PIN) ;
+  fgets (buf, 80, stdin) ;
+
+// Bring all up one by one:
+
+  for (i = 0 ; i < NUM_LEDS ; ++i)
+    for (j = 0 ; j <= 100 ; ++j)
+    {
+      softPwmWrite (ledMap [i], j) ;
+      delay (10) ;
+    }
+
+  fgets (buf, 80, stdin) ;
+
+// All Down
+
+  for (i = 100 ; i > 0 ; --i)
+  {
+    for (j = 0 ; j < NUM_LEDS ; ++j)
+      softPwmWrite (ledMap [j], i) ;
+    delay (10) ;
+  }
+
+  fgets (buf, 80, stdin) ;
 
   for (;;)
   {
-    for (i = 0 ; i < 8 ; ++i)
-    {
-      printf ("%3d\n", i) ;
-      softToneWrite (PIN, scale [i]) ;
-      delay (500) ;
-    }
-  }
+    for (i = 0 ; i < NUM_LEDS ; ++i)
+      softPwmWrite (ledMap [i], values [i]) ;
 
+    delay (50) ;
+
+    i = values [0] ;
+    for (j = 0 ; j < NUM_LEDS - 1 ; ++j)
+      values [j] = values [j + 1] ;
+    values [NUM_LEDS - 1] = i ;
+  }
 }

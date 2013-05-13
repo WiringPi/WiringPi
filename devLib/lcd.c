@@ -26,29 +26,40 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <stdarg.h>
 
-#include "wiringPi.h"
+#include <wiringPi.h>
+
 #include "lcd.h"
 
-// Commands
+#ifndef	TRUE
+#  define	TRUE	(1==1)
+#  define	FALSE	(1==2)
+#endif
+
+// HD44780U Commands
 
 #define	LCD_CLEAR	0x01
 #define	LCD_HOME	0x02
 #define	LCD_ENTRY	0x04
-#define	LCD_ON_OFF	0x08
+#define	LCD_CTRL	0x08
 #define	LCD_CDSHIFT	0x10
 #define	LCD_FUNC	0x20
 #define	LCD_CGRAM	0x40
 #define	LCD_DGRAM	0x80
 
-#define	LCD_ENTRY_SH	0x01
-#define	LCD_ENTRY_ID	0x02
+// Bits in the entry register
 
-#define	LCD_ON_OFF_B	0x01
-#define	LCD_ON_OFF_C	0x02
-#define	LCD_ON_OFF_D	0x04
+#define	LCD_ENTRY_SH		0x01
+#define	LCD_ENTRY_ID		0x02
+
+// Bits in the control register
+
+#define	LCD_BLINK_CTRL		0x01
+#define	LCD_CURSOR_CTRL		0x02
+#define	LCD_DISPLAY_CTRL	0x04
+
+// Bits in the function register
 
 #define	LCD_FUNC_F	0x04
 #define	LCD_FUNC_N	0x08
@@ -58,12 +69,19 @@
 
 struct lcdDataStruct
 {
-  uint8_t bits, rows, cols ;
-  uint8_t rsPin, strbPin ;
-  uint8_t dataPins [8] ;
+  int bits, rows, cols ;
+  int rsPin, strbPin ;
+  int dataPins [8] ;
+  int cx, cy ;
 } ;
 
 struct lcdDataStruct *lcds [MAX_LCDS] ;
+
+static int lcdControl ;
+
+// Row offsets
+
+static const int rowOff [4] = { 0x00, 0x40, 0x14, 0x54 } ;
 
 
 /*
@@ -73,7 +91,7 @@ struct lcdDataStruct *lcds [MAX_LCDS] ;
  *********************************************************************************
  */
 
-static void strobe (struct lcdDataStruct *lcd)
+static void strobe (const struct lcdDataStruct *lcd)
 {
 
 // Note timing changes for new version of delayMicroseconds ()
@@ -89,13 +107,14 @@ static void strobe (struct lcdDataStruct *lcd)
  *********************************************************************************
  */
 
-static void sendDataCmd (struct lcdDataStruct *lcd, uint8_t data)
+static void sendDataCmd (const struct lcdDataStruct *lcd, unsigned char data)
 {
-  uint8_t i, d4 ;
+  register unsigned char myData = data ;
+  unsigned char          i, d4 ;
 
   if (lcd->bits == 4)
   {
-    d4 = (data >> 4) & 0x0F;
+    d4 = (myData >> 4) & 0x0F;
     for (i = 0 ; i < 4 ; ++i)
     {
       digitalWrite (lcd->dataPins [i], (d4 & 1)) ;
@@ -103,7 +122,7 @@ static void sendDataCmd (struct lcdDataStruct *lcd, uint8_t data)
     }
     strobe (lcd) ;
 
-    d4 = data & 0x0F ;
+    d4 = myData & 0x0F ;
     for (i = 0 ; i < 4 ; ++i)
     {
       digitalWrite (lcd->dataPins [i], (d4 & 1)) ;
@@ -114,8 +133,8 @@ static void sendDataCmd (struct lcdDataStruct *lcd, uint8_t data)
   {
     for (i = 0 ; i < 8 ; ++i)
     {
-      digitalWrite (lcd->dataPins [i], (data & 1)) ;
-      data >>= 1 ;
+      digitalWrite (lcd->dataPins [i], (myData & 1)) ;
+      myData >>= 1 ;
     }
   }
   strobe (lcd) ;
@@ -128,22 +147,24 @@ static void sendDataCmd (struct lcdDataStruct *lcd, uint8_t data)
  *********************************************************************************
  */
 
-static void putCommand (struct lcdDataStruct *lcd, uint8_t command)
+static void putCommand (const struct lcdDataStruct *lcd, unsigned char command)
 {
   digitalWrite (lcd->rsPin,   0) ;
   sendDataCmd  (lcd, command) ;
+  delay (2) ;
 }
 
-static void put4Command (struct lcdDataStruct *lcd, uint8_t command)
+static void put4Command (const struct lcdDataStruct *lcd, unsigned char command)
 {
-  uint8_t i ;
+  register unsigned char myCommand = command ;
+  register unsigned char i ;
 
   digitalWrite (lcd->rsPin,   0) ;
 
   for (i = 0 ; i < 4 ; ++i)
   {
-    digitalWrite (lcd->dataPins [i], (command & 1)) ;
-    command >>= 1 ;
+    digitalWrite (lcd->dataPins [i], (myCommand & 1)) ;
+    myCommand >>= 1 ;
   }
   strobe (lcd) ;
 }
@@ -151,7 +172,7 @@ static void put4Command (struct lcdDataStruct *lcd, uint8_t command)
 
 /*
  *********************************************************************************
- * User Code below here
+ * User Callable code below here
  *********************************************************************************
  */
 
@@ -161,16 +182,66 @@ static void put4Command (struct lcdDataStruct *lcd, uint8_t command)
  *********************************************************************************
  */
 
-void lcdHome (int fd)
+void lcdHome (const int fd)
 {
   struct lcdDataStruct *lcd = lcds [fd] ;
+
   putCommand (lcd, LCD_HOME) ;
+  lcd->cx = lcd->cy = 0 ;
+  delay (5) ;
 }
 
-void lcdClear (int fd)
+void lcdClear (const int fd)
 {
   struct lcdDataStruct *lcd = lcds [fd] ;
+
   putCommand (lcd, LCD_CLEAR) ;
+  putCommand (lcd, LCD_HOME) ;
+  lcd->cx = lcd->cy = 0 ;
+  delay (5) ;
+}
+
+
+/*
+ * lcdDisplay: lcdCursor: lcdCursorBlink:
+ *	Turn the display, cursor, cursor blinking on/off
+ *********************************************************************************
+ */
+
+void lcdDisplay (const int fd, int state)
+{
+  struct lcdDataStruct *lcd = lcds [fd] ;
+
+  if (state)
+    lcdControl |=  LCD_DISPLAY_CTRL ;
+  else
+    lcdControl &= ~LCD_DISPLAY_CTRL ;
+
+  putCommand (lcd, LCD_CTRL | lcdControl) ; 
+}
+
+void lcdCursor (const int fd, int state)
+{
+  struct lcdDataStruct *lcd = lcds [fd] ;
+
+  if (state)
+    lcdControl |=  LCD_CURSOR_CTRL ;
+  else
+    lcdControl &= ~LCD_CURSOR_CTRL ;
+
+  putCommand (lcd, LCD_CTRL | lcdControl) ; 
+}
+
+void lcdCursorBlink (const int fd, int state)
+{
+  struct lcdDataStruct *lcd = lcds [fd] ;
+
+  if (state)
+    lcdControl |=  LCD_BLINK_CTRL ;
+  else
+    lcdControl &= ~LCD_BLINK_CTRL ;
+
+  putCommand (lcd, LCD_CTRL | lcdControl) ; 
 }
 
 
@@ -180,40 +251,77 @@ void lcdClear (int fd)
  *********************************************************************************
  */
 
-void lcdSendCommand (int fd, uint8_t command)
+void lcdSendCommand (const int fd, unsigned char command)
 {
   struct lcdDataStruct *lcd = lcds [fd] ;
   putCommand (lcd, command) ;
 }
 
+
 /*
  * lcdPosition:
- *	Update the position of the cursor on the display
+ *	Update the position of the cursor on the display.
+ *	Ignore invalid locations.
  *********************************************************************************
  */
 
-
-void lcdPosition (int fd, int x, int y)
+void lcdPosition (const int fd, int x, int y)
 {
-  static uint8_t rowOff [4] = { 0x00, 0x40, 0x14, 0x54 } ;
   struct lcdDataStruct *lcd = lcds [fd] ;
 
+  if ((x > lcd->cols) || (x < 0))
+    return ;
+  if ((y > lcd->rows) || (y < 0))
+    return ;
+
   putCommand (lcd, x + (LCD_DGRAM | rowOff [y])) ;
+
+  lcd->cx = x ;
+  lcd->cy = y ;
+}
+
+
+/*
+ * lcdCharDef:
+ *	Defines a new character in the CGRAM
+ *********************************************************************************
+ */
+
+void lcdCharDef (const int fd, int index, unsigned char data [8])
+{
+  struct lcdDataStruct *lcd = lcds [fd] ;
+  int i ;
+
+  putCommand (lcd, LCD_CGRAM | ((index & 7) << 3)) ;
+
+  digitalWrite (lcd->rsPin, 1) ;
+  for (i = 0 ; i < 8 ; ++i)
+    sendDataCmd (lcd, data [i]) ;
 }
 
 
 /*
  * lcdPutchar:
- *	Send a data byte to be displayed on the display
+ *	Send a data byte to be displayed on the display. We implement a very
+ *	simple terminal here - with line wrapping, but no scrolling. Yet.
  *********************************************************************************
  */
 
-void lcdPutchar (int fd, uint8_t data)
+void lcdPutchar (const int fd, unsigned char data)
 {
   struct lcdDataStruct *lcd = lcds [fd] ;
 
   digitalWrite (lcd->rsPin, 1) ;
-  sendDataCmd (lcd, data) ;
+  sendDataCmd  (lcd, data) ;
+
+  if (++lcd->cx == lcd->cols)
+  {
+    lcd->cx = 0 ;
+    if (++lcd->cy == lcd->rows)
+      lcd->cy = 0 ;
+    
+    putCommand (lcd, lcd->cx + (LCD_DGRAM | rowOff [lcd->cy])) ;
+  }
 }
 
 
@@ -223,7 +331,7 @@ void lcdPutchar (int fd, uint8_t data)
  *********************************************************************************
  */
 
-void lcdPuts (int fd, char *string)
+void lcdPuts (const int fd, const char *string)
 {
   while (*string)
     lcdPutchar (fd, *string++) ;
@@ -236,7 +344,7 @@ void lcdPuts (int fd, char *string)
  *********************************************************************************
  */
 
-void lcdPrintf (int fd, char *message, ...)
+void lcdPrintf (const int fd, const char *message, ...)
 {
   va_list argp ;
   char buffer [1024] ;
@@ -256,12 +364,14 @@ void lcdPrintf (int fd, char *message, ...)
  *********************************************************************************
  */
 
-int lcdInit (int rows, int cols, int bits, int rs, int strb,
-	int d0, int d1, int d2, int d3, int d4, int d5, int d6, int d7)
+int lcdInit (const int rows, const int cols, const int bits,
+	const int rs, const int strb,
+	const int d0, const int d1, const int d2, const int d3, const int d4,
+	const int d5, const int d6, const int d7)
 {
   static int initialised = 0 ;
 
-  uint8_t func ;
+  unsigned char func ;
   int i ;
   int lcdFd = -1 ;
   struct lcdDataStruct *lcd ;
@@ -298,7 +408,7 @@ int lcdInit (int rows, int cols, int bits, int rs, int strb,
   if (lcdFd == -1)
     return -1 ;
 
-  lcd = malloc (sizeof (struct lcdDataStruct)) ;
+  lcd = (struct lcdDataStruct *)malloc (sizeof (struct lcdDataStruct)) ;
   if (lcd == NULL)
     return -1 ;
 
@@ -307,6 +417,8 @@ int lcdInit (int rows, int cols, int bits, int rs, int strb,
   lcd->bits    = 8 ;		// For now - we'll set it properly later.
   lcd->rows    = rows ;
   lcd->cols    = cols ;
+  lcd->cx      = 0 ;
+  lcd->cy      = 0 ;
 
   lcd->dataPins [0] = d0 ;
   lcd->dataPins [1] = d1 ;
@@ -371,10 +483,13 @@ int lcdInit (int rows, int cols, int bits, int rs, int strb,
 
 // Rest of the initialisation sequence
 
-  putCommand (lcd, LCD_ON_OFF  | LCD_ON_OFF_D) ;   delay (2) ;
-  putCommand (lcd, LCD_ENTRY   | LCD_ENTRY_ID) ;   delay (2) ;
-  putCommand (lcd, LCD_CDSHIFT | LCD_CDSHIFT_RL) ; delay (2) ;
-  putCommand (lcd, LCD_CLEAR) ;                    delay (5) ;
+  lcdDisplay     (lcdFd, TRUE) ;
+  lcdCursor      (lcdFd, FALSE) ;
+  lcdCursorBlink (lcdFd, FALSE) ;
+  lcdClear       (lcdFd) ;
+
+  putCommand (lcd, LCD_ENTRY   | LCD_ENTRY_ID) ;
+  putCommand (lcd, LCD_CDSHIFT | LCD_CDSHIFT_RL) ;
 
   return lcdFd ;
 }

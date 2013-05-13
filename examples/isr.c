@@ -38,16 +38,11 @@
 #include <wiringPi.h>
 
 
-// What GPIO input are we using?
-//	This is a wiringPi pin number
-
-#define	BUTTON_PIN	0
-
 // globalCounter:
 //	Global variable to count interrupts
 //	Should be declared volatile to make sure the compiler doesn't cache it.
 
-static volatile int globalCounter = 0 ;
+static volatile int globalCounter [8] ;
 
 
 /*
@@ -55,10 +50,14 @@ static volatile int globalCounter = 0 ;
  *********************************************************************************
  */
 
-void myInterrupt (void)
-{
-  ++globalCounter ;
-}
+void myInterrupt0 (void) { ++globalCounter [0] ; }
+void myInterrupt1 (void) { ++globalCounter [1] ; }
+void myInterrupt2 (void) { ++globalCounter [2] ; }
+void myInterrupt3 (void) { ++globalCounter [3] ; }
+void myInterrupt4 (void) { ++globalCounter [4] ; }
+void myInterrupt5 (void) { ++globalCounter [5] ; }
+void myInterrupt6 (void) { ++globalCounter [6] ; }
+void myInterrupt7 (void) { ++globalCounter [7] ; }
 
 
 /*
@@ -69,30 +68,42 @@ void myInterrupt (void)
 
 int main (void)
 {
-  int myCounter = 0 ;
+  int gotOne, pin ;
+  int myCounter [8] ;
 
-  if (wiringPiSetup () < 0)
-  {
-    fprintf (stderr, "Unable to setup wiringPi: %s\n", strerror (errno)) ;
-    return 1 ;
-  }
+  for (pin = 0 ; pin < 8 ; ++pin) 
+    globalCounter [pin] = myCounter [pin] = 0 ;
 
-  if (wiringPiISR (BUTTON_PIN, INT_EDGE_FALLING, &myInterrupt) < 0)
-  {
-    fprintf (stderr, "Unable to setup ISR: %s\n", strerror (errno)) ;
-    return 1 ;
-  }
+  wiringPiSetup () ;
 
+  wiringPiISR (0, INT_EDGE_FALLING, &myInterrupt0) ;
+  wiringPiISR (1, INT_EDGE_FALLING, &myInterrupt1) ;
+  wiringPiISR (2, INT_EDGE_FALLING, &myInterrupt2) ;
+  wiringPiISR (3, INT_EDGE_FALLING, &myInterrupt3) ;
+  wiringPiISR (4, INT_EDGE_FALLING, &myInterrupt4) ;
+  wiringPiISR (5, INT_EDGE_FALLING, &myInterrupt5) ;
+  wiringPiISR (6, INT_EDGE_FALLING, &myInterrupt6) ;
+  wiringPiISR (7, INT_EDGE_FALLING, &myInterrupt7) ;
 
   for (;;)
   {
+    gotOne = 0 ;
     printf ("Waiting ... ") ; fflush (stdout) ;
 
-    while (myCounter == globalCounter)
-      delay (100) ;
-
-    printf (" Done. counter: %5d\n", globalCounter) ;
-    myCounter = globalCounter ;
+    for (;;)
+    {
+      for (pin = 0 ; pin < 8 ; ++pin)
+      {
+	if (globalCounter [pin] != myCounter [pin])
+	{
+	  printf (" Int on pin %d: Counter: %5d\n", pin, globalCounter [pin]) ;
+	  myCounter [pin] = globalCounter [pin] ;
+	  ++gotOne ;
+	}
+      }
+      if (gotOne != 0)
+	break ;
+    }
   }
 
   return 0 ;

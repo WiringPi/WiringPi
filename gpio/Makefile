@@ -30,20 +30,20 @@ INCLUDE	= -I/usr/local/include
 CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 
 LDFLAGS	= -L/usr/local/lib
-LIBS    = -lwiringPi -lpthread -lm
+LIBS    = -lwiringPi -lwiringPiDev -lpthread -lm
 
 # May not need to  alter anything below this line
 ###############################################################################
 
-SRC	=	gpio.c
+SRC	=	gpio.c extensions.c
 
 OBJ	=	$(SRC:.c=.o)
 
 all:		gpio
 
-gpio:	gpio.o
+gpio:	$(OBJ)
 	@echo [Link]
-	@$(CC) -o $@ gpio.o $(LDFLAGS) $(LIBS)
+	@$(CC) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
 	
 .c.o:
 	@echo [Compile] $<
@@ -51,7 +51,8 @@ gpio:	gpio.o
 
 .PHONEY:	clean
 clean:
-	rm -f $(OBJ) gpio *~ core tags *.bak
+	@echo "[Clean]"
+	@rm -f $(OBJ) gpio *~ core tags *.bak
 
 .PHONEY:	tags
 tags:	$(SRC)
@@ -78,3 +79,6 @@ depend:
 	makedepend -Y $(SRC)
 
 # DO NOT DELETE
+
+gpio.o: extensions.h
+extensions.o: extensions.h
