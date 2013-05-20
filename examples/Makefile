@@ -38,7 +38,7 @@ LDLIBS    = -lwiringPi -lwiringPiDev -lpthread -lm
 SRC	=	blink.c blink8.c blink12.c					\
 		pwm.c								\
 		speed.c wfi.c isr.c isr-osc.c					\
-		lcd.c clock.c							\
+		lcd.c lcd-adafruit.c clock.c					\
 		nes.c								\
 		softPwm.c softTone.c 						\
 		delayTest.c serialRead.c serialTest.c okLed.c ds1302.c		\
@@ -74,6 +74,10 @@ speed:	speed.o
 lcd:	lcd.o
 	@echo [link]
 	@$(CC) -o $@ lcd.o $(LDFLAGS) $(LDLIBS)
+
+lcd-adafruit:	lcd-adafruit.o
+	@echo [link]
+	@$(CC) -o $@ lcd-adafruit.o $(LDFLAGS) $(LDLIBS)
 
 clock:	clock.o
 	@echo [link]

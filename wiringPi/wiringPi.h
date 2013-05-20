@@ -21,6 +21,9 @@
  ***********************************************************************
  */
 
+#ifndef	__WIRING_PI_H__
+#define	__WIRING_PI_H__
+
 // Handy defines
 
 // Deprecated
@@ -175,4 +178,6 @@ extern unsigned int micros            (void) ;
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

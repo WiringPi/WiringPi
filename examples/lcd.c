@@ -65,30 +65,58 @@ static unsigned char newChar [8] =
 } ;
 
 
+// Global lcd handle:
+
+static int lcdHandle ;
+
+/*
+ * usage:
+ *********************************************************************************
+ */
+
 int usage (const char *progName)
 {
   fprintf (stderr, "Usage: %s bits cols rows\n", progName) ;
   return EXIT_FAILURE ;
 }
 
+
+/*
+ * scrollMessage:
+ *********************************************************************************
+ */
+
 static const char *message =
   "                    "
   "Wiring Pi by Gordon Henderson. HTTP://WIRINGPI.COM/"
   "                    " ;
 
-void scrollMessage (int lcd, int line, int width)
+void scrollMessage (int line, int width)
 {
   char buf [32] ;
   static int position = 0 ;
+  static int timer = 0 ;
+
+  if (millis () < timer)
+    return ;
+
+  timer = millis () + 200 ;
 
   strncpy (buf, &message [position], width) ;
   buf [width] = 0 ;
-  lcdPosition (lcd, 0, line) ;
-  lcdPuts (lcd, buf) ;
+  lcdPosition (lcdHandle, 0, line) ;
+  lcdPuts     (lcdHandle, buf) ;
 
   if (++position == (strlen (message) - width))
     position = 0 ;
 }
+
+
+/*
+ * pingPong:
+ *	Bounce a character - only on 4-line displays
+ *********************************************************************************
+ */
 
 static void pingPong (int lcd, int cols)
 {
@@ -98,13 +126,13 @@ static void pingPong (int lcd, int cols)
   if (dir == 0)		// Setup
   {
     dir = 1 ;
-    lcdPosition (lcd, 0, 3) ;
-    lcdPutchar (lcd, '*') ;
+    lcdPosition (lcdHandle, 0, 3) ;
+    lcdPutchar  (lcdHandle, '*') ;
     return ;
   }
 
-  lcdPosition (lcd, position, 3) ;
-  lcdPutchar (lcd, ' ') ;
+  lcdPosition (lcdHandle, position, 3) ;
+  lcdPutchar (lcdHandle, ' ') ;
   position += dir ;
 
   if (position == cols)
@@ -119,17 +147,27 @@ static void pingPong (int lcd, int cols)
     ++position ;
   }
 
-  lcdPosition (lcd, position, 3) ;
-  lcdPutchar (lcd, '#') ;
+  lcdPosition (lcdHandle, position, 3) ;
+  lcdPutchar  (lcdHandle, '#') ;
 }
 
 
+/*
+ * waitForEnter:
+ *********************************************************************************
+ */
 
 static void waitForEnter (void)
 {
   printf ("Press ENTER to continue: ") ;
   (void)fgetc (stdin) ;
 }
+
+
+/*
+ * The works
+ *********************************************************************************
+ */
 
 int main (int argc, char *argv[])
 {
@@ -167,67 +205,60 @@ int main (int argc, char *argv[])
   wiringPiSetup () ;
 
   if (bits == 4)
-    lcd = lcdInit (rows, cols, 4, 11,10, 4,5,6,7,0,0,0,0) ;
+    lcdHandle = lcdInit (rows, cols, 4, 11,10, 4,5,6,7,0,0,0,0) ;
   else
-    lcd = lcdInit (rows, cols, 8, 11,10, 0,1,2,3,4,5,6,7) ;
+    lcdHandle = lcdInit (rows, cols, 8, 11,10, 0,1,2,3,4,5,6,7) ;
 
-  if (lcd < 0)
+  if (lcdHandle < 0)
   {
     fprintf (stderr, "%s: lcdInit failed\n", argv [0]) ;
     return -1 ;
   }
 
-  lcdPosition (lcd, 0, 0) ; lcdPuts (lcd, "Gordon Henderson") ;
+  lcdPosition (lcdHandle, 0, 0) ; lcdPuts (lcdHandle, "Gordon Henderson") ;
+  lcdPosition (lcdHandle, 0, 1) ; lcdPuts (lcdHandle, "  wiringpi.com  ") ;
+
+  waitForEnter () ;
 
   if (rows > 1)
   {
-    lcdPosition (lcd, 0, 1) ;
-    for (i = 0 ; i < (cols - 1) ; ++i)
-      lcdPutchar (lcd, '*') ;
-    lcdPutchar (lcd, '2') ;
+    lcdPosition (lcdHandle, 0, 1) ; lcdPuts (lcdHandle, "  wiringpi.com  ") ;
 
     if (rows == 4)
     {
-      lcdPosition (lcd, 0, 2) ;
+      lcdPosition (lcdHandle, 0, 2) ;
       for (i = 0 ; i < ((cols - 1) / 2) ; ++i)
-        lcdPuts (lcd, "=-") ;
-      lcdPuts (lcd, "=3") ;
+        lcdPuts (lcdHandle, "=-") ;
+      lcdPuts (lcdHandle, "=3") ;
 
-      lcdPosition (lcd, 0, 3) ;
+      lcdPosition (lcdHandle, 0, 3) ;
       for (i = 0 ; i < ((cols - 1) / 2) ; ++i)
-        lcdPuts (lcd, "-=") ;
-      lcdPuts (lcd, "-4") ;
+        lcdPuts (lcdHandle, "-=") ;
+      lcdPuts (lcdHandle, "-4") ;
     }
   }
 
-  sleep (2) ;
+  waitForEnter () ;
 
-  lcdPosition (lcd, 0, 0) ; lcdPuts (lcd, "  wiringpi.com  ") ;
+  lcdCharDef  (lcdHandle, 2, newChar) ;
 
+  lcdClear    (lcdHandle) ;
+  lcdPosition (lcdHandle, 0, 0) ;
+  lcdPuts     (lcdHandle, "User Char: ") ;
+  lcdPutchar  (lcdHandle, 2) ;
+
+  lcdCursor      (lcdHandle, TRUE) ;
+  lcdCursorBlink (lcdHandle, TRUE) ;
 
   waitForEnter () ;
 
-  lcdCharDef  (lcd, 2, newChar) ;
-
-  lcdClear    (lcd) ;
-  lcdPosition (lcd, 0, 0) ;
-  lcdPuts     (lcd, "User Char: ") ;
-  lcdPutchar  (lcd, 2) ;
-
-  lcdCursor      (lcd, TRUE) ;
-  lcdCursorBlink (lcd, TRUE) ;
-
-  waitForEnter () ;
-
-  lcdCursor      (lcd, FALSE) ;
-  lcdCursorBlink (lcd, FALSE) ;
-
+  lcdCursor      (lcdHandle, FALSE) ;
+  lcdCursorBlink (lcdHandle, FALSE) ;
+  lcdClear       (lcdHandle) ;
 
   for (;;)
   {
-    delay (250) ;
-
-    scrollMessage (lcd, 0, cols) ;
+    scrollMessage (0, cols) ;
     
     if (rows == 1)
       continue ;
@@ -237,16 +268,16 @@ int main (int argc, char *argv[])
 
     sprintf (buf, "%02d:%02d:%02d", t->tm_hour, t->tm_min, t->tm_sec) ;
 
-    lcdPosition (lcd, (cols - 8) / 2, 1) ;
-    lcdPuts     (lcd, buf) ;
+    lcdPosition (lcdHandle, (cols - 8) / 2, 1) ;
+    lcdPuts     (lcdHandle, buf) ;
 
     if (rows == 2)
       continue ;
 
     sprintf (buf, "%02d/%02d/%04d", t->tm_mday, t->tm_mon + 1, t->tm_year+1900) ;
 
-    lcdPosition (lcd, (cols - 10) / 2, 2) ;
-    lcdPuts     (lcd, buf) ;
+    lcdPosition (lcdHandle, (cols - 10) / 2, 2) ;
+    lcdPuts     (lcdHandle, buf) ;
 
     pingPong (lcd, cols) ;
   }

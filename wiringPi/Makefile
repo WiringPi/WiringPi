@@ -47,8 +47,10 @@ SRC	=	wiringPi.c						\
 		piHiPri.c piThread.c					\
 		wiringPiSPI.c wiringPiI2C.c				\
 		softPwm.c softTone.c					\
-		mcp23s08.c mcp23008.c					\
-		mcp23s17.c mcp23017.c sr595.c pcf8574.c			\
+		mcp23008.c mcp23016.c mcp23017.c			\
+		mcp23s08.c mcp23s17.c					\
+		sr595.c							\
+		pcf8574.c pcf8591.c					\
 		mcp3002.c mcp4802.c mcp3422.c				\
 		drc.c
 
@@ -95,6 +97,7 @@ install-headers:
 	@install -m 0644 wiringPiSPI.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 wiringPiI2C.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 mcp23008.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 mcp23016.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 mcp23017.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 mcp23s08.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 mcp23s17.h		$(DESTDIR)$(PREFIX)/include
@@ -103,6 +106,7 @@ install-headers:
 	@install -m 0644 mcp3422.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 sr595.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 pcf8574.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 pcf8591.h		$(DESTDIR)$(PREFIX)/include
 
 .PHONEY:	install
 install:	$(DYNAMIC) install-headers
@@ -129,6 +133,7 @@ uninstall:
 	@rm -f $(DESTDIR)$(PREFIX)/include/wiringPiSPI.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/wiringPiI2C.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp23008.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/mcp23016.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp23017.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp23s08.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp23s17.h
@@ -137,6 +142,7 @@ uninstall:
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp3422.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/sr595.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/pcf8574.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/pcf8591.h
 	@rm -f $(DESTDIR)$(PREFIX)/lib/libwiringPi.*
 	@ldconfig
 
@@ -156,12 +162,14 @@ wiringPiSPI.o: wiringPi.h wiringPiSPI.h
 wiringPiI2C.o: wiringPi.h wiringPiI2C.h
 softPwm.o: wiringPi.h softPwm.h
 softTone.o: wiringPi.h softTone.h
-mcp23s08.o: wiringPi.h wiringPiSPI.h mcp23x0817.h mcp23s08.h
 mcp23008.o: wiringPi.h wiringPiI2C.h mcp23x0817.h mcp23008.h
-mcp23s17.o: wiringPi.h wiringPiSPI.h mcp23x0817.h mcp23s17.h
+mcp23016.o: wiringPi.h wiringPiI2C.h mcp23016.h mcp23016reg.h
 mcp23017.o: wiringPi.h wiringPiI2C.h mcp23x0817.h mcp23017.h
+mcp23s08.o: wiringPi.h wiringPiSPI.h mcp23x0817.h mcp23s08.h
+mcp23s17.o: wiringPi.h wiringPiSPI.h mcp23x0817.h mcp23s17.h
 sr595.o: wiringPi.h sr595.h
 pcf8574.o: wiringPi.h wiringPiI2C.h pcf8574.h
+pcf8591.o: wiringPi.h wiringPiI2C.h pcf8591.h
 mcp3002.o: wiringPi.h wiringPiSPI.h mcp3002.h
 mcp4802.o: wiringPi.h wiringPiSPI.h mcp4802.h
 mcp3422.o: wiringPi.h wiringPiI2C.h mcp3422.h

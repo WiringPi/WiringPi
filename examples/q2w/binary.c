@@ -1,6 +1,7 @@
 /*
- * rht03.c:
- *	Driver for the MaxDetect series sensors
+ * binary.c:
+ *      Using the Quick 2 wire 16-bit GPIO expansion board to output
+ *	a binary counter.
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -23,42 +24,56 @@
  */
 
 #include <stdio.h>
-
 #include <wiringPi.h>
-#include <maxdetect.h>
+#include <mcp23017.h>
 
-#define	RHT03_PIN	0
-
-/*
- ***********************************************************************
- * The main program
- ***********************************************************************
- */
+#define	Q2W_BASE	100
 
 int main (void)
 {
-  int temp, rh ;
-  int newTemp, newRh ;
+  int i, bit ;
 
-  temp = rh = newTemp = newRh = 0 ;
+// Enable the on-goard GPIO
 
   wiringPiSetup () ;
-  piHiPri       (55) ;
+
+// Add in the mcp23017 on the q2w board
+
+  mcp23017Setup (Q2W_BASE, 0x20) ;
+
+  printf ("Raspberry Pi - quite2Wire MCP23017 Test\n") ;
+
+// On-board button Input:
+
+  pinMode (0, INPUT) ;
+
+// First 10 pins on q2w board as outputs:
+
+  for (i = 0 ; i < 10 ; ++i)
+    pinMode (Q2W_BASE + i, OUTPUT) ;
+
+// Last pin as an input with the internal pull-up enabled
+
+  pinMode         (Q2W_BASE + 15, INPUT) ;
+  pullUpDnControl (Q2W_BASE + 15, PUD_UP) ;
+
+// Loop, outputting a binary number,
+//	Go faster with the button, or stop if the
+//	on-board button is pushed
 
   for (;;)
   {
-    delay (100) ;
-
-    if (!readRHT03 (RHT03_PIN, &newTemp, &newRh))
-      continue ;
-
-    if ((temp != newTemp) || (rh != newRh))
+    for (i = 0 ; i < 1024 ; ++i)
     {
-      temp = newTemp ;
-      rh   = newRh ;
-      printf ("Temp: %5.1f, RH: %5.1f%%\n", temp / 10.0, rh / 10.0) ;
+      for (bit = 0 ; bit < 10 ; ++bit)
+        digitalWrite (Q2W_BASE + bit, i & (1 << bit)) ;
+
+      while (digitalRead (0) == HIGH)		// While pushed
+	delay (1) ;
+
+      if (digitalRead (Q2W_BASE + 15) == HIGH)	// Not Pushed
+	delay (100) ;
     }
   }
-
   return 0 ;
 }

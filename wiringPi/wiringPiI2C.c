@@ -150,7 +150,7 @@ int wiringPiI2CReadReg16 (int fd, int reg)
   if (i2c_smbus_access (fd, I2C_SMBUS_READ, reg, I2C_SMBUS_WORD_DATA, &data))
     return -1 ;
   else
-    return data.byte & 0xFF ;
+    return data.byte & 0xFFFF ;
 }
 
 

@@ -1,6 +1,6 @@
 /*
- * rht03.c:
- *	Driver for the MaxDetect series sensors
+ * volts.c:
+ *	Read in all 4 analogs on the Q2W analog board.
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -23,41 +23,39 @@
  */
 
 #include <stdio.h>
-
 #include <wiringPi.h>
-#include <maxdetect.h>
+#include <pcf8591.h>
 
-#define	RHT03_PIN	0
-
-/*
- ***********************************************************************
- * The main program
- ***********************************************************************
- */
+#define	LED		1
+#define Q2W_ABASE       120
 
 int main (void)
 {
-  int temp, rh ;
-  int newTemp, newRh ;
+  int value, pin ;
 
-  temp = rh = newTemp = newRh = 0 ;
+// Enable the on-goard GPIO
 
   wiringPiSetup () ;
-  piHiPri       (55) ;
+
+  pinMode (LED, OUTPUT) ;	// On-board LED
+
+// Add in the pcf8591 on the q2w board
+
+  pcf8591Setup (Q2W_ABASE, 0x48) ;
+
+  printf ("Raspberry Pi - Quick2Wire Voltmeter\n") ;
 
   for (;;)
   {
-    delay (100) ;
-
-    if (!readRHT03 (RHT03_PIN, &newTemp, &newRh))
-      continue ;
-
-    if ((temp != newTemp) || (rh != newRh))
+    for (pin = 0 ; pin < 4 ; ++pin)
     {
-      temp = newTemp ;
-      rh   = newRh ;
-      printf ("Temp: %5.1f, RH: %5.1f%%\n", temp / 10.0, rh / 10.0) ;
+      value = analogRead  (Q2W_ABASE + pin) ;
+      printf ("  %5.2f", (double)value * 3.3 / 255.0) ;
     }
+    printf ("\r") ; fflush (stdout) ;
+
+    delay (100) ;
+    digitalWrite (LED, !digitalRead (LED)) ;	// Flicker the LED
   }
 
   return 0 ;

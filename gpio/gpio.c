@@ -895,19 +895,13 @@ void doRead (int argc, char *argv [])
 
 void doAread (int argc, char *argv []) 
 {
-  int pin, val ;
-
   if (argc != 3)
   {
     fprintf (stderr, "Usage: %s aread pin\n", argv [0]) ;
     exit (1) ;
   }
 
-  pin = atoi (argv [2]) ;
-
-  val = analogRead (pin) ;
-
-  printf ("%s\n", val == 0 ? "0" : "1") ;
+  printf ("%d\n", analogRead (atoi (argv [2]))) ;
 }
 
 

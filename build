@@ -15,17 +15,19 @@ check-make-ok()
 
 if [ x$1 = "xclean" ]; then
   cd wiringPi
-  echo -n "wiringPi:  "	; make clean
+  echo -n "wiringPi:   "	; make clean
   cd ../devLib
-  echo -n "DevLib:    "	; make clean
+  echo -n "DevLib:     "	; make clean
   cd ../gpio
-  echo -n "gpio:      "	; make clean
+  echo -n "gpio:       "	; make clean
   cd ../examples
-  echo -n "Examples:  "	; make clean
+  echo -n "Examples:   "	; make clean
   cd Gertboard
-  echo -n "Gertboard: "	; make clean
+  echo -n "Gertboard:  "	; make clean
   cd ../PiFace
-  echo -n "PiFace:    "	; make clean
+  echo -n "PiFace:     "	; make clean
+  cd ../q2w
+  echo -n "Quick2Wire: "	; make clean
   exit
 fi
 
@@ -78,3 +80,8 @@ fi
 
 echo
 echo All Done.
+echo ""
+echo "NOTE: This is wiringPi v2, and if you need to use the lcd, Piface,"
+echo "  Gertboard, MaxDetext, etc. routines then you must change your"
+echo "  compile scripts to add -lwiringPiDev"
+echo ""

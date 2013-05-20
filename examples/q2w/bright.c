@@ -1,6 +1,6 @@
 /*
- * rht03.c:
- *	Driver for the MaxDetect series sensors
+ * bright.c:
+ *	Vary the Q2W LED brightness with the analog card
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -23,41 +23,36 @@
  */
 
 #include <stdio.h>
-
 #include <wiringPi.h>
-#include <maxdetect.h>
+#include <pcf8591.h>
 
-#define	RHT03_PIN	0
-
-/*
- ***********************************************************************
- * The main program
- ***********************************************************************
- */
+#define	LED		  1
+#define Q2W_ABASE       120
 
 int main (void)
 {
-  int temp, rh ;
-  int newTemp, newRh ;
+  int value ;
 
-  temp = rh = newTemp = newRh = 0 ;
+// Enable the on-goard GPIO
 
   wiringPiSetup () ;
-  piHiPri       (55) ;
+
+// Add in the pcf8591 on the q2w board
+
+  pcf8591Setup (Q2W_ABASE, 0x48) ;
+
+  printf ("Raspberry Pi - Quick2Wire Analog Test\n") ;
+
+// Setup the LED
+
+  pinMode  (LED, PWM_OUTPUT) ;
+  pwmWrite (LED, 0) ;
 
   for (;;)
   {
-    delay (100) ;
-
-    if (!readRHT03 (RHT03_PIN, &newTemp, &newRh))
-      continue ;
-
-    if ((temp != newTemp) || (rh != newRh))
-    {
-      temp = newTemp ;
-      rh   = newRh ;
-      printf ("Temp: %5.1f, RH: %5.1f%%\n", temp / 10.0, rh / 10.0) ;
-    }
+    value = analogRead  (Q2W_ABASE + 0) ;
+    pwmWrite (LED, value * 4) ;
+    delay (10) ;
   }
 
   return 0 ;

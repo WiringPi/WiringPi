@@ -1,6 +1,6 @@
 /*
- * rht03.c:
- *	Driver for the MaxDetect series sensors
+ * blink-io.c:
+ *	Simple "blink" test for the Quick2Wire 16-pin IO board.
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -23,41 +23,38 @@
  */
 
 #include <stdio.h>
-
 #include <wiringPi.h>
-#include <maxdetect.h>
+#include <mcp23017.h>
 
-#define	RHT03_PIN	0
-
-/*
- ***********************************************************************
- * The main program
- ***********************************************************************
- */
+#define	LED		1
+#define	Q2W_BASE	100
 
 int main (void)
 {
-  int temp, rh ;
-  int newTemp, newRh ;
 
-  temp = rh = newTemp = newRh = 0 ;
+// Enable the on-goard GPIO
 
   wiringPiSetup () ;
-  piHiPri       (55) ;
+
+// Add in the mcp23017 on the q2w board
+
+  mcp23017Setup (Q2W_BASE, 0x20) ;
+
+  printf ("Raspberry Pi - Quick2Wire MCP23017 Blink Test\n") ;
+
+// Blink the on-board LED as well as one on the mcp23017
+
+  pinMode (LED, OUTPUT) ;
+  pinMode (Q2W_BASE + 0, OUTPUT) ;
 
   for (;;)
   {
-    delay (100) ;
-
-    if (!readRHT03 (RHT03_PIN, &newTemp, &newRh))
-      continue ;
-
-    if ((temp != newTemp) || (rh != newRh))
-    {
-      temp = newTemp ;
-      rh   = newRh ;
-      printf ("Temp: %5.1f, RH: %5.1f%%\n", temp / 10.0, rh / 10.0) ;
-    }
+    digitalWrite (LED,          HIGH) ;
+    digitalWrite (Q2W_BASE + 0, HIGH) ;
+    delay (500) ;
+    digitalWrite (LED,          LOW) ;
+    digitalWrite (Q2W_BASE + 0, LOW) ;
+    delay (500) ;
   }
 
   return 0 ;

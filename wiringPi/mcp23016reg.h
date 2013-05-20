@@ -1,7 +1,9 @@
 /*
- * pcf8574.h:
- *	Extend wiringPi with the PCF8574 I2C GPIO expander chip
- *	Copyright (c) 2013 Gordon Henderson
+ * mcp23016:
+ *	Copyright (c) 2012-2013 Gordon Henderson
+ *
+ *	Header file for code using the MCP23016 GPIO expander
+ *	chip.
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -22,12 +24,25 @@
  ***********************************************************************
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+// MCP23016 Registers
 
-extern int pcf8574Setup (const int pinBase, const int i2cAddress) ;
+#define	MCP23016_GP0		0x00
+#define	MCP23016_GP1		0x01
+#define	MCP23016_OLAT0		0x02
+#define	MCP23016_OLAT1		0x03
+#define	MCP23016_IPOL0		0x04
+#define	MCP23016_IPOL1		0x05
+#define	MCP23016_IODIR0		0x06
+#define	MCP23016_IODIR1		0x07
+#define	MCP23016_INTCAP0	0x08
+#define	MCP23016_INTCAP1	0x09
+#define	MCP23016_IOCON0		0x0A
+#define	MCP23016_IOCON1		0x0B
 
-#ifdef __cplusplus
-}
-#endif
+// Bits in the IOCON register
+
+#define	IOCON_IARES	0x01
+
+// Default initialisation mode
+
+#define	IOCON_INIT	0

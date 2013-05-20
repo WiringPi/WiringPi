@@ -1,6 +1,6 @@
 /*
- * pcf8574.c:
- *	Extend wiringPi with the PCF8574 I2C GPIO expander chip
+ * mcp23016.c:
+ *	Extend wiringPi with the MCP 23016 I2C GPIO expander chip
  *	Copyright (c) 2013 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
@@ -27,34 +27,40 @@
 
 #include "wiringPi.h"
 #include "wiringPiI2C.h"
+#include "mcp23016.h"
 
-#include "pcf8574.h"
+#include "mcp23016reg.h"
 
 
 /*
  * myPinMode:
- *	The PCF8574 is an odd chip - the pins are effectively bi-directional,
- *	however the pins should be drven high when used as an input pin...
- *	So, we're effectively copying digitalWrite...
  *********************************************************************************
  */
 
 static void myPinMode (struct wiringPiNodeStruct *node, int pin, int mode)
 {
-  int bit, old ;
+  int mask, old, reg ;
 
-  bit  = 1 << ((pin - node->pinBase) & 7) ;
+  pin -= node->pinBase ;
 
-  old = node->data2 ;
-  if (mode == OUTPUT)
-    old &= (~bit) ;	// Write bit to 0
+  if (pin < 8)		// Bank A
+    reg  = MCP23016_IODIR0 ;
   else
-    old |=   bit ;	// Write bit to 1
+  {
+    reg  = MCP23016_IODIR1 ;
+    pin &= 0x07 ;
+  }
 
-  wiringPiI2CWrite (node->fd, old) ;
-  node->data2 = old ;
+  mask = 1 << pin ;
+  old  = wiringPiI2CReadReg8 (node->fd, reg) ;
+
+  if (mode == OUTPUT)
+    old &= (~mask) ;
+  else
+    old |=   mask ;
+
+  wiringPiI2CWriteReg8 (node->fd, reg, old) ;
 }
-
 
 
 /*
@@ -66,16 +72,34 @@ static void myDigitalWrite (struct wiringPiNodeStruct *node, int pin, int value)
 {
   int bit, old ;
 
-  bit  = 1 << ((pin - node->pinBase) & 7) ;
+  pin -= node->pinBase ;	// Pin now 0-15
 
-  old = node->data2 ;
-  if (value == LOW)
-    old &= (~bit) ;
-  else
-    old |=   bit ;
+  bit = 1 << (pin & 7) ;
 
-  wiringPiI2CWrite (node->fd, old) ;
-  node->data2 = old ;
+  if (pin < 8)			// Bank A
+  {
+    old = node->data2 ;
+
+    if (value == LOW)
+      old &= (~bit) ;
+    else
+      old |=   bit ;
+
+    wiringPiI2CWriteReg8 (node->fd, MCP23016_GP0, old) ;
+    node->data2 = old ;
+  }
+  else				// Bank B
+  {
+    old = node->data3 ;
+
+    if (value == LOW)
+      old &= (~bit) ;
+    else
+      old |=   bit ;
+
+    wiringPiI2CWriteReg8 (node->fd, MCP23016_GP1, old) ;
+    node->data3 = old ;
+  }
 }
 
 
@@ -86,10 +110,20 @@ static void myDigitalWrite (struct wiringPiNodeStruct *node, int pin, int value)
 
 static int myDigitalRead (struct wiringPiNodeStruct *node, int pin)
 {
-  int mask, value ;
+  int mask, value, gpio ;
 
-  mask  = 1 << ((pin - node->pinBase) & 7) ;
-  value = wiringPiI2CRead (node->fd) ;
+  pin -= node->pinBase ;
+
+  if (pin < 8)		// Bank A
+    gpio  = MCP23016_GP0 ;
+  else
+  {
+    gpio  = MCP23016_GP1 ;
+    pin  &= 0x07 ;
+  }
+
+  mask  = 1 << pin ;
+  value = wiringPiI2CReadReg8 (node->fd, gpio) ;
 
   if ((value & mask) == 0)
     return LOW ;
@@ -99,14 +133,14 @@ static int myDigitalRead (struct wiringPiNodeStruct *node, int pin)
 
 
 /*
- * pcf8574Setup:
- *	Create a new instance of a PCF8574 I2C GPIO interface. We know it
- *	has 8 pins, so all we need to know here is the I2C address and the
+ * mcp23016Setup:
+ *	Create a new instance of an MCP23016 I2C GPIO interface. We know it
+ *	has 16 pins, so all we need to know here is the I2C address and the
  *	user-defined pin base.
  *********************************************************************************
  */
 
-int pcf8574Setup (const int pinBase, const int i2cAddress)
+int mcp23016Setup (const int pinBase, const int i2cAddress)
 {
   int fd ;
   struct wiringPiNodeStruct *node ;
@@ -114,13 +148,17 @@ int pcf8574Setup (const int pinBase, const int i2cAddress)
   if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
     return fd ;
 
-  node = wiringPiNewNode (pinBase, 8) ;
+  wiringPiI2CWriteReg8 (fd, MCP23016_IOCON0, IOCON_INIT) ;
+  wiringPiI2CWriteReg8 (fd, MCP23016_IOCON1, IOCON_INIT) ;
 
-  node->fd           = fd ;
-  node->pinMode      = myPinMode ;
-  node->digitalRead  = myDigitalRead ;
-  node->digitalWrite = myDigitalWrite ;
-  node->data2        = wiringPiI2CRead (fd) ;
+  node = wiringPiNewNode (pinBase, 16) ;
+
+  node->fd              = fd ;
+  node->pinMode         = myPinMode ;
+  node->digitalRead     = myDigitalRead ;
+  node->digitalWrite    = myDigitalWrite ;
+  node->data2           = wiringPiI2CReadReg8 (fd, MCP23016_OLAT0) ;
+  node->data3           = wiringPiI2CReadReg8 (fd, MCP23016_OLAT1) ;
 
   return 0 ;
 }

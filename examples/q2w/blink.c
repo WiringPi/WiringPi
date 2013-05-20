@@ -1,6 +1,6 @@
 /*
- * rht03.c:
- *	Driver for the MaxDetect series sensors
+ * blink.c:
+ *	Simple "blink" test for the Quick2Wire interface board.
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -23,41 +23,27 @@
  */
 
 #include <stdio.h>
-
 #include <wiringPi.h>
-#include <maxdetect.h>
 
-#define	RHT03_PIN	0
-
-/*
- ***********************************************************************
- * The main program
- ***********************************************************************
- */
+#define	LED	1
 
 int main (void)
 {
-  int temp, rh ;
-  int newTemp, newRh ;
 
-  temp = rh = newTemp = newRh = 0 ;
+// Enable the on-goard GPIO
 
   wiringPiSetup () ;
-  piHiPri       (55) ;
+
+  printf ("Raspberry Pi - Quick2Wire Mainboard LED Blink Test\n") ;
+
+  pinMode (LED, OUTPUT) ;
 
   for (;;)
   {
-    delay (100) ;
-
-    if (!readRHT03 (RHT03_PIN, &newTemp, &newRh))
-      continue ;
-
-    if ((temp != newTemp) || (rh != newRh))
-    {
-      temp = newTemp ;
-      rh   = newRh ;
-      printf ("Temp: %5.1f, RH: %5.1f%%\n", temp / 10.0, rh / 10.0) ;
-    }
+    digitalWrite (LED, HIGH) ;
+    delay (500) ;
+    digitalWrite (LED, LOW) ;
+    delay (500) ;
   }
 
   return 0 ;

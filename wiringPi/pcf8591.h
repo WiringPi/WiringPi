@@ -1,6 +1,6 @@
 /*
- * pcf8574.h:
- *	Extend wiringPi with the PCF8574 I2C GPIO expander chip
+ * pcf8591.h:
+ *	Extend wiringPi with the PCF8591 I2C GPIO Analog expander chip
  *	Copyright (c) 2013 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
@@ -26,7 +26,7 @@
 extern "C" {
 #endif
 
-extern int pcf8574Setup (const int pinBase, const int i2cAddress) ;
+extern int pcf8591Setup (const int pinBase, const int i2cAddress) ;
 
 #ifdef __cplusplus
 }

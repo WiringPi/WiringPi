@@ -36,10 +36,13 @@
 #include <wiringPi.h>
 
 #include <mcp23008.h>
+#include <mcp23016.h>
 #include <mcp23017.h>
 #include <mcp23s08.h>
 #include <mcp23s17.h>
 #include <sr595.h>
+#include <pcf8591.h>
+#include <pcf8574.h>
 
 #include "extensions.h"
 
@@ -117,9 +120,35 @@ static int doExtensionMcp23008 (char *progName, int pinBase, char *params)
 
 
 /*
+ * doExtensionMcp23016:
+ *	MCP230016- 16-bit I2C GPIO expansion chip
+ *	mcp23016:base:i2cAddr
+ *********************************************************************************
+ */
+
+static int doExtensionMcp23016 (char *progName, int pinBase, char *params)
+{
+  int i2c ;
+
+  if ((params = extractInt (progName, params, &i2c)) == NULL)
+    return FALSE ;
+
+  if ((i2c < 0x03) || (i2c > 0x77))
+  {
+    fprintf (stderr, "%s: i2c address (0x%X) out of range\n", progName, i2c) ;
+    return FALSE ;
+  }
+
+  mcp23016Setup (pinBase, i2c) ;
+
+  return TRUE ;
+}
+
+
+/*
  * doExtensionMcp23017:
- *	MCP23008 - 16-bit I2C GPIO expansion chip
- *	mcp23002:base:i2cAddr
+ *	MCP230017- 16-bit I2C GPIO expansion chip
+ *	mcp23017:base:i2cAddr
  *********************************************************************************
  */
 
@@ -211,6 +240,7 @@ static int doExtensionMcp23s17 (char *progName, int pinBase, char *params)
   return TRUE ;
 }
 
+
 /*
  * doExtensionSr595:
  *	Shift Register 74x595
@@ -249,6 +279,58 @@ static int doExtensionSr595 (char *progName, int pinBase, char *params)
 
 
 /*
+ * doExtensionPcf8574:
+ *	Digital IO (Crude!)
+ *	pcf8574:base:i2cAddr
+ *********************************************************************************
+ */
+
+static int doExtensionPcf8574 (char *progName, int pinBase, char *params)
+{
+  int i2c ;
+
+  if ((params = extractInt (progName, params, &i2c)) == NULL)
+    return FALSE ;
+
+  if ((i2c < 0x03) || (i2c > 0x77))
+  {
+    fprintf (stderr, "%s: i2c address (0x%X) out of range\n", progName, i2c) ;
+    return FALSE ;
+  }
+
+  pcf8574Setup (pinBase, i2c) ;
+
+  return TRUE ;
+}
+
+
+/*
+ * doExtensionPcf8591:
+ *	Analog IO
+ *	pcf8591:base:i2cAddr
+ *********************************************************************************
+ */
+
+static int doExtensionPcf8591 (char *progName, int pinBase, char *params)
+{
+  int i2c ;
+
+  if ((params = extractInt (progName, params, &i2c)) == NULL)
+    return FALSE ;
+
+  if ((i2c < 0x03) || (i2c > 0x77))
+  {
+    fprintf (stderr, "%s: i2c address (0x%X) out of range\n", progName, i2c) ;
+    return FALSE ;
+  }
+
+  pcf8591Setup (pinBase, i2c) ;
+
+  return TRUE ;
+}
+
+
+/*
  * Function list
  *********************************************************************************
  */
@@ -256,10 +338,13 @@ static int doExtensionSr595 (char *progName, int pinBase, char *params)
 struct extensionFunctionStruct extensionFunctions [] = 
 {
   { "mcp23008",		&doExtensionMcp23008 	},
+  { "mcp23016",		&doExtensionMcp23016 	},
   { "mcp23017",		&doExtensionMcp23017 	},
   { "mcp23s08",		&doExtensionMcp23s08 	},
   { "mcp23s17",		&doExtensionMcp23s17 	},
-  { "sr595",		&doExtensionSr595	 },
+  { "sr595",		&doExtensionSr595	},
+  { "pcf8574",		&doExtensionPcf8574	},
+  { "pcf8591",		&doExtensionPcf8591	},
   { NULL,		NULL		 	},
 } ;
 

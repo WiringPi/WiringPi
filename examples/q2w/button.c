@@ -1,6 +1,6 @@
 /*
- * rht03.c:
- *	Driver for the MaxDetect series sensors
+ * button.c:
+ *	Simple button test for the Quick2Wire interface board.
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -23,41 +23,40 @@
  */
 
 #include <stdio.h>
-
 #include <wiringPi.h>
-#include <maxdetect.h>
 
-#define	RHT03_PIN	0
-
-/*
- ***********************************************************************
- * The main program
- ***********************************************************************
- */
+#define	BUTTON	0
+#define	LED1	1
+#define	LED2	7
 
 int main (void)
 {
-  int temp, rh ;
-  int newTemp, newRh ;
 
-  temp = rh = newTemp = newRh = 0 ;
+// Enable the on-goard GPIO
 
   wiringPiSetup () ;
-  piHiPri       (55) ;
+
+  printf ("Raspberry Pi - Quick2Wire Mainboard Button & LED Test\n") ;
+
+  pinMode (BUTTON, INPUT) ;
+  pinMode (LED1, OUTPUT) ;
+  pinMode (LED2, OUTPUT) ;
+
+  digitalWrite (LED1, HIGH) ;		// On-board LED on
+  digitalWrite (LED2, LOW) ;		// 2nd LED off
 
   for (;;)
   {
-    delay (100) ;
-
-    if (!readRHT03 (RHT03_PIN, &newTemp, &newRh))
-      continue ;
-
-    if ((temp != newTemp) || (rh != newRh))
+    if (digitalRead (BUTTON) == HIGH)	// Swap LED states
     {
-      temp = newTemp ;
-      rh   = newRh ;
-      printf ("Temp: %5.1f, RH: %5.1f%%\n", temp / 10.0, rh / 10.0) ;
+      digitalWrite (LED1, LOW) ;
+      digitalWrite (LED2, HIGH) ;
+      while (digitalRead (BUTTON) == HIGH)
+	delay (1) ;
+      digitalWrite (LED1, HIGH) ;
+      digitalWrite (LED2, LOW) ;
     }
+    delay (1) ;
   }
 
   return 0 ;
