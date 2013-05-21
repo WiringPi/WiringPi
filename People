@@ -28,3 +28,6 @@ Xian Stannard
 
 Andre Crone
   Suggested the __WIRING_PI.H__ round wiringPi.h
+
+Rik Teerling
+  Pointing out some silly mistooks in the I2C code...

@@ -1,6 +1,7 @@
 /*
  * mcp3422.c:
  *	Extend wiringPi with the MCP3422 I2C ADC chip
+ *	Also works for the MCP3423 and MCP3224 (4 channel) chips
  *	Copyright (c) 2013 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
@@ -98,7 +99,7 @@ int myAnalogRead (struct wiringPiNodeStruct *node, int chan)
  *********************************************************************************
  */
 
-int mcp3422Setup (int pinBase, int i2cAddress, int channels, int sampleRate, int gain)
+int mcp3422Setup (int pinBase, int i2cAddress, int sampleRate, int gain)
 {
   int fd ;
   struct wiringPiNodeStruct *node ;
@@ -106,7 +107,7 @@ int mcp3422Setup (int pinBase, int i2cAddress, int channels, int sampleRate, int
   if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
     return fd ;
 
-  node = wiringPiNewNode (pinBase, channels) ;
+  node = wiringPiNewNode (pinBase, 4) ;
 
   node->data0      = sampleRate ;
   node->data1      = gain ;

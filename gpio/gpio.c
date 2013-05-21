@@ -48,7 +48,7 @@ extern int wiringPiDebug ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION		"2.05"
+#define	VERSION		"2.06"
 #define	I2CDETECT	"/usr/sbin/i2cdetect"
 
 static int wpMode ;

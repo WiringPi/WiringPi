@@ -1,6 +1,7 @@
 /*
- * mcp3422.c:
- *	Extend wiringPi with the MCP3422 I2C ADC chip
+ * mcp3004.c:
+ *	Extend wiringPi with the MCP3004 SPI Analog to Digital convertor
+ *	Copyright (c) 2012-2013 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -21,22 +22,11 @@
  ***********************************************************************
  */
 
-#define	MCP3422_SR_3_75	0
-#define	MCP3422_SR_15	1
-#define	MCP3422_SR_60	2
-#define	MCP3422_SR_240	3
-
-#define	MCP3422_GAIN_1	0
-#define	MCP3422_GAIN_2	1
-#define	MCP3422_GAIN_4	2
-#define	MCP3422_GAIN_8	3
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int mcp3422Setup (int pinBase, int i2cAddress, int sampleRate, int gain) ;
+extern int mcp3004Setup (int pinBase, int spiChannel) ;
 
 #ifdef __cplusplus
 }

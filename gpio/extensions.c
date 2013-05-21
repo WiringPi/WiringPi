@@ -43,6 +43,10 @@
 #include <sr595.h>
 #include <pcf8591.h>
 #include <pcf8574.h>
+#include <mcp3002.h>
+#include <mcp3004.h>
+#include <mcp4802.h>
+#include <mcp3422.h>
 
 #include "extensions.h"
 
@@ -331,6 +335,128 @@ static int doExtensionPcf8591 (char *progName, int pinBase, char *params)
 
 
 /*
+ * doExtensionMcp3002:
+ *	Analog IO
+ *	mcp3002:base:spiChan
+ *********************************************************************************
+ */
+
+static int doExtensionMcp3002 (char *progName, int pinBase, char *params)
+{
+  int spi ;
+
+  if ((params = extractInt (progName, params, &spi)) == NULL)
+    return FALSE ;
+
+  if ((spi < 0) || (spi > 1))
+  {
+    fprintf (stderr, "%s: SPI channel (%d) out of range\n", progName, spi) ;
+    return FALSE ;
+  }
+
+  mcp3002Setup (pinBase, spi) ;
+
+  return TRUE ;
+}
+
+
+/*
+ * doExtensionMcp3004:
+ *	Analog IO
+ *	mcp3004:base:spiChan
+ *********************************************************************************
+ */
+
+static int doExtensionMcp3004 (char *progName, int pinBase, char *params)
+{
+  int spi ;
+
+  if ((params = extractInt (progName, params, &spi)) == NULL)
+    return FALSE ;
+
+  if ((spi < 0) || (spi > 1))
+  {
+    fprintf (stderr, "%s: SPI channel (%d) out of range\n", progName, spi) ;
+    return FALSE ;
+  }
+
+  mcp3004Setup (pinBase, spi) ;
+
+  return TRUE ;
+}
+
+
+/*
+ * doExtensionMcp4802:
+ *	Analog IO
+ *	mcp4802:base:spiChan
+ *********************************************************************************
+ */
+
+static int doExtensionMcp4802 (char *progName, int pinBase, char *params)
+{
+  int spi ;
+
+  if ((params = extractInt (progName, params, &spi)) == NULL)
+    return FALSE ;
+
+  if ((spi < 0) || (spi > 1))
+  {
+    fprintf (stderr, "%s: SPI channel (%d) out of range\n", progName, spi) ;
+    return FALSE ;
+  }
+
+  mcp4802Setup (pinBase, spi) ;
+
+  return TRUE ;
+}
+
+
+/*
+ * doExtensionMcp3422:
+ *	Analog IO
+ *	mcp3422:base:i2cAddr
+ *********************************************************************************
+ */
+
+static int doExtensionMcp3422 (char *progName, int pinBase, char *params)
+{
+  int i2c, sampleRate, gain ;
+
+  if ((params = extractInt (progName, params, &i2c)) == NULL)
+    return FALSE ;
+
+  if ((i2c < 0x03) || (i2c > 0x77))
+  {
+    fprintf (stderr, "%s: i2c address (0x%X) out of range\n", progName, i2c) ;
+    return FALSE ;
+  }
+
+  if ((params = extractInt (progName, params, &sampleRate)) == NULL)
+    return FALSE ;
+
+  if ((sampleRate < 0) || (sampleRate > 3))
+  {
+    fprintf (stderr, "%s: sample rate (%d) out of range\n", progName, sampleRate) ;
+    return FALSE ;
+  }
+
+  if ((params = extractInt (progName, params, &gain)) == NULL)
+    return FALSE ;
+
+  if ((gain < 0) || (gain > 3))
+  {
+    fprintf (stderr, "%s: gain (%d) out of range\n", progName, gain) ;
+    return FALSE ;
+  }
+
+  mcp3422Setup (pinBase, i2c, sampleRate, gain) ;
+
+  return TRUE ;
+}
+
+
+/*
  * Function list
  *********************************************************************************
  */
@@ -345,6 +471,10 @@ struct extensionFunctionStruct extensionFunctions [] =
   { "sr595",		&doExtensionSr595	},
   { "pcf8574",		&doExtensionPcf8574	},
   { "pcf8591",		&doExtensionPcf8591	},
+  { "mcp3002",		&doExtensionMcp3002	},
+  { "mcp3004",		&doExtensionMcp3004	},
+  { "mcp4802",		&doExtensionMcp4802	},
+  { "mcp3422",		&doExtensionMcp3422	},
   { NULL,		NULL		 	},
 } ;
 
