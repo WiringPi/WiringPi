@@ -48,7 +48,7 @@ extern int wiringPiDebug ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION		"2.06"
+#define	VERSION		"2.07"
 #define	I2CDETECT	"/usr/sbin/i2cdetect"
 
 static int wpMode ;
@@ -239,6 +239,10 @@ static void doI2Cdetect (int argc, char *argv [])
 /*
  * doReadall:
  *	Read all the GPIO pins
+ *	We also want to use this to read the state of pins on an externally
+ *	connected device, so we need to do some fiddling with the internal
+ *	wiringPi node structures - since the gpio command can only use
+ *	one external device at a time, we'll use that to our advantage...
  *********************************************************************************
  */
 
@@ -268,27 +272,56 @@ static int wpiToPhys [64] =
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	// 47..63
 } ;
 
+
+/*
+ * doReadallExternal:
+ *	A relatively crude way to read the pins on an external device.
+ *	We don't know the input/output mode of pins, but we can tell
+ *	if it's an analog pin or a digital one...
+ *********************************************************************************
+ */
+
+static void doReadallExternal (void)
+{
+  int pin ;
+
+  printf ("+------+---------+--------+\n") ;
+  printf ("|  Pin | Digital | Analog |\n") ;
+  printf ("+------+---------+--------+\n") ;
+
+  for (pin = wiringPiNodes->pinBase ; pin <= wiringPiNodes->pinMax ; ++pin)
+    printf ("| %4d |  %4d   |  %4d  |\n", pin, digitalRead (pin), analogRead (pin)) ;
+
+  printf ("+------+---------+--------+\n") ;
+}
+
+
 static void doReadall (void)
 {
   int pin ;
 
-  printf ("+----------+-Rev%d-+------+--------+------+-------+\n", piBoardRev ()) ;
-  printf ("| wiringPi | GPIO | Phys | Name   | Mode | Value |\n") ;
-  printf ("+----------+------+------+--------+------+-------+\n") ;
-
-  for (pin = 0 ; pin < 64 ; ++pin)	// Crude, but effective
+  if (wiringPiNodes != NULL)	// External readall
+    doReadallExternal () ;
+  else
   {
-    if (wpiPinToGpio (pin) == -1)
-      continue ;
+    printf ("+----------+-Rev%d-+------+--------+------+-------+\n", piBoardRev ()) ;
+    printf ("| wiringPi | GPIO | Phys | Name   | Mode | Value |\n") ;
+    printf ("+----------+------+------+--------+------+-------+\n") ;
 
-    printf ("| %6d   | %3d  | %3d  | %s | %s | %s  |\n",
-	pin, wpiPinToGpio (pin), wpiToPhys [pin],
-	pinNames [pin], 
-	alts [getAlt (pin)], 
-	digitalRead (pin) == HIGH ? "High" : "Low ") ;
+    for (pin = 0 ; pin < 64 ; ++pin)	// Crude, but effective
+    {
+      if (wpiPinToGpio (pin) == -1)
+	continue ;
+
+      printf ("| %6d   | %3d  | %3d  | %s | %s | %s  |\n",
+	  pin, wpiPinToGpio (pin), wpiToPhys [pin],
+	  pinNames [pin], 
+	  alts [getAlt (pin)], 
+	  digitalRead (pin) == HIGH ? "High" : "Low ") ;
+    }
+
+    printf ("+----------+------+------+--------+------+-------+\n") ;
   }
-
-  printf ("+----------+------+------+--------+------+-------+\n") ;
 }
 
 
@@ -615,6 +648,24 @@ void doUnexportall (char *progName)
 
 
 /*
+ * doResetExternal:
+ *	Load readallExternal, we try to do this with an external device.
+ *********************************************************************************
+ */
+
+static void doResetExternal (void)
+{
+  int pin ;
+
+  for (pin = wiringPiNodes->pinBase ; pin <= wiringPiNodes->pinMax ; ++pin)
+  {
+    pinMode         (pin, INPUT) ;
+    pullUpDnControl (pin, PUD_OFF) ;
+  }
+}
+
+
+/*
  * doReset:
  *	Reset the GPIO pins - as much as we can do
  *********************************************************************************
@@ -624,16 +675,21 @@ static void doReset (char *progName)
 {
   int pin ;
 
-  doUnexportall (progName) ;
-
-  for (pin = 0 ; pin < 64 ; ++pin)
+  if (wiringPiNodes != NULL)	// External reset
+    doResetExternal () ;
+  else
   {
-    if (wpiPinToGpio (pin) == -1)
-      continue ;
+    doUnexportall (progName) ;
 
-    digitalWrite    (pin, LOW) ;
-    pinMode         (pin, INPUT) ;
-    pullUpDnControl (pin, PUD_OFF) ;
+    for (pin = 0 ; pin < 64 ; ++pin)
+    {
+      if (wpiPinToGpio (pin) == -1)
+	continue ;
+
+      digitalWrite    (pin, LOW) ;
+      pinMode         (pin, INPUT) ;
+      pullUpDnControl (pin, PUD_OFF) ;
+    }
   }
 }
 

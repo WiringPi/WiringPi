@@ -88,7 +88,7 @@
 
 #define	PI_GPIO_MASK	(0xFFFFFFC0)
 
-static struct wiringPiNodeStruct *wiringPiNodes = NULL ;
+struct wiringPiNodeStruct *wiringPiNodes = NULL ;
 
 // BCM Magic
 
@@ -213,7 +213,13 @@ int wiringPiReturnCodes = FALSE ;
 // sysFds:
 //	Map a file descriptor from the /sys/class/gpio/gpioX/value
 
-static int sysFds [64] ;
+static int sysFds [64] =
+{
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+} ;
 
 // ISR Data
 
@@ -833,7 +839,7 @@ void gpioClockSet (int pin, int freq)
  *********************************************************************************
  */
 
-static struct wiringPiNodeStruct *wiringPiFindNode (int pin)
+struct wiringPiNodeStruct *wiringPiFindNode (int pin)
 {
   struct wiringPiNodeStruct *node = wiringPiNodes ;
 
@@ -1304,7 +1310,8 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
   char  c ;
   int   bcmGpioPin ;
 
-  pin &= 63 ;
+  if ((pin < 0) || (pin > 63))
+    return wiringPiFailure (WPI_FATAL, "wiringPiISR: pin must be 0-63 (%d)\n", pin) ;
 
   /**/ if (wiringPiMode == WPI_MODE_UNINITIALISED)
     return wiringPiFailure (WPI_FATAL, "wiringPiISR: wiringPi has not been initialised. Unable to continue.\n") ;
@@ -1333,26 +1340,26 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
     sprintf (pinS, "%d", bcmGpioPin) ;
 
     if ((pid = fork ()) < 0)	// Fail
-      return pid ;
+      return wiringPiFailure (WPI_FATAL, "wiringPiISR: fork failed: %s\n", strerror (errno)) ;
 
     if (pid == 0)	// Child, exec
     {
       execl ("/usr/local/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL) ;
-      return -1 ;	// Failure ...
+      return wiringPiFailure (WPI_FATAL, "wiringPiISR: execl failed: %s\n", strerror (errno)) ;
     }
     else		// Parent, wait
       wait (NULL) ;
   }
 
-// Now pre-open the /sys/class node - it may already be open if
-//	we are in Sys mode or if we call here twice, if-so, we'll close it.
+// Now pre-open the /sys/class node - but it may already be open if
+//	we are in Sys mode...
 
-  if (sysFds [bcmGpioPin] != -1)
-    close (sysFds [bcmGpioPin]) ;
-
-  sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
-  if ((sysFds [bcmGpioPin] = open (fName, O_RDWR)) < 0)
-    return -1 ;
+  if (sysFds [bcmGpioPin] == -1)
+  {
+    sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
+    if ((sysFds [bcmGpioPin] = open (fName, O_RDWR)) < 0)
+      return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
+  }
 
 // Clear any initial pending interrupt
 

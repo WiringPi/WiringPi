@@ -126,10 +126,18 @@ Output a table of all GPIO pins values. The values represent the actual values r
 if the pin is in input mode, or the last value written if the pin is in output
 mode.
 
+The readall command is usable with an extension module (via the -x parameter),
+but it's unable to determine pin modes or states, so will perform both a
+digital and analog read on each pin in-turn.
+
 .TP
 .B reset
 Resets the GPIO - As much as it's possible to do. All pins are set to input
 mode and all the internal pull-up/down resistors are disconnected (tristate mode).
+
+The reset command is usable with an extension module (via the -x parameter),
+but it's limited to turning the pin into input mode (if applicable) and
+removing any pull up/down resistor.
 
 .TP
 .B pwm <pin> <value>
@@ -212,8 +220,8 @@ Change the PWM range register. The default is 1024.
 .B load i2c [baudrate]
 This loads the i2c or drivers into the kernel and changes the permissions
 on the associated /dev/ entries so that the current user has access to
-them. Optionally it will set the I2C baudrate to that supplied (or as
-close as the Pi can manage) The default speed is 100Kb/sec.
+them. Optionally it will set the I2C baudrate to that supplied in Kb/sec
+(or as close as the Pi can manage) The default speed is 100Kb/sec.
 
 .TP
 .B load spi [buffer size in KB]

@@ -1,7 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-check-make-ok()
-{
+check_make_ok() {
   if [ $? != 0 ]; then
     echo ""
     echo "Make Failed..."
@@ -51,26 +50,26 @@ fi
   cd wiringPi
   sudo make uninstall
   make
-  check-make-ok
+  check_make_ok
   sudo make install
-  check-make-ok
+  check_make_ok
 
   echo
   echo "WiringPi Devices Library"
   cd ../devLib
   sudo make uninstall
   make
-  check-make-ok
+  check_make_ok
   sudo make install
-  check-make-ok
+  check_make_ok
 
   echo
   echo "GPIO Utility"
   cd ../gpio
   make
-  check-make-ok
+  check_make_ok
   sudo make install
-  check-make-ok
+  check_make_ok
 
 # echo
 # echo "Examples"
