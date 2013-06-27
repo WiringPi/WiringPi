@@ -1448,6 +1448,8 @@ void delayMicrosecondsHard (unsigned int howLong)
 void delayMicroseconds (unsigned int howLong)
 {
   struct timespec sleeper ;
+  unsigned int uSecs = howLong % 1000000 ;
+  unsigned int wSecs = howLong / 1000000 ;
 
   /**/ if (howLong ==   0)
     return ;
@@ -1455,8 +1457,8 @@ void delayMicroseconds (unsigned int howLong)
     delayMicrosecondsHard (howLong) ;
   else
   {
-    sleeper.tv_sec  = 0 ;
-    sleeper.tv_nsec = (long)(howLong * 1000) ;
+    sleeper.tv_sec  = wSecs ;
+    sleeper.tv_nsec = (long)(uSecs * 1000L) ;
     nanosleep (&sleeper, NULL) ;
   }
 }
@@ -1539,7 +1541,7 @@ int wiringPiSetup (void)
 
 // Open the master /dev/memory device
 
-  if ((fd = open ("/dev/mem", O_RDWR | O_SYNC) ) < 0)
+  if ((fd = open ("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC) ) < 0)
     return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Unable to open /dev/mem: %s\n", strerror (errno)) ;
 
 // GPIO:

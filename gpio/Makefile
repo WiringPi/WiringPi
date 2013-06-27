@@ -35,7 +35,7 @@ LIBS    = -lwiringPi -lwiringPiDev -lpthread -lm
 # May not need to  alter anything below this line
 ###############################################################################
 
-SRC	=	gpio.c extensions.c
+SRC	=	gpio.c extensions.c readall.c
 
 OBJ	=	$(SRC:.c=.o)
 
