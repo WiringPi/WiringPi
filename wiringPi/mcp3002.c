@@ -55,7 +55,7 @@ static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
 
 /*
  * mcp3002Setup:
- *	Create a new wiringPi device node for an mcp2003 on the Pi's
+ *	Create a new wiringPi device node for an mcp3002 on the Pi's
  *	SPI interface.
  *********************************************************************************
  */
