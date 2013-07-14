@@ -2,6 +2,8 @@
  * mcp3004.c:
  *	Extend wiringPi with the MCP3004 SPI Analog to Digital convertor
  *	Copyright (c) 2012-2013 Gordon Henderson
+ *
+ *	Thanks also to "ShorTie" on IRC for some remote debugging help!
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -35,18 +37,19 @@
 
 static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
 {
-  unsigned char spiData [2] ;
+  unsigned char spiData [3] ;
   unsigned char chanBits ;
   int chan = pin - node->pinBase ;
 
-  chanBits = 0b11000000 | (chan << 3) ;
+  chanBits = 0b10000000 | (chan << 4) ;
 
-  spiData [0] = chanBits ;
-  spiData [1] = 0 ;
+  spiData [0] = 1 ;		// Start bit
+  spiData [1] = chanBits ;
+  spiData [2] = 0 ;
 
-  wiringPiSPIDataRW (node->fd, spiData, 2) ;
+  wiringPiSPIDataRW (node->fd, spiData, 3) ;
 
-  return ((spiData [0] << 7) | (spiData [1] >> 1)) & 0x3FF ;
+  return ((spiData [1] << 8) | spiData [2]) & 0x3FF ;
 }
 
 

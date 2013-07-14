@@ -22,14 +22,16 @@
 #    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
 #################################################################################
 
+DESTDIR=/usr
+PREFIX=/local
 
 #DEBUG	= -g -O0
 DEBUG	= -O2
 CC	= gcc
-INCLUDE	= -I/usr/local/include
+INCLUDE	= -I$(DESTDIR)$(PREFIX)/usr/local/include
 CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 
-LDFLAGS	= -L/usr/local/lib
+LDFLAGS	= -L$(DESTDIR)$(PREFIX)/lib
 LIBS    = -lwiringPi -lwiringPiDev -lpthread -lm
 
 # May not need to  alter anything below this line
@@ -62,17 +64,17 @@ tags:	$(SRC)
 .PHONEY:	install
 install:
 	@echo "[Install]"
-	@cp gpio /usr/local/bin
-	@chown root.root /usr/local/bin/gpio
-	@chmod 4755 /usr/local/bin/gpio
-	@mkdir -p /usr/local/man/man1
-	@cp gpio.1 /usr/local/man/man1
+	@cp gpio		$(DESTDIR)$(PREFIX)/bin
+	@chown root.root	$(DESTDIR)$(PREFIX)/bin/gpio
+	@chmod 4755		$(DESTDIR)$(PREFIX)/bin/gpio
+	@mkdir -p		$(DESTDIR)$(PREFIX)/man/man1
+	@cp gpio.1		$(DESTDIR)$(PREFIX)/man/man1
 
 .PHONEY:	uninstall
 uninstall:
 	@echo "[UnInstall]"
-	@rm -f /usr/local/bin/gpio
-	@rm -f /usr/local/man/man1/gpio.1
+	@rm -f $(DESTDIR)$(PREFIX)/bin/gpio
+	@rm -f $(DESTDIR)$(PREFIX)/man/man1/gpio.1
 
 .PHONEY:	depend
 depend:
