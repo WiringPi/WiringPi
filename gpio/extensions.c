@@ -44,6 +44,7 @@
 #include <pcf8591.h>
 #include <pcf8574.h>
 #include <max31855.h>
+#include <max5322.h>
 #include <mcp3002.h>
 #include <mcp3004.h>
 #include <mcp4802.h>
@@ -414,6 +415,32 @@ static int doExtensionMcp3004 (char *progName, int pinBase, char *params)
 
 
 /*
+ * doExtensionMax5322:
+ *	Analog O
+ *	max5322:base:spiChan
+ *********************************************************************************
+ */
+
+static int doExtensionMax5322 (char *progName, int pinBase, char *params)
+{
+  int spi ;
+
+  if ((params = extractInt (progName, params, &spi)) == NULL)
+    return FALSE ;
+
+  if ((spi < 0) || (spi > 1))
+  {
+    fprintf (stderr, "%s: SPI channel (%d) out of range\n", progName, spi) ;
+    return FALSE ;
+  }
+
+  max5322Setup (pinBase, spi) ;
+
+  return TRUE ;
+}
+
+
+/*
  * doExtensionMcp4802:
  *	Analog IO
  *	mcp4802:base:spiChan
@@ -503,6 +530,7 @@ struct extensionFunctionStruct extensionFunctions [] =
   { "mcp4802",		&doExtensionMcp4802	},
   { "mcp3422",		&doExtensionMcp3422	},
   { "max31855",		&doExtensionMax31855	},
+  { "max5322",		&doExtensionMax5322	},
   { NULL,		NULL		 	},
 } ;
 

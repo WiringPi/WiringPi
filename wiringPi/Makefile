@@ -53,7 +53,7 @@ SRC	=	wiringPi.c						\
 		sr595.c							\
 		pcf8574.c pcf8591.c					\
 		mcp3002.c mcp3004.c mcp4802.c mcp3422.c			\
-		max31855.c						\
+		max31855.c max5322.c					\
 		drc.c
 
 OBJ	=	$(SRC:.c=.o)
@@ -104,6 +104,7 @@ install-headers:
 	@install -m 0644 mcp23s08.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 mcp23s17.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 max31855.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 max5322.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 mcp3002.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 mcp3004.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 mcp4802.h		$(DESTDIR)$(PREFIX)/include
@@ -142,6 +143,7 @@ uninstall:
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp23s08.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp23s17.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/max31855.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/max5322.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp3002.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp3004.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp4802.h
@@ -181,4 +183,5 @@ mcp3004.o: wiringPi.h wiringPiSPI.h mcp3004.h
 mcp4802.o: wiringPi.h wiringPiSPI.h mcp4802.h
 mcp3422.o: wiringPi.h wiringPiI2C.h mcp3422.h
 max31855.o: wiringPi.h wiringPiSPI.h max31855.h
+max5322.o: wiringPi.h wiringPiSPI.h max5322.h
 drc.o: wiringPi.h wiringSerial.h drc.h
