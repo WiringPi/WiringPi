@@ -101,7 +101,7 @@ extern void (*pwmSetClock)       (int divisor) ;
 // Interrupts
 
 extern int  (*waitForInterrupt) (int pin, int mS) ;
-extern int  wiringPiISR         (int pin, int mode, void (*function)(void)) ;
+extern int  wiringPiISR         (int pin, int mode, void (*function)(int)) ;
 
 // Threads
 
