@@ -51,7 +51,7 @@ extern void doReadallOld (void) ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION		"2.09"
+#define	VERSION		"2.10"
 #define	I2CDETECT	"/usr/sbin/i2cdetect"
 
 int wpMode ;

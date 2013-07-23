@@ -42,7 +42,8 @@ LIBS    =
 
 SRC	=	ds1302.c maxdetect.c  piNes.c		\
 		gertboard.c piFace.c			\
-		lcd128x64.c lcd.c
+		lcd128x64.c lcd.c			\
+		piGlow.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -86,6 +87,7 @@ install-headers:
 	@install -m 0644 piFace.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 lcd128x64.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 lcd.h			$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 piGlow.h		$(DESTDIR)$(PREFIX)/include
 
 .PHONEY:	install
 install:	$(DYNAMIC) install-headers
@@ -111,6 +113,7 @@ uninstall:
 	@rm -f $(DESTDIR)$(PREFIX)/include/piFace.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/lcd128x64.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/lcd.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/piGlow.h
 	@rm -f $(DESTDIR)$(PREFIX)/lib/libwiringPiDev.*
 	@ldconfig
 
@@ -128,3 +131,4 @@ gertboard.o: gertboard.h
 piFace.o: piFace.h
 lcd128x64.o: font.h lcd128x64.h
 lcd.o: lcd.h
+piGlow.o: piGlow.h
