@@ -49,6 +49,7 @@
 #include <mcp3004.h>
 #include <mcp4802.h>
 #include <mcp3422.h>
+#include <sn3218.h>
 
 #include "extensions.h"
 
@@ -467,6 +468,20 @@ static int doExtensionMcp4802 (char *progName, int pinBase, char *params)
 
 
 /*
+ * doExtensionSn3218:
+ *	Analog Output (LED Driver)
+ *	sn3218:base
+ *********************************************************************************
+ */
+
+static int doExtensionSn3218 (char *progName, int pinBase, char *params)
+{
+  sn3218Setup (pinBase) ;
+  return TRUE ;
+}
+
+
+/*
  * doExtensionMcp3422:
  *	Analog IO
  *	mcp3422:base:i2cAddr
@@ -531,6 +546,7 @@ struct extensionFunctionStruct extensionFunctions [] =
   { "mcp3422",		&doExtensionMcp3422	},
   { "max31855",		&doExtensionMax31855	},
   { "max5322",		&doExtensionMax5322	},
+  { "sn3218",		&doExtensionSn3218	},
   { NULL,		NULL		 	},
 } ;
 
