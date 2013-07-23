@@ -137,7 +137,7 @@ static char *physNames [64] =
   "3.3v",  "GPIO5",
   "MOSI",  "0v",
   "MISO",  "GPIO6",
-  "SCLK",  "CE1",
+  "SCLK",  "CE0",
   "0v",    "CE1",
 
                                                          NULL,NULL,NULL,NULL,NULL,
@@ -178,7 +178,7 @@ static void readallPhys (int physPin)
       pin = physToWpi [physPin] ;
 
     printf (" | %4s", alts [getAlt (pin)]) ;
-    printf (" | %s", (digitalRead (pin) == 0) ? "Hi" : "Lo") ;
+    printf (" | %s", (digitalRead (pin) == LOW) ? "Lo" : "Hi") ;
   }
 
 // Pin numbers:
@@ -200,7 +200,7 @@ static void readallPhys (int physPin)
     else
       pin = physToWpi [physPin] ;
 
-    printf (" | %s", (digitalRead (pin) == 0) ? "Hi" : "Lo") ;
+    printf (" | %s", (digitalRead (pin) == LOW) ? "Lo" : "Hi") ;
     printf (" | %-4s", alts [getAlt (pin)]) ;
   }
 

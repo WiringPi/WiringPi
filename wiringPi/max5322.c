@@ -44,8 +44,8 @@ static void myAnalogWrite (struct wiringPiNodeStruct *node, int pin, int value)
   else
     chanBits = 0b01010000 ;
 
-  chanBits |= ((value >> 4) & 0x0F) ;
-  dataBits  = ((value << 4) & 0xF0) ;
+  chanBits |= ((value >> 12) & 0x0F) ;
+  dataBits  = ((value      ) & 0xFF) ;
 
   spiData [0] = chanBits ;
   spiData [1] = dataBits ;

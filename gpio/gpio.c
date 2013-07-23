@@ -51,7 +51,7 @@ extern void doReadallOld (void) ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION		"2.08"
+#define	VERSION		"2.09"
 #define	I2CDETECT	"/usr/sbin/i2cdetect"
 
 int wpMode ;
@@ -1190,8 +1190,8 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "pwmr"     ) == 0) doPwmRange   (argc, argv) ;
   else if (strcasecmp (argv [1], "pwmc"     ) == 0) doPwmClock   (argc, argv) ;
   else if (strcasecmp (argv [1], "drive"    ) == 0) doPadDrive   (argc, argv) ;
-  else if (strcasecmp (argv [1], "readall"  ) == 0) doReadall    () ;
-  else if (strcasecmp (argv [1], "oreadall" ) == 0) doReadallOld () ;
+  else if (strcasecmp (argv [1], "readall"  ) == 0) doReadallOld () ;
+  else if (strcasecmp (argv [1], "nreadall" ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "i2cdetect") == 0) doI2Cdetect  (argc, argv) ;
   else if (strcasecmp (argv [1], "i2cd"     ) == 0) doI2Cdetect  (argc, argv) ;
   else if (strcasecmp (argv [1], "reset"    ) == 0) doReset      (argv [0]) ;
