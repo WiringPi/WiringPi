@@ -27,6 +27,8 @@ if [ x$1 = "xclean" ]; then
   echo -n "PiFace:     "	; make clean
   cd ../q2w
   echo -n "Quick2Wire: "	; make clean
+  cd ../PiGlow
+  echo -n "PiGlow:     "	; make clean
   exit
 fi
 

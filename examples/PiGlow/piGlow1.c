@@ -32,6 +32,11 @@
 
 #define	PIGLOW_BASE	533
 
+#ifndef	TRUE
+#  define TRUE  (1==1)
+#  define FALSE (!TRUE)
+#endif
+
 
 /*
  * keypressed: clearKeypressed:
@@ -123,6 +128,37 @@ static void pulseRing (int ring)
   }
 }
 
+#define	LEG_STEPS	3
+
+static int legSequence [] =
+{
+   4, 12, 99,
+  99,  4, 12, 
+  12, 99,  4,
+} ;
+  
+
+#define	RING_STEPS	16
+
+static int ringSequence [] =
+{
+   0,  0,  0,  0,  0, 64,
+   0,  0,  0,  0, 64, 64,
+   0,  0,  0, 64, 64,  0,
+   0,  0, 64, 64,  0,  0,
+   0, 64, 64,  0,  0,  0,
+  64, 64,  0,  0,  0,  0,
+  64,  0,  0,  0,  0,  0,
+   0,  0,  0,  0,  0,  0,
+  64,  0,  0,  0,  0,  0,
+  64, 64,  0,  0,  0,  0,
+   0, 64, 64,  0,  0,  0,
+   0,  0, 64, 64,  0,  0,
+   0,  0,  0, 64, 64,  0,
+   0,  0,  0,  0, 64, 64,
+   0,  0,  0,  0,  0, 64,
+   0,  0,  0,  0,  0,  0,
+} ;
 
 /*
  * main:
@@ -133,7 +169,7 @@ static void pulseRing (int ring)
 int main (void)
 {
   int i ;
-  int ring, leg ;
+  int step, ring, leg ;
 
 // Always initialise wiringPi:
 //	Use the Sys method if you don't need to run as root
@@ -142,7 +178,7 @@ int main (void)
 
 // Initialise the piGlow devLib with our chosen pin base
 
-  piGlowSetup (PIGLOW_BASE) ;
+  piGlowSetup (1) ;
 
 // LEDs, one at a time
 
@@ -190,28 +226,27 @@ int main (void)
 // Sequence - alternating rings, legs and random
 
   printf ("Sequence now\n") ;
-
   for (; !keypressed () ;)
   {
     for (i = 0 ; i < 20 ; ++i)
-      for (leg = 2 ; leg >= 0 ; --leg)
+      for (step = 0 ; step < LEG_STEPS ; ++step)
       {
-	piGlowLeg (leg, 100) ;
-	delay (100) ;
-	piGlowLeg (leg, 0) ;
+	for (leg = 0 ; leg < 3 ; ++leg)
+	  piGlowLeg (leg, legSequence [step * 3 + leg]) ;
+	delay (80) ;
       }
 
-    for (i = 0 ; i < 20 ; ++i)
-      for (ring = 5 ; ring >= 0 ; --ring)
+    for (i = 0 ; i < 10 ; ++i)
+      for (step = 0 ; step < RING_STEPS ; ++step)
       {
-	piGlowRing (ring, 100) ;
-	delay (50) ;
-	piGlowRing (ring,   0) ;
+	for (ring = 0 ; ring < 6 ; ++ring)
+	  piGlowRing (ring, ringSequence [step * 6 + ring]) ;
+	delay (80) ;
       }
 
     for (i = 0 ; i < 1000 ; ++i)
     {
-      leg = random () % 3 ;
+      leg  = random () % 3 ;
       ring = random () % 6 ;
       piGlow1 (leg, ring, random () % 256) ;
       delay (5) ; 

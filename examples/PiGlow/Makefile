@@ -35,7 +35,7 @@ LDLIBS    = -lwiringPi -lwiringPiDev -lpthread -lm
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	piGlow0.c piGlow1.c
+SRC	=	piGlow0.c piGlow1.c piglow.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -51,6 +51,10 @@ piGlow1:	piGlow1.o
 	@echo [link]
 	@$(CC) -o $@ piGlow1.o $(LDFLAGS) $(LDLIBS)
 
+piglow:	piglow.o
+	@echo [link]
+	@$(CC) -o $@ piglow.o $(LDFLAGS) $(LDLIBS)
+
 .c.o:
 	@echo [CC] $<
 	@$(CC) -c $(CFLAGS) $< -o $@
@@ -62,6 +66,12 @@ clean:
 tags:	$(SRC)
 	@echo [ctags]
 	@ctags $(SRC)
+
+install:	piglow
+	@echo Installing piglow into /usr/local/bin
+	@cp -a piglow /usr/local/bin/piglow
+	@chmod 755 /usr/local/bin/piglow
+	@echo Done. Remember to load the I2C drivers!
 
 depend:
 	makedepend -Y $(SRC)
