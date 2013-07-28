@@ -55,7 +55,7 @@ SRC	=	wiringPi.c						\
 		mcp3002.c mcp3004.c mcp4802.c mcp3422.c			\
 		max31855.c max5322.c					\
 		sn3218.c						\
-		drc.c
+		drcSerial.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -99,6 +99,7 @@ install-headers:
 	@install -m 0644 softTone.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 wiringPiSPI.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 wiringPiI2C.h		$(DESTDIR)$(PREFIX)/include
+	@install -m 0644 drcSerial.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 mcp23008.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 mcp23016.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 mcp23017.h		$(DESTDIR)$(PREFIX)/include
@@ -139,6 +140,7 @@ uninstall:
 	@rm -f $(DESTDIR)$(PREFIX)/include/softTone.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/wiringPiSPI.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/wiringPiI2C.h
+	@rm -f $(DESTDIR)$(PREFIX)/include/drcSerial.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp23008.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp23016.h
 	@rm -f $(DESTDIR)$(PREFIX)/include/mcp23017.h

@@ -50,6 +50,7 @@
 #include <mcp4802.h>
 #include <mcp3422.h>
 #include <sn3218.h>
+#include <drcSerial.h>
 
 #include "extensions.h"
 
@@ -95,6 +96,43 @@ static char *extractInt (char *progName, char *p, int *num)
   while (isdigit (*p))
     ++p ;
 
+  return p ;
+}
+
+
+/*
+ * extractStr:
+ *	Check & return a string at the given location (prefixed by a :)
+ *********************************************************************************
+ */
+
+static char *extractStr (char *progName, char *p, char **str)
+{
+  char *q, *r ;
+
+  if (*p != ':')
+  {
+    fprintf (stderr, "%s: colon expected\n", progName) ;
+    return NULL ;
+  }
+
+  ++p ;
+
+  if (!isprint (*p))
+  {
+    fprintf (stderr, "%s: character expected\n", progName) ;
+    return NULL ;
+  }
+
+  q = p ;
+  while ((*q != 0) && (*q != ':'))
+    ++q ;
+
+  *str = r = calloc (q - p + 2, 1) ;	// Zeros it
+
+  while (p != q)
+    *r++ = *p++ ;
+    
   return p ;
 }
 
@@ -524,6 +562,51 @@ static int doExtensionMcp3422 (char *progName, int pinBase, char *params)
   return TRUE ;
 }
 
+/*
+ * doExtensionDrcS:
+ *	Interface to a DRC Serial system
+ *	drcs:base:pins:serialPort:baud
+ *********************************************************************************
+ */
+
+static int doExtensionDrcS (char *progName, int pinBase, char *params)
+{
+  char *port ;
+  int pins, baud ;
+
+  if ((params = extractInt (progName, params, &pins)) == NULL)
+    return FALSE ;
+
+  if ((pins < 1) || (pins > 100))
+  {
+    fprintf (stderr, "%s: pins (%d) out of range (2-100)\n", progName, pins) ;
+    return FALSE ;
+  }
+  
+  if ((params = extractStr (progName, params, &port)) == NULL)
+    return FALSE ;
+
+  if (strlen (port) == 0)
+  {
+    fprintf (stderr, "%s: serial port device name required\n", progName) ;
+    return FALSE ;
+  }
+
+  if ((params = extractInt (progName, params, &baud)) == NULL)
+    return FALSE ;
+
+  if ((baud < 1) || (baud > 4000000))
+  {
+    fprintf (stderr, "%s: baud rate (%d) out of range\n", progName, baud) ;
+    return FALSE ;
+  }
+
+  drcSetupSerial (pinBase, pins, port, baud) ;
+
+  return TRUE ;
+}
+
+
 
 /*
  * Function list
@@ -547,6 +630,7 @@ struct extensionFunctionStruct extensionFunctions [] =
   { "max31855",		&doExtensionMax31855	},
   { "max5322",		&doExtensionMax5322	},
   { "sn3218",		&doExtensionSn3218	},
+  { "drcs",		&doExtensionDrcS	},
   { NULL,		NULL		 	},
 } ;
 
