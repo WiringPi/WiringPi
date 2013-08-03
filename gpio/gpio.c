@@ -51,7 +51,7 @@ extern void doReadallOld (void) ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION		"2.12"
+#define	VERSION		"2.13"
 #define	I2CDETECT	"/usr/sbin/i2cdetect"
 
 int wpMode ;
@@ -73,6 +73,25 @@ char *usage = "Usage: gpio -v\n"
 	      "       gpio i2cd/i2cdetect\n"
 	      "       gpio gbr <channel>\n"
 	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
+
+
+/*
+ * decodePin:
+ *	Decode a pin "number" which can actually be a pin name to represent
+ *	one of the Pi's on-board pins.
+ *********************************************************************************
+ */
+
+static int decodePin (const char *str)
+{
+
+// The first case - see if it's a number:
+
+  if (isdigit (str [0]))
+    return atoi (str) ;
+
+  return 0 ;
+}
 
 
 /*
@@ -639,6 +658,15 @@ void doMode (int argc, char *argv [])
   else if (strcasecmp (mode, "down")   == 0) pullUpDnControl (pin, PUD_DOWN) ;
   else if (strcasecmp (mode, "tri")    == 0) pullUpDnControl (pin, PUD_OFF) ;
   else if (strcasecmp (mode, "off")    == 0) pullUpDnControl (pin, PUD_OFF) ;
+
+// Undocumented
+
+  else if (strcasecmp (mode, "alt0")    == 0) pinModeAlt (pin, 0b100) ;
+  else if (strcasecmp (mode, "alt1")    == 0) pinModeAlt (pin, 0b101) ;
+  else if (strcasecmp (mode, "alt2")    == 0) pinModeAlt (pin, 0b110) ;
+  else if (strcasecmp (mode, "alt3")    == 0) pinModeAlt (pin, 0b111) ;
+  else if (strcasecmp (mode, "alt4")    == 0) pinModeAlt (pin, 0b011) ;
+  else if (strcasecmp (mode, "alt5")    == 0) pinModeAlt (pin, 0b010) ;
   else
   {
     fprintf (stderr, "%s: Invalid mode: %s. Should be in/out/pwm/clock/up/down/tri\n", argv [1], mode) ;

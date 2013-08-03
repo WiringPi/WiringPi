@@ -118,7 +118,6 @@ struct wiringPiNodeStruct *wiringPiNodes = NULL ;
 #define	FSEL_INPT		0b000
 #define	FSEL_OUTP		0b001
 #define	FSEL_ALT0		0b100
-#define	FSEL_ALT0		0b100
 #define	FSEL_ALT1		0b101
 #define	FSEL_ALT2		0b110
 #define	FSEL_ALT3		0b111
@@ -924,6 +923,32 @@ void pinEnableED01Pi (int pin)
  * Core Functions
  *********************************************************************************
  */
+
+/*
+ * pinModeAlt:
+ *	This is an un-documented special to let you set any pin to any mode
+ *********************************************************************************
+ */
+
+void pinModeAlt (int pin, int mode)
+{
+  int fSel, shift ;
+
+  if ((pin & PI_GPIO_MASK) == 0)		// On-board pin
+  {
+    /**/ if (wiringPiMode == WPI_MODE_PINS)
+      pin = pinToGpio [pin] ;
+    else if (wiringPiMode == WPI_MODE_PHYS)
+      pin = physToGpio [pin] ;
+    else if (wiringPiMode != WPI_MODE_GPIO)
+      return ;
+
+    fSel  = gpioToGPFSEL [pin] ;
+    shift = gpioToShift  [pin] ;
+
+    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | ((mode & 0x7) << shift) ;
+  }
+}
 
 
 /*
