@@ -1215,7 +1215,7 @@ void delayMicrosecondsHard (unsigned int howLong)
 
 void delayMicroseconds (unsigned int howLong)
 {
-  struct timespec sleeper ;
+  struct timespec sleeper, dummy;
 
   /**/ if (howLong ==   0)
     return ;
@@ -1223,9 +1223,9 @@ void delayMicroseconds (unsigned int howLong)
     delayMicrosecondsHard (howLong) ;
   else
   {
-    sleeper.tv_sec  = 0 ;
-    sleeper.tv_nsec = (long)(howLong * 1000) ;
-    nanosleep (&sleeper, NULL) ;
+    sleeper.tv_sec  = (time_t) (howLong / 1000000) ;  // nr of seconds is nr of microSeconds divided by 1000000 ( should be integer right?) 
+    sleeper.tv_nsec = (long)((howLong % 1000000) * 1000) ; // wrap microSeconds over seconds and multiply by 1000 to get nano seconds
+    nanosleep (&sleeper, &dummy) ;
   }
 }
 
