@@ -43,15 +43,19 @@
 
 extern int wiringPiDebug ;
 
+// External functions I can't be bothered creating a separate .h file for:
+
 extern void doReadall    (void) ;
 extern void doReadallOld (void) ;
+
+extern void doPins       (void) ;
 
 #ifndef TRUE
 #  define	TRUE	(1==1)
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION		"2.13"
+#define	VERSION		"2.14"
 #define	I2CDETECT	"/usr/sbin/i2cdetect"
 
 int wpMode ;
@@ -1078,7 +1082,7 @@ int main (int argc, char *argv [])
   if (strcmp (argv [1], "-v") == 0)
   {
     printf ("gpio version: %s\n", VERSION) ;
-    printf ("Copyright (c) 2012-2013 Gordon Henderson\n") ;
+    printf ("Copyright (c) 2012-2014 Gordon Henderson\n") ;
     printf ("This is free software with ABSOLUTELY NO WARRANTY.\n") ;
     printf ("For details type: %s -warranty\n", argv [0]) ;
     printf ("\n") ;
@@ -1220,6 +1224,7 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "drive"    ) == 0) doPadDrive   (argc, argv) ;
   else if (strcasecmp (argv [1], "readall"  ) == 0) doReadallOld () ;
   else if (strcasecmp (argv [1], "nreadall" ) == 0) doReadall    () ;
+  else if (strcasecmp (argv [1], "pins"     ) == 0) doPins       () ;
   else if (strcasecmp (argv [1], "i2cdetect") == 0) doI2Cdetect  (argc, argv) ;
   else if (strcasecmp (argv [1], "i2cd"     ) == 0) doI2Cdetect  (argc, argv) ;
   else if (strcasecmp (argv [1], "reset"    ) == 0) doReset      (argv [0]) ;

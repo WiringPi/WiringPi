@@ -56,6 +56,11 @@ int main (void)
     {
       temp = newTemp ;
       rh   = newRh ;
+      if ((temp & 0x8000) != 0)	// Negative
+      {
+	temp &= 0x7FFF ;
+	temp = -temp ;
+      }
       printf ("Temp: %5.1f, RH: %5.1f%%\n", temp / 10.0, rh / 10.0) ;
     }
   }

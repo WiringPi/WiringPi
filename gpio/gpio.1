@@ -115,6 +115,28 @@ Write the given value (0 or 1) to the pin. You need to set the pin
 to output mode first.
 
 .TP
+.B aread <pin>
+Read the analog value of the given pin. This needs to be uses in
+conjunction with a -x flag to add in an extension that handles analog
+inputs.  respective logic levels.
+
+e.g. gpio -x mcp3002:200:0 aread 200
+
+will read the first analog input on an mcp3002 SPI ADC chip.
+
+.TP
+.B awrite <pin> <value>
+Write the analog value to the given pin. This needs to be used in
+conjunction with a -x flag to add in an extension that handles analog
+inputs.  respective logic levels.
+
+e.g. gpio -x mcp4802:200:0 awrite 200 128
+
+will write the value 128 to the first DAC port on an mcp4802 chip on
+the Pi's SPI bus 0.
+
+
+.TP
 .B wb <value>
 Write the given byte to the 8 main GPIO pins. You can prefix it with 0x
 to specify a hexadecimal number. You need to set pins to output mode
@@ -132,8 +154,9 @@ digital and analog read on each pin in-turn.
 
 .TP
 .B reset
-Resets the GPIO - As much as it's possible to do. All pins are set to input
-mode and all the internal pull-up/down resistors are disconnected (tristate mode).
+Resets the GPIO - As much as it's possible to do. All pins are set to
+input mode and all the internal pull-up/down resistors are disconnected
+(tristate mode).
 
 The reset command is usable with an extension module (via the -x parameter),
 but it's limited to turning the pin into input mode (if applicable) and

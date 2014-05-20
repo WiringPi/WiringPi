@@ -38,7 +38,7 @@ LIBS    = -lwiringPi -lwiringPiDev -lpthread -lm
 # May not need to  alter anything below this line
 ###############################################################################
 
-SRC	=	gpio.c extensions.c readall.c
+SRC	=	gpio.c extensions.c readall.c pins.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -52,17 +52,17 @@ gpio:	$(OBJ)
 	@echo [Compile] $<
 	@$(CC) -c $(CFLAGS) $< -o $@
 
-.PHONEY:	clean
+.PHONY:	clean
 clean:
 	@echo "[Clean]"
 	@rm -f $(OBJ) gpio *~ core tags *.bak
 
-.PHONEY:	tags
+.PHONY:	tags
 tags:	$(SRC)
 	@echo [ctags]
 	@ctags $(SRC)
 
-.PHONEY:	install
+.PHONY:	install
 install:
 	@echo "[Install]"
 	@cp gpio		$(DESTDIR)$(PREFIX)/bin
@@ -71,13 +71,13 @@ install:
 	@mkdir -p		$(DESTDIR)$(PREFIX)/man/man1
 	@cp gpio.1		$(DESTDIR)$(PREFIX)/man/man1
 
-.PHONEY:	uninstall
+.PHONY:	uninstall
 uninstall:
 	@echo "[UnInstall]"
 	@rm -f $(DESTDIR)$(PREFIX)/bin/gpio
 	@rm -f $(DESTDIR)$(PREFIX)/man/man1/gpio.1
 
-.PHONEY:	depend
+.PHONY:	depend
 depend:
 	makedepend -Y $(SRC)
 

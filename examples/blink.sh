@@ -25,7 +25,7 @@
 
 # LED Pin - wiringPi pin 0 is BCM_GPIO 17.
 
-LED=0
+PIN=0
 
 gpio mode $PIN out
 

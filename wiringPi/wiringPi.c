@@ -70,6 +70,8 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 
+#include "softPwm.h"
+
 #include "wiringPi.h"
 
 #ifndef	TRUE
@@ -961,6 +963,7 @@ void pinMode (int pin, int mode)
 {
   int    fSel, shift, alt ;
   struct wiringPiNodeStruct *node = wiringPiNodes ;
+  int origPin = pin ;
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-board pin
   {
@@ -971,6 +974,8 @@ void pinMode (int pin, int mode)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
+    softPwmStop (origPin) ;
+
     fSel    = gpioToGPFSEL [pin] ;
     shift   = gpioToShift  [pin] ;
 
@@ -978,9 +983,11 @@ void pinMode (int pin, int mode)
       *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) ; // Sets bits to zero = input
     else if (mode == OUTPUT)
       *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (1 << shift) ;
+    else if (mode == SOFT_PWM_OUTPUT)
+      softPwmCreate (origPin, 0, 100) ;
     else if (mode == PWM_OUTPUT)
     {
-      if ((alt = gpioToPwmALT [pin]) == 0)	// Not a PWM pin
+      if ((alt = gpioToPwmALT [pin]) == 0)	// Not a hardware capable PWM pin
 	return ;
 
 // Set pin to PWM mode
@@ -990,7 +997,7 @@ void pinMode (int pin, int mode)
 
       pwmSetMode  (PWM_MODE_BAL) ;	// Pi default mode
       pwmSetRange (1024) ;		// Default range of 1024
-      pwmSetClock (32) ;			// 19.2 / 32 = 600KHz - Also starts the PWM
+      pwmSetClock (32) ;		// 19.2 / 32 = 600KHz - Also starts the PWM
     }
     else if (mode == GPIO_CLOCK)
     {
