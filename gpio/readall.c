@@ -37,6 +37,11 @@
 
 extern int wpMode ;
 
+#ifndef TRUE
+#  define       TRUE    (1==1)
+#  define       FALSE   (1==2)
+#endif
+
 /*
  * doReadallExternal:
  *	A relatively crude way to read the pins on an external device.
@@ -90,7 +95,7 @@ static int wpiToPhys [64] =
    3,  5,				//  8...9
   24, 26, 19, 21, 23,			// 10..14
    8, 10,				// 15..16
-   3,  4,  5,  6,			// 17..20
+  53, 54, 55, 56,			// 17..20
              0,0,0,0,0,0,0,0,0,0,0,	// 20..31
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	// 32..47
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,	// 47..63
@@ -115,11 +120,11 @@ static int physToWpi [64] =
   14, 10,
   -1, 11,       // 25, 26
 
-// Padding:
-
                                               -1, -1, -1, -1, -1,       // ... 31
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,       // ... 47
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,       // ... 63
+  -1, -1, -1, -1, -1,							// ... 52
+  28, 29, 30, 31,							// ... 53, 54, 55, 56 - P5
+  -1, -1, -1, -1, -1, -1, -1,						// ... 63
 } ;
 
 static char *physNames [64] = 
@@ -140,9 +145,11 @@ static char *physNames [64] =
   "SCLK",  "CE0",
   "0v",    "CE1",
 
-                                                         NULL,NULL,NULL,NULL,NULL,
-  NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-  NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+                                                         NULL,NULL,NULL,NULL,NULL,	// ... 31
+  NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,	// ... 47
+  NULL,NULL,NULL,NULL,NULL,								// ... 52
+  "GPIO8", "GPIO9", "GPIO10", "GPIO11",							// ... 53, 54, 55, 56 - P5
+  NULL,NULL,NULL,NULL,NULL,NULL,							// ... 63
 } ;
 
 static void readallPhys (int physPin)
@@ -225,6 +232,38 @@ static void readallPhys (int physPin)
 }
 
 
+int cmReadall (void)
+{
+  int model, rev, mem ;
+  int pin ;
+  char *maker ;
+
+  piBoardId (&model, &rev, &mem, &maker) ;
+  if (model != PI_MODEL_CM)
+    return FALSE ;
+
+  printf ("+-----+------+-------+      +-----+------+-------+\n") ;
+  printf ("| Pin | Mode | Value |      | Pin | Mode | Value |\n") ;
+  printf ("+-----+------+-------+      +-----+------+-------+\n") ;
+
+  for (pin = 0 ; pin < 28 ; ++pin)
+  {
+    printf ("| %3d ", pin) ;
+    printf ("| %-4s ", alts [getAlt (pin)]) ;
+    printf ("| %s  ", digitalRead (pin) == HIGH ? "High" : "Low ") ;
+    printf ("|      ") ;
+    printf ("| %3d ", pin + 28) ;
+    printf ("| %-4s ", alts [getAlt (pin + 28)]) ;
+    printf ("| %s  ", digitalRead (pin + 28) == HIGH ? "High" : "Low ") ;
+    printf ("|\n") ;
+  }
+
+  printf ("+-----+------+-------+      +-----+------+-------+\n") ;
+
+  return TRUE ;
+}
+
+
 void doReadall (void)
 {
   int pin ;
@@ -234,6 +273,9 @@ void doReadall (void)
     doReadallExternal () ;
     return ;
   }
+
+  if (cmReadall ())
+    return ;
 
   /**/ if (wpMode == WPI_MODE_GPIO)
   {
@@ -274,6 +316,9 @@ void doReadallOld (void)
     doReadallExternal () ;
     return ;
   }
+
+  if (cmReadall ())
+    return ;
 
   printf ("+----------+-Rev%d-+------+--------+------+-------+\n", piBoardRev ()) ;
   printf ("| wiringPi | GPIO | Phys | Name   | Mode | Value |\n") ;

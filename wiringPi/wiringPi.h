@@ -43,6 +43,7 @@
 #define	PWM_OUTPUT		 2
 #define	GPIO_CLOCK		 3
 #define	SOFT_PWM_OUTPUT		 4
+#define	SOFT_TONE_OUTPUT	 5
 
 #define	LOW			 0
 #define	HIGH			 1
@@ -64,6 +65,13 @@
 #define	INT_EDGE_FALLING	1
 #define	INT_EDGE_RISING		2
 #define	INT_EDGE_BOTH		3
+
+// Pi model types
+
+#define	PI_MODEL_A		0
+#define	PI_MODEL_B		1
+#define	PI_MODEL_CM		2
+
 
 // Threads
 
@@ -116,6 +124,12 @@ extern struct wiringPiNodeStruct *wiringPiNodes ;
 extern "C" {
 #endif
 
+// Data
+
+extern const char *piModelNames [] ;
+extern const char *piRevisionNames[] ;
+extern const char *piComputeRevisionNames[] ;
+
 // Internal
 
 extern int wiringPiFailure (int fatal, const char *message, ...) ;
@@ -148,6 +162,7 @@ extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio
 // On-Board Raspberry Pi hardware specific stuff
 
 extern int  piBoardRev          (void) ;
+extern void piBoardId           (int *model, int *rev, int *mem, char **maker) ;
 extern int  wpiPinToGpio        (int wpiPin) ;
 extern int  physPinToGpio       (int physPin) ;
 extern void setPadDrive         (int group, int value) ;

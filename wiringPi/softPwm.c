@@ -67,11 +67,15 @@ int newPin = -1 ;
 static PI_THREAD (softPwmThread)
 {
   int pin, mark, space ;
+  struct sched_param param ;
+
+  param.sched_priority = sched_get_priority_max (SCHED_RR) ;
+  pthread_setschedparam (pthread_self (), SCHED_RR, &param) ;
 
   pin    = newPin ;
   newPin = -1 ;
 
-  piHiPri (50) ;
+  piHiPri (90) ;
 
   for (;;)
   {
@@ -159,5 +163,5 @@ void softPwmStop (int pin)
     pthread_join   (threads [pin], NULL) ;
     range [pin] = 0 ;
     digitalWrite (pin, LOW) ;
-}
+  }
 }

@@ -79,6 +79,7 @@ char *usage = "Usage: gpio -v\n"
 	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
 
 
+#ifdef	NOT_FOR_NOW
 /*
  * decodePin:
  *	Decode a pin "number" which can actually be a pin name to represent
@@ -96,6 +97,7 @@ static int decodePin (const char *str)
 
   return 0 ;
 }
+#endif
 
 
 /*
@@ -1042,6 +1044,8 @@ static void doPwmClock (int argc, char *argv [])
 int main (int argc, char *argv [])
 {
   int i ;
+  int model, rev, mem ;
+  char *maker ;
 
   if (getenv ("WIRINGPI_DEBUG") != NULL)
   {
@@ -1086,7 +1090,10 @@ int main (int argc, char *argv [])
     printf ("This is free software with ABSOLUTELY NO WARRANTY.\n") ;
     printf ("For details type: %s -warranty\n", argv [0]) ;
     printf ("\n") ;
-    printf ("This Raspberry Pi is a revision %d board.\n", piBoardRev ()) ;
+    piBoardId (&model, &rev, &mem, &maker) ;
+    printf ("Raspberry Pi Details:\n") ;
+    printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s\n", 
+	piModelNames [model], piRevisionNames [rev], mem, maker) ;
     return 0 ;
   }
 

@@ -71,6 +71,7 @@
 #include <sys/ioctl.h>
 
 #include "softPwm.h"
+#include "softTone.h"
 
 #include "wiringPi.h"
 
@@ -272,6 +273,7 @@ static int pinToGpioR2 [64] =
 // physToGpio:
 //	Take a physical pin (1 through 26) and re-map it to the BCM_GPIO pin
 //	Cope for 2 different board revisions here.
+//	Also add in the P5 connector, so the P5 pins are 3,4,5,6, so 53,54,55,56
 
 static int *physToGpio ;
 
@@ -291,8 +293,6 @@ static int physToGpioR1 [64] =
    9, 25,
   11,  8,
   -1,  7,	// 25, 26
-
-// Padding:
 
                                               -1, -1, -1, -1, -1,	// ... 31
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 47
@@ -316,11 +316,13 @@ static int physToGpioR2 [64] =
   11,  8,
   -1,  7,	// 25, 26
 
-// Padding:
+// the P5 connector on the Rev 2 boards:
 
                                               -1, -1, -1, -1, -1,	// ... 31
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 47
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	// ... 63
+  -1, -1, -1, -1, -1,							// ... 52
+  28, 29, 30, 31,							// ... 53, 54, 55, 56 - P5
+  -1, -1, -1, -1, -1, -1, -1,						// ... 63
 } ;
 
 
@@ -547,21 +549,29 @@ int wiringPiFailure (int fatal, const char *message, ...)
  *
  *	Much confusion here )-:
  *	Seems there are some boards with 0000 in them (mistake in manufacture)
- *	and some board with 0005 in them (another mistake in manufacture?)
  *	So the distinction between boards that I can see is:
  *	0000 - Error
- *	0001 - Not used
- *	0002 - Rev 1
- *	0003 - Rev 1
- *	0004 - Rev 2 (Early reports?
- *	0005 - Rev 2 (but error?)
- *	0006 - Rev 2
- *	0008 - Rev 2 - Model A
- *	000e - Rev 2 + 512MB
- *	000f - Rev 2 + 512MB
+ *	0001 - Not used (Compute - default to Rev 2)
+ *	0002 - Model B, Rev 1, 256MB
+ *	0003 - Model B, Rev 1.1, 256MB, Fuses/D14 removed.
+ *	0004 - Model B, Rev 2, 256MB, Sony
+ *	0005 - Model B, Rev 2, 256MB, Qisda
+ *	0006 - Model B, Rev 2, 256MB, Egoman
+ *	0007 - Model A, Rev 2, 256MB, Egoman
+ *	0008 - Model A, Rev 2, 256MB, Sony
+ *	0009 - Model A, Rev 2, 256MB, Qisda
+ *	000d - Model B, Rev 2, 512MB, Egoman
+ *	000e - Model B, Rev 2, 512MB, Sony
+ *	000f - Model B, Rev 2, 512MB, Qisda
+ *	0011 - Pi compute Module
  *
  *	A small thorn is the olde style overvolting - that will add in
  *		1000000
+ *
+ *	The Pi compute module has an revision of 0011 - since we only check the
+ *	last digit, then it's 1, therefore it'll default to not 2 or 3 for a
+ *	Rev 1, so will appear as a Rev 2. This is fine for the most part, but
+ *	we'll properly detect the Compute Module later and adjust accordingly.
  *
  *********************************************************************************
  */
@@ -632,6 +642,89 @@ int piBoardRev (void)
 
   return boardRev ;
 }
+
+
+/*
+ * piBoardId:
+ *	Do more digging into the board revision string as above, but return
+ *	as much details as we can.
+ *********************************************************************************
+ */
+
+const char *piModelNames [] =
+{
+  "Model A",
+  "Model B",
+  "Compute Module",
+} ;
+
+const char *piRevisionNames[] =
+{
+  "1",
+  "1.1",
+  "2",
+} ;
+
+void piBoardId (int *model, int *rev, int *mem, char **maker)
+{
+  FILE *cpuFd ;
+  char line [120] ;
+  char *c ;
+
+  piBoardRev () ;	// Call this first to make sure all's OK. Don't care about the result.
+
+  if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
+    piBoardRevOops ("Unable to open /proc/cpuinfo") ;
+
+  while (fgets (line, 120, cpuFd) != NULL)
+    if (strncmp (line, "Revision", 8) == 0)
+      break ;
+
+  fclose (cpuFd) ;
+
+  if (strncmp (line, "Revision", 8) != 0)
+    piBoardRevOops ("No \"Revision\" line") ;
+
+// Chomp trailing CR/NL
+
+  for (c = &line [strlen (line) - 1] ; (*c == '\n') || (*c == '\r') ; --c)
+    *c = 0 ;
+  
+  if (wiringPiDebug)
+    printf ("piboardId: Revision string: %s\n", line) ;
+
+// Scan to first digit
+
+  for (c = line ; *c ; ++c)
+    if (isdigit (*c))
+      break ;
+
+// Make sure its long enough
+
+  if (strlen (c) < 4)
+    piBoardRevOops ("Bogus \"Revision\" line") ;
+  
+// Extract last 4 characters:
+
+  c = c + strlen (c) - 4 ;
+
+// Fill out the replys as appropriate
+
+  /**/ if (strcmp (c, "0002") == 0) { *model = 1 ; *rev = 0 ; *mem = 256 ; *maker = "China"  ; }
+  else if (strcmp (c, "0003") == 0) { *model = 1 ; *rev = 1 ; *mem = 256 ; *maker = "China"  ; }
+  else if (strcmp (c, "0004") == 0) { *model = 1 ; *rev = 2 ; *mem = 256 ; *maker = "Sony"   ; }
+  else if (strcmp (c, "0005") == 0) { *model = 1 ; *rev = 2 ; *mem = 256 ; *maker = "Qisda"  ; }
+  else if (strcmp (c, "0006") == 0) { *model = 1 ; *rev = 2 ; *mem = 256 ; *maker = "Egoman" ; }
+  else if (strcmp (c, "0007") == 0) { *model = 0 ; *rev = 2 ; *mem = 256 ; *maker = "Egoman" ; }
+  else if (strcmp (c, "0008") == 0) { *model = 0 ; *rev = 2 ; *mem = 256 ; *maker = "Sony"   ; }
+  else if (strcmp (c, "0009") == 0) { *model = 1 ; *rev = 2 ; *mem = 256 ; *maker = "Qisda"  ; }
+  else if (strcmp (c, "000d") == 0) { *model = 1 ; *rev = 2 ; *mem = 512 ; *maker = "Egoman" ; }
+  else if (strcmp (c, "000e") == 0) { *model = 1 ; *rev = 2 ; *mem = 512 ; *maker = "Sony"   ; }
+  else if (strcmp (c, "000f") == 0) { *model = 1 ; *rev = 2 ; *mem = 512 ; *maker = "Egoman" ; }
+  else if (strcmp (c, "0011") == 0) { *model = 2 ; *rev = 1 ; *mem = 512 ; *maker = "Sony"   ; }
+  else                              { *model = 0 ; *rev = 0 ; *mem =   0 ; *maker = "Unkn"   ; }
+}
+ 
 
 
 /*
@@ -974,7 +1067,8 @@ void pinMode (int pin, int mode)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
-    softPwmStop (origPin) ;
+    softPwmStop  (origPin) ;
+    softToneStop (origPin) ;
 
     fSel    = gpioToGPFSEL [pin] ;
     shift   = gpioToShift  [pin] ;
@@ -985,6 +1079,8 @@ void pinMode (int pin, int mode)
       *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (1 << shift) ;
     else if (mode == SOFT_PWM_OUTPUT)
       softPwmCreate (origPin, 0, 100) ;
+    else if (mode == SOFT_TONE_OUTPUT)
+      softToneCreate (origPin) ;
     else if (mode == PWM_OUTPUT)
     {
       if ((alt = gpioToPwmALT [pin]) == 0)	// Not a hardware capable PWM pin
@@ -1376,8 +1472,18 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
     if (pid == 0)	// Child, exec
     {
-      execl ("/usr/local/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL) ;
-      return wiringPiFailure (WPI_FATAL, "wiringPiISR: execl failed: %s\n", strerror (errno)) ;
+      if (access ("/usr/local/bin/gpio", X_OK))
+      {
+	execl ("/usr/local/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL) ;
+	return wiringPiFailure (WPI_FATAL, "wiringPiISR: execl failed: %s\n", strerror (errno)) ;
+      }
+      else if (access ("/usr/bin/gpio", X_OK))
+      {
+	execl ("/usr/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL) ;
+	return wiringPiFailure (WPI_FATAL, "wiringPiISR: execl failed: %s\n", strerror (errno)) ;
+      }
+      else
+	return wiringPiFailure (WPI_FATAL, "wiringPiISR: Can't find gpio program\n") ;
     }
     else		// Parent, wait
       wait (NULL) ;
@@ -1538,13 +1644,17 @@ unsigned int micros (void)
  *
  * Default setup: Initialises the system into wiringPi Pin mode and uses the
  *	memory mapped hardware directly.
+ *
+ * Changed now to revert to "gpio" mode if we're running on a Compute Module.
  *********************************************************************************
  */
 
 int wiringPiSetup (void)
 {
-  int      fd ;
-  int      boardRev ;
+  int   fd ;
+  int   boardRev ;
+  int   model, rev, mem ;
+  char *maker ;
 
   if (getenv (ENV_DEBUG) != NULL)
     wiringPiDebug = TRUE ;
@@ -1618,7 +1728,13 @@ int wiringPiSetup (void)
 
   initialiseEpoch () ;
 
-  wiringPiMode = WPI_MODE_PINS ;
+// If we're running on a compute module, then wiringPi pin numbers don't really many anything...
+
+  piBoardId (&model, &rev, &mem, &maker) ;
+  if (model == PI_MODEL_CM)
+    wiringPiMode = WPI_MODE_GPIO ;
+  else
+    wiringPiMode = WPI_MODE_PINS ;
 
   return 0 ;
 }

@@ -39,6 +39,17 @@ extern int wpMode ;
 
 void doPins (void)
 {
+  int model, rev, mem ;
+  char *maker ;
+
+  piBoardId (&model, &rev, &mem, &maker) ;
+  if (model == PI_MODEL_CM)
+  {
+    printf ("This Raspberry Pi is a Compute Module.\n") ;
+    printf ("    (who knows what's been done to the pins!)\n") ;
+    return ;
+  }
+
   printf ("This Raspberry Pi is a revision %d board.\n", piBoardRev ()) ;
 
   printf (
