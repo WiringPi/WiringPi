@@ -1472,12 +1472,12 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
     if (pid == 0)	// Child, exec
     {
-      if (access ("/usr/local/bin/gpio", X_OK))
+      /**/ if (access ("/usr/local/bin/gpio", X_OK) == 0)
       {
 	execl ("/usr/local/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL) ;
 	return wiringPiFailure (WPI_FATAL, "wiringPiISR: execl failed: %s\n", strerror (errno)) ;
       }
-      else if (access ("/usr/bin/gpio", X_OK))
+      else if (access ("/usr/bin/gpio", X_OK) == 0)
       {
 	execl ("/usr/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL) ;
 	return wiringPiFailure (WPI_FATAL, "wiringPiISR: execl failed: %s\n", strerror (errno)) ;

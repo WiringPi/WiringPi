@@ -55,7 +55,7 @@ extern void doPins       (void) ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION		"2.15"
+#define	VERSION		"2.16"
 #define	I2CDETECT	"/usr/sbin/i2cdetect"
 
 int wpMode ;
