@@ -119,11 +119,16 @@ static int physToWpi [64] =
   13,  6,
   14, 10,
   -1, 11,       // 25, 26
-
-                                              -1, -1, -1, -1, -1,       // ... 31
-  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,       // ... 47
+  30, 31,	// Actually I2C, but not used
+  21, -1,
+  22, 26,
+  23, -1,
+  24, 27,
+  25, 28,
+  -1, 29,
+                                      -1, -1, -1, -1, -1, -1, -1,       // ... 47
   -1, -1, -1, -1, -1,							// ... 52
-  28, 29, 30, 31,							// ... 53, 54, 55, 56 - P5
+  17, 18, 19, 20,							// ... 53, 54, 55, 56 - P5
   -1, -1, -1, -1, -1, -1, -1,						// ... 63
 } ;
 
@@ -131,25 +136,34 @@ static char *physNames [64] =
 {
   NULL,
 
-  "3.3v",  "5v",
-  "SDA",   "5V",
-  "SCL",   "0v",
-  "GPIO7", "TxD",
-  "0v",    "RxD",
-  "GPIO0", "GPIO1",
-  "GPIO2", "0v",
-  "GPIO3", "GPIO4",
-  "3.3v",  "GPIO5",
-  "MOSI",  "0v",
-  "MISO",  "GPIO6",
-  "SCLK",  "CE0",
-  "0v",    "CE1",
-
-                                                         NULL,NULL,NULL,NULL,NULL,	// ... 31
-  NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,	// ... 47
-  NULL,NULL,NULL,NULL,NULL,								// ... 52
-  "GPIO8", "GPIO9", "GPIO10", "GPIO11",							// ... 53, 54, 55, 56 - P5
-  NULL,NULL,NULL,NULL,NULL,NULL,							// ... 63
+  "   3.3v", "5v     ",
+  "  SDA.1", "5V     ",
+  "  SCL.1", "0v     ",
+  "GPIO. 7", "TxD    ",
+  "     0v", "RxD    ",
+  "GPIO. 0", "GPIO. 1",
+  "GPIO. 2", "0v     ",
+  "GPIO. 3", "GPIO. 4",
+  "   3.3v", "GPIO. 5",
+  "   MOSI", "0v     ",
+  "   MISO", "GPIO. 6",
+  "   SCLK", "CE0    ",
+  "     0v", "CE1    ",
+  "  SDA.0", "SCL0   ",
+  "GPIO.21", "0v     ",
+  "GPIO.22", "GPIO.26",
+  "GPIO.23", "0v     ",
+  "GPIO.24", "GPIO.27",
+  "GPIO.25", "GPIO.28",
+  "     0v", "GPIO.29",
+       NULL, NULL,
+       NULL, NULL,
+       NULL, NULL,
+       NULL, NULL,
+       NULL, NULL,
+  "GPIO.17", "GPIO.18",
+  "GPIO.19", "GPIO.20",
+   NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 } ;
 
 static void readallPhys (int physPin)
@@ -171,7 +185,7 @@ static void readallPhys (int physPin)
       printf (" | %3d", physToWpi     [physPin]) ;
   }
 
-  printf (" | %5s", physNames [physPin]) ;
+  printf (" | %s", physNames [physPin]) ;
 
   if (physToWpi [physPin] == -1)
     printf (" |      |   ") ;
@@ -264,6 +278,39 @@ int cmReadall (void)
 }
 
 
+/*
+ * bPlusReadall:
+ *	Read all the pins on the model B+
+ *********************************************************************************
+ */
+
+int bPlusReadall (void)
+{
+  int model, rev, mem ;
+  int pin ;
+  char *maker ;
+  char *name ;
+
+  piBoardId (&model, &rev, &mem, &maker) ;
+  if (model != PI_MODEL_BPLUS)
+    return FALSE ;
+
+  /**/ if (wpMode == WPI_MODE_GPIO)
+    name = "BCM" ;
+  else
+    name = "wPi" ;
+
+  printf (" +-----+---------+------+----+--B Plus--+----+------+---------+-----+\n") ;
+  printf (" | %s |   Name  | Mode | Val| Physical |Val | Mode | Name    | %s |\n", name, name) ;
+  printf (" +-----+---------+------+----+----++----+----+------+---------+-----+\n") ;
+  for (pin = 1 ; pin <= 40 ; pin += 2)
+    readallPhys (pin) ;
+  printf (" +-----+---------+------+----+----++----+----+------+---------+-----+\n") ;
+
+  return TRUE ;
+}
+
+
 void doReadall (void)
 {
   int pin ;
@@ -275,6 +322,9 @@ void doReadall (void)
   }
 
   if (cmReadall ())
+    return ;
+
+  if (bPlusReadall ())
     return ;
 
   /**/ if (wpMode == WPI_MODE_GPIO)
@@ -318,6 +368,9 @@ void doReadallOld (void)
   }
 
   if (cmReadall ())
+    return ;
+
+  if (bPlusReadall ())
     return ;
 
   printf ("+----------+-Rev%d-+------+--------+------+-------+\n", piBoardRev ()) ;

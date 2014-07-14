@@ -55,7 +55,7 @@ extern void doPins       (void) ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION		"2.16"
+#define	VERSION		"2.18"
 #define	I2CDETECT	"/usr/sbin/i2cdetect"
 
 int wpMode ;
@@ -654,16 +654,17 @@ void doMode (int argc, char *argv [])
 
   mode = argv [3] ;
 
-  /**/ if (strcasecmp (mode, "in")     == 0) pinMode         (pin, INPUT) ;
-  else if (strcasecmp (mode, "input")  == 0) pinMode         (pin, INPUT) ;
-  else if (strcasecmp (mode, "out")    == 0) pinMode         (pin, OUTPUT) ;
-  else if (strcasecmp (mode, "output") == 0) pinMode         (pin, OUTPUT) ;
-  else if (strcasecmp (mode, "pwm")    == 0) pinMode         (pin, PWM_OUTPUT) ;
-  else if (strcasecmp (mode, "clock")  == 0) pinMode         (pin, GPIO_CLOCK) ;
-  else if (strcasecmp (mode, "up")     == 0) pullUpDnControl (pin, PUD_UP) ;
-  else if (strcasecmp (mode, "down")   == 0) pullUpDnControl (pin, PUD_DOWN) ;
-  else if (strcasecmp (mode, "tri")    == 0) pullUpDnControl (pin, PUD_OFF) ;
-  else if (strcasecmp (mode, "off")    == 0) pullUpDnControl (pin, PUD_OFF) ;
+  /**/ if (strcasecmp (mode, "in")      == 0) pinMode         (pin, INPUT) ;
+  else if (strcasecmp (mode, "input")   == 0) pinMode         (pin, INPUT) ;
+  else if (strcasecmp (mode, "out")     == 0) pinMode         (pin, OUTPUT) ;
+  else if (strcasecmp (mode, "output")  == 0) pinMode         (pin, OUTPUT) ;
+  else if (strcasecmp (mode, "pwm")     == 0) pinMode         (pin, PWM_OUTPUT) ;
+  else if (strcasecmp (mode, "pwmTone") == 0) pinMode         (pin, PWM_TONE_OUTPUT) ;
+  else if (strcasecmp (mode, "clock")   == 0) pinMode         (pin, GPIO_CLOCK) ;
+  else if (strcasecmp (mode, "up")      == 0) pullUpDnControl (pin, PUD_UP) ;
+  else if (strcasecmp (mode, "down")    == 0) pullUpDnControl (pin, PUD_DOWN) ;
+  else if (strcasecmp (mode, "tri")     == 0) pullUpDnControl (pin, PUD_OFF) ;
+  else if (strcasecmp (mode, "off")     == 0) pullUpDnControl (pin, PUD_OFF) ;
 
 // Undocumented
 
@@ -742,7 +743,7 @@ static void doGbw (int argc, char *argv [])
     exit (1) ;
   }
 
-  if ((value < 0) || (value > 1023))
+  if ((value < 0) || (value > 255))
   {
     fprintf (stderr, "%s: gbw: Value must be from 0 to 255\n", argv [0]) ;
     exit (1) ;
@@ -933,6 +934,30 @@ void doToggle (int argc, char *argv [])
   digitalWrite (pin, !digitalRead (pin)) ;
 }
 
+
+/*
+ * doPwmTone:
+ *	Output a tone in a PWM pin
+ *********************************************************************************
+ */
+
+void doPwmTone (int argc, char *argv [])
+{
+  int pin, freq ;
+
+  if (argc != 4)
+  {
+    fprintf (stderr, "Usage: %s pwmTone <pin> <freq>\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  pin = atoi (argv [2]) ;
+  freq = atoi (argv [3]) ;
+
+  pwmToneWrite (pin, freq) ;
+}
+
+
 /*
  * doClock:
  *	Output a clock on a pin
@@ -1100,7 +1125,7 @@ int main (int argc, char *argv [])
   if (strcasecmp (argv [1], "-warranty") == 0)
   {
     printf ("gpio version: %s\n", VERSION) ;
-    printf ("Copyright (c) 2012-2013 Gordon Henderson\n") ;
+    printf ("Copyright (c) 2012-2014 Gordon Henderson\n") ;
     printf ("\n") ;
     printf ("    This program is free software; you can redistribute it and/or modify\n") ;
     printf ("    it under the terms of the GNU Leser General Public License as published\n") ;
@@ -1228,6 +1253,7 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "pwm-ms"   ) == 0) doPwmMode    (PWM_MODE_MS) ;
   else if (strcasecmp (argv [1], "pwmr"     ) == 0) doPwmRange   (argc, argv) ;
   else if (strcasecmp (argv [1], "pwmc"     ) == 0) doPwmClock   (argc, argv) ;
+  else if (strcasecmp (argv [1], "pwmTone"  ) == 0) doPwmTone    (argc, argv) ;
   else if (strcasecmp (argv [1], "drive"    ) == 0) doPadDrive   (argc, argv) ;
   else if (strcasecmp (argv [1], "readall"  ) == 0) doReadallOld () ;
   else if (strcasecmp (argv [1], "nreadall" ) == 0) doReadall    () ;

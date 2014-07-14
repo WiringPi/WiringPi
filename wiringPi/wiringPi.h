@@ -44,6 +44,7 @@
 #define	GPIO_CLOCK		 3
 #define	SOFT_PWM_OUTPUT		 4
 #define	SOFT_TONE_OUTPUT	 5
+#define	PWM_TONE_OUTPUT		 6
 
 #define	LOW			 0
 #define	HIGH			 1
@@ -70,7 +71,8 @@
 
 #define	PI_MODEL_A		0
 #define	PI_MODEL_B		1
-#define	PI_MODEL_CM		2
+#define	PI_MODEL_BPLUS		2
+#define	PI_MODEL_CM		3
 
 
 // Threads
@@ -128,7 +130,6 @@ extern "C" {
 
 extern const char *piModelNames [] ;
 extern const char *piRevisionNames[] ;
-extern const char *piComputeRevisionNames[] ;
 
 // Internal
 
@@ -167,6 +168,7 @@ extern int  wpiPinToGpio        (int wpiPin) ;
 extern int  physPinToGpio       (int physPin) ;
 extern void setPadDrive         (int group, int value) ;
 extern int  getAlt              (int pin) ;
+extern void pwmToneWrite        (int pin, int freq) ;
 extern void digitalWriteByte    (int value) ;
 extern void pwmSetMode          (int mode) ;
 extern void pwmSetRange         (unsigned int range) ;
