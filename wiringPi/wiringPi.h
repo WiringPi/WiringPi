@@ -67,13 +67,32 @@
 #define	INT_EDGE_RISING		2
 #define	INT_EDGE_BOTH		3
 
-// Pi model types
+// Pi model types and version numbers
+//	Intended for the GPIO program Use at your own risk.
 
-#define	PI_MODEL_A		0
-#define	PI_MODEL_B		1
-#define	PI_MODEL_BPLUS		2
-#define	PI_MODEL_CM		3
+#define	PI_MODEL_UNKNOWN	0
+#define	PI_MODEL_A		1
+#define	PI_MODEL_B		2
+#define	PI_MODEL_BP		3
+#define	PI_MODEL_CM		4
 
+#define	PI_VERSION_UNKNOWN	0
+#define	PI_VERSION_1		1
+#define	PI_VERSION_1_1		2
+#define	PI_VERSION_1_2		3
+#define	PI_VERSION_2		4
+
+#define	PI_MAKER_UNKNOWN	0
+#define	PI_MAKER_EGOMAN		1
+#define	PI_MAKER_SONY		2
+#define	PI_MAKER_QISDA		3
+
+extern const char *piModelNames    [5] ;
+extern const char *piRevisionNames [5] ;
+extern const char *piMakerNames    [4] ;
+
+
+//	Intended for the GPIO program Use at your own risk.
 
 // Threads
 
@@ -128,8 +147,8 @@ extern "C" {
 
 // Data
 
-extern const char *piModelNames [] ;
-extern const char *piRevisionNames[] ;
+//extern const char *piModelNames [] ;
+//extern const char *piRevisionNames[] ;
 
 // Internal
 
@@ -163,7 +182,7 @@ extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio
 // On-Board Raspberry Pi hardware specific stuff
 
 extern int  piBoardRev          (void) ;
-extern void piBoardId           (int *model, int *rev, int *mem, char **maker) ;
+extern void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
 extern int  wpiPinToGpio        (int wpiPin) ;
 extern int  physPinToGpio       (int physPin) ;
 extern void setPadDrive         (int group, int value) ;

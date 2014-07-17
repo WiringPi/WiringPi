@@ -166,7 +166,7 @@ depend:
 
 # DO NOT DELETE
 
-wiringPi.o: wiringPi.h
+wiringPi.o: softPwm.h softTone.h wiringPi.h
 wiringSerial.o: wiringSerial.h
 wiringShift.o: wiringPi.h wiringShift.h
 piHiPri.o: wiringPi.h
@@ -190,4 +190,4 @@ mcp3422.o: wiringPi.h wiringPiI2C.h mcp3422.h
 max31855.o: wiringPi.h wiringPiSPI.h max31855.h
 max5322.o: wiringPi.h wiringPiSPI.h max5322.h
 sn3218.o: wiringPi.h wiringPiI2C.h sn3218.h
-drc.o: wiringPi.h wiringSerial.h drc.h
+drcSerial.o: wiringPi.h wiringSerial.h drcSerial.h

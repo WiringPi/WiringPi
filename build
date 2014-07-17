@@ -94,7 +94,10 @@ fi
 echo
 echo All Done.
 echo ""
-echo "NOTE: This is wiringPi v2, and if you need to use the lcd, Piface,"
-echo "  Gertboard, MaxDetext, etc. routines then you must change your"
-echo "  compile scripts to add -lwiringPiDev"
+echo "NOTE: To compile programs with wiringPi, you need to add:"
+echo "    -lwiringPi"
+echo "  to your compile line(s) To use the Gertboard, MaxDetect, etc."
+echo "  code (the devLib), you need to also add:"
+echo "    -lwiringPiDev"
+echo "  to your compile line(s)."
 echo ""

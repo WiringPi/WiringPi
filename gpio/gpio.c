@@ -46,8 +46,6 @@ extern int wiringPiDebug ;
 // External functions I can't be bothered creating a separate .h file for:
 
 extern void doReadall    (void) ;
-extern void doReadallOld (void) ;
-
 extern void doPins       (void) ;
 
 #ifndef TRUE
@@ -55,8 +53,9 @@ extern void doPins       (void) ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION		"2.18"
-#define	I2CDETECT	"/usr/sbin/i2cdetect"
+#define	VERSION			"2.20"
+#define	PI_USB_POWER_CONTROL	38
+#define	I2CDETECT		"/usr/sbin/i2cdetect"
 
 int wpMode ;
 
@@ -75,6 +74,7 @@ char *usage = "Usage: gpio -v\n"
 	      "       gpio pwmc <divider> \n"
 	      "       gpio load spi/i2c\n"
 	      "       gpio i2cd/i2cdetect\n"
+	      "       gpio usbp high/low\n"
 	      "       gpio gbr <channel>\n"
 	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
 
@@ -718,6 +718,58 @@ static void doPadDrive (int argc, char *argv [])
 
 
 /*
+ * doUsbP:
+ *	Control USB Power - High (1.2A) or Low (600mA)
+ *	gpio usbp high/low
+ *********************************************************************************
+ */
+
+static void doUsbP (int argc, char *argv [])
+{
+  int model, rev, mem, maker, overVolted ;
+
+  if (argc != 3)
+  {
+    fprintf (stderr, "Usage: %s usbp high|low\n", argv [0]) ;
+    exit (1) ;
+  }
+
+// Make sure we're on a B+
+
+  piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+
+  if (model != PI_MODEL_BP)
+  {
+    fprintf (stderr, "USB power contol is applicable to B+ boards only.\n") ;
+    exit (1) ;
+  }
+    
+// Need to force BCM_GPIO mode:
+
+  wiringPiSetupGpio () ;
+
+  if ((strcasecmp (argv [2], "high") == 0) || (strcasecmp (argv [2], "hi") == 0))
+  {
+    digitalWrite (PI_USB_POWER_CONTROL, 1) ;
+    pinMode (PI_USB_POWER_CONTROL, OUTPUT) ;
+    printf ("Switched to HIGH current USB (1.2A)\n") ;
+    return ;
+  }
+
+  if ((strcasecmp (argv [2], "low") == 0) || (strcasecmp (argv [2], "lo") == 0))
+  {
+    digitalWrite (PI_USB_POWER_CONTROL, 0) ;
+    pinMode (PI_USB_POWER_CONTROL, OUTPUT) ;
+    printf ("Switched to LOW current USB (600mA)\n") ;
+    return ;
+  }
+
+  fprintf (stderr, "Usage: %s usbp high|low\n", argv [0]) ;
+  exit (1) ;
+}
+
+
+/*
  * doGbw:
  *	gpio gbw channel value
  *	Gertboard Write - To the Analog output
@@ -1069,8 +1121,7 @@ static void doPwmClock (int argc, char *argv [])
 int main (int argc, char *argv [])
 {
   int i ;
-  int model, rev, mem ;
-  char *maker ;
+  int model, rev, mem, maker, overVolted ;
 
   if (getenv ("WIRINGPI_DEBUG") != NULL)
   {
@@ -1115,10 +1166,19 @@ int main (int argc, char *argv [])
     printf ("This is free software with ABSOLUTELY NO WARRANTY.\n") ;
     printf ("For details type: %s -warranty\n", argv [0]) ;
     printf ("\n") ;
-    piBoardId (&model, &rev, &mem, &maker) ;
-    printf ("Raspberry Pi Details:\n") ;
-    printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s\n", 
-	piModelNames [model], piRevisionNames [rev], mem, maker) ;
+    piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+    if (model == PI_MODEL_UNKNOWN)
+    {
+      printf ("Your Raspberry Pi has an unknown model type. Please report this to\n") ;
+      printf ("    projects@drogon.net\n") ;
+      printf ("with a copy of your /proc/cpuinfo if possible\n") ;
+    }
+    else
+    {
+      printf ("Raspberry Pi Details:\n") ;
+      printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s %s\n", 
+	  piModelNames [model], piRevisionNames [rev], mem, piMakerNames [maker], overVolted ? "[OV]" : "") ;
+    }
     return 0 ;
   }
 
@@ -1255,7 +1315,8 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "pwmc"     ) == 0) doPwmClock   (argc, argv) ;
   else if (strcasecmp (argv [1], "pwmTone"  ) == 0) doPwmTone    (argc, argv) ;
   else if (strcasecmp (argv [1], "drive"    ) == 0) doPadDrive   (argc, argv) ;
-  else if (strcasecmp (argv [1], "readall"  ) == 0) doReadallOld () ;
+  else if (strcasecmp (argv [1], "usbp"     ) == 0) doUsbP       (argc, argv) ;
+  else if (strcasecmp (argv [1], "readall"  ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "nreadall" ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "pins"     ) == 0) doPins       () ;
   else if (strcasecmp (argv [1], "i2cdetect") == 0) doI2Cdetect  (argc, argv) ;

@@ -13,11 +13,11 @@ gpio \- Command-line access to Raspberry Pi's GPIO
 .PP
 .B gpio
 .B [ \-x extension:params ]
-.B mode/read/write/aread/awrite/pwm ...
+.B mode/read/write/aread/awrite/pwm/pwmTone ...
 .PP
 .B gpio
 .B [ \-p ]
-.B read/write/wb
+.B read/write/toggle/wb
 .B ...
 .PP
 .B gpio
@@ -37,6 +37,10 @@ gpio \- Command-line access to Raspberry Pi's GPIO
 .B gpio
 .B drive
 group value
+.PP
+.B gpio
+.B usbp
+high | low
 .PP
 .B gpio
 .B pwm-bal/pwm-ms
@@ -230,6 +234,13 @@ group value
 Change the pad driver value for the given pad group to the supplied drive
 value. Group is 0, 1 or 2 and value is 0-7. Do not use unless you are
 absolutely sure you know what you're doing.
+
+.TP
+.B usbp
+high | low
+
+Change the USB current limiter to high (1.2 amps) or low (the default, 600mA)
+This is only applicable to the model B+
 
 .TP
 .B pwm-bal/pwm-ms 
