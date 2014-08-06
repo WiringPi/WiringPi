@@ -1,0 +1,10 @@
+examples/*
+!examples/*.*
+
+*.o
+*.a
+*.so.*
+
+gpio/gpio
+
+
