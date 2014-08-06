@@ -66,7 +66,7 @@ subdirs: $(SUBDIRS)
 
 
 $(SUBDIRS):
-	$(MAKE) -C $@
+	@$(MAKE) --no-print-directory -C $@
 
 
 blink:	blink.o
@@ -170,7 +170,7 @@ clean:	$(CLEANDIRS)
 CLEANDIRS: $(SUBDIRS:%=clean-%)
 
 $(CLEANDIRS): 
-	$(MAKE) -C $(@:clean-%=%) clean
+	@$(MAKE) --no-print-directory -C $(@:clean-%=%) clean
 
 
 .PHONY: tags
