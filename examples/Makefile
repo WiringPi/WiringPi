@@ -43,7 +43,11 @@ SRC	=	blink.c blink8.c blink12.c					\
 		nes.c								\
 		softPwm.c softTone.c 						\
 		delayTest.c serialRead.c serialTest.c okLed.c ds1302.c		\
-		rht03.c piglow.c
+		rht03.c 
+
+SUBDIRS = 	PiGlow Gertboard PiFace q2w
+
+CLEANDIRS = 	$(SUBDIRS:%=clean-%)
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -54,7 +58,16 @@ all:
 	@echo "    $(BINS)" | fmt
 	@echo ""
 
-really-all:	$(BINS)
+really-all:	$(BINS) $(SUBDIRS)
+
+
+.PHONY: subdirs $(SUBDIRS)
+subdirs: $(SUBDIRS)
+
+
+$(SUBDIRS):
+	$(MAKE) -C $@
+
 
 blink:	blink.o
 	@echo [link]
@@ -144,23 +157,28 @@ ds1302:	ds1302.o
 	@echo [link]
 	@$(CC) -o $@ ds1302.o $(LDFLAGS) $(LDLIBS)
 
-piglow:	piglow.o
-	@echo [link]
-	@$(CC) -o $@ piglow.o $(LDFLAGS) $(LDLIBS)
-
-
 .c.o:
 	@echo [CC] $<
 	@$(CC) -c $(CFLAGS) $< -o $@
 
-clean:
+.PHONY: clean
+clean:	$(CLEANDIRS)
 	@echo "[Clean]"
 	@rm -f $(OBJ) *~ core tags $(BINS)
 
+.PHONY: subdirs $(CLEANDIRS)
+CLEANDIRS: $(SUBDIRS:%=clean-%)
+
+$(CLEANDIRS): 
+	$(MAKE) -C $(@:clean-%=%) clean
+
+
+.PHONY: tags
 tags:	$(SRC)
 	@echo [ctags]
 	@ctags $(SRC)
 
+.PHONY: depend
 depend:
 	makedepend -Y $(SRC)
 
