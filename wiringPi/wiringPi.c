@@ -989,6 +989,10 @@ void pinModeGpio (int pin, int mode)
     delayMicroseconds (110) ;
     gpioClockSetGpio (pin, 100000) ;
   }
+  else if (mode == INPUT_PULLUP) {
+    *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) ; // Sets bits to zero = input
+    pullUpDnControlGpio (pin, PUD_UP);
+  }
 }
 
 void pinModeWPi (int pin, int mode)
