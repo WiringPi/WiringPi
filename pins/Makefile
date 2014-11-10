@@ -13,6 +13,6 @@ pdf:	pins.dvi
 	@dvipdf pins.dvi
 
 
-.PHONEY:	clean
+.PHONY:	clean
 clean:
 	@rm -f *.dvi *.aux *.log *.ps *.toc *.bak *~

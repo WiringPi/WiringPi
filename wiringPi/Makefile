@@ -77,18 +77,18 @@ $(DYNAMIC):	$(OBJ)
 	@echo [Compile] $<
 	@$(CC) -c $(CFLAGS) $< -o $@
 
-.PHONEY:	clean
+.PHONY:	clean
 clean:
 	@echo "[Clean]"
 	@rm -f $(OBJ) $(OBJ_I2C) *~ core tags Makefile.bak libwiringPi.*
 
-.PHONEY:	tags
+.PHONY:	tags
 tags:	$(SRC)
 	@echo [ctags]
 	@ctags $(SRC)
 
 
-.PHONEY:	install-headers
+.PHONY:	install-headers
 install-headers:
 	@echo "[Install Headers]"
 	@install -m 0755 -d			$(DESTDIR)$(PREFIX)/include
@@ -116,7 +116,7 @@ install-headers:
 	@install -m 0644 pcf8591.h		$(DESTDIR)$(PREFIX)/include
 	@install -m 0644 sn3218.h		$(DESTDIR)$(PREFIX)/include
 
-.PHONEY:	install
+.PHONY:	install
 install:	$(DYNAMIC) install-headers
 	@echo "[Install Dynamic Lib]"
 	@install -m 0755 -d						$(DESTDIR)$(PREFIX)/lib
@@ -124,13 +124,13 @@ install:	$(DYNAMIC) install-headers
 	@ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION)	$(DESTDIR)/lib/libwiringPi.so
 	@ldconfig
 
-.PHONEY:	install-static
+.PHONY:	install-static
 install-static:	$(STATIC) install-headers
 	@echo "[Install Static Lib]"
 	@install -m 0755 -d			$(DESTDIR)$(PREFIX)/lib
 	@install -m 0755 libwiringPi.a		$(DESTDIR)$(PREFIX)/lib
 
-.PHONEY:	uninstall
+.PHONY:	uninstall
 uninstall:
 	@echo "[UnInstall]"
 	@rm -f $(DESTDIR)$(PREFIX)/include/wiringPi.h
@@ -160,7 +160,7 @@ uninstall:
 	@ldconfig
 
 
-.PHONEY:	depend
+.PHONY:	depend
 depend:
 	makedepend -Y $(SRC) $(SRC_I2C)
 

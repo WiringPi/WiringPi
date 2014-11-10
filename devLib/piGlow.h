@@ -24,8 +24,8 @@
 
 
 #define	PIGLOW_RED	0
-#define	PIGLOW_YELLOW	1
-#define	PIGLOW_ORANGE	2
+#define	PIGLOW_ORANGE	1
+#define	PIGLOW_YELLOW	2
 #define	PIGLOW_GREEN	3
 #define	PIGLOW_BLUE	4
 #define	PIGLOW_WHITE	5

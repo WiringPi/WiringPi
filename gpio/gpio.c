@@ -2,7 +2,7 @@
  * gpio.c:
  *	Swiss-Army-Knife, Set-UID command-line interface to the Raspberry
  *	Pi's GPIO.
- *	Copyright (c) 2012-2013 Gordon Henderson
+ *	Copyright (c) 2012-2014 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -53,7 +53,7 @@ extern void doPins       (void) ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION			"2.20"
+#define	VERSION			"2.21"
 #define	PI_USB_POWER_CONTROL	38
 #define	I2CDETECT		"/usr/sbin/i2cdetect"
 
@@ -612,23 +612,44 @@ static void doResetExternal (void)
 
 static void doReset (char *progName)
 {
-  int pin ;
+  int model, rev, mem, maker, overVolted ;
+  int pin, endPin ;
 
-  if (wiringPiNodes != NULL)	// External reset
+  printf ("GPIO Reset is dangerous!\n") ;
+  printf (" - Do Not rely on this to do anything sensible!\n") ;
+
+  if (wiringPiNodes != NULL)	// External
+  {
     doResetExternal () ;
+    return ;
+  }
+
+  piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+
+  /**/ if ((model == PI_MODEL_A) || (model == PI_MODEL_B))
+    endPin = 16 ;
+  else if (model == PI_MODEL_BP)
+    endPin = 39 ;
+  else if (model == PI_MODEL_CM)
+  {
+    printf (" - Don't know how to reset a comput module:\n") ;
+    printf ("   Write a shell-script to reset the pins to the state you need.\n") ;
+    return ;
+  }
   else
   {
-    doUnexportall (progName) ;
+    printf ("Oops - unable to determine board type... model: %d\n", model) ;
+    return ;
+  }
 
-    for (pin = 0 ; pin < 64 ; ++pin)
-    {
-      if (wpiPinToGpio (pin) == -1)
-	continue ;
+  for (pin = 0 ; pin <= endPin ; ++pin)
+  {
+    if (wpiPinToGpio (pin) == -1)
+      continue ;
 
-      digitalWrite    (pin, LOW) ;
-      pinMode         (pin, INPUT) ;
-      pullUpDnControl (pin, PUD_OFF) ;
-    }
+    digitalWrite    (pin, LOW) ;
+    pinMode         (pin, INPUT) ;
+    pullUpDnControl (pin, PUD_OFF) ;
   }
 }
 

@@ -278,23 +278,31 @@ void abReadall (int model, int rev)
 
 
 /*
- * bPlusReadall:
- *	Read all the pins on the model B+
+ * piPlusReadall:
+ *	Read all the pins on the model A+ or the B+
  *********************************************************************************
  */
 
-void bPlusReadall (void)
+void piPlusReadall (int model)
 {
   int pin ;
 
-  printf (" +-----+-----+---------+------+---+--B Plus--+---+------+---------+-----+-----+\n") ;
+  if (model == PI_MODEL_AP)
+    printf (" +-----+-----+---------+------+---+--A Plus--+---+------+---------+-----+-----+\n") ;
+  else
+    printf (" +-----+-----+---------+------+---+--B Plus--+---+------+---------+-----+-----+\n") ;
+
   printf (" | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |\n") ;
   printf (" +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+\n") ;
   for (pin = 1 ; pin <= 40 ; pin += 2)
     readallPhys (pin) ;
   printf (" +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+\n") ;
   printf (" | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |\n") ;
-  printf (" +-----+-----+---------+------+---+--B Plus--+---+------+---------+-----+-----+\n") ;
+
+  if (model == PI_MODEL_AP)
+    printf (" +-----+-----+---------+------+---+--A Plus--+---+------+---------+-----+-----+\n") ;
+  else
+    printf (" +-----+-----+---------+------+---+--B Plus--+---+------+---------+-----+-----+\n") ;
 }
 
 
@@ -312,8 +320,8 @@ void doReadall (void)
 
   /**/ if ((model == PI_MODEL_A) || (model == PI_MODEL_B))
     abReadall (model, rev) ;
-  else if (model == PI_MODEL_BP)
-    bPlusReadall () ;
+  else if ((model == PI_MODEL_BP) || (model == PI_MODEL_AP))
+    piPlusReadall (model) ;
   else if (model == PI_MODEL_CM)
     cmReadall () ;
   else
