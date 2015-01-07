@@ -222,12 +222,13 @@ const char *piRevisionNames [5] =
   "2",
 } ;
 
-const char *piMakerNames [4] =
+const char *piMakerNames [5] =
 {
   "Unknown",
   "Egoman",
   "Sony",
   "Qusda",
+  "MBest",
 } ;
 
 
@@ -787,6 +788,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted)
   else if (strcmp (c, "0010") == 0) { *model = PI_MODEL_BP ; *rev = PI_VERSION_1_2 ; *mem = 512 ; *maker = PI_MAKER_SONY   ; }
   else if (strcmp (c, "0011") == 0) { *model = PI_MODEL_CM ; *rev = PI_VERSION_1_2 ; *mem = 512 ; *maker = PI_MAKER_SONY   ; }
   else if (strcmp (c, "0012") == 0) { *model = PI_MODEL_AP ; *rev = PI_VERSION_1_2 ; *mem = 256 ; *maker = PI_MAKER_SONY   ; }
+  else if (strcmp (c, "0013") == 0) { *model = PI_MODEL_BP ; *rev = PI_VERSION_1_2 ; *mem = 512 ; *maker = PI_MAKER_MBEST  ; }
   else                              { *model = 0           ; *rev = 0              ; *mem =   0 ; *maker = 0 ;               }
 }
  

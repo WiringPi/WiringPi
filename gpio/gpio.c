@@ -53,7 +53,7 @@ extern void doPins       (void) ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION			"2.21"
+#define	VERSION			"2.22"
 #define	PI_USB_POWER_CONTROL	38
 #define	I2CDETECT		"/usr/sbin/i2cdetect"
 

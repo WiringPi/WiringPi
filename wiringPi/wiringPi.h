@@ -87,10 +87,11 @@
 #define	PI_MAKER_EGOMAN		1
 #define	PI_MAKER_SONY		2
 #define	PI_MAKER_QISDA		3
+#define	PI_MAKER_MBEST		4
 
 extern const char *piModelNames    [6] ;
 extern const char *piRevisionNames [5] ;
-extern const char *piMakerNames    [4] ;
+extern const char *piMakerNames    [5] ;
 
 
 //	Intended for the GPIO program Use at your own risk.
