@@ -75,6 +75,11 @@ int wiringPiSPIDataRW (int channel, unsigned char *data, int len)
 
   channel &= 1 ;
 
+// Mentioned in spidev.h but not used in the original kernel documentation
+//	test program )-:
+
+  memset (&spi, 0, sizeof (spi)) ;
+
   spi.tx_buf        = (unsigned long)data ;
   spi.rx_buf        = (unsigned long)data ;
   spi.len           = len ;
