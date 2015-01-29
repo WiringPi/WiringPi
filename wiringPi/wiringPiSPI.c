@@ -77,6 +77,8 @@ int wiringPiSPIDataRW (int channel, unsigned char *data, int len)
   spi.delay_usecs   = spiDelay ;
   spi.speed_hz      = spiSpeeds [channel] ;
   spi.bits_per_word = spiBPW ;
+  spi.tx_nbits      = 0 ;
+  spi.rx_nbits      = 0 ;
 
   return ioctl (spiFds [channel], SPI_IOC_MESSAGE(1), &spi) ;
 }
