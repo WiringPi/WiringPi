@@ -4,7 +4,7 @@
 #	  A swiss-army knige of GPIO shenanigans.
 #	https://projects.drogon.net/wiring-pi
 #
-#	Copyright (c) 2012-2013 Gordon Henderson
+#	Copyright (c) 2012-2015 Gordon Henderson
 #################################################################################
 # This file is part of wiringPi:
 #	Wiring Compatable library for the Raspberry Pi
@@ -38,7 +38,7 @@ LIBS    = -lwiringPi -lwiringPiDev -lpthread -lm
 # May not need to  alter anything below this line
 ###############################################################################
 
-SRC	=	gpio.c extensions.c readall.c pins.c
+SRC	=	gpio.c readall.c pins.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -82,6 +82,3 @@ depend:
 	makedepend -Y $(SRC)
 
 # DO NOT DELETE
-
-gpio.o: extensions.h
-extensions.o: extensions.h

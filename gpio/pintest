@@ -2,7 +2,7 @@
 #
 # pintest
 #	Test the Pi's GPIO port
-# Copyright (c) 2013 Gordon Henderson
+# Copyright (c) 2013-2015 Gordon Henderson
 #################################################################################
 # This file is part of wiringPi:
 #	Wiring Compatable library for the Raspberry Pi
@@ -104,13 +104,11 @@ testPins()
 
 intro()
 {
-  revision=`gpio -V`
   cat <<EOF
 PinTest
 =======
 
-This is a simple utility to test the GPIO pins on your revision $revision
-Raspberry Pi.
+This is a simple utility to test the GPIO pins on your Raspberry Pi.
 
 NOTE: All GPIO peripherals must be removed to perform this test. This
   includes serial, I2C and SPI connections. You may get incorrect results
@@ -122,6 +120,9 @@ the output drivers.
 
 You will need to reboot your Pi after this test if you wish to use the 
 serial port as it will be left in GPIO mode rather than serial mode.
+
+This test only tests the original pins present on the Rev A and B. It
+does not test the extra pins on the Revision A2, B2 nor the A+ or B+
 
 Please make sure everything is removed and press the ENTER key to continue,
 EOF
@@ -136,7 +137,6 @@ EOF
 
 intro
 gpio unexportall
-gpio reset
 
    errs=0
 totErrs=0
@@ -146,12 +146,6 @@ echo ""
 # Main pins
 
 testPins 0 7 "The main 8 GPIO pins"
-
-# P5 pins, if a rev 2:
-
-if [ $revision = 2 ]; then
-  testPins 17 20 "The 4 pins on the P5 connector"
-fi
 
 # SPI
 

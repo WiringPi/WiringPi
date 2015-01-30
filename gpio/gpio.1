@@ -1,4 +1,4 @@
-.TH "GPIO" "March 2013" "Command-Line access to Raspberry Pi's GPIO"
+.TH "GPIO" "January 2015" "Command-Line access to Raspberry Pi's GPIO"
 
 .SH NAME
 gpio \- Command-line access to Raspberry Pi's GPIO
@@ -21,7 +21,7 @@ gpio \- Command-line access to Raspberry Pi's GPIO
 .B ...
 .PP
 .B gpio
-.B readall/reset
+.B readall
 .PP
 .B gpio
 .B unexportall/exports
@@ -157,16 +157,6 @@ but it's unable to determine pin modes or states, so will perform both a
 digital and analog read on each pin in-turn.
 
 .TP
-.B reset
-Resets the GPIO - As much as it's possible to do. All pins are set to
-input mode and all the internal pull-up/down resistors are disconnected
-(tristate mode).
-
-The reset command is usable with an extension module (via the -x parameter),
-but it's limited to turning the pin into input mode (if applicable) and
-removing any pull up/down resistor.
-
-.TP
 .B pwm <pin> <value>
 Write a PWM value (0-1023) to the given pin. The pin needs to be put
 into PWM mode first.
@@ -181,6 +171,8 @@ clock mode first.
 Set a pin into \fIinput\fR, \fIoutput\fR or \fIpwm\fR mode. Can also
 use the literals \fIup\fR, \fIdown\fR or \fItri\fR to set the internal
 pull-up, pull-down or tristate (off) controls.
+
+The ALT modes can also be set using \fIalt0\fR, \fIalt1\fR,  ... \fIalt5\fR.
 
 .TP
 .B unexportall
@@ -257,12 +249,30 @@ on the associated /dev/ entries so that the current user has access to
 them. Optionally it will set the I2C baudrate to that supplied in Kb/sec
 (or as close as the Pi can manage) The default speed is 100Kb/sec.
 
+Note that on a Pi with a recent 3.18 kernel with the device-tree structure
+enable, the load may fail until you add:
+
+.I dtparam=i2c=on
+
+into \fB/boot/config.txt\fR to allow user use of the I2C bus.
+
 .TP
-.B load spi [buffer size in KB]
+.B load spi
 This loads the spi drivers into the kernel and changes the permissions
 on the associated /dev/ entries so that the current user has access to
-them. Optionally it will set the SPI buffer size to that supplied. The
-default is 4KB.
+them. It used to have the ability to change the buffer size from the
+default of 4096 bytes to an arbitary value, however for some time the
+Pi Foundation have compiled the SPI device driver into the kernel and
+this has fixed the buffer size. The way to change it now is to edit
+the /boot/cmdline.txt file and add on spdev.bufsiz=8192 to set it to
+e.g. 8192 bytes then reboot.
+
+Note that on a Pi with a recent 3.18 kernel with the device-tree structure
+enable, the load may fail until you add:
+
+.I dtparam=spi=on
+
+into \fB/boot/config.txt\fR to allow user use of the I2C bus.
 
 .TP
 .B gbr
@@ -280,41 +290,12 @@ SPI digital to analogue converter.
 The board jumpers need to be in-place to do this operation.
 
 
-.SH "WiringPi vs. BCM_GPIO Pin numbering"
+.SH "WiringPi vs. BCM_GPIO Pin numbering vs. Physical pin numbering"
 
 .PP
-.TS
-c c c c l.
-WiringPi	GPIO-r1	GPIO-r2	P1-Phys	Function
-_
- 0	17	17	11	
- 1	18	18	12	(PWM)
- 2	21	27	13
- 3	22	22	15
- 4	23	23	16
- 5	24	24	18
- 6	25	25	22
- 7	4	4	7
- 8	0	2	3	I2C: SDA0
- 9	1	3	5	I2C: SCL0
-10	8	8	24	SPI: CE0
-11	7	7	26	SPI: CE1
-12	10	10	19	SPI: MOSI
-13	9	9	21	SPI: MISO
-14	11	11	23	SPI: SCLK
-15	14	14	8	TxD
-16	15	16	10	RxD
-17	-	28
-18	-	29
-19	-	30
-20	-	31
-.TE
-
-Note that "r1" and "r2" above refers to the board revision. Normally
-wiringPi detects the correct board revision with use for it's own
-numbering scheme, but if you are using a Revision 2 board with some
-of the pins which change numbers between revisions you will need
-to alter your software.
+The quickest way to get a list of the pin differences is to run the command
+.TP
+gpio readall
 
 .SH FILES
 
@@ -361,7 +342,7 @@ Please report bugs to <projects@drogon.net>
 
 .SH COPYRIGHT
 
-Copyright (c) 2012-2013 Gordon Henderson
+Copyright (c) 2012-2015 Gordon Henderson
 This is free software; see the source for copying conditions. There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
