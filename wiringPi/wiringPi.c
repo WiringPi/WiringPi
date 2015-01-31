@@ -1,7 +1,7 @@
 /*
  * wiringPi:
- *	Arduino compatable (ish) Wiring library for the Raspberry Pi
- *	Copyright (c) 2012 Gordon Henderson
+ *	Arduino look-a-like Wiring library for the Raspberry Pi
+ *	Copyright (c) 2012-2015 Gordon Henderson
  *	Additional code for pwmSetClock by Chris Hall <chris@kchall.plus.com>
  *
  *	Thanks to code samples from Gert Jan van Loo and the
@@ -131,7 +131,7 @@ struct wiringPiNodeStruct *wiringPiNodes = NULL ;
 //	Taken from Gert/Doms code. Some of this is not in the manual
 //	that I can find )-:
 
-static volatile unsigned int	BCM2708_PERI_BASE =  0x20000000 ;
+static volatile unsigned int	 BCM2708_PERI_BASE = 0x20000000 ;	// Variable for Pi2
 #define GPIO_PADS		(BCM2708_PERI_BASE + 0x00100000)
 #define CLOCK_BASE		(BCM2708_PERI_BASE + 0x00101000)
 #define GPIO_BASE		(BCM2708_PERI_BASE + 0x00200000)
@@ -607,7 +607,7 @@ int wiringPiFailure (int fatal, const char *message, ...)
  *
  *	Revision 1 really means the early Model B's.
  *	Revision 2 is everything else - it covers the B, B+ and CM.
- *		... and the quad core Pi 2 - which is a B+ ++  ...
+ *		... and the Pi 2 - which is a B+ ++  ...
  *
  *	Seems there are some boards with 0000 in them (mistake in manufacture)
  *	So the distinction between boards that I can see is:

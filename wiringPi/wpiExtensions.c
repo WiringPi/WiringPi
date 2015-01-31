@@ -44,14 +44,14 @@
 #include "mcp23s08.h"
 #include "mcp23s17.h"
 #include "sr595.h"
-#include "pcf8591.h"
 #include "pcf8574.h"
-#include "max31855.h"
-#include "max5322.h"
+#include "pcf8591.h"
 #include "mcp3002.h"
 #include "mcp3004.h"
 #include "mcp4802.h"
 #include "mcp3422.h"
+#include "max31855.h"
+#include "max5322.h"
 #include "sn3218.h"
 #include "drcSerial.h"
 
@@ -664,6 +664,8 @@ static struct extensionFunctionStruct extensionFunctions [] =
 /*
  * loadWPiExtension:
  *	Load in a wiringPi extension
+ *	The extensionData always starts with the name, a colon then the pinBase
+ *	number. Other parameters after that are decoded by the module in question.
  *********************************************************************************
  */
 
@@ -676,7 +678,7 @@ int loadWPiExtension (char *progName, char *extensionData, int printErrors)
 
   verbose = printErrors ;
 
-// Get the extension extension name by finding the first colon
+// Get the extension name by finding the first colon
 
   p = extension ;
   while (*p != ':')
@@ -688,8 +690,9 @@ int loadWPiExtension (char *progName, char *extensionData, int printErrors)
     }
     ++p ;
   }
-
   *p++ = 0 ;
+
+// Simple ATOI code
 
   if (!isdigit (*p))
   {
@@ -699,7 +702,7 @@ int loadWPiExtension (char *progName, char *extensionData, int printErrors)
 
   while (isdigit (*p))
   {
-    if (pinBase > 1000000000)
+    if (pinBase > 1000000000) // Lets be realistic here...
     {
       verbError ("%s: pinBase too large", progName) ;
       return FALSE ;

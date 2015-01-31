@@ -44,6 +44,9 @@ OBJ	=	$(SRC:.c=.o)
 
 all:		gpio
 
+version.h:	../VERSION
+	./newVersion
+
 gpio:	$(OBJ)
 	@echo [Link]
 	@$(CC) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
@@ -63,13 +66,19 @@ tags:	$(SRC)
 	@ctags $(SRC)
 
 .PHONY:	install
-install:
+install: gpio
 	@echo "[Install]"
 	@cp gpio		$(DESTDIR)$(PREFIX)/bin
 	@chown root.root	$(DESTDIR)$(PREFIX)/bin/gpio
 	@chmod 4755		$(DESTDIR)$(PREFIX)/bin/gpio
 	@mkdir -p		$(DESTDIR)$(PREFIX)/man/man1
 	@cp gpio.1		$(DESTDIR)$(PREFIX)/man/man1
+
+.PHONY:	install-deb
+install-deb:	gpio
+	@echo "[Install: deb]"
+	@install -m 0755 -d							~/wiringPi/debian/wiringPi/usr/bin
+	@install -m 0755 gpio							~/wiringPi/debian/wiringPi/usr/bin
 
 .PHONY:	uninstall
 uninstall:

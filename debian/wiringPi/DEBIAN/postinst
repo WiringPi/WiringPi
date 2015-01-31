@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+/bin/chown root.root	/usr/bin/gpio
+/bin/chmod 4755		/usr/bin/gpio
+/sbin/ldconfig

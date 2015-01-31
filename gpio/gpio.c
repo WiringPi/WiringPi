@@ -40,6 +40,7 @@
 #include <gertboard.h>
 #include <piFace.h>
 
+#include "version.h"
 
 extern int wiringPiDebug ;
 
@@ -53,7 +54,6 @@ extern void doPins       (void) ;
 #  define	FALSE	(1==2)
 #endif
 
-#define	VERSION			"2.23"
 #define	PI_USB_POWER_CONTROL	38
 #define	I2CDETECT		"/usr/sbin/i2cdetect"
 

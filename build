@@ -73,6 +73,28 @@ if [ x$1 = "xuninstall" ]; then
   exit
 fi
 
+# Only if you know what you're doing!
+
+if [ x$1 = "xdebian" ]; then
+  here=`pwd`
+  cd debian/wiringPi
+  rm -rf usr
+  cd $here/wiringPi
+  make install-deb
+  cd $here/devLib
+  make install-deb
+  cd $here/gpio
+  make install-deb
+  cd $here/debian
+  fakeroot dpkg-deb --build wiringPi
+  mv wiringPi.deb  wiringpi-`cat $here/VERSION`-1.deb
+  exit
+fi
+
+if [ x$1 != "x" ]; then
+  echo "Usage: $0 [clean | uninstall]"
+  exit 1
+fi
 
   echo "wiringPi Build script"
   echo "====================="
@@ -101,11 +123,11 @@ fi
   cd wiringPi
   sudo make uninstall
   if [ x$1 = "xstatic" ]; then
-    make static
+    make -j5 static
     check_make_ok
     sudo make install-static
   else
-    make
+    make -j5
     check_make_ok
     sudo make install
   fi
@@ -116,11 +138,11 @@ fi
   cd ../devLib
   sudo make uninstall
   if [ x$1 = "xstatic" ]; then
-    make static
+    make -j5 static
     check_make_ok
     sudo make install-static
   else
-    make
+    make -j5
     check_make_ok
     sudo make install
   fi
@@ -129,7 +151,7 @@ fi
   echo
   echo "GPIO Utility"
   cd ../gpio
-  make
+  make -j5
   check_make_ok
   sudo make install
   check_make_ok
