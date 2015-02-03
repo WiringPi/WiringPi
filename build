@@ -102,20 +102,20 @@ fi
 
   hardware=`fgrep Hardware /proc/cpuinfo | head -1 | awk '{ print $3 }'`
 
-  if [ x$hardware != "xBCM2708" ]; then
-    echo ""
-    echo "   +------------------------------------------------------------+"
-    echo "   |   wiringPi is designed to run on the Raspberry Pi only.    |"
-    echo "   |   This processor does not appear to be a Raspberry Pi.     |"
-    echo "   +------------------------------------------------------------+"
-    echo "   | In the unlikely event that you think it is a Raspberry Pi, |"
-    echo "   | then please accept my apologies and email the contents of  |"
-    echo "   | /proc/cpuinfo to projects@drogon.net.                      |"
-    echo "   |    - Thanks, Gordon                                        |"
-    echo "   +------------------------------------------------------------+"
-    echo ""
-    exit 1
-  fi
+#  if [ x$hardware != "xBCM2708" ]; then
+#    echo ""
+#    echo "   +------------------------------------------------------------+"
+#    echo "   |   wiringPi is designed to run on the Raspberry Pi only.    |"
+#    echo "   |   This processor does not appear to be a Raspberry Pi.     |"
+#    echo "   +------------------------------------------------------------+"
+#    echo "   | In the unlikely event that you think it is a Raspberry Pi, |"
+#    echo "   | then please accept my apologies and email the contents of  |"
+#    echo "   | /proc/cpuinfo to projects@drogon.net.                      |"
+#    echo "   |    - Thanks, Gordon                                        |"
+#    echo "   +------------------------------------------------------------+"
+#    echo ""
+#    exit 1
+#  fi
 
 
   echo

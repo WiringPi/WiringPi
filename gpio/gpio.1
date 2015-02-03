@@ -185,9 +185,11 @@ Print a list (if any) of all the exported GPIO pins and their current values.
 .TP
 .B export
 Export a GPIO pin in the \fI/sys/class/gpio\fR directory. Use like the
-mode command above however only \fIin\fR and \fIout\fR are supported at
-this time. Note that the pin number is the \fBBCM_GPIO\fR number and
-not the wiringPi number.
+mode command above however only \fIin\fR, \fIout\fR, \fIhigh\fR and
+\fRlow\fR are supported at this time. Note that the pin number is the
+\fBBCM_GPIO\fR number and not the wiringPi number. The \fIhigh\fR and
+\fIlow\fR commands pre-set the output value at the same time as the
+export to output mode.
 
 Once a GPIO pin has been exported, the \fBgpio\fR program changes the
 ownership of the \fI/sys/class/gpio/gpioX/value\fR and if present in

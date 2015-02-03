@@ -667,19 +667,25 @@ int piBoardRev (void)
 // Start by looking for the Architecture, then we can look for a B2 revision....
 
   while (fgets (line, 120, cpuFd) != NULL)
-    if (strncmp (line, "model name", 10) == 0)
+    if (strncmp (line, "Hardware", 8) == 0)
       break ;
 
-  if (strncmp (line, "model name", 10) != 0)
-    piBoardRevOops ("No \"model name\" line") ;
+  if (strncmp (line, "Hardware", 8) != 0)
+    piBoardRevOops ("No \"Hardware\" line") ;
 
   if (wiringPiDebug)
-    printf ("piboardRev: Model name: %s\n", line) ;
+    printf ("piboardRev: Hardware: %s\n", line) ;
 
-// See if it's v7
+// See if it's BCM2708 or BCM2709
 
-  if (strstr (line, "ARMv7") != NULL)
+  if (strstr (line, "BCM2709") != NULL)
     piModel2 = TRUE ;
+  else if (strstr (line, "BCM2708") == NULL)
+  {
+    fprintf (stderr, "Unable to determine hardware version. I see: %s,\n", line) ;
+    fprintf (stderr, " - expecting BCM2708 or BCM2709. Please report this to projects@drogon.net\n") ;
+    exit (EXIT_FAILURE) ;
+  }
 
 // Now do the rest of it as before
 
@@ -750,6 +756,15 @@ int piBoardRev (void)
  *	as much details as we can.
  *	This is undocumented and really only intended for the GPIO command.
  *	Use at your own risk!
+ *
+ * for Pi v2:
+ *   [USER:8] [NEW:1] [MEMSIZE:3] [MANUFACTURER:4] [PROCESSOR:4] [TYPE:8] [REV:4]
+ *   NEW          23: will be 1 for the new scheme, 0 for the old scheme
+ *   MEMSIZE      20: 0=256M 1=512M 2=1G
+ *   MANUFACTURER 16: 0=SONY 1=EGOMAN 2=EMBEST
+ *   PROCESSOR    12: 0=2835 1=2836
+ *   TYPE         04: 0=MODELA 1=MODELB 2=MODELA+ 3=MODELB+ 4=Pi2 MODEL B 5=ALPHA 6=CM
+ *   REV          00: 0=REV0 1=REV1 2=REV2
  *********************************************************************************
  */
 
@@ -758,6 +773,9 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted)
   FILE *cpuFd ;
   char line [120] ;
   char *c ;
+
+//	Will deal with the properly later on - for now, lets just get it going...
+//  unsigned int modelNum ;
 
   (void)piBoardRev () ;	// Call this first to make sure all's OK. Don't care about the result.
 
@@ -781,34 +799,49 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted)
   if (wiringPiDebug)
     printf ("piboardId: Revision string: %s\n", line) ;
 
-// Scan to first digit
-
-  for (c = line ; *c ; ++c)
-    if (isdigit (*c))
-      break ;
-
-// Make sure its long enough
-
-  if (strlen (c) < 4)
-    piBoardRevOops ("Bogus \"Revision\" line") ;
-
-// If longer than 4, we'll assume it's been overvolted
-
-  *overVolted = strlen (c) > 4 ;
-  
-// Extract last 4 characters:
-
-  c = c + strlen (c) - 4 ;
-
-// Fill out the replys as appropriate
-
   if (piModel2)
   {
-    /**/ if (strcmp (c, "0010") == 0) { *model = PI_MODEL_2  ; *rev = PI_VERSION_1_1 ; *mem = 1024 ; *maker = PI_MAKER_SONY   ; }
-    else                              { *model = 0           ; *rev = 0              ; *mem =    0 ; *maker = 0 ;               }
+
+// Scan to the colon
+
+    for (c = line ; *c ; ++c)
+      if (*c == ':')
+	break ;
+
+    if (*c != ':')
+      piBoardRevOops ("Bogus \"Revision\" line") ;
+
+//    modelNum = (unsigned int)strtol (++c, NULL, 16) ; // Hex number with no leading 0x
+    
+    *model = PI_MODEL_2  ;
+    *rev   = PI_VERSION_1_1 ;
+    *mem   = 1024 ;
+    *maker = PI_MAKER_SONY   ;
   }
   else
   {
+
+// Scan to first digit
+
+    for (c = line ; *c ; ++c)
+      if (isdigit (*c))
+	break ;
+
+// Make sure its long enough
+
+    if (strlen (c) < 4)
+      piBoardRevOops ("Bogus \"Revision\" line") ;
+
+// If longer than 4, we'll assume it's been overvolted
+
+    *overVolted = strlen (c) > 4 ;
+  
+// Extract last 4 characters:
+
+    c = c + strlen (c) - 4 ;
+
+// Fill out the replys as appropriate
+
     /**/ if (strcmp (c, "0002") == 0) { *model = PI_MODEL_B  ; *rev = PI_VERSION_1   ; *mem = 256 ; *maker = PI_MAKER_EGOMAN ; }
     else if (strcmp (c, "0003") == 0) { *model = PI_MODEL_B  ; *rev = PI_VERSION_1_1 ; *mem = 256 ; *maker = PI_MAKER_EGOMAN ; }
     else if (strcmp (c, "0004") == 0) { *model = PI_MODEL_B  ; *rev = PI_VERSION_2   ; *mem = 256 ; *maker = PI_MAKER_SONY   ; }
