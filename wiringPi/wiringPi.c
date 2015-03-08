@@ -627,6 +627,7 @@ int wiringPiFailure (int fatal, const char *message, ...)
  *	0010 - Model B+, Rev 1.2, 512MB, Sony
  *	0011 - Pi CM,    Rev 1.2, 512MB, Sony
  *	0012 - Model A+  Rev 1.2, 256MB, Sony
+ *	0014 - Pi CM,    Rev 1.1, 512MB, Sony (Actual Revision might be different)
  *
  *	For the Pi 2:
  *	0010 - Model 2, Rev 1.1, Quad Core, 1GB, Sony
@@ -638,6 +639,7 @@ int wiringPiFailure (int fatal, const char *message, ...)
  *	last digit, then it's 1, therefore it'll default to not 2 or 3 for a
  *	Rev 1, so will appear as a Rev 2. This is fine for the most part, but
  *	we'll properly detect the Compute Module later and adjust accordingly.
+ *	And the next rev of the CN is 0014 ...
  *
  *********************************************************************************
  */
@@ -741,7 +743,7 @@ int piBoardRev (void)
   if ( (strcmp (c, "0002") == 0) || (strcmp (c, "0003") == 0))
     boardRev = 1 ;
   else
-    boardRev = 2 ;
+    boardRev = 2 ;	// Covers everything else from the B revision 2 to the B+, the Pi v2 and CM's.
 
   if (wiringPiDebug)
     printf ("piBoardRev: Returning revision: %d\n", boardRev) ;
@@ -809,7 +811,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted)
 	break ;
 
     if (*c != ':')
-      piBoardRevOops ("Bogus \"Revision\" line") ;
+      piBoardRevOops ("Bogus \"Revision\" line (no colon)") ;
 
 //    modelNum = (unsigned int)strtol (++c, NULL, 16) ; // Hex number with no leading 0x
     
@@ -830,7 +832,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted)
 // Make sure its long enough
 
     if (strlen (c) < 4)
-      piBoardRevOops ("Bogus \"Revision\" line") ;
+      piBoardRevOops ("Bogus \"Revision\" line (not long enough)") ;
 
 // If longer than 4, we'll assume it's been overvolted
 
@@ -857,6 +859,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *overVolted)
     else if (strcmp (c, "0011") == 0) { *model = PI_MODEL_CM ; *rev = PI_VERSION_1_2 ; *mem = 512 ; *maker = PI_MAKER_SONY   ; }
     else if (strcmp (c, "0012") == 0) { *model = PI_MODEL_AP ; *rev = PI_VERSION_1_2 ; *mem = 256 ; *maker = PI_MAKER_SONY   ; }
     else if (strcmp (c, "0013") == 0) { *model = PI_MODEL_BP ; *rev = PI_VERSION_1_2 ; *mem = 512 ; *maker = PI_MAKER_MBEST  ; }
+    else if (strcmp (c, "0014") == 0) { *model = PI_MODEL_CM ; *rev = PI_VERSION_1_2 ; *mem = 512 ; *maker = PI_MAKER_SONY   ; }
     else                              { *model = 0           ; *rev = 0              ; *mem =   0 ; *maker = 0 ;               }
   }
 }
