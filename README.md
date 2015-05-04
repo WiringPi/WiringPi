@@ -30,7 +30,7 @@ Thanks!
    同步  git://git.drogon.net/wiringPi 最新源代码到项目当中。
      此修改基于 原来的master 分支  
 
-   `   git remote add upstream git://git.drogon.net/wiringPi.git  `
+   `   git remote add upstream git://git.drogon.net/wiringPi  `
 
    `    git fetch upstream master:upstream/master  `
 
