@@ -121,7 +121,6 @@ void (*pwmSetClock)       (int divisor) ;
 #define	FSEL_INPT		0b000
 #define	FSEL_OUTP		0b001
 #define	FSEL_ALT0		0b100
-#define	FSEL_ALT0		0b100
 #define	FSEL_ALT1		0b101
 #define	FSEL_ALT2		0b110
 #define	FSEL_ALT3		0b111
