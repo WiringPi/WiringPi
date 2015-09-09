@@ -54,7 +54,7 @@ version.h:	../VERSION
 gpio:	$(OBJ)
 	$Q echo [Link]
 	$Q $(CC) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
-	
+
 .c.o:
 	$Q echo [Compile] $<
 	$Q $(CC) -c $(CFLAGS) $< -o $@
