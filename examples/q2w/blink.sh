@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 #
 # blink.sh:
 #	Standard "blink" program in wiringPi. Blinks an LED connected
