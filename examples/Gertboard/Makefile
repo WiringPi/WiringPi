@@ -5,6 +5,10 @@
 #	Copyright (c) 2013 Gordon Henderson
 #################################################################################
 
+ifneq ($V,1)
+Q ?= @
+endif
+
 #DEBUG	= -g -O0
 DEBUG	= -O3
 CC	= gcc

@@ -22,6 +22,9 @@
 #    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
 #################################################################################
 
+ifneq ($V,1)
+Q ?= @
+endif
 
 #DEBUG	= -g -O0
 DEBUG	= -O3

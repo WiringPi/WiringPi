@@ -1,6 +1,10 @@
 
 SRC	=	pins.tex
 
+ifneq ($V,1)
+Q ?= @
+endif
+
 
 all:		${SRC}
 	@echo	Generating DVI

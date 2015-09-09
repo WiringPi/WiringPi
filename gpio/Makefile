@@ -26,6 +26,10 @@
 DESTDIR=/usr
 PREFIX=/local
 
+ifneq ($V,1)
+Q ?= @
+endif
+
 #DEBUG	= -g -O0
 DEBUG	= -O2
 CC	= gcc

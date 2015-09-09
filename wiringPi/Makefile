@@ -25,6 +25,10 @@ VERSION=$(shell cat ../VERSION)
 DESTDIR=/usr
 PREFIX=/local
 
+ifneq ($V,1)
+Q ?= @
+endif
+
 STATIC=libwiringPi.a
 DYNAMIC=libwiringPi.so.$(VERSION)
 
