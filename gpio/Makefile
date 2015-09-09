@@ -52,43 +52,43 @@ version.h:	../VERSION
 	./newVersion
 
 gpio:	$(OBJ)
-	@echo [Link]
-	@$(CC) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
+	$Q echo [Link]
+	$Q $(CC) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
 	
 .c.o:
-	@echo [Compile] $<
-	@$(CC) -c $(CFLAGS) $< -o $@
+	$Q echo [Compile] $<
+	$Q $(CC) -c $(CFLAGS) $< -o $@
 
 .PHONY:	clean
 clean:
-	@echo "[Clean]"
-	@rm -f $(OBJ) gpio *~ core tags *.bak
+	$Q echo "[Clean]"
+	$Q rm -f $(OBJ) gpio *~ core tags *.bak
 
 .PHONY:	tags
 tags:	$(SRC)
-	@echo [ctags]
-	@ctags $(SRC)
+	$Q echo [ctags]
+	$Q ctags $(SRC)
 
 .PHONY:	install
 install: gpio
-	@echo "[Install]"
-	@cp gpio		$(DESTDIR)$(PREFIX)/bin
-	@chown root.root	$(DESTDIR)$(PREFIX)/bin/gpio
-	@chmod 4755		$(DESTDIR)$(PREFIX)/bin/gpio
-	@mkdir -p		$(DESTDIR)$(PREFIX)/man/man1
-	@cp gpio.1		$(DESTDIR)$(PREFIX)/man/man1
+	$Q echo "[Install]"
+	$Q cp gpio		$(DESTDIR)$(PREFIX)/bin
+	$Q chown root.root	$(DESTDIR)$(PREFIX)/bin/gpio
+	$Q chmod 4755		$(DESTDIR)$(PREFIX)/bin/gpio
+	$Q mkdir -p		$(DESTDIR)$(PREFIX)/man/man1
+	$Q cp gpio.1		$(DESTDIR)$(PREFIX)/man/man1
 
 .PHONY:	install-deb
 install-deb:	gpio
-	@echo "[Install: deb]"
-	@install -m 0755 -d							~/wiringPi/debian/wiringPi/usr/bin
-	@install -m 0755 gpio							~/wiringPi/debian/wiringPi/usr/bin
+	$Q echo "[Install: deb]"
+	$Q install -m 0755 -d							~/wiringPi/debian/wiringPi/usr/bin
+	$Q install -m 0755 gpio							~/wiringPi/debian/wiringPi/usr/bin
 
 .PHONY:	uninstall
 uninstall:
-	@echo "[UnInstall]"
-	@rm -f $(DESTDIR)$(PREFIX)/bin/gpio
-	@rm -f $(DESTDIR)$(PREFIX)/man/man1/gpio.1
+	$Q echo "[UnInstall]"
+	$Q rm -f $(DESTDIR)$(PREFIX)/bin/gpio
+	$Q rm -f $(DESTDIR)$(PREFIX)/man/man1/gpio.1
 
 .PHONY:	depend
 depend:

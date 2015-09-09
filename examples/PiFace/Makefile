@@ -47,40 +47,40 @@ BINS	=	$(SRC:.c=)
 all:	$(BINS)
 
 blink:	blink.o
-	@echo [link]
-	@$(CC) -o $@ blink.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ blink.o $(LDFLAGS) $(LDLIBS)
 
 buttons:	buttons.o
-	@echo [link]
-	@$(CC) -o $@ buttons.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ buttons.o $(LDFLAGS) $(LDLIBS)
 
 reaction:	reaction.o
-	@echo [link]
-	@$(CC) -o $@ reaction.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ reaction.o $(LDFLAGS) $(LDLIBS)
 
 ladder:	ladder.o
-	@echo [link]
-	@$(CC) -o $@ ladder.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ ladder.o $(LDFLAGS) $(LDLIBS)
 
 metro:	metro.o
-	@echo [link]
-	@$(CC) -o $@ metro.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ metro.o $(LDFLAGS) $(LDLIBS)
 
 motor:	motor.o
-	@echo [link]
-	@$(CC) -o $@ motor.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ motor.o $(LDFLAGS) $(LDLIBS)
 
 .c.o:
-	@echo [CC] $<
-	@$(CC) -c $(CFLAGS) $< -o $@
+	$Q echo [CC] $<
+	$Q $(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	@echo "[Clean]"
-	@rm -f $(OBJ) *~ core tags $(BINS)
+	$Q echo "[Clean]"
+	$Q rm -f $(OBJ) *~ core tags $(BINS)
 
 tags:	$(SRC)
-	@echo [ctags]
-	@ctags $(SRC)
+	$Q echo [ctags]
+	$Q ctags $(SRC)
 
 depend:
 	makedepend -Y $(SRC)
