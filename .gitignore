@@ -1,0 +1,7 @@
+*.o
+*.so
+lib*.so.*
+*~
+debian/wiringPi
+debian/wiringpi-*.deb
+gpio/gpio
