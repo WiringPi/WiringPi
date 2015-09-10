@@ -82,9 +82,9 @@ if [ x$1 = "xdebian" ]; then
   cd $here/wiringPi
   make install-deb
   cd $here/devLib
-  make install-deb
+  make install-deb INCLUDE='-I. -I../wiringPi'
   cd $here/gpio
-  make install-deb
+  make install-deb INCLUDE='-I../wiringPi -I../devLib' LDFLAGS=-L../debian/wiringPi/usr/lib
   cd $here/debian
   fakeroot dpkg-deb --build wiringPi
   mv wiringPi.deb  wiringpi-`cat $here/VERSION`-1.deb
