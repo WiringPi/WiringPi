@@ -1,0 +1,6 @@
+wiringpi (2.26~iwj) rpi-unstable; urgency=low
+
+  * Initial version with real Debian source package build.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Sep 2015 18:31:35 +0100
+
