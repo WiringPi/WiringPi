@@ -2,6 +2,6 @@
 *.so
 lib*.so.*
 *~
-debian/wiringPi
-debian/wiringpi-*.deb
+debian-template/wiringPi
+debian-template/wiringpi-*.deb
 gpio/gpio

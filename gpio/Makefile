@@ -81,8 +81,8 @@ install: gpio
 .PHONY:	install-deb
 install-deb:	gpio
 	$Q echo "[Install: deb]"
-	$Q install -m 0755 -d							~/wiringPi/debian/wiringPi/usr/bin
-	$Q install -m 0755 gpio							~/wiringPi/debian/wiringPi/usr/bin
+	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/bin
+	$Q install -m 0755 gpio							~/wiringPi/debian-template/wiringPi/usr/bin
 
 .PHONY:	uninstall
 uninstall:
