@@ -43,6 +43,8 @@ check_make_ok() {
   fi
 }
 
+sudo=${WIRINGPI_SUDO-sudo}
+
 if [ x$1 = "xclean" ]; then
   cd wiringPi
   echo -n "wiringPi:   "	; make clean
@@ -65,11 +67,11 @@ fi
 
 if [ x$1 = "xuninstall" ]; then
   cd wiringPi
-  echo -n "wiringPi: " ; sudo make uninstall
+  echo -n "wiringPi: " ; $sudo make uninstall
   cd ../devLib
-  echo -n "DevLib:   " ; sudo make uninstall
+  echo -n "DevLib:   " ; $sudo make uninstall
   cd ../gpio
-  echo -n "gpio:     " ; sudo make uninstall
+  echo -n "gpio:     " ; $sudo make uninstall
   exit
 fi
 
@@ -121,30 +123,30 @@ fi
   echo
   echo "WiringPi Library"
   cd wiringPi
-  sudo make uninstall
+  $sudo make uninstall
   if [ x$1 = "xstatic" ]; then
     make -j5 static
     check_make_ok
-    sudo make install-static
+    $sudo make install-static
   else
     make -j5
     check_make_ok
-    sudo make install
+    $sudo make install
   fi
   check_make_ok
 
   echo
   echo "WiringPi Devices Library"
   cd ../devLib
-  sudo make uninstall
+  $sudo make uninstall
   if [ x$1 = "xstatic" ]; then
     make -j5 static
     check_make_ok
-    sudo make install-static
+    $sudo make install-static
   else
     make -j5
     check_make_ok
-    sudo make install
+    $sudo make install
   fi
   check_make_ok
 
@@ -153,7 +155,7 @@ fi
   cd ../gpio
   make -j5
   check_make_ok
-  sudo make install
+  $sudo make install
   check_make_ok
 
 # echo
