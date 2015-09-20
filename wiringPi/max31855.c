@@ -22,39 +22,58 @@
  ***********************************************************************
  */
 
+#include <byteswap.h>
+#include <stdint.h>
+#include <math.h>
+
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 
 #include "max31855.h"
 
-/*
- * myAnalogRead:
- *	Return the analog value of the given pin
- *	Note: The chip really only has one read "channel", but we're faking it
- *	here so we can read the error registers. Channel 0 will be the data
- *	channel, and 1 is the error register code.
- *	Note: Temperature returned is temp in C * 4, so divide result by 4
- *********************************************************************************
- */
-
 static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
 {
-  unsigned int spiData ;
+  uint32_t spiData ;
   int temp ;
   int chan = pin - node->pinBase ;
 
   wiringPiSPIDataRW (node->fd, (unsigned char *)&spiData, 4) ;
 
-  if (chan == 0)			// Read temp in C
+  spiData = __bswap_32(spiData) ;
+
+  switch (chan)
   {
-    spiData >>= 18 ;
-    temp = spiData & 0x3FFF ;		// Bottom 13 bits
-    if ((spiData & 0x2000) != 0)	// Negative
-      temp = -temp ;
-    return temp ;
+    case 0:				// Existing read - return raw value * 4
+      spiData >>= 18 ;
+      temp = spiData & 0x1FFF ;		// Bottom 13 bits
+      if ((spiData & 0x2000) != 0)	// Negative
+        temp = -temp ;
+
+      return temp ;
+
+    case 1:				// Return error bits
+      return spiData & 0x7 ;
+
+    case 2:				// Return temp in C * 10
+      spiData >>= 18 ;
+      temp = spiData & 0x1FFF ;		// Bottom 13 bits
+      if ((spiData & 0x2000) != 0)	// Negative
+        temp = -temp ;
+
+      return (int)rint ((double)temp * 2.5) ;
+
+    case 3:				// Return temp in F * 10
+      spiData >>= 18 ;
+      temp = spiData & 0x1FFF ;		// Bottom 13 bits
+      if ((spiData & 0x2000) != 0)	// Negative
+        temp = -temp ;
+
+      return (int)rint ((((double)temp * 0.25 * 9.0 / 5.0) + 32.0) * 10.0) ;
+
+    default:				// Who knows...
+      return 0 ;
+
   }
-  else					// Return error bits
-    return spiData & 0x7 ;
 }
 
 
@@ -72,7 +91,7 @@ int max31855Setup (const int pinBase, int spiChannel)
   if (wiringPiSPISetup (spiChannel, 5000000) < 0)	// 5MHz - prob 4 on the Pi
     return -1 ;
 
-  node = wiringPiNewNode (pinBase, 2) ;
+  node = wiringPiNewNode (pinBase, 4) ;
 
   node->fd         = spiChannel ;
   node->analogRead = myAnalogRead ;

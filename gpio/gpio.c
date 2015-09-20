@@ -1194,6 +1194,17 @@ int main (int argc, char *argv [])
       printf ("Raspberry Pi Details:\n") ;
       printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s %s\n", 
 	  piModelNames [model], piRevisionNames [rev], mem, piMakerNames [maker], overVolted ? "[OV]" : "") ;
+
+// Quick check for /dev/gpiomem
+
+      if ((i = open ("/dev/gpiomem", O_RDWR | O_SYNC | O_CLOEXEC) ) >= 0)
+	printf ("  This Raspberry Pi supports user-level GPIO access via /dev/gpiomem.\n") ;
+      else
+      {
+	printf ("  You need to run your programs as root for GPIO access\n") ;
+	printf ("  (Old /dev/mem method - consider upgrading)\n") ;
+      }
+      
     }
     return 0 ;
   }

@@ -49,7 +49,7 @@ OBJ	=	$(SRC:.c=.o)
 all:		gpio
 
 version.h:	../VERSION
-	./newVersion
+	$Q echo Need to run newVersion above.
 
 gpio:	$(OBJ)
 	$Q echo [Link]
@@ -97,3 +97,5 @@ depend:
 	makedepend -Y $(SRC)
 
 # DO NOT DELETE
+
+gpio.o: version.h
