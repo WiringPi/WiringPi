@@ -116,7 +116,7 @@ static void changeOwner (char *cmd, char *file)
   if (chown (file, uid, gid) != 0)
   {
     if (errno == ENOENT)	// Warn that it's not there
-      fprintf (stderr, "%s: Warning (not an error): File not present: %s\n", cmd, file) ;
+      fprintf (stderr, "%s: Warning (not an error, do not report): File not present: %s\n", cmd, file) ;
     else
       fprintf (stderr, "%s: Warning (not an error): Unable to change ownership of %s: %s\n", cmd, file, strerror (errno)) ;
   }
@@ -163,6 +163,22 @@ static int moduleLoaded (char *modName)
  *********************************************************************************
  */
 
+static void checkDevTree (char *argv [])
+{
+  struct stat statBuf ;
+
+  if (stat ("/proc/device-tree", &statBuf) == 0)	// We're on a devtree system ...
+  {
+    fprintf (stderr,
+"%s: Unable to load/unload modules as this Pi has the device tree enabled.\n"
+"  You need to run the raspi-config program (as root) and select the\n"
+"  modules (SPI or I2C) that you wish to load/unload there and reboot.\n"
+"  There is more information here:\n"
+"      https://www.raspberrypi.org/forums/viewtopic.php?f=28&t=97314\n", argv [0]) ;
+    exit (1) ;
+  }
+}
+
 static void _doLoadUsage (char *argv [])
 {
   fprintf (stderr, "Usage: %s load <spi/i2c> [I2C baudrate in Kb/sec]\n", argv [0]) ;
@@ -175,6 +191,8 @@ static void doLoad (int argc, char *argv [])
   char cmd [80] ;
   char *file1, *file2 ;
   char args1 [32], args2 [32] ;
+
+  checkDevTree (argv) ;
 
   if (argc < 3)
     _doLoadUsage (argv) ;
@@ -250,6 +268,8 @@ static void doUnLoad (int argc, char *argv [])
 {
   char *module1, *module2 ;
   char cmd [80] ;
+
+  checkDevTree (argv) ;
 
   if (argc != 3)
     _doUnLoadUsage (argv) ;
@@ -1138,6 +1158,8 @@ int main (int argc, char *argv [])
 {
   int i ;
   int model, rev, mem, maker, overVolted ;
+  struct stat statBuf ;
+
 
   if (getenv ("WIRINGPI_DEBUG") != NULL)
   {
@@ -1195,15 +1217,15 @@ int main (int argc, char *argv [])
       printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s %s\n", 
 	  piModelNames [model], piRevisionNames [rev], mem, piMakerNames [maker], overVolted ? "[OV]" : "") ;
 
-// Quick check for /dev/gpiomem
+// Check for device tree
 
-      if ((i = open ("/dev/gpiomem", O_RDWR | O_SYNC | O_CLOEXEC) ) >= 0)
-	printf ("  This Raspberry Pi supports user-level GPIO access via /dev/gpiomem.\n") ;
+      if (stat ("/proc/device-tree", &statBuf) == 0)	// We're on a devtree system ...
+	printf ("  Device tree is enabled.\n") ;
+
+      if (stat ("/dev/gpiomem", &statBuf) == 0)		// User level GPIO is GO
+	printf ("  This Raspberry Pi supports user-level GPIO access.\n") ;
       else
-      {
-	printf ("  You need to run your programs as root for GPIO access\n") ;
-	printf ("  (Old /dev/mem method - consider upgrading)\n") ;
-      }
+	printf ("  * Root or sudo required for GPIO access.\n") ;
       
     }
     return 0 ;

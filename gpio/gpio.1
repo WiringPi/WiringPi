@@ -1,4 +1,4 @@
-.TH gpio 1 "January 2015" wiringPi "Command-Line access to Raspberry Pi's GPIO"
+.TH GPIO 1 "September 2015" wiringPi "Command-Line access to Raspberry Pi's GPIO"
 
 .SH NAME
 gpio \- Command-line access to Raspberry Pi's GPIO
@@ -251,12 +251,9 @@ on the associated /dev/ entries so that the current user has access to
 them. Optionally it will set the I2C baudrate to that supplied in Kb/sec
 (or as close as the Pi can manage) The default speed is 100Kb/sec.
 
-Note that on a Pi with a recent 3.18 kernel with the device-tree structure
-enable, the load may fail until you add:
-
-.I dtparam=i2c=on
-
-into \fB/boot/config.txt\fR to allow user use of the I2C bus.
+Note: On recent kernels with the device tree enabled you should use the
+raspi-config program to load/unload the I2C device at boot time.
+(or disable the device tree to continue to use this method)
 
 .TP
 .B load spi
@@ -269,12 +266,9 @@ this has fixed the buffer size. The way to change it now is to edit
 the /boot/cmdline.txt file and add on spdev.bufsiz=8192 to set it to
 e.g. 8192 bytes then reboot.
 
-Note that on a Pi with a recent 3.18 kernel with the device-tree structure
-enable, the load may fail until you add:
-
-.I dtparam=spi=on
-
-into \fB/boot/config.txt\fR to allow user use of the I2C bus.
+Note: On recent kernels with the device tree enabled you should use the
+raspi-config program to load/unload the SPI device at boot time.
+(or disable the device tree to continue to use this method)
 
 .TP
 .B gbr

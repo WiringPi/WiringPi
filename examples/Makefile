@@ -3,7 +3,7 @@
 #	wiringPi - Wiring Compatable library for the Raspberry Pi
 #	https://projects.drogon.net/wiring-pi
 #
-#	Copyright (c) 2012 Gordon Henderson
+#	Copyright (c) 2012-2015 Gordon Henderson
 #################################################################################
 # This file is part of wiringPi:
 #	Wiring Compatable library for the Raspberry Pi
@@ -47,7 +47,8 @@ SRC	=	blink.c blink8.c blink12.c					\
 		softPwm.c softTone.c 						\
 		delayTest.c serialRead.c serialTest.c okLed.c ds1302.c		\
 		lowPower.c							\
-		rht03.c piglow.c
+		max31855.c							\
+		rht03.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -148,10 +149,9 @@ ds1302:	ds1302.o
 	$Q echo [link]
 	$Q $(CC) -o $@ ds1302.o $(LDFLAGS) $(LDLIBS)
 
-piglow:	piglow.o
+max31855:	max31855.o
 	$Q echo [link]
-	$Q $(CC) -o $@ piglow.o $(LDFLAGS) $(LDLIBS)
-
+	$Q $(CC) -o $@ max31855.c.o $(LDFLAGS) $(LDLIBS)
 
 .c.o:
 	$Q echo [CC] $<

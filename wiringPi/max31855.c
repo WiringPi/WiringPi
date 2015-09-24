@@ -1,7 +1,7 @@
 /*
  * max31855.c:
  *	Extend wiringPi with the max31855 SPI Analog to Digital convertor
- *	Copyright (c) 2012-2013 Gordon Henderson
+ *	Copyright (c) 2012-2015 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -24,7 +24,6 @@
 
 #include <byteswap.h>
 #include <stdint.h>
-#include <math.h>
 
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
@@ -60,7 +59,7 @@ static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
       if ((spiData & 0x2000) != 0)	// Negative
         temp = -temp ;
 
-      return (int)rint ((double)temp * 2.5) ;
+      return (int)((((double)temp * 25) + 0.5) / 10.0) ;
 
     case 3:				// Return temp in F * 10
       spiData >>= 18 ;
@@ -68,7 +67,7 @@ static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
       if ((spiData & 0x2000) != 0)	// Negative
         temp = -temp ;
 
-      return (int)rint ((((double)temp * 0.25 * 9.0 / 5.0) + 32.0) * 10.0) ;
+      return (int)((((((double)temp * 0.25 * 9.0 / 5.0) + 32.0) * 100.0) + 0.5) / 10.0) ;
 
     default:				// Who knows...
       return 0 ;

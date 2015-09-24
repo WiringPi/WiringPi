@@ -3,7 +3,7 @@
 #	wiringPi - Wiring Compatable library for the Raspberry Pi
 #	https://projects.drogon.net/wiring-pi
 #
-#	Copyright (c) 2012-2013 Gordon Henderson
+#	Copyright (c) 2012-2015 Gordon Henderson
 #################################################################################
 # This file is part of wiringPi:
 #	Wiring Compatable library for the Raspberry Pi
