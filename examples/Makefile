@@ -45,7 +45,7 @@ SRC	=	blink.c blink8.c blink12.c					\
 		lcd.c lcd-adafruit.c clock.c					\
 		nes.c								\
 		softPwm.c softTone.c 						\
-		delayTest.c serialRead.c serialTest.c okLed.c ds1302.c		\
+		delayTest.c serialRead.c serialTestc okLed.c ds1302.c		\
 		lowPower.c							\
 		max31855.c							\
 		rht03.c
@@ -151,7 +151,7 @@ ds1302:	ds1302.o
 
 max31855:	max31855.o
 	$Q echo [link]
-	$Q $(CC) -o $@ max31855.c.o $(LDFLAGS) $(LDLIBS)
+	$Q $(CC) -o $@ max31855.o $(LDFLAGS) $(LDLIBS)
 
 .c.o:
 	$Q echo [CC] $<

@@ -84,6 +84,7 @@
 
 #define	ENV_DEBUG	"WIRINGPI_DEBUG"
 #define	ENV_CODES	"WIRINGPI_CODES"
+#define	ENV_GPIOMEM	"WIRINGPI_GPIOMEM"
 
 
 // Mask for the bottom 64 pins which belong to the Raspberry Pi
@@ -252,6 +253,10 @@ static pthread_mutex_t pinMutex ;
 
 int wiringPiDebug       = FALSE ;
 int wiringPiReturnCodes = FALSE ;
+
+// Use /dev/gpiomem ?
+
+int wiringPiTryGpioMem  = FALSE ;
 
 // sysFds:
 //	Map a file descriptor from the /sys/class/gpio/gpioX/value
@@ -913,6 +918,9 @@ void setPadDrive (int group, int value)
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
+    if (RASPBERRY_PI_PERI_BASE == 0)	// Ignore for now
+      return ;
+
     if ((group < 0) || (group > 2))
       return ;
 
@@ -986,6 +994,9 @@ void pwmSetRange (unsigned int range)
 {
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
+    if (RASPBERRY_PI_PERI_BASE == 0)	// Ignore for now
+      return ;
+
     *(pwm + PWM0_RANGE) = range ; delayMicroseconds (10) ;
     *(pwm + PWM1_RANGE) = range ; delayMicroseconds (10) ;
   }
@@ -1007,6 +1018,9 @@ void pwmSetClock (int divisor)
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
+    if (RASPBERRY_PI_PERI_BASE == 0)	// Ignore for now
+      return ;
+
     if (wiringPiDebug)
       printf ("Setting to: %d. Current: 0x%08X\n", divisor, *(clk + PWMCLK_DIV)) ;
 
@@ -1059,6 +1073,9 @@ void gpioClockSet (int pin, int freq)
   else if (wiringPiMode != WPI_MODE_GPIO)
     return ;
   
+  if (RASPBERRY_PI_PERI_BASE == 0)	// Ignore for now
+    return ;
+
   divi = 19200000 / freq ;
   divr = 19200000 % freq ;
   divf = (int)((double)divr * 4096.0 / 19200000.0) ;
@@ -1231,11 +1248,17 @@ void pinMode (int pin, int mode)
       softToneCreate (origPin) ;
     else if (mode == PWM_TONE_OUTPUT)
     {
+      if (RASPBERRY_PI_PERI_BASE == 0)	// Ignore for now
+	return ;
+
       pinMode (origPin, PWM_OUTPUT) ;	// Call myself to enable PWM mode
       pwmSetMode (PWM_MODE_MS) ;
     }
     else if (mode == PWM_OUTPUT)
     {
+      if (RASPBERRY_PI_PERI_BASE == 0)	// Ignore for now
+	return ;
+
       if ((alt = gpioToPwmALT [pin]) == 0)	// Not a hardware capable PWM pin
 	return ;
 
@@ -1250,6 +1273,9 @@ void pinMode (int pin, int mode)
     }
     else if (mode == GPIO_CLOCK)
     {
+      if (RASPBERRY_PI_PERI_BASE == 0)	// Ignore for now
+	return ;
+
       if ((alt = gpioToGpClkALT0 [pin]) == 0)	// Not a GPIO_CLOCK pin
 	return ;
 
@@ -1404,6 +1430,9 @@ void pwmWrite (int pin, int value)
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
+    if (RASPBERRY_PI_PERI_BASE == 0)	// Ignore for now
+      return ;
+
     /**/ if (wiringPiMode == WPI_MODE_PINS)
       pin = pinToGpio [pin] ;
     else if (wiringPiMode == WPI_MODE_PHYS)
@@ -1469,6 +1498,9 @@ void analogWrite (int pin, int value)
 void pwmToneWrite (int pin, int freq)
 {
   int range ;
+
+  if (RASPBERRY_PI_PERI_BASE == 0)	// Ignore for now
+    return ;
 
   if (freq == 0)
     pwmWrite (pin, 0) ;             // Off
@@ -1838,8 +1870,15 @@ int wiringPiSetup (void)
   if (getenv (ENV_CODES) != NULL)
     wiringPiReturnCodes = TRUE ;
 
+  if (getenv (ENV_GPIOMEM) != NULL)
+    wiringPiTryGpioMem = TRUE ;
+
   if (wiringPiDebug)
+  {
     printf ("wiringPi: wiringPiSetup called\n") ;
+    if (wiringPiTryGpioMem)
+      printf ("wiringPi: Using /dev/gpiomem\n") ;
+  }
 
   boardRev = piBoardRev () ;
 
@@ -1863,8 +1902,12 @@ int wiringPiSetup (void)
 
 //	See if /dev/gpiomem exists and we can open it...
 
-  if ((fd = open ("/dev/gpiomem", O_RDWR | O_SYNC | O_CLOEXEC) ) >= 0)
+  if (wiringPiTryGpioMem)
+  {
+    if ((fd = open ("/dev/gpiomem", O_RDWR | O_SYNC | O_CLOEXEC) ) < 0)
+      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Unable to open /dev/gpiomem: %s\n", strerror (errno)) ;
     RASPBERRY_PI_PERI_BASE = 0 ;
+  }
 
 //	... otherwise fall back to the original /dev/mem which requires root level access
 

@@ -33,7 +33,7 @@
 
 int main (int argc, char *argv [])
 {
-  int i ;
+  int i = 0 ;
 
   wiringPiSetup () ;
   max31855Setup (200, 0) ;
@@ -41,9 +41,20 @@ int main (int argc, char *argv [])
 
   for (;;)
   {
-    printf ("%6d, %6d, %6d, %6d ::::", analogRead (200), analogRead (201), analogRead (202), analogRead (203)) ;
-    printf ("%6d, %6d, %6d, %6d\n", analogRead (400), analogRead (401), analogRead (402), analogRead (403)) ;
+    if (i == 0)
+    {
+      printf ("+------+------+------+------++------+------+------+------+\n") ;
+      printf ("| Raw  | Err  |  C   |   F  || Raw  | Err  |  C   |  F   |\n") ;
+      printf ("+------+------+------+------++------+------+------+------+\n") ;
+    }
+
+    printf ("| %4d | %4d | %4d | %4d |",   analogRead (200), analogRead (201), analogRead (202), analogRead (203)) ;
+    printf ("| %4d | %4d | %4d | %4d |\n", analogRead (400), analogRead (401), analogRead (402), analogRead (403)) ;
     delay (500) ;
+
+    if (++i == 10)
+      i = 0 ;
+
   }
 
 }

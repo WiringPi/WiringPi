@@ -1223,7 +1223,10 @@ int main (int argc, char *argv [])
 	printf ("  Device tree is enabled.\n") ;
 
       if (stat ("/dev/gpiomem", &statBuf) == 0)		// User level GPIO is GO
+      {
 	printf ("  This Raspberry Pi supports user-level GPIO access.\n") ;
+	printf ("    -> See the man-page for more details\n") ;
+      }
       else
 	printf ("  * Root or sudo required for GPIO access.\n") ;
       
