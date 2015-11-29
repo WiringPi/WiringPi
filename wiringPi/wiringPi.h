@@ -26,8 +26,7 @@
 
 // Handy defines
 
-// Deprecated
-#define	NUM_PINS	17
+// wiringPi modes
 
 #define	WPI_MODE_PINS		 0
 #define	WPI_MODE_GPIO		 1
@@ -70,29 +69,28 @@
 // Pi model types and version numbers
 //	Intended for the GPIO program Use at your own risk.
 
-#define	PI_MODEL_UNKNOWN	0
-#define	PI_MODEL_A		1
-#define	PI_MODEL_B		2
+#define	PI_MODEL_A		0
+#define	PI_MODEL_B		1
+#define	PI_MODEL_AP		2
 #define	PI_MODEL_BP		3
-#define	PI_MODEL_CM		4
-#define	PI_MODEL_AP		5
-#define	PI_MODEL_2		6
+#define	PI_MODEL_2		4
+#define	PI_ALPHA		5
+#define	PI_MODEL_CM		6
 
-#define	PI_VERSION_UNKNOWN	0
-#define	PI_VERSION_1		1
-#define	PI_VERSION_1_1		2
-#define	PI_VERSION_1_2		3
-#define	PI_VERSION_2		4
+#define	PI_VERSION_1		0
+#define	PI_VERSION_1_1		1
+#define	PI_VERSION_1_2		2
+#define	PI_VERSION_2		3
 
-#define	PI_MAKER_UNKNOWN	0
+#define	PI_MAKER_SONY		0
 #define	PI_MAKER_EGOMAN		1
-#define	PI_MAKER_SONY		2
-#define	PI_MAKER_QISDA		3
-#define	PI_MAKER_MBEST		4
+#define	PI_MAKER_MBEST		2
+#define	PI_MAKER_UNKNOWN	3
 
-extern const char *piModelNames    [7] ;
-extern const char *piRevisionNames [5] ;
-extern const char *piMakerNames    [5] ;
+extern const char *piModelNames    [16] ;
+extern const char *piRevisionNames [16] ;
+extern const char *piMakerNames    [16] ;
+extern const int   piMemorySize    [ 8] ;
 
 
 //	Intended for the GPIO program Use at your own risk.

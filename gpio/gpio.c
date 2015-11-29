@@ -1149,6 +1149,56 @@ static void doPwmClock (int argc, char *argv [])
 
 
 /*
+ * doVersion:
+ *	Handle the ever more complicated version command
+ *********************************************************************************
+ */
+
+static void doVersion (char *argv [])
+{
+  int model, rev, mem, maker, warranty ;
+  struct stat statBuf ;
+
+  printf ("gpio version: %s\n", VERSION) ;
+  printf ("Copyright (c) 2012-2015 Gordon Henderson\n") ;
+  printf ("This is free software with ABSOLUTELY NO WARRANTY.\n") ;
+  printf ("For details type: %s -warranty\n", argv [0]) ;
+  printf ("\n") ;
+  piBoardId (&model, &rev, &mem, &maker, &warranty) ;
+
+/*************
+  if (model == PI_MODEL_UNKNOWN)
+  {
+    printf ("Your Raspberry Pi has an unknown model type. Please report this to\n") ;
+    printf ("    projects@drogon.net\n") ;
+    printf ("with a copy of your /proc/cpuinfo if possible\n") ;
+  }
+  else
+***************/
+
+  {
+    printf ("Raspberry Pi Details:\n") ;
+    printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s %s\n", 
+	piModelNames [model], piRevisionNames [rev], piMemorySize [mem], piMakerNames [maker], warranty ? "[Out of Warranty]" : "") ;
+
+// Check for device tree
+
+    if (stat ("/proc/device-tree", &statBuf) == 0)	// We're on a devtree system ...
+      printf ("  Device tree is enabled.\n") ;
+
+    if (stat ("/dev/gpiomem", &statBuf) == 0)		// User level GPIO is GO
+    {
+      printf ("  This Raspberry Pi supports user-level GPIO access.\n") ;
+      printf ("    -> See the man-page for more details\n") ;
+    }
+    else
+      printf ("  * Root or sudo required for GPIO access.\n") ;
+    
+  }
+}
+
+
+/*
  * main:
  *	Start here
  *********************************************************************************
@@ -1157,9 +1207,6 @@ static void doPwmClock (int argc, char *argv [])
 int main (int argc, char *argv [])
 {
   int i ;
-  int model, rev, mem, maker, overVolted ;
-  struct stat statBuf ;
-
 
   if (getenv ("WIRINGPI_DEBUG") != NULL)
   {
@@ -1181,56 +1228,20 @@ int main (int argc, char *argv [])
     return 0 ;
   }
 
-// Sort of a special:
-
-  if (strcmp (argv [1], "-R") == 0)
-  {
-    printf ("%d\n", piBoardRev ()) ;
-    return 0 ;
-  }
-
 // Version & Warranty
+//	Wish I could remember why I have both -R and -V ...
 
-  if (strcmp (argv [1], "-V") == 0)
+  if ((strcmp (argv [1], "-R") == 0) || (strcmp (argv [1], "-V") == 0))
   {
     printf ("%d\n", piBoardRev ()) ;
     return 0 ;
   }
+
+// Version and information
 
   if (strcmp (argv [1], "-v") == 0)
   {
-    printf ("gpio version: %s\n", VERSION) ;
-    printf ("Copyright (c) 2012-2015 Gordon Henderson\n") ;
-    printf ("This is free software with ABSOLUTELY NO WARRANTY.\n") ;
-    printf ("For details type: %s -warranty\n", argv [0]) ;
-    printf ("\n") ;
-    piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
-    if (model == PI_MODEL_UNKNOWN)
-    {
-      printf ("Your Raspberry Pi has an unknown model type. Please report this to\n") ;
-      printf ("    projects@drogon.net\n") ;
-      printf ("with a copy of your /proc/cpuinfo if possible\n") ;
-    }
-    else
-    {
-      printf ("Raspberry Pi Details:\n") ;
-      printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s %s\n", 
-	  piModelNames [model], piRevisionNames [rev], mem, piMakerNames [maker], overVolted ? "[OV]" : "") ;
-
-// Check for device tree
-
-      if (stat ("/proc/device-tree", &statBuf) == 0)	// We're on a devtree system ...
-	printf ("  Device tree is enabled.\n") ;
-
-      if (stat ("/dev/gpiomem", &statBuf) == 0)		// User level GPIO is GO
-      {
-	printf ("  This Raspberry Pi supports user-level GPIO access.\n") ;
-	printf ("    -> See the man-page for more details\n") ;
-      }
-      else
-	printf ("  * Root or sudo required for GPIO access.\n") ;
-      
-    }
+    doVersion (argv) ;
     return 0 ;
   }
 
