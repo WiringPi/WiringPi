@@ -5,6 +5,10 @@
 #	Copyright (c) 2013 Gordon Henderson
 #################################################################################
 
+ifneq ($V,1)
+Q ?= @
+endif
+
 #DEBUG	= -g -O0
 DEBUG	= -O3
 CC	= gcc
@@ -29,44 +33,44 @@ BINS	=	$(SRC:.c=)
 all:	$(BINS)
 
 gertboard:	gertboard.o
-	@echo [link]
-	@$(CC) -o $@ gertboard.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ gertboard.o $(LDFLAGS) $(LDLIBS)
 
 buttons:	buttons.o
-	@echo [link]
-	@$(CC) -o $@ buttons.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ buttons.o $(LDFLAGS) $(LDLIBS)
 
 7segments:	7segments.o
-	@echo [link]
-	@$(CC) -o $@ 7segments.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ 7segments.o $(LDFLAGS) $(LDLIBS)
 
 voltmeter:	voltmeter.o
-	@echo [link]
-	@$(CC) -o $@ voltmeter.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ voltmeter.o $(LDFLAGS) $(LDLIBS)
 
 temperature:	temperature.o
-	@echo [link]
-	@$(CC) -o $@ temperature.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ temperature.o $(LDFLAGS) $(LDLIBS)
 
 vumeter:	vumeter.o
-	@echo [link]
-	@$(CC) -o $@ vumeter.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ vumeter.o $(LDFLAGS) $(LDLIBS)
 
 record:	record.o
-	@echo [link]
-	@$(CC) -o $@ record.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ record.o $(LDFLAGS) $(LDLIBS)
 
 .c.o:
-	@echo [CC] $<
-	@$(CC) -c $(CFLAGS) $< -o $@
+	$Q echo [CC] $<
+	$Q $(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	@echo [Clean]
-	@rm -f $(OBJ) *~ core tags $(BINS)
+	$Q echo [Clean]
+	$Q rm -f $(OBJ) *~ core tags $(BINS)
 
 tags:	$(SRC)
-	@echo [ctags]
-	@ctags $(SRC)
+	$Q echo [ctags]
+	$Q ctags $(SRC)
 
 depend:
 	makedepend -Y $(SRC)

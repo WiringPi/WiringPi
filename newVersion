@@ -1,7 +1,8 @@
-#!/bin/sh
+#!/bin/sh -e
 #
 # newVersion:
 #	Utility to create the version.h include file for the gpio command.
+#	and the Debian package
 #
 #	Copyright (c) 2012-2015 Gordon Henderson
 #################################################################################
@@ -22,5 +23,21 @@
 #    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
 #################################################################################
 
-rm -f version.h
-echo "#define VERSION \"`cat ../VERSION`\"" > version.h
+echo Updating to version: `cat VERSION`
+
+rm -f gpio/version.h
+echo "#define VERSION \"`cat VERSION`\"" > gpio/version.h
+
+rm -f debian-template/wiringPi/DEBIAN/control
+cat > debian-template/wiringPi/DEBIAN/control <<EOF
+Package: wiringpi
+Version: `cat VERSION`
+Section: libraries
+Priority: optional
+Architecture: armhf
+Depends: libc6
+Maintainer: Gordon Henderson <projects@drogon.net>
+Description: The wiringPi libraries, headers and gpio command
+  Libraries to allow GPIO access on a Raspberry Pi from C and C++
+  programs as well as from the command-line
+EOF

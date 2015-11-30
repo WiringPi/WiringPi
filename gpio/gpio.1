@@ -1,4 +1,4 @@
-.TH "GPIO" "January 2015" "Command-Line access to Raspberry Pi's GPIO"
+.TH GPIO 1 "September 2015" wiringPi "Command-Line access to Raspberry Pi's GPIO"
 
 .SH NAME
 gpio \- Command-line access to Raspberry Pi's GPIO
@@ -251,30 +251,24 @@ on the associated /dev/ entries so that the current user has access to
 them. Optionally it will set the I2C baudrate to that supplied in Kb/sec
 (or as close as the Pi can manage) The default speed is 100Kb/sec.
 
-Note that on a Pi with a recent 3.18 kernel with the device-tree structure
-enable, the load may fail until you add:
-
-.I dtparam=i2c=on
-
-into \fB/boot/config.txt\fR to allow user use of the I2C bus.
+Note: On recent kernels with the device tree enabled you should use the
+raspi-config program to load/unload the I2C device at boot time.
+(or disable the device tree to continue to use this method)
 
 .TP
 .B load spi
 This loads the spi drivers into the kernel and changes the permissions
 on the associated /dev/ entries so that the current user has access to
 them. It used to have the ability to change the buffer size from the
-default of 4096 bytes to an arbitary value, however for some time the
+default of 4096 bytes to an arbitrary value, however for some time the
 Pi Foundation have compiled the SPI device driver into the kernel and
 this has fixed the buffer size. The way to change it now is to edit
 the /boot/cmdline.txt file and add on spdev.bufsiz=8192 to set it to
 e.g. 8192 bytes then reboot.
 
-Note that on a Pi with a recent 3.18 kernel with the device-tree structure
-enable, the load may fail until you add:
-
-.I dtparam=spi=on
-
-into \fB/boot/config.txt\fR to allow user use of the I2C bus.
+Note: On recent kernels with the device tree enabled you should use the
+raspi-config program to load/unload the SPI device at boot time.
+(or disable the device tree to continue to use this method)
 
 .TP
 .B gbr
@@ -326,6 +320,18 @@ gpio -g read 0 # Read GPIO Pin 0 (SDA0)
 When using the \fIexport\fR, \fIedge\fR or \fIunexport\fR commands, the
 pin numbers are \fBalways\fR native BCM_GPIO numbers and never wiringPi
 pin numbers.
+
+As of kernels 4.1.7, a user-level GPIO access mechanism is available,
+however wiringPi will not use this by default - because at this time
+there appears to be issues when trying to program the PWM or clock output
+hardware. If you can live without PWM or GPIO clocks and you want to use
+the GPIO from a non-root program, then you need to make sure that the 
+module \fIbcm2835_gpiomem\fR is loaded at boot time. This should happen
+automatically when you enable the device tree in raspi-config. You may
+also need some additional information in /etc/udev/rules.d/ to change the
+mode and ownership of the /dev/gpiomem file. Finally, you need to set
+the environment variable \fIWIRINGPI_GPIOMEM\fR. This will go-away
+in future releases once the /dev/gpiomem interface is fully operational.
 
 .SH "SEE ALSO"
 

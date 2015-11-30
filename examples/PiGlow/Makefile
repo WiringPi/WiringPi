@@ -3,7 +3,7 @@
 #	wiringPi - Wiring Compatable library for the Raspberry Pi
 #	https://projects.drogon.net/wiring-pi
 #
-#	Copyright (c) 2012-2013 Gordon Henderson
+#	Copyright (c) 2012-2015 Gordon Henderson
 #################################################################################
 # This file is part of wiringPi:
 #	Wiring Compatable library for the Raspberry Pi
@@ -22,6 +22,9 @@
 #    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
 #################################################################################
 
+ifneq ($V,1)
+Q ?= @
+endif
 
 #DEBUG	= -g -O0
 DEBUG	= -O3
@@ -44,34 +47,34 @@ BINS	=	$(SRC:.c=)
 all:	$(BINS)
 
 piGlow0:	piGlow0.o
-	@echo [link]
-	@$(CC) -o $@ piGlow0.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ piGlow0.o $(LDFLAGS) $(LDLIBS)
 
 piGlow1:	piGlow1.o
-	@echo [link]
-	@$(CC) -o $@ piGlow1.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ piGlow1.o $(LDFLAGS) $(LDLIBS)
 
 piglow:	piglow.o
-	@echo [link]
-	@$(CC) -o $@ piglow.o $(LDFLAGS) $(LDLIBS)
+	$Q echo [link]
+	$Q $(CC) -o $@ piglow.o $(LDFLAGS) $(LDLIBS)
 
 .c.o:
-	@echo [CC] $<
-	@$(CC) -c $(CFLAGS) $< -o $@
+	$Q echo [CC] $<
+	$Q $(CC) -c $(CFLAGS) $< -o $@
 
 clean:
-	@echo "[Clean]"
-	@rm -f $(OBJ) *~ core tags $(BINS)
+	$Q echo "[Clean]"
+	$Q rm -f $(OBJ) *~ core tags $(BINS)
 
 tags:	$(SRC)
-	@echo [ctags]
-	@ctags $(SRC)
+	$Q echo [ctags]
+	$Q ctags $(SRC)
 
 install:	piglow
-	@echo Installing piglow into /usr/local/bin
-	@cp -a piglow /usr/local/bin/piglow
-	@chmod 755 /usr/local/bin/piglow
-	@echo Done. Remember to load the I2C drivers!
+	$Q echo Installing piglow into /usr/local/bin
+	$Q cp -a piglow /usr/local/bin/piglow
+	$Q chmod 755 /usr/local/bin/piglow
+	$Q echo Done. Remember to load the I2C drivers!
 
 depend:
 	makedepend -Y $(SRC)

@@ -1,0 +1,29 @@
+Source: wiringpi
+Section: electronics
+Priority: optional
+Maintainer: Ian Jackson <ijackson@chiark.greenend.org.uk>
+Standards-Version: 3.8.0
+Homepage: http://wiringpi.com/
+Build-Depends: debhelper (>= 8)
+
+Package: libwiringpi2
+Section: libs
+Architecture: armhf
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: GPIO librariees for Raspberry Pi (runtime).
+ Runtime for the popular wiringPi library.
+
+Package: wiringpi
+Architecture: armhf
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: gpio utility for Raspberry Pi
+ The wiringPi gpio command line utility, for GPIO access on a
+ Raspberry Pi from the command line.
+
+Package: libwiringpi-dev
+Architecture: armhf
+Depends: libwiringpi2 (= ${binary:Version}), libc6-dev, ${misc:Depends}
+Suggests: wiringpi
+Description: GPIO development library for Raspberry Pi
+ Development libraries to allow GPIO access on a Raspberry Pi from C
+ and C++ programs.
