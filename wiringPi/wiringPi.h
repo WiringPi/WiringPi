@@ -76,6 +76,9 @@
 #define	PI_MODEL_2		4
 #define	PI_ALPHA		5
 #define	PI_MODEL_CM		6
+#define	PI_MODEL_07		7
+#define	PI_MODEL_08		8
+#define	PI_MODEL_ZERO		9
 
 #define	PI_VERSION_1		0
 #define	PI_VERSION_1_1		1
