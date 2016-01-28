@@ -107,7 +107,7 @@ int main (void)
   printf ("    Message Test...Press Ctrl-C to exit: ") ;
   fflush (stdout) ;
 
-  scrollPhatPrintSpeed (20) ;
+  scrollPhatPrintSpeed (75) ;
   for (;;)
     scrollPhatPuts ("  Welcome to the scroll phat from Pimoroni  ") ;
   
