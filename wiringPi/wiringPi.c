@@ -461,6 +461,7 @@ static uint8_t gpioToShift [] =
   0,3,6,9,12,15,18,21,24,27,
   0,3,6,9,12,15,18,21,24,27,
   0,3,6,9,12,15,18,21,24,27,
+  0,3,6,9,12,15,18,21,24,27,
 } ;
 
 
@@ -1970,6 +1971,16 @@ int wiringPiSetup (void)
   int   fd ;
   int   boardRev ;
   int   model, rev, mem, maker, overVolted ;
+  static int alreadyCalled = FALSE ;
+
+// This is here to trap the unwary - those who's program appears to work then fails some
+//	time later with a weird error message because you run out of file-handles.
+
+  if (alreadyCalled)
+    (void)wiringPiFailure (WPI_FATAL, "wiringPiSetup*: You must only call this once per program run. This is a fatal error. Please fix your code.\n") ;
+
+  alreadyCalled = TRUE ;
+
 
   if (getenv (ENV_DEBUG) != NULL)
     wiringPiDebug = TRUE ;
@@ -1994,11 +2005,13 @@ int wiringPiSetup (void)
      pinToGpio =  pinToGpioR1 ;
     physToGpio = physToGpioR1 ;
   }
-  else 				// A, B, Rev 2, B+, CM, Pi2
+  else 				// A, B, Rev 2, B+, CM, Pi2, Zero
   {
      pinToGpio =  pinToGpioR2 ;
     physToGpio = physToGpioR2 ;
   }
+
+// Note that a Zero is a model 1
 
   if (piModel2)
     RASPBERRY_PI_PERI_BASE = 0x3F000000 ;
@@ -2153,6 +2166,15 @@ int wiringPiSetupSys (void)
   int boardRev ;
   int pin ;
   char fName [128] ;
+  static int alreadyCalled = FALSE ;
+
+// This is here to trap the unwary - those who's program appears to work then fails some
+//	time later with a weird error message because you run out of file-handles.
+
+  if (alreadyCalled)
+    (void)wiringPiFailure (WPI_FATAL, "wiringPiSetupSys: You must only call this once per program run. This is a fatal error. Please fix your code.\n") ;
+
+  alreadyCalled = TRUE ;
 
   if (getenv (ENV_DEBUG) != NULL)
     wiringPiDebug = TRUE ;

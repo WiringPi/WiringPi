@@ -223,19 +223,20 @@ void cmReadall (void)
   printf ("| Pin | Mode | Value |      | Pin | Mode | Value |\n") ;
   printf ("+-----+------+-------+      +-----+------+-------+\n") ;
 
-  for (pin = 0 ; pin < 28 ; ++pin)
+  for (pin = 0 ; pin < 27 ; ++pin)
   {
     printf ("| %3d ", pin) ;
     printf ("| %-4s ", alts [getAlt (pin)]) ;
     printf ("| %s  ", digitalRead (pin) == HIGH ? "High" : "Low ") ;
     printf ("|      ") ;
-    printf ("| %3d ", pin + 28) ;
-    printf ("| %-4s ", alts [getAlt (pin + 28)]) ;
-    printf ("| %s  ", digitalRead (pin + 28) == HIGH ? "High" : "Low ") ;
+    printf ("| %3d ", pin + 27) ;
+    printf ("| %-4s ", alts [getAlt (pin + 27)]) ;
+    printf ("| %s  ", digitalRead (pin + 27) == HIGH ? "High" : "Low ") ;
     printf ("|\n") ;
   }
 
   printf ("+-----+------+-------+      +-----+------+-------+\n") ;
+
 }
 
 

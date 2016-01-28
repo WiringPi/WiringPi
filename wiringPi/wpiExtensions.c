@@ -52,6 +52,7 @@
 #include "mcp3422.h"
 #include "max31855.h"
 #include "max5322.h"
+#include "ads1115.h"
 #include "sn3218.h"
 #include "drcSerial.h"
 
@@ -375,6 +376,32 @@ static int doExtensionPcf8574 (char *progName, int pinBase, char *params)
 
 
 /*
+ * doExtensionAds1115:
+ *	Analog Input
+ *	ads1115:base:i2cAddr
+ *********************************************************************************
+ */
+
+static int doExtensionAds1115 (char *progName, int pinBase, char *params)
+{
+  int i2c ;
+
+  if ((params = extractInt (progName, params, &i2c)) == NULL)
+    return FALSE ;
+
+  if ((i2c < 0x03) || (i2c > 0x77))
+  {
+    verbError ("%s: i2c address (0x%X) out of range", progName, i2c) ;
+    return FALSE ;
+  }
+
+  ads1115Setup (pinBase, i2c) ;
+
+  return TRUE ;
+}
+
+
+/*
  * doExtensionPcf8591:
  *	Analog IO
  *	pcf8591:base:i2cAddr
@@ -654,6 +681,7 @@ static struct extensionFunctionStruct extensionFunctions [] =
   { "mcp4802",		&doExtensionMcp4802	},
   { "mcp3422",		&doExtensionMcp3422	},
   { "max31855",		&doExtensionMax31855	},
+  { "ads1115",		&doExtensionAds1115	},
   { "max5322",		&doExtensionMax5322	},
   { "sn3218",		&doExtensionSn3218	},
   { "drcs",		&doExtensionDrcS	},
