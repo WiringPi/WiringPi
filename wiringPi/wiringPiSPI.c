@@ -1,7 +1,7 @@
 /*
  * wiringPiSPI.c:
  *	Simplified SPI access routines
- *	Copyright (c) 2012 Gordon Henderson
+ *	Copyright (c) 2012-2015 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -25,8 +25,12 @@
 
 #include <stdint.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
+
+#include "wiringPi.h"
 
 #include "wiringPiSPI.h"
 
@@ -34,11 +38,10 @@
 // The SPI bus parameters
 //	Variables as they need to be passed as pointers later on
 
-static char       *spiDev0 = "/dev/spidev0.0" ;
-static char       *spiDev1 = "/dev/spidev0.1" ;
-static uint8_t     spiMode   = 0 ;
-static uint8_t     spiBPW    = 8 ;
-static uint16_t    spiDelay  = 0;
+const static char       *spiDev0  = "/dev/spidev0.0" ;
+const static char       *spiDev1  = "/dev/spidev0.1" ;
+const static uint8_t     spiBPW   = 8 ;
+const static uint16_t    spiDelay = 0 ;
 
 static uint32_t    spiSpeeds [2] ;
 static int         spiFds [2] ;
@@ -71,6 +74,11 @@ int wiringPiSPIDataRW (int channel, unsigned char *data, int len)
 
   channel &= 1 ;
 
+// Mentioned in spidev.h but not used in the original kernel documentation
+//	test program )-:
+
+  memset (&spi, 0, sizeof (spi)) ;
+
   spi.tx_buf        = (unsigned long)data ;
   spi.rx_buf        = (unsigned long)data ;
   spi.len           = len ;
@@ -83,35 +91,46 @@ int wiringPiSPIDataRW (int channel, unsigned char *data, int len)
 
 
 /*
- * wiringPiSPISetup:
- *	Open the SPI device, and set it up, etc.
+ * wiringPiSPISetupMode:
+ *	Open the SPI device, and set it up, with the mode, etc.
  *********************************************************************************
  */
 
-int wiringPiSPISetup (int channel, int speed)
+int wiringPiSPISetupMode (int channel, int speed, int mode)
 {
   int fd ;
 
-  channel &= 1 ;
+  mode    &= 3 ;	// Mode is 0, 1, 2 or 3
+  channel &= 1 ;	// Channel is 0 or 1
 
   if ((fd = open (channel == 0 ? spiDev0 : spiDev1, O_RDWR)) < 0)
-    return -1 ;
+    return wiringPiFailure (WPI_ALMOST, "Unable to open SPI device: %s\n", strerror (errno)) ;
 
   spiSpeeds [channel] = speed ;
   spiFds    [channel] = fd ;
 
 // Set SPI parameters.
-//	Why are we reading it afterwriting it? I've no idea, but for now I'm blindly
-//	copying example code I've seen online...
 
-  if (ioctl (fd, SPI_IOC_WR_MODE, &spiMode)         < 0) return -1 ;
-  if (ioctl (fd, SPI_IOC_RD_MODE, &spiMode)         < 0) return -1 ;
+  if (ioctl (fd, SPI_IOC_WR_MODE, &mode)            < 0)
+    return wiringPiFailure (WPI_ALMOST, "SPI Mode Change failure: %s\n", strerror (errno)) ;
+  
+  if (ioctl (fd, SPI_IOC_WR_BITS_PER_WORD, &spiBPW) < 0)
+    return wiringPiFailure (WPI_ALMOST, "SPI BPW Change failure: %s\n", strerror (errno)) ;
 
-  if (ioctl (fd, SPI_IOC_WR_BITS_PER_WORD, &spiBPW) < 0) return -1 ;
-  if (ioctl (fd, SPI_IOC_RD_BITS_PER_WORD, &spiBPW) < 0) return -1 ;
-
-  if (ioctl (fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed)   < 0) return -1 ;
-  if (ioctl (fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed)   < 0) return -1 ;
+  if (ioctl (fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed)   < 0)
+    return wiringPiFailure (WPI_ALMOST, "SPI Speed Change failure: %s\n", strerror (errno)) ;
 
   return fd ;
+}
+
+
+/*
+ * wiringPiSPISetup:
+ *	Open the SPI device, and set it up, etc. in the default MODE 0
+ *********************************************************************************
+ */
+
+int wiringPiSPISetup (int channel, int speed)
+{
+  return wiringPiSPISetupMode (channel, speed, 0) ;
 }

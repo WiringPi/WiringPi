@@ -1,9 +1,10 @@
 #
 # Makefile:
-#	wiringPi - Wiring Compatable library for the Raspberry Pi
+#	The gpio command:
+#	  A swiss-army knige of GPIO shenanigans.
 #	https://projects.drogon.net/wiring-pi
 #
-#	Copyright (c) 2012 Gordon Henderson
+#	Copyright (c) 2012-2015 Gordon Henderson
 #################################################################################
 # This file is part of wiringPi:
 #	Wiring Compatable library for the Raspberry Pi
@@ -22,59 +23,79 @@
 #    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
 #################################################################################
 
+DESTDIR?=/usr
+PREFIX?=/local
+
+ifneq ($V,1)
+Q ?= @
+endif
 
 #DEBUG	= -g -O0
 DEBUG	= -O2
 CC	= gcc
-INCLUDE	= -I/usr/local/include
+INCLUDE	= -I$(DESTDIR)$(PREFIX)/include
 CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 
-LDFLAGS	= -L/usr/local/lib
-LIBS    = -lwiringPi -lpthread -lm
+LDFLAGS	= -L$(DESTDIR)$(PREFIX)/lib
+LIBS    = -lwiringPi -lwiringPiDev -lpthread
 
 # May not need to  alter anything below this line
 ###############################################################################
 
-SRC	=	gpio.c
+SRC	=	gpio.c readall.c pins.c
 
 OBJ	=	$(SRC:.c=.o)
 
 all:		gpio
 
-gpio:	gpio.o
-	@echo [Link]
-	@$(CC) -o $@ gpio.o $(LDFLAGS) $(LIBS)
-	
+version.h:	../VERSION
+	$Q echo Need to run newVersion above.
+
+gpio:	$(OBJ)
+	$Q echo [Link]
+	$Q $(CC) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
+
 .c.o:
-	@echo [Compile] $<
-	@$(CC) -c $(CFLAGS) $< -o $@
+	$Q echo [Compile] $<
+	$Q $(CC) -c $(CFLAGS) $< -o $@
 
-.PHONEY:	clean
+.PHONY:	clean
 clean:
-	rm -f $(OBJ) gpio *~ core tags *.bak
+	$Q echo "[Clean]"
+	$Q rm -f $(OBJ) gpio *~ core tags *.bak
 
-.PHONEY:	tags
+.PHONY:	tags
 tags:	$(SRC)
-	@echo [ctags]
-	@ctags $(SRC)
+	$Q echo [ctags]
+	$Q ctags $(SRC)
 
-.PHONEY:	install
-install:
-	@echo "[Install]"
-	@cp gpio /usr/local/bin
-	@chown root.root /usr/local/bin/gpio
-	@chmod 4755 /usr/local/bin/gpio
-	@mkdir -p /usr/local/man/man1
-	@cp gpio.1 /usr/local/man/man1
+.PHONY:	install
+install: gpio
+	$Q echo "[Install]"
+	$Q cp gpio		$(DESTDIR)$(PREFIX)/bin
+ifneq ($(WIRINGPI_SUID),0)
+	$Q chown root.root	$(DESTDIR)$(PREFIX)/bin/gpio
+	$Q chmod 4755		$(DESTDIR)$(PREFIX)/bin/gpio
+endif
+	$Q mkdir -p		$(DESTDIR)$(PREFIX)/man/man1
+	$Q cp gpio.1		$(DESTDIR)$(PREFIX)/man/man1
 
-.PHONEY:	uninstall
+.PHONY:	install-deb
+install-deb:	gpio
+	$Q echo "[Install: deb]"
+	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/bin
+	$Q install -m 0755 gpio							~/wiringPi/debian-template/wiringPi/usr/bin
+
+.PHONY:	uninstall
 uninstall:
-	@echo "[UnInstall]"
-	@rm -f /usr/local/bin/gpio
-	@rm -f /usr/local/man/man1/gpio.1
+	$Q echo "[UnInstall]"
+	$Q rm -f $(DESTDIR)$(PREFIX)/bin/gpio
+	$Q rm -f $(DESTDIR)$(PREFIX)/man/man1/gpio.1
 
-.PHONEY:	depend
+.PHONY:	depend
 depend:
 	makedepend -Y $(SRC)
 
 # DO NOT DELETE
+
+gpio.o: version.h

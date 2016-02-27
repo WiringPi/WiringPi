@@ -39,26 +39,25 @@
 #include <wiringPi.h>
 #include <softPwm.h>
 
+// The OK/Act LED is connected to BCM_GPIO pin 16
+
 #define OK_LED  16
 
 int main ()
 {
   int fd, i ;
 
+  wiringPiSetupGpio () ;
+
+// Change the trigger on the OK/Act LED to "none"
+
   if ((fd = open ("/sys/class/leds/led0/trigger", O_RDWR)) < 0)
   {
     fprintf (stderr, "Unable to change LED trigger: %s\n", strerror (errno)) ;
     return 1 ;
   }
-
   write (fd, "none\n", 5) ;
   close (fd) ;
-
-  if (wiringPiSetupGpio () < 0)
-  {
-    fprintf (stderr, "Unable to setup GPIO: %s\n", strerror (errno)) ;
-    return 1 ;
-  }
 
   softPwmCreate (OK_LED, 0, 100) ;
 

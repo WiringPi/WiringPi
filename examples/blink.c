@@ -34,16 +34,14 @@ int main (void)
 {
   printf ("Raspberry Pi blink\n") ;
 
-  if (wiringPiSetup () == -1)
-    return 1 ;
-
+  wiringPiSetup () ;
   pinMode (LED, OUTPUT) ;
 
   for (;;)
   {
-    digitalWrite (LED, 1) ;	// On
+    digitalWrite (LED, HIGH) ;	// On
     delay (500) ;		// mS
-    digitalWrite (LED, 0) ;	// Off
+    digitalWrite (LED, LOW) ;	// Off
     delay (500) ;
   }
   return 0 ;

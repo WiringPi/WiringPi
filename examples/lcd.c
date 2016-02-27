@@ -4,7 +4,19 @@
  *	This is designed to drive the parallel interface LCD drivers
  *	based in the Hitachi HD44780U controller and compatables.
  *
- * Copyright (c) 2012 Gordon Henderson.
+ *	This test program assumes the following:
+ *
+ *	8-bit displays:
+ *		GPIO 0-7 is connected to display data pins 0-7.
+ *		GPIO 11 is the RS pin.
+ *		GPIO 10 is the Strobe/E pin.
+ *
+ *	For 4-bit interface:
+ *		GPIO 4-7 is connected to display data pins 4-7.
+ *		GPIO 11 is the RS pin.
+ *		GPIO 10 is the Strobe/E pin.
+ *
+ * Copyright (c) 2012-2013 Gordon Henderson.
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -35,94 +47,239 @@
 #include <wiringPi.h>
 #include <lcd.h>
 
-int main (void)
-{
-  int i, j ;
-  int fd1, fd2 ; 
+#ifndef	TRUE
+#  define	TRUE	(1==1)
+#  define	FALSE	(1==2)
+#endif
 
-  char message1 [256] ;
-  char message2 [256] ;
-  char buf1 [30] ;
-  char buf2 [30] ;
+static unsigned char newChar [8] = 
+{
+  0b11111,
+  0b10001,
+  0b10001,
+  0b10101,
+  0b11111,
+  0b10001,
+  0b10001,
+  0b11111,
+} ;
+
+
+// Global lcd handle:
+
+static int lcdHandle ;
+
+/*
+ * usage:
+ *********************************************************************************
+ */
+
+int usage (const char *progName)
+{
+  fprintf (stderr, "Usage: %s bits cols rows\n", progName) ;
+  return EXIT_FAILURE ;
+}
+
+
+/*
+ * scrollMessage:
+ *********************************************************************************
+ */
+
+static const char *message =
+  "                    "
+  "Wiring Pi by Gordon Henderson. HTTP://WIRINGPI.COM/"
+  "                    " ;
+
+void scrollMessage (int line, int width)
+{
+  char buf [32] ;
+  static int position = 0 ;
+  static int timer = 0 ;
+
+  if (millis () < timer)
+    return ;
+
+  timer = millis () + 200 ;
+
+  strncpy (buf, &message [position], width) ;
+  buf [width] = 0 ;
+  lcdPosition (lcdHandle, 0, line) ;
+  lcdPuts     (lcdHandle, buf) ;
+
+  if (++position == (strlen (message) - width))
+    position = 0 ;
+}
+
+
+/*
+ * pingPong:
+ *	Bounce a character - only on 4-line displays
+ *********************************************************************************
+ */
+
+static void pingPong (int lcd, int cols)
+{
+  static int position = 0 ;
+  static int dir      = 0 ;
+
+  if (dir == 0)		// Setup
+  {
+    dir = 1 ;
+    lcdPosition (lcdHandle, 0, 3) ;
+    lcdPutchar  (lcdHandle, '*') ;
+    return ;
+  }
+
+  lcdPosition (lcdHandle, position, 3) ;
+  lcdPutchar (lcdHandle, ' ') ;
+  position += dir ;
+
+  if (position == cols)
+  {
+    dir = -1 ;
+    --position ;
+  }
+  
+  if (position < 0)
+  {
+    dir = 1 ;
+    ++position ;
+  }
+
+  lcdPosition (lcdHandle, position, 3) ;
+  lcdPutchar  (lcdHandle, '#') ;
+}
+
+
+/*
+ * waitForEnter:
+ *********************************************************************************
+ */
+
+static void waitForEnter (void)
+{
+  printf ("Press ENTER to continue: ") ;
+  (void)fgetc (stdin) ;
+}
+
+
+/*
+ * The works
+ *********************************************************************************
+ */
+
+int main (int argc, char *argv[])
+{
+  int i ;
+  int lcd ;
+  int bits, rows, cols ;
 
   struct tm *t ;
   time_t tim ;
 
-  printf ("Raspberry Pi LCD test program\n") ;
+  char buf [32] ;
 
-  if (wiringPiSetup () == -1)
-    exit (1) ;
+  if (argc != 4)
+    return usage (argv [0]) ;
 
-  fd1 = lcdInit (4, 20, 4, 8,  9, 4,5,6,7,0,0,0,0) ;
-  fd2 = lcdInit (2, 16, 4, 8, 10, 4,5,6,7,0,0,0,0) ;
+  printf ("Raspberry Pi LCD test\n") ;
+  printf ("=====================\n") ;
 
-//fd1 = lcdInit (4, 20, 8, 8,  9, 0,1,2,3,4,5,6,7) ;
-//fd2 = lcdInit (2, 16, 8, 8, 10, 0,1,2,3,4,5,6,7) ;
+  bits = atoi (argv [1]) ;
+  cols = atoi (argv [2]) ;
+  rows = atoi (argv [3]) ;
 
-  if (fd1 == -1)
+  if (!((rows == 1) || (rows == 2) || (rows == 4)))
   {
-    printf ("lcdInit 1 failed\n") ;
-    return 1 ;
+    fprintf (stderr, "%s: rows must be 1, 2 or 4\n", argv [0]) ;
+    return EXIT_FAILURE ;
   }
 
-  if (fd2 == -1)
+  if (!((cols == 16) || (cols == 20)))
   {
-    printf ("lcdInit 2 failed\n") ;
-    return 1 ;
+    fprintf (stderr, "%s: cols must be 16 or 20\n", argv [0]) ;
+    return EXIT_FAILURE ;
   }
 
-  sleep (1) ;
+  wiringPiSetup () ;
 
-  lcdPosition (fd1, 0, 0) ; lcdPuts (fd1, " Gordon Henderson") ;
-  lcdPosition (fd1, 0, 1) ; lcdPuts (fd1, "  --------------") ;
-/*
-  lcdPosition (fd1, 0, 2) ; lcdPuts (fd1, "   00:00:00") ;
-  lcdPosition (fd1, 0, 3) ; lcdPuts (fd1, "   DD:MM:YY") ;
-*/
+  if (bits == 4)
+    lcdHandle = lcdInit (rows, cols, 4, 11,10, 4,5,6,7,0,0,0,0) ;
+  else
+    lcdHandle = lcdInit (rows, cols, 8, 11,10, 0,1,2,3,4,5,6,7) ;
 
-  lcdPosition (fd2, 0, 0) ; lcdPuts (fd2, "Gordon Henderson") ;
-  lcdPosition (fd2, 0, 1) ; lcdPuts (fd2, "----------------") ;
+  if (lcdHandle < 0)
+  {
+    fprintf (stderr, "%s: lcdInit failed\n", argv [0]) ;
+    return -1 ;
+  }
 
-  sleep (2) ;
+  lcdPosition (lcdHandle, 0, 0) ; lcdPuts (lcdHandle, "Gordon Henderson") ;
+  lcdPosition (lcdHandle, 0, 1) ; lcdPuts (lcdHandle, "  wiringpi.com  ") ;
 
-  sprintf (message1, "%s", "                  http://projects.drogon.net/                    ") ;
-  sprintf (message2, "%s", "                This is a long message to go into the smaller display just for a demonstration of what we can do.                ") ;
+  waitForEnter () ;
+
+  if (rows > 1)
+  {
+    lcdPosition (lcdHandle, 0, 1) ; lcdPuts (lcdHandle, "  wiringpi.com  ") ;
+
+    if (rows == 4)
+    {
+      lcdPosition (lcdHandle, 0, 2) ;
+      for (i = 0 ; i < ((cols - 1) / 2) ; ++i)
+        lcdPuts (lcdHandle, "=-") ;
+      lcdPuts (lcdHandle, "=3") ;
+
+      lcdPosition (lcdHandle, 0, 3) ;
+      for (i = 0 ; i < ((cols - 1) / 2) ; ++i)
+        lcdPuts (lcdHandle, "-=") ;
+      lcdPuts (lcdHandle, "-4") ;
+    }
+  }
+
+  waitForEnter () ;
+
+  lcdCharDef  (lcdHandle, 2, newChar) ;
+
+  lcdClear    (lcdHandle) ;
+  lcdPosition (lcdHandle, 0, 0) ;
+  lcdPuts     (lcdHandle, "User Char: ") ;
+  lcdPutchar  (lcdHandle, 2) ;
+
+  lcdCursor      (lcdHandle, TRUE) ;
+  lcdCursorBlink (lcdHandle, TRUE) ;
+
+  waitForEnter () ;
+
+  lcdCursor      (lcdHandle, FALSE) ;
+  lcdCursorBlink (lcdHandle, FALSE) ;
+  lcdClear       (lcdHandle) ;
 
   for (;;)
   {
-    i = 0 ;
-    j = 0 ;
-    for (;;)
-    {
-      strncpy (buf1, &message1 [i], 20) ;
-      buf1 [20] = 0 ;
-      lcdPosition (fd1, 0, 1) ;
-      lcdPuts (fd1, buf1) ;
-      ++i ;
-      if (i == strlen (message1) - 20)
-	i = 0 ;
+    scrollMessage (0, cols) ;
+    
+    if (rows == 1)
+      continue ;
 
-      strncpy (buf2, &message2 [j], 16) ;
-      buf2 [16] = 0 ;
-      lcdPosition (fd2, 0, 1) ;
-      lcdPuts (fd2, buf2) ;
-      ++j ;
-      if (j == strlen (message2) - 16)
-	j = 0 ;
+    tim = time (NULL) ;
+    t = localtime (&tim) ;
 
-      tim = time (NULL) ;
-      t = localtime (&tim) ;
+    sprintf (buf, "%02d:%02d:%02d", t->tm_hour, t->tm_min, t->tm_sec) ;
 
-      sprintf (buf1, "%02d:%02d:%02d", t->tm_hour, t->tm_min, t->tm_sec) ;
-      lcdPosition (fd1, 5, 2) ;
-      lcdPuts (fd1, buf1) ;
+    lcdPosition (lcdHandle, (cols - 8) / 2, 1) ;
+    lcdPuts     (lcdHandle, buf) ;
 
-      sprintf (buf1, "%02d/%02d/%02d", t->tm_mday, t->tm_mon + 1, t->tm_year+1900) ;
-      lcdPosition (fd1, 4, 3) ;
-      lcdPuts (fd1, buf1) ;
+    if (rows == 2)
+      continue ;
 
-      delay (250) ;
-    }
+    sprintf (buf, "%02d/%02d/%04d", t->tm_mday, t->tm_mon + 1, t->tm_year+1900) ;
+
+    lcdPosition (lcdHandle, (cols - 10) / 2, 2) ;
+    lcdPuts     (lcdHandle, buf) ;
+
+    pingPong (lcd, cols) ;
   }
 
   return 0 ;

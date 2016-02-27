@@ -36,7 +36,8 @@
 
 #define	PULSE_TIME	100
 
-static int frewqs [MAX_PINS] ;
+static int freqs         [MAX_PINS] ;
+static pthread_t threads [MAX_PINS] ;
 
 static int newPin = -1 ;
 
@@ -49,7 +50,11 @@ static int newPin = -1 ;
 
 static PI_THREAD (softToneThread)
 {
-  int pin, frewq, halfPeriod ;
+  int pin, freq, halfPeriod ;
+  struct sched_param param ;
+
+  param.sched_priority = sched_get_priority_max (SCHED_RR) ;
+  pthread_setschedparam (pthread_self (), SCHED_RR, &param) ;
 
   pin    = newPin ;
   newPin = -1 ;
@@ -58,12 +63,12 @@ static PI_THREAD (softToneThread)
 
   for (;;)
   {
-    frewq = frewqs [pin] ;
-    if (frewq == 0)
+    freq = freqs [pin] ;
+    if (freq == 0)
       delay (1) ;
     else
     {
-      halfPeriod = 500000 / frewq ;
+      halfPeriod = 500000 / freq ;
 
       digitalWrite (pin, HIGH) ;
       delayMicroseconds (halfPeriod) ;
@@ -83,16 +88,16 @@ static PI_THREAD (softToneThread)
  *********************************************************************************
  */
 
-void softToneWrite (int pin, int frewq)
+void softToneWrite (int pin, int freq)
 {
   pin &= 63 ;
 
-  /**/ if (frewq < 0)
-    frewq = 0 ;
-  else if (frewq > 5000)	// Max 5KHz
-    frewq = 5000 ;
+  /**/ if (freq < 0)
+    freq = 0 ;
+  else if (freq > 5000)	// Max 5KHz
+    freq = 5000 ;
 
-  frewqs [pin] = frewq ;
+  freqs [pin] = freq ;
 }
 
 
@@ -105,17 +110,41 @@ void softToneWrite (int pin, int frewq)
 int softToneCreate (int pin)
 {
   int res ;
+  pthread_t myThread ;
 
   pinMode      (pin, OUTPUT) ;
   digitalWrite (pin, LOW) ;
 
-  frewqs [pin] = 0 ;
+  if (threads [pin] != 0)
+    return -1 ;
+
+  freqs [pin] = 0 ;
 
   newPin = pin ;
-  res = piThreadCreate (softToneThread) ;
+  res    = pthread_create (&myThread, NULL, softToneThread, NULL) ;
 
   while (newPin != -1)
     delay (1) ;
 
+  threads [pin] = myThread ;
+
   return res ;
+}
+
+
+/*
+ * softToneStop:
+ *	Stop an existing softTone thread
+ *********************************************************************************
+ */
+
+void softToneStop (int pin)
+{
+  if (threads [pin] != 0)
+  {
+    pthread_cancel (threads [pin]) ;
+    pthread_join   (threads [pin], NULL) ;
+    threads [pin] = 0 ;
+    digitalWrite (pin, LOW) ;
+  }
 }

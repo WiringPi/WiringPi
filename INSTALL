@@ -30,18 +30,6 @@ To un-install wiringPi:
 
   ./build uninstall
 
-
-I2C:
-
-If your system has the correct i2c-dev libraries and headers installed,
-then the I2C helpers will be compiled into wiringPi. If you want to
-use the I2C helpers and don't have them installed, then under Raspbian,
-issue the command:
-
-  sudo apt-get install libi2c-dev
-
-Consult the documentation for your system if you are not running Raspbian.
-
 Gordon Henderson
 
 projects@drogon.net
