@@ -1,9 +1,0 @@
-
-WiringPi: An implementation of most of the Arduino Wiring
-	functions for the Raspberry Pi,
-	along with many more features and libraries to support
-	hardware, etc. on the Raspberry Pi
-
-Full details at:
-	https://projects.drogon.net/raspberry-pi/wiringpi/
-
