@@ -22,7 +22,8 @@
  ***********************************************************************
  */
 
-//#include <stdio.h>
+#include <sys/time.h>
+#include <stdio.h>
 //#include <stdlib.h>
 //#include <unistd.h>
 
@@ -38,21 +39,43 @@
 
 /*
  * maxDetectLowHighWait:
- *	Wait for a transition from high to low on the bus
+ *	Wait for a transition from low to high on the bus
  *********************************************************************************
  */
 
-static void maxDetectLowHighWait (const int pin)
+static int maxDetectLowHighWait (const int pin)
 {
-  unsigned int timeOut = millis () + 2000 ;
+  struct timeval now, timeOut, timeUp ;
+
+// If already high then wait for pin to go low
+
+  gettimeofday (&now, NULL) ;
+  timerclear   (&timeOut) ;
+  timeOut.tv_usec = 1000 ;
+  timeradd     (&now, &timeOut, &timeUp) ;
 
   while (digitalRead (pin) == HIGH)
-    if (millis () > timeOut)
-      return ;
+  {
+    gettimeofday (&now, NULL) ;
+    if (timercmp (&now, &timeUp, >))
+      return FALSE ;
+  }
+
+// Wait for it to go HIGH
+
+  gettimeofday (&now, NULL) ;
+  timerclear (&timeOut) ;
+  timeOut.tv_usec = 1000 ;
+  timeradd (&now, &timeOut, &timeUp) ;
 
   while (digitalRead (pin) == LOW)
-    if (millis () > timeOut)
-      return ;
+  {
+    gettimeofday (&now, NULL) ;
+    if (timercmp (&now, &timeUp, >))
+      return FALSE ;
+  }
+
+  return TRUE ;
 }
 
 
@@ -69,7 +92,8 @@ static unsigned int maxDetectClockByte (const int pin)
 
   for (bit = 0 ; bit < 8 ; ++bit)
   {
-    maxDetectLowHighWait (pin) ;
+    if (!maxDetectLowHighWait (pin))
+      return 0 ;
 
 // bit starting now - we need to time it.
 
@@ -95,6 +119,11 @@ int maxDetectRead (const int pin, unsigned char buffer [4])
   int i ;
   unsigned int checksum ;
   unsigned char localBuf [5] ;
+  struct timeval now, then, took ;
+
+// See how long we took
+
+  gettimeofday (&then, NULL) ;
 
 // Wake up the RHT03 by pulling the data line low, then high
 //	Low for 10mS, high for 40uS.
@@ -106,7 +135,8 @@ int maxDetectRead (const int pin, unsigned char buffer [4])
 
 // Now wait for sensor to pull pin low
 
-  maxDetectLowHighWait (pin) ;
+  if (!maxDetectLowHighWait (pin))
+    return FALSE ;
 
 // and read in 5 bytes (40 bits)
 
@@ -121,6 +151,22 @@ int maxDetectRead (const int pin, unsigned char buffer [4])
   }
   checksum &= 0xFF ;
 
+// See how long we took
+  
+  gettimeofday (&now, NULL) ;
+  timersub (&now, &then, &took) ;
+
+// Total time to do this should be:
+//	10mS + 40µS - reset
+//	+ 80µS + 80µS - sensor doing its low -> high thing
+//	+ 40 * (50µS + 27µS (0) or 70µS (1) )
+//	= 15010µS
+// so if we take more than that, we've had a scheduling interruption and the
+// reading is probably bogus.
+
+  if ((took.tv_sec != 0) || (took.tv_usec > 16000))
+    return FALSE ;
+
   return checksum == localBuf [4] ;
 }
 
@@ -128,38 +174,65 @@ int maxDetectRead (const int pin, unsigned char buffer [4])
 /*
  * readRHT03:
  *	Read the Temperature & Humidity from an RHT03 sensor
+ *	Values returned are *10, so 123 is 12.3.
  *********************************************************************************
  */
 
 int readRHT03 (const int pin, int *temp, int *rh)
 {
-  static unsigned int nextTime   = 0 ;
-  static          int lastTemp   = 0 ;
-  static          int lastRh     = 0 ;
-  static          int lastResult = TRUE ;
+  static struct timeval then ;	// will initialise to zero
+  static        int     lastTemp = 0 ;
+  static        int     lastRh   = 0 ;
 
+  int result ;
+  struct timeval now, timeOut ;
   unsigned char buffer [4] ;
 
-// Don't read more than once a second
+// The data sheets say to not read more than once every 2 seconds, so you
+//	get the last good reading
 
-  if (millis () < nextTime)
+  gettimeofday (&now, NULL) ;
+  if (timercmp (&now, &then, <))
   {
-    *temp = lastTemp ;
     *rh   = lastRh ;
-    return lastResult ;
-  }
-  
-  lastResult = maxDetectRead (pin, buffer) ;
-
-  if (lastResult)
-  {
-    *temp      = lastTemp   = (buffer [2] * 256 + buffer [3]) ;
-    *rh        = lastRh     = (buffer [0] * 256 + buffer [1]) ;
-    nextTime   = millis () + 2000 ;
+    *temp = lastTemp ;
     return TRUE ;
   }
-  else
-  {
+
+// Set timeout for next read
+
+  gettimeofday (&now, NULL) ;
+  timerclear   (&timeOut) ;
+  timeOut.tv_sec = 2 ;
+  timeradd (&now, &timeOut, &then) ;
+
+// Read ...
+  
+  result = maxDetectRead (pin, buffer) ;
+
+  if (!result) // Try again, but just once
+    result = maxDetectRead (pin, buffer) ;
+
+  if (!result)
     return FALSE ;
+
+  *rh   = (buffer [0] * 256 + buffer [1]) ;
+  *temp = (buffer [2] * 256 + buffer [3]) ;
+
+  if ((*temp & 0x8000) != 0)	// Negative
+  {
+    *temp &= 0x7FFF ;
+    *temp = -*temp ;
   }
+
+// Discard obviously bogus readings - the checksum can't detect a 2-bit error
+//	(which does seem to happen - no realtime here)
+
+  if ((*rh > 999) || (*temp > 800) || (*temp < -400))
+    return FALSE ;
+
+  lastRh   = *rh ;
+  lastTemp = *temp ;
+
+  return TRUE ;
 }

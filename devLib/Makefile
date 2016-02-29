@@ -48,11 +48,13 @@ LIBS    =
 SRC	=	ds1302.c maxdetect.c  piNes.c		\
 		gertboard.c piFace.c			\
 		lcd128x64.c lcd.c			\
+		scrollPhat.c				\
 		piGlow.c
 
 OBJ	=	$(SRC:.c=.o)
 
-HEADERS	=	ds1302.h gertboard.h  lcd128x64.h  lcd.h  maxdetect.h piFace.h  piGlow.h  piNes.h
+HEADERS	=	ds1302.h gertboard.h  lcd128x64.h  lcd.h  maxdetect.h piFace.h  piGlow.h  piNes.h\
+		scrollPhat.h
 
 all:		$(DYNAMIC)
 
@@ -134,4 +136,5 @@ gertboard.o: gertboard.h
 piFace.o: piFace.h
 lcd128x64.o: font.h lcd128x64.h
 lcd.o: lcd.h
+scrollPhat.o: scrollPhatFont.h scrollPhat.h
 piGlow.o: piGlow.h

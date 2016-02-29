@@ -66,7 +66,7 @@ int max5322Setup (const int pinBase, int spiChannel)
   unsigned char spiData [2] ;
 
   if (wiringPiSPISetup (spiChannel, 8000000) < 0)	// 10MHz Max
-    return -1 ;
+    return FALSE ;
 
   node = wiringPiNewNode (pinBase, 2) ;
 
@@ -80,5 +80,5 @@ int max5322Setup (const int pinBase, int spiChannel)
   
   wiringPiSPIDataRW (node->fd, spiData, 2) ;
 
-  return 0 ;
+  return TRUE ;
 }

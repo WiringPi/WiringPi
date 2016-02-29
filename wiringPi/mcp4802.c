@@ -65,12 +65,12 @@ int mcp4802Setup (const int pinBase, int spiChannel)
   struct wiringPiNodeStruct *node ;
 
   if (wiringPiSPISetup (spiChannel, 1000000) < 0)
-    return -1 ;
+    return FALSE ;
 
   node = wiringPiNewNode (pinBase, 2) ;
 
   node->fd          = spiChannel ;
   node->analogWrite = myAnalogWrite ;
 
-  return 0 ;
+  return TRUE ;
 }

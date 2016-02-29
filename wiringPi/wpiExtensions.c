@@ -52,6 +52,7 @@
 #include "mcp3422.h"
 #include "max31855.h"
 #include "max5322.h"
+#include "ads1115.h"
 #include "sn3218.h"
 #include "drcSerial.h"
 
@@ -62,11 +63,6 @@ extern int wiringPiDebug ;
 static int verbose ;
 static char errorMessage [1024] ;
 
-
-#ifndef TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(1==2)
-#endif
 
 // Local structure to hold details
 
@@ -118,7 +114,13 @@ static char *extractInt (char *progName, char *p, int *num)
   }
 
   *num = strtol (p, NULL, 0) ;
-  while (isdigit (*p))
+
+// Increment p, but we need to check for hex 0x
+
+  if ((*p == '0') && (*(p + 1) == 'x'))
+    p +=2 ;
+
+  while (isxdigit (*p))
     ++p ;
 
   return p ;
@@ -369,6 +371,32 @@ static int doExtensionPcf8574 (char *progName, int pinBase, char *params)
   }
 
   pcf8574Setup (pinBase, i2c) ;
+
+  return TRUE ;
+}
+
+
+/*
+ * doExtensionAds1115:
+ *	Analog Input
+ *	ads1115:base:i2cAddr
+ *********************************************************************************
+ */
+
+static int doExtensionAds1115 (char *progName, int pinBase, char *params)
+{
+  int i2c ;
+
+  if ((params = extractInt (progName, params, &i2c)) == NULL)
+    return FALSE ;
+
+  if ((i2c < 0x03) || (i2c > 0x77))
+  {
+    verbError ("%s: i2c address (0x%X) out of range", progName, i2c) ;
+    return FALSE ;
+  }
+
+  ads1115Setup (pinBase, i2c) ;
 
   return TRUE ;
 }
@@ -654,6 +682,7 @@ static struct extensionFunctionStruct extensionFunctions [] =
   { "mcp4802",		&doExtensionMcp4802	},
   { "mcp3422",		&doExtensionMcp3422	},
   { "max31855",		&doExtensionMax31855	},
+  { "ads1115",		&doExtensionAds1115	},
   { "max5322",		&doExtensionMax5322	},
   { "sn3218",		&doExtensionSn3218	},
   { "drcs",		&doExtensionDrcS	},
@@ -674,7 +703,7 @@ int loadWPiExtension (char *progName, char *extensionData, int printErrors)
   char *p ;
   char *extension = extensionData ;
   struct extensionFunctionStruct *extensionFn ;
-  int pinBase = 0 ;
+  unsigned pinBase = 0 ;
 
   verbose = printErrors ;
 
@@ -696,13 +725,13 @@ int loadWPiExtension (char *progName, char *extensionData, int printErrors)
 
   if (!isdigit (*p))
   {
-    verbError ("%s: pinBase number expected after extension name", progName) ;
+    verbError ("%s: decimal pinBase number expected after extension name", progName) ;
     return FALSE ;
   }
 
   while (isdigit (*p))
   {
-    if (pinBase > 1000000000) // Lets be realistic here...
+    if (pinBase > 2147483647) // 2^31-1 ... Lets be realistic here...
     {
       verbError ("%s: pinBase too large", progName) ;
       return FALSE ;
