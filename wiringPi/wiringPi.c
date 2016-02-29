@@ -69,16 +69,12 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
+#include <asm/ioctl.h>
 
 #include "softPwm.h"
 #include "softTone.h"
 
 #include "wiringPi.h"
-
-#ifndef	TRUE
-#define	TRUE	(1==1)
-#define	FALSE	(1==2)
-#endif
 
 // Environment Variables
 
@@ -219,7 +215,7 @@ const char *piModelNames [16] =
   "Alpha",	//  5
   "CM",		//  6
   "Unknown07",	// 07
-  "Unknown08",	// 08
+  "Pi 3",	// 08
   "Pi Zero",	// 09
   "Unknown10",	// 10
   "Unknown11",	// 11
@@ -894,7 +890,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     *c = 0 ;
   
   if (wiringPiDebug)
-    printf ("piboardId: Revision string: %s\n", line) ;
+    printf ("piBoardId: Revision string: %s\n", line) ;
 
 // Need to work out if it's using the new or old encoding scheme:
 
@@ -1624,16 +1620,21 @@ void pwmToneWrite (int pin, int freq)
 
 /*
  * digitalWriteByte:
+ * digitalReadByte:
  *	Pi Specific
  *	Write an 8-bit byte to the first 8 GPIO pins - try to do it as
  *	fast as possible.
  *	However it still needs 2 operations to set the bits, so any external
  *	hardware must not rely on seeing a change as there will be a change 
  *	to set the outputs bits to zero, then another change to set the 1's
+ *	Reading is just bit fiddling.
+ *	These are wiringPi pin numbers 0..7, or BCM_GPIO pin numbers
+ *	17, 18, 22, 23, 24, 24, 4 on a Pi v1 rev 0-3
+ *	17, 18, 27, 23, 24, 24, 4 on a Pi v1 rev 3 onwards or B+, 2, zero
  *********************************************************************************
  */
 
-void digitalWriteByte (int value)
+void digitalWriteByte (const int value)
 {
   uint32_t pinSet = 0 ;
   uint32_t pinClr = 0 ;
@@ -1644,7 +1645,7 @@ void digitalWriteByte (int value)
   {
     for (pin = 0 ; pin < 8 ; ++pin)
     {
-      digitalWrite (pin, value & mask) ;
+      digitalWrite (pinToGpio [pin], value & mask) ;
       mask <<= 1 ;
     }
     return ;
@@ -1664,6 +1665,83 @@ void digitalWriteByte (int value)
     *(gpio + gpioToGPCLR [0]) = pinClr ;
     *(gpio + gpioToGPSET [0]) = pinSet ;
   }
+}
+
+unsigned int digitalReadByte (void)
+{
+  int pin, x ;
+  uint32_t raw ;
+  uint32_t data = 0 ;
+
+  /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)
+  {
+    for (pin = 0 ; pin < 8 ; ++pin)
+    {
+      x = digitalRead (pinToGpio [pin]) ;
+      data = (data << 1) | x ;
+    }
+  }
+  else 
+  {
+    raw = *(gpio + gpioToGPLEV [0]) ; // First bank for these pins
+    for (pin = 0 ; pin < 8 ; ++pin)
+    {
+      x = pinToGpio [pin] ;
+      data = (data << 1) | (((raw & (1 << x)) == 0) ? 0 : 1) ;
+    }
+  }
+  return data ;
+}
+
+
+/*
+ * digitalWriteByte2:
+ * digitalReadByte2:
+ *	Pi Specific
+ *	Write an 8-bit byte to the second set of 8 GPIO pins. This is marginally
+ *	faster than the first lot as these are consecutive BCM_GPIO pin numbers.
+ *	However they overlap with the original read/write bytes.
+ *********************************************************************************
+ */
+
+void digitalWriteByte2 (const int value)
+{
+  register int mask = 1 ;
+  register int pin ;
+
+  /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)
+  {
+    for (pin = 20 ; pin < 28 ; ++pin)
+    {
+      digitalWrite (pin, value & mask) ;
+      mask <<= 1 ;
+    }
+    return ;
+  }
+  else
+  {
+    *(gpio + gpioToGPCLR [0]) = 0x0FF00000 ;
+    *(gpio + gpioToGPSET [0]) = (value & 0xFF) << 20 ;
+  }
+}
+
+unsigned int digitalReadByte2 (void)
+{
+  int pin, x ;
+  uint32_t data = 0 ;
+
+  /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)
+  {
+    for (pin = 20 ; pin < 28 ; ++pin)
+    {
+      x = digitalRead (pin) ;
+      data = (data << 1) | x ;
+    }
+  }
+  else 
+    data = ((*(gpio + gpioToGPLEV [0])) >> 20) & 0xFF ; // First bank for these pins
+
+  return data ;
 }
 
 

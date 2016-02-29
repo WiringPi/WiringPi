@@ -47,6 +47,7 @@ extern int wiringPiDebug ;
 // External functions I can't be bothered creating a separate .h file for:
 
 extern void doReadall    (void) ;
+extern void doAllReadall (void) ;
 extern void doPins       (void) ;
 
 #ifndef TRUE
@@ -115,10 +116,12 @@ static void changeOwner (char *cmd, char *file)
 
   if (chown (file, uid, gid) != 0)
   {
-    if (errno == ENOENT)	// Warn that it's not there
-      fprintf (stderr, "%s: Warning (not an error, do not report): File not present: %s\n", cmd, file) ;
-    else
-      fprintf (stderr, "%s: Warning (not an error): Unable to change ownership of %s: %s\n", cmd, file, strerror (errno)) ;
+
+// Removed (ignoring) the check for not existing as I'm fed-up with morons telling me that
+//	the warning message is an error.
+
+    if (errno != ENOENT)
+      fprintf (stderr, "%s: Unable to change ownership of %s: %s\n", cmd, file, strerror (errno)) ;
   }
 }
 
@@ -138,7 +141,7 @@ static int moduleLoaded (char *modName)
 
   if (fd == NULL)
   {
-    fprintf (stderr, "gpio: Unable to check modules: %s\n", strerror (errno)) ;
+    fprintf (stderr, "gpio: Unable to check /proc/modules: %s\n", strerror (errno)) ;
     exit (1) ;
   }
 
@@ -774,13 +777,13 @@ static void doUsbP (int argc, char *argv [])
 
   piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
 
-  if (model != PI_MODEL_BP)
+  if (!((model == PI_MODEL_BP) || (model == PI_MODEL_2)))
   {
-    fprintf (stderr, "USB power contol is applicable to B+ boards only.\n") ;
+    fprintf (stderr, "USB power contol is applicable to B+ and v2 boards only.\n") ;
     exit (1) ;
   }
     
-// Need to force BCM_GPIO mode:
+// Make sure we start in BCM_GPIO mode
 
   wiringPiSetupGpio () ;
 
@@ -1150,7 +1153,8 @@ static void doPwmClock (int argc, char *argv [])
 
 /*
  * doVersion:
- *	Handle the ever more complicated version command
+ *	Handle the ever more complicated version command and print out
+ *	some usefull information.
  *********************************************************************************
  */
 
@@ -1166,35 +1170,23 @@ static void doVersion (char *argv [])
   printf ("\n") ;
   piBoardId (&model, &rev, &mem, &maker, &warranty) ;
 
-/*************
-  if (model == PI_MODEL_UNKNOWN)
-  {
-    printf ("Your Raspberry Pi has an unknown model type. Please report this to\n") ;
-    printf ("    projects@drogon.net\n") ;
-    printf ("with a copy of your /proc/cpuinfo if possible\n") ;
-  }
-  else
-***************/
-
-  {
-    printf ("Raspberry Pi Details:\n") ;
-    printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s %s\n", 
-	piModelNames [model], piRevisionNames [rev], piMemorySize [mem], piMakerNames [maker], warranty ? "[Out of Warranty]" : "") ;
+  printf ("Raspberry Pi Details:\n") ;
+  printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s %s\n", 
+      piModelNames [model], piRevisionNames [rev], piMemorySize [mem], piMakerNames [maker], warranty ? "[Out of Warranty]" : "") ;
 
 // Check for device tree
 
-    if (stat ("/proc/device-tree", &statBuf) == 0)	// We're on a devtree system ...
-      printf ("  Device tree is enabled.\n") ;
+  if (stat ("/proc/device-tree", &statBuf) == 0)	// We're on a devtree system ...
+    printf ("  * Device tree is enabled.\n") ;
 
-    if (stat ("/dev/gpiomem", &statBuf) == 0)		// User level GPIO is GO
-    {
-      printf ("  This Raspberry Pi supports user-level GPIO access.\n") ;
-      printf ("    -> See the man-page for more details\n") ;
-    }
-    else
-      printf ("  * Root or sudo required for GPIO access.\n") ;
-    
+  if (stat ("/dev/gpiomem", &statBuf) == 0)		// User level GPIO is GO
+  {
+    printf ("  * This Raspberry Pi supports user-level GPIO access.\n") ;
+    printf ("    -> See the man-page for more details\n") ;
+    printf ("    -> ie. export WIRINGPI_GPIOMEM=1\n") ;
   }
+  else
+    printf ("  * Root or sudo required for GPIO access.\n") ;
 }
 
 
@@ -1285,10 +1277,23 @@ int main (int argc, char *argv [])
   if (strcasecmp (argv [1], "load"   ) == 0)	{ doLoad   (argc, argv) ; return 0 ; }
   if (strcasecmp (argv [1], "unload" ) == 0)	{ doUnLoad (argc, argv) ; return 0 ; }
 
+// Check for usb power command
+
+  if (strcasecmp (argv [1], "usbp"   ) == 0)	{ doUsbP   (argc, argv) ; return 0 ; }
+
 // Gertboard commands
 
   if (strcasecmp (argv [1], "gbr" ) == 0)	{ doGbr (argc, argv) ; return 0 ; }
   if (strcasecmp (argv [1], "gbw" ) == 0)	{ doGbw (argc, argv) ; return 0 ; }
+
+// Check for allreadall command, force Gpio mode
+
+  if (strcasecmp (argv [1], "allreadall") == 0)
+  {
+    wiringPiSetupGpio () ;
+    doAllReadall      () ;
+    return 0 ;
+  }
 
 // Check for -g argument
 
@@ -1379,7 +1384,6 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "pwmc"     ) == 0) doPwmClock   (argc, argv) ;
   else if (strcasecmp (argv [1], "pwmTone"  ) == 0) doPwmTone    (argc, argv) ;
   else if (strcasecmp (argv [1], "drive"    ) == 0) doPadDrive   (argc, argv) ;
-  else if (strcasecmp (argv [1], "usbp"     ) == 0) doUsbP       (argc, argv) ;
   else if (strcasecmp (argv [1], "readall"  ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "nreadall" ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "pins"     ) == 0) doPins       () ;

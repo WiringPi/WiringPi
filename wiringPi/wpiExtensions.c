@@ -64,11 +64,6 @@ static int verbose ;
 static char errorMessage [1024] ;
 
 
-#ifndef TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(1==2)
-#endif
-
 // Local structure to hold details
 
 struct extensionFunctionStruct
@@ -119,7 +114,13 @@ static char *extractInt (char *progName, char *p, int *num)
   }
 
   *num = strtol (p, NULL, 0) ;
-  while (isdigit (*p))
+
+// Increment p, but we need to check for hex 0x
+
+  if ((*p == '0') && (*(p + 1) == 'x'))
+    p +=2 ;
+
+  while (isxdigit (*p))
     ++p ;
 
   return p ;
@@ -702,7 +703,7 @@ int loadWPiExtension (char *progName, char *extensionData, int printErrors)
   char *p ;
   char *extension = extensionData ;
   struct extensionFunctionStruct *extensionFn ;
-  int pinBase = 0 ;
+  unsigned pinBase = 0 ;
 
   verbose = printErrors ;
 
@@ -724,13 +725,13 @@ int loadWPiExtension (char *progName, char *extensionData, int printErrors)
 
   if (!isdigit (*p))
   {
-    verbError ("%s: pinBase number expected after extension name", progName) ;
+    verbError ("%s: decimal pinBase number expected after extension name", progName) ;
     return FALSE ;
   }
 
   while (isdigit (*p))
   {
-    if (pinBase > 1000000000) // Lets be realistic here...
+    if (pinBase > 2147483647) // 2^31-1 ... Lets be realistic here...
     {
       verbError ("%s: pinBase too large", progName) ;
       return FALSE ;

@@ -278,7 +278,7 @@ int ads1115Setup (const int pinBase, int i2cAddr)
   int fd ;
 
   if ((fd = wiringPiI2CSetup (i2cAddr)) < 0)
-    return -1 ;
+    return FALSE ;
 
   node = wiringPiNewNode (pinBase, 8) ;
 
@@ -289,5 +289,5 @@ int ads1115Setup (const int pinBase, int i2cAddr)
   node->analogWrite  = myAnalogWrite ;
   node->digitalWrite = myDigitalWrite ;
 
-  return 0 ;
+  return TRUE ;
 }

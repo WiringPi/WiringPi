@@ -27,7 +27,7 @@
 #include <wiringPi.h>
 #include <maxdetect.h>
 
-#define	RHT03_PIN	0
+#define	RHT03_PIN	7
 
 /*
  ***********************************************************************
@@ -37,32 +37,49 @@
 
 int main (void)
 {
-  int temp, rh ;
-  int newTemp, newRh ;
+  int result, temp, rh ;
+  int minT, maxT, minRH, maxRH ;
 
-  temp = rh = newTemp = newRh = 0 ;
+  int numGood, numBad ;
 
   wiringPiSetup () ;
   piHiPri       (55) ;
+
+  minT =  1000 ;
+  maxT = -1000 ;
+
+  minRH =  1000 ;
+  maxRH = -1000 ;
+
+  numGood = numBad = 0 ;
 
   for (;;)
   {
     delay (100) ;
 
-    if (!readRHT03 (RHT03_PIN, &newTemp, &newRh))
-      continue ;
+    result = readRHT03 (RHT03_PIN, &temp, &rh) ;
 
-    if ((temp != newTemp) || (rh != newRh))
+    if (!result)
     {
-      temp = newTemp ;
-      rh   = newRh ;
-      if ((temp & 0x8000) != 0)	// Negative
-      {
-	temp &= 0x7FFF ;
-	temp = -temp ;
-      }
-      printf ("Temp: %5.1f, RH: %5.1f%%\n", temp / 10.0, rh / 10.0) ;
+      printf (".") ;
+      fflush (stdout) ;
+      ++numBad ;
+      continue ;
     }
+
+    ++numGood ;
+
+    if (temp < minT) minT = temp ;
+    if (temp > maxT) maxT = temp ;
+    if (rh  < minRH) minRH = rh ;
+    if (rh  > maxRH) maxRH = rh ;
+
+    printf ("\r%6d, %6d: ", numGood, numBad) ;
+    printf ("Temp: %5.1f, RH: %5.1f%%", temp / 10.0, rh / 10.0) ;
+    printf ("  Max/Min Temp: %5.1f:%5.1f", maxT / 10.0, minT / 10.0) ;
+    printf ("  Max/Min RH: %5.1f:%5.1f", maxRH / 10.0, minRH / 10.0) ;
+
+    printf ("\n") ;
   }
 
   return 0 ;

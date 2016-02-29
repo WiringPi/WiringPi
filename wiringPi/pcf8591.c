@@ -78,7 +78,7 @@ int pcf8591Setup (const int pinBase, const int i2cAddress)
   struct wiringPiNodeStruct *node ;
 
   if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
-    return fd ;
+    return FALSE ;
 
   node = wiringPiNewNode (pinBase, 4) ;
 
@@ -86,5 +86,5 @@ int pcf8591Setup (const int pinBase, const int i2cAddress)
   node->analogRead  = myAnalogRead ;
   node->analogWrite = myAnalogWrite ;
 
-  return 0 ;
+  return TRUE ;
 }

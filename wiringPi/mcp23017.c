@@ -177,7 +177,7 @@ int mcp23017Setup (const int pinBase, const int i2cAddress)
   struct wiringPiNodeStruct *node ;
 
   if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
-    return fd ;
+    return FALSE ;
 
   wiringPiI2CWriteReg8 (fd, MCP23x17_IOCON, IOCON_INIT) ;
 
@@ -191,5 +191,5 @@ int mcp23017Setup (const int pinBase, const int i2cAddress)
   node->data2           = wiringPiI2CReadReg8 (fd, MCP23x17_OLATA) ;
   node->data3           = wiringPiI2CReadReg8 (fd, MCP23x17_OLATB) ;
 
-  return 0 ;
+  return TRUE ;
 }
