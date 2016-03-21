@@ -159,6 +159,17 @@ void serialPuts (const int fd, const char *s)
 }
 
 /*
+ * serialPuts:
+ *	Send binarys to serial port
+ *********************************************************************************
+ */
+
+void serialPutBin (const int fd, const char *bin, unsigned int size)
+{
+  write (fd, bin, size) ;
+}
+
+/*
  * serialPrintf:
  *	Printf over Serial
  *********************************************************************************

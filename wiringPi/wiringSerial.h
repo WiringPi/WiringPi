@@ -29,6 +29,7 @@ extern void  serialClose     (const int fd) ;
 extern void  serialFlush     (const int fd) ;
 extern void  serialPutchar   (const int fd, const unsigned char c) ;
 extern void  serialPuts      (const int fd, const char *s) ;
+extern void  serialPutBin    (const int fd, const char *bin, unsigned int size) ;
 extern void  serialPrintf    (const int fd, const char *message, ...) ;
 extern int   serialDataAvail (const int fd) ;
 extern int   serialGetchar   (const int fd) ;
