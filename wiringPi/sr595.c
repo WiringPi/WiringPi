@@ -105,5 +105,5 @@ int sr595Setup (const int pinBase, const int numPins,
   pinMode (clockPin, OUTPUT) ;
   pinMode (latchPin, OUTPUT) ;
 
-  return 0 ;
+  return TRUE ;
 }

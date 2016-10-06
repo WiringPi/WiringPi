@@ -1,6 +1,7 @@
 /*
- * mcp3422.h:
- *	Extend wiringPi with the MCP3422/3/4 I2C ADC chip
+ * ads1115.c:
+ *	Extend wiringPi with the ADS1115 I2C 16-bit ADC
+ *	Copyright (c) 2016 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -21,22 +22,33 @@
  ***********************************************************************
  */
 
-#define	MCP3422_SR_240	0
-#define	MCP3422_SR_60	1
-#define	MCP3422_SR_15	2
-#define	MCP3422_SR_3_75	3
+// Constants for some of the internal functions
 
-#define	MCP3422_GAIN_1	0
-#define	MCP3422_GAIN_2	1
-#define	MCP3422_GAIN_4	2
-#define	MCP3422_GAIN_8	3
+//	Gain
 
+#define	ADS1115_GAIN_6		0
+#define	ADS1115_GAIN_4		1
+#define	ADS1115_GAIN_2		2
+#define	ADS1115_GAIN_1		3
+#define	ADS1115_GAIN_HALF	4
+#define	ADS1115_GAIN_QUARTER	5
+
+//	Data rate
+
+#define	ADS1115_DR_8		0
+#define	ADS1115_DR_16		1
+#define	ADS1115_DR_32		2
+#define	ADS1115_DR_64		3
+#define	ADS1115_DR_128		4
+#define	ADS1115_DR_250		5
+#define	ADS1115_DR_475		6
+#define	ADS1115_DR_860		7
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-extern int mcp3422Setup (int pinBase, int i2cAddress, int sampleRate, int gain) ;
+extern int ads1115Setup (int pinBase, int i2cAddress) ;
 
 #ifdef __cplusplus
 }

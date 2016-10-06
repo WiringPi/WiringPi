@@ -55,7 +55,7 @@ int sn3218Setup (const int pinBase)
   struct wiringPiNodeStruct *node ;
 
   if ((fd = wiringPiI2CSetup (0x54)) < 0)
-    return fd ;
+    return FALSE ;
 
 // Setup the chip - initialise all 18 LEDs to off
 
@@ -71,5 +71,5 @@ int sn3218Setup (const int pinBase)
   node->fd          = fd ;
   node->analogWrite = myAnalogWrite ;
 
-  return 0 ;
+  return TRUE ;
 }

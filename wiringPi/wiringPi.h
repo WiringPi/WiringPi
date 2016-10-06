@@ -1,7 +1,7 @@
 /*
- * wiringPi:
- *	Arduino compatable (ish) Wiring library for the Raspberry Pi
- *	Copyright (c) 2012 Gordon Henderson
+ * wiringPi.h:
+ *	Arduino like Wiring library for the Raspberry Pi.
+ *	Copyright (c) 2012-2016 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -23,6 +23,14 @@
 
 #ifndef	__WIRING_PI_H__
 #define	__WIRING_PI_H__
+
+// C doesn't have true/false by default and I can never remember which
+//	way round they are, so ...
+
+#ifndef	TRUE
+#  define	TRUE	(1==1)
+#  define	FALSE	(!TRUE)
+#endif
 
 // Handy defines
 
@@ -76,6 +84,9 @@
 #define	PI_MODEL_2		4
 #define	PI_ALPHA		5
 #define	PI_MODEL_CM		6
+#define	PI_MODEL_07		7
+#define	PI_MODEL_3		8
+#define	PI_MODEL_ZERO		9
 
 #define	PI_VERSION_1		0
 #define	PI_VERSION_1_1		1
@@ -179,18 +190,19 @@ extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio
 
 // On-Board Raspberry Pi hardware specific stuff
 
-extern int  piBoardRev          (void) ;
-extern void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
-extern int  wpiPinToGpio        (int wpiPin) ;
-extern int  physPinToGpio       (int physPin) ;
-extern void setPadDrive         (int group, int value) ;
-extern int  getAlt              (int pin) ;
-extern void pwmToneWrite        (int pin, int freq) ;
-extern void digitalWriteByte    (int value) ;
-extern void pwmSetMode          (int mode) ;
-extern void pwmSetRange         (unsigned int range) ;
-extern void pwmSetClock         (int divisor) ;
-extern void gpioClockSet        (int pin, int freq) ;
+extern          int  piBoardRev          (void) ;
+extern          void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
+extern          int  wpiPinToGpio        (int wpiPin) ;
+extern          int  physPinToGpio       (int physPin) ;
+extern          void setPadDrive         (int group, int value) ;
+extern          int  getAlt              (int pin) ;
+extern          void pwmToneWrite        (int pin, int freq) ;
+extern          void digitalWriteByte    (int value) ;
+extern unsigned int  digitalReadByte     (void) ;
+extern          void pwmSetMode          (int mode) ;
+extern          void pwmSetRange         (unsigned int range) ;
+extern          void pwmSetClock         (int divisor) ;
+extern          void gpioClockSet        (int pin, int freq) ;
 
 // Interrupts
 //	(Also Pi hardware specific)

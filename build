@@ -62,6 +62,8 @@ if [ x$1 = "xclean" ]; then
   echo -n "Quick2Wire: "	; make clean
   cd ../PiGlow
   echo -n "PiGlow:     "	; make clean
+  cd ../scrollPhat
+  echo -n "scrollPhat: "	; make clean
   exit
 fi
 
