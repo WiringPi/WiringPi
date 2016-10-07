@@ -10,7 +10,8 @@
       $sudo dpkg -i WiringPi_lib-2.32.0-Linux.deb
 ```
       
-  #what the file has been installed to 
+  # what the file has been installed to 
+
      1. libwiringPiDev.so && libwiringPi.so install to /usr/lib/
      2. HEAD_FILES under wiring/ , dev/ install to /usr/local/include
      3. exec binary 'gpio' install to /usr/local/bin/gpio
