@@ -140,6 +140,7 @@ install-deb:	$(DYNAMIC)
 .PHONY:	uninstall
 uninstall:
 	$Q echo "[UnInstall]"
+	$Q install -d $(DESTDIR)$(PREFIX)/include/ $(DESTDIR)$(PREFIX)/lib
 	$Q cd $(DESTDIR)$(PREFIX)/include/ && rm -f $(HEADERS)
 	$Q cd $(DESTDIR)$(PREFIX)/lib/     && rm -f libwiringPi.*
 	$Q $(LDCONFIG)

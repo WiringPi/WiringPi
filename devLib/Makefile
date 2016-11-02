@@ -116,12 +116,15 @@ install-deb:	$(DYNAMIC)
 	ln -sf ~/wiringPi/debian-template/wiringPi/usr/lib/libwiringPiDev.so.$(VERSION)	~/wiringPi/debian-template/wiringPi/usr/lib/libwiringPiDev.so
 
 .PHONY:	uninstall
-uninstall:
+uninstall: $(DESTDIR)$(PREFIX)/include $(DESTDIR)$(PREFIX)/lib
 	$Q echo "[UnInstall]"
+	$Q install -d $(DESTDIR)$(PREFIX)/include/ $(DESTDIR)$(PREFIX)/lib
 	$Q cd $(DESTDIR)$(PREFIX)/include/ && rm -f $(HEADERS)
 	$Q cd $(DESTDIR)$(PREFIX)/lib/     && rm -f libwiringPiDev.*
 	$Q $(LDCONFIG)
 
+$(DESTDIR)$(PREFIX)/include $(DESTDIR)$(PREFIX)/lib $(DESTDIR)$(PREFIX)/bin:
+	$Q install -d $@
 
 .PHONY:	depend
 depend:
