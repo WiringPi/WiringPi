@@ -26,12 +26,12 @@
 
 //	Gain
 
-#define	ADS1115_GAIN_6		0
-#define	ADS1115_GAIN_4		1
+#define	ADS1115_GAIN_TWO_THIRD	0
+#define	ADS1115_GAIN_1		1
 #define	ADS1115_GAIN_2		2
-#define	ADS1115_GAIN_1		3
-#define	ADS1115_GAIN_HALF	4
-#define	ADS1115_GAIN_QUARTER	5
+#define	ADS1115_GAIN_4		3
+#define	ADS1115_GAIN_8		4
+#define	ADS1115_GAIN_16		5
 
 //	Data rate
 
