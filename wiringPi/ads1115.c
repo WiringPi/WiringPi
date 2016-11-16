@@ -85,8 +85,9 @@
 #define	CONFIG_DR_32SPS		(0x0040)	//  32 samples per second
 #define	CONFIG_DR_64SPS		(0x0060)	//  64 samples per second
 #define	CONFIG_DR_128SPS	(0x0080)	// 128 samples per second (default)
-#define	CONFIG_DR_475SPS	(0x00A0)	// 475 samples per second
-#define	CONFIG_DR_860SPS	(0x00C0)	// 860 samples per second
+#define	CONFIG_DR_250SPS	(0x00A0)	// 250 samples per second
+#define	CONFIG_DR_475SPS	(0x00C0)	// 475 samples per second
+#define	CONFIG_DR_860SPS	(0x00E0)	// 860 samples per second
 
 // Comparator mode
 
@@ -119,7 +120,7 @@
 
 static const uint16_t dataRates [8] =
 {
-  CONFIG_DR_8SPS, CONFIG_DR_16SPS, CONFIG_DR_32SPS, CONFIG_DR_64SPS, CONFIG_DR_128SPS, CONFIG_DR_475SPS, CONFIG_DR_860SPS
+  CONFIG_DR_8SPS, CONFIG_DR_16SPS, CONFIG_DR_32SPS, CONFIG_DR_64SPS, CONFIG_DR_128SPS, CONFIG_DR_250SPS, CONFIG_DR_475SPS, CONFIG_DR_860SPS
 } ;
 
 static const uint16_t gains [6] =
@@ -226,9 +227,9 @@ static void myDigitalWrite (struct wiringPiNodeStruct *node, int pin, int data)
   }
   else			// Data rate control
   {
-    if ( (data < 0) || (data > 7) )	// Use default if out of range
+    if ( (data < 0) || (data > 8) )	// Use default if out of range
       data = 4 ;
-    node->data0 = dataRates [data] ;
+    node->data1 = dataRates [data] ;
   }
   
 }
