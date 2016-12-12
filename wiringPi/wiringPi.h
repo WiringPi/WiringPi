@@ -95,7 +95,7 @@
 
 #define	PI_MAKER_SONY		0
 #define	PI_MAKER_EGOMAN		1
-#define	PI_MAKER_MBEST		2
+#define	PI_MAKER_EMBEST		2
 #define	PI_MAKER_UNKNOWN	3
 
 extern const char *piModelNames    [16] ;
@@ -190,7 +190,7 @@ extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio
 
 // On-Board Raspberry Pi hardware specific stuff
 
-extern          int  piBoardRev          (void) ;
+extern          int  piGpioLayout        (void) ;
 extern          void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
 extern          int  wpiPinToGpio        (int wpiPin) ;
 extern          int  physPinToGpio       (int physPin) ;

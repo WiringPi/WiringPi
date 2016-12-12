@@ -1,8 +1,8 @@
 #
 # Makefile:
-#	wiringPi device - Wiring Compatable library for the Raspberry Pi
+#	wiringPi device - A "wiring" library for the Raspberry Pi
 #
-#	Copyright (c) 2012-2015 Gordon Henderson
+#	Copyright (c) 2012-2016 Gordon Henderson
 #################################################################################
 # This file is part of wiringPi:
 #	https://projects.drogon.net/raspberry-pi/wiringpi/

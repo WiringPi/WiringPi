@@ -1,7 +1,6 @@
 /*
  * piFace.:
- *	Arduino compatable (ish) Wiring library for the Raspberry Pi
- *	Copyright (c) 2012-2013 Gordon Henderson
+ *	Copyright (c) 2012-2016 Gordon Henderson
  *
  *	This file to interface with the PiFace peripheral device which
  *	has an MCP23S17 GPIO device connected via the SPI bus.

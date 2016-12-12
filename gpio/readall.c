@@ -118,7 +118,7 @@ static char *physNames [64] =
   NULL,
 
   "   3.3v", "5v     ",
-  "  SDA.1", "5V     ",
+  "  SDA.1", "5v     ",
   "  SCL.1", "0v     ",
   "GPIO. 7", "TxD    ",
   "     0v", "RxD    ",

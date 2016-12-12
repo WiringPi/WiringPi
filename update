@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# update - update source files from master on yakko
+
+rsync -aHx --exclude='*.o' --exclude='*~' -v --delete gordon@yakko:rpi/git/wiringPi/ .
