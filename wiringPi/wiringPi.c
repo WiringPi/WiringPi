@@ -1068,7 +1068,7 @@ int getAlt (int pin)
   return alt ;
 }
 
-char* getAltText (int pin)
+const char* getAltText (int pin)
 {
   static char *alts [] = {
     "IN", "OUT", "ALT5", "ALT4", "ALT0", "ALT1", "ALT2", "ALT3"
