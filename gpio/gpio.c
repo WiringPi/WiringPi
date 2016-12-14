@@ -70,6 +70,8 @@ char *usage = "Usage: gpio -v\n"
 	      "       gpio export/edge/unexport ...\n"
 	      "       gpio wfi <pin> <mode>\n"
 	      "       gpio drive <group> <value>\n"
+        "       gpio mode <pin>\n"
+        "       gpio mode <pin> <mode>\n"
 	      "       gpio pwm-bal/pwm-ms \n"
 	      "       gpio pwmr <range> \n"
 	      "       gpio pwmc <divider> \n"
@@ -678,6 +680,7 @@ static void doReset (char *progName)
 /*
  * doMode:
  *	gpio mode pin mode ...
+ *  or, gpio mode pin
  *********************************************************************************
  */
 
@@ -686,37 +689,43 @@ void doMode (int argc, char *argv [])
   int pin ;
   char *mode ;
 
-  if (argc != 4)
+  if (argc > 4)
   {
     fprintf (stderr, "Usage: %s mode pin mode\n", argv [0]) ;
+    exit (1) ;
+  } else if(argc < 3) {
+    fprintf (stderr, "Usage: %s mode pin\n", argv [0]) ;
     exit (1) ;
   }
 
   pin = atoi (argv [2]) ;
+  if(argc == 4) {
+    mode = argv [3] ;
 
-  mode = argv [3] ;
-
-  /**/ if (strcasecmp (mode, "in")      == 0) pinMode         (pin, INPUT) ;
-  else if (strcasecmp (mode, "input")   == 0) pinMode         (pin, INPUT) ;
-  else if (strcasecmp (mode, "out")     == 0) pinMode         (pin, OUTPUT) ;
-  else if (strcasecmp (mode, "output")  == 0) pinMode         (pin, OUTPUT) ;
-  else if (strcasecmp (mode, "pwm")     == 0) pinMode         (pin, PWM_OUTPUT) ;
-  else if (strcasecmp (mode, "pwmTone") == 0) pinMode         (pin, PWM_TONE_OUTPUT) ;
-  else if (strcasecmp (mode, "clock")   == 0) pinMode         (pin, GPIO_CLOCK) ;
-  else if (strcasecmp (mode, "up")      == 0) pullUpDnControl (pin, PUD_UP) ;
-  else if (strcasecmp (mode, "down")    == 0) pullUpDnControl (pin, PUD_DOWN) ;
-  else if (strcasecmp (mode, "tri")     == 0) pullUpDnControl (pin, PUD_OFF) ;
-  else if (strcasecmp (mode, "off")     == 0) pullUpDnControl (pin, PUD_OFF) ;
-  else if (strcasecmp (mode, "alt0")    == 0) pinModeAlt (pin, 0b100) ;
-  else if (strcasecmp (mode, "alt1")    == 0) pinModeAlt (pin, 0b101) ;
-  else if (strcasecmp (mode, "alt2")    == 0) pinModeAlt (pin, 0b110) ;
-  else if (strcasecmp (mode, "alt3")    == 0) pinModeAlt (pin, 0b111) ;
-  else if (strcasecmp (mode, "alt4")    == 0) pinModeAlt (pin, 0b011) ;
-  else if (strcasecmp (mode, "alt5")    == 0) pinModeAlt (pin, 0b010) ;
-  else
-  {
-    fprintf (stderr, "%s: Invalid mode: %s. Should be in/out/pwm/clock/up/down/tri\n", argv [1], mode) ;
-    exit (1) ;
+    /**/ if (strcasecmp (mode, "in")      == 0) pinMode         (pin, INPUT) ;
+    else if (strcasecmp (mode, "input")   == 0) pinMode         (pin, INPUT) ;
+    else if (strcasecmp (mode, "out")     == 0) pinMode         (pin, OUTPUT) ;
+    else if (strcasecmp (mode, "output")  == 0) pinMode         (pin, OUTPUT) ;
+    else if (strcasecmp (mode, "pwm")     == 0) pinMode         (pin, PWM_OUTPUT) ;
+    else if (strcasecmp (mode, "pwmTone") == 0) pinMode         (pin, PWM_TONE_OUTPUT) ;
+    else if (strcasecmp (mode, "clock")   == 0) pinMode         (pin, GPIO_CLOCK) ;
+    else if (strcasecmp (mode, "up")      == 0) pullUpDnControl (pin, PUD_UP) ;
+    else if (strcasecmp (mode, "down")    == 0) pullUpDnControl (pin, PUD_DOWN) ;
+    else if (strcasecmp (mode, "tri")     == 0) pullUpDnControl (pin, PUD_OFF) ;
+    else if (strcasecmp (mode, "off")     == 0) pullUpDnControl (pin, PUD_OFF) ;
+    else if (strcasecmp (mode, "alt0")    == 0) pinModeAlt (pin, 0b100) ;
+    else if (strcasecmp (mode, "alt1")    == 0) pinModeAlt (pin, 0b101) ;
+    else if (strcasecmp (mode, "alt2")    == 0) pinModeAlt (pin, 0b110) ;
+    else if (strcasecmp (mode, "alt3")    == 0) pinModeAlt (pin, 0b111) ;
+    else if (strcasecmp (mode, "alt4")    == 0) pinModeAlt (pin, 0b011) ;
+    else if (strcasecmp (mode, "alt5")    == 0) pinModeAlt (pin, 0b010) ;
+    else
+    {
+      fprintf (stderr, "%s: Invalid mode: %s. Should be in/out/pwm/clock/up/down/tri\n", argv [1], mode) ;
+      exit (1) ;
+    }
+  } else {
+    printf("%s\n", getAltText(pin));
   }
 }
 
