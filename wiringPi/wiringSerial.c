@@ -60,6 +60,7 @@ int serialOpen (const char *device, const int baud)
     case    1200:	myBaud =    B1200 ; break ;
     case    1800:	myBaud =    B1800 ; break ;
     case    2400:	myBaud =    B2400 ; break ;
+    case    4800:	myBaud =    B4800 ; break ;
     case    9600:	myBaud =    B9600 ; break ;
     case   19200:	myBaud =   B19200 ; break ;
     case   38400:	myBaud =   B38400 ; break ;

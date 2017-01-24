@@ -1,7 +1,7 @@
 /*
  * wiringPi.h:
  *	Arduino like Wiring library for the Raspberry Pi.
- *	Copyright (c) 2012-2016 Gordon Henderson
+ *	Copyright (c) 2012-2017 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -31,6 +31,10 @@
 #  define	TRUE	(1==1)
 #  define	FALSE	(!TRUE)
 #endif
+
+// GCC warning suppressor
+
+#define	UNU	__attribute__((unused))
 
 // Handy defines
 
@@ -77,16 +81,17 @@
 // Pi model types and version numbers
 //	Intended for the GPIO program Use at your own risk.
 
-#define	PI_MODEL_A		0
-#define	PI_MODEL_B		1
-#define	PI_MODEL_AP		2
-#define	PI_MODEL_BP		3
-#define	PI_MODEL_2		4
-#define	PI_ALPHA		5
-#define	PI_MODEL_CM		6
-#define	PI_MODEL_07		7
-#define	PI_MODEL_3		8
-#define	PI_MODEL_ZERO		9
+#define	PI_MODEL_A		 0
+#define	PI_MODEL_B		 1
+#define	PI_MODEL_AP		 2
+#define	PI_MODEL_BP		 3
+#define	PI_MODEL_2		 4
+#define	PI_ALPHA		 5
+#define	PI_MODEL_CM		 6
+#define	PI_MODEL_07		 7
+#define	PI_MODEL_3		 8
+#define	PI_MODEL_ZERO		 9
+#define	PI_MODEL_CM3		10
 
 #define	PI_VERSION_1		0
 #define	PI_VERSION_1_1		1
@@ -108,7 +113,7 @@ extern const int   piMemorySize    [ 8] ;
 
 // Threads
 
-#define	PI_THREAD(X)	void *X (void *dummy)
+#define	PI_THREAD(X)	void *X (UNU void *dummy)
 
 // Failure modes
 
@@ -168,6 +173,7 @@ extern int wiringPiFailure (int fatal, const char *message, ...) ;
 extern struct wiringPiNodeStruct *wiringPiFindNode (int pin) ;
 extern struct wiringPiNodeStruct *wiringPiNewNode  (int pinBase, int numPins) ;
 
+extern void wiringPiVersion	(int *major, int *minor) ;
 extern int  wiringPiSetup       (void) ;
 extern int  wiringPiSetupSys    (void) ;
 extern int  wiringPiSetupGpio   (void) ;
@@ -191,6 +197,7 @@ extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio
 // On-Board Raspberry Pi hardware specific stuff
 
 extern          int  piGpioLayout        (void) ;
+extern          int  piBoardRev          (void) ;	// Deprecated
 extern          void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
 extern          int  wpiPinToGpio        (int wpiPin) ;
 extern          int  physPinToGpio       (int physPin) ;

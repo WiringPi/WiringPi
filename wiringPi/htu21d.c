@@ -38,7 +38,7 @@
 
 #define	I2C_ADDRESS	0x40
 
-int checksum (uint8_t data [4])
+int checksum (UNU uint8_t data [4])
 {
   return TRUE ;
 }

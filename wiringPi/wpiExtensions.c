@@ -439,10 +439,9 @@ static int doExtensionPcf8591 (char *progName, int pinBase, char *params)
  *********************************************************************************
  */
 
-static int doExtensionPseudoPins (char *progName, int pinBase, char *params)
+static int doExtensionPseudoPins (UNU char *progName, int pinBase, UNU char *params)
 {
   pseudoPinsSetup (pinBase) ;
-printf ("pseudoPins: %d\n", pinBase) ;
 
   return TRUE ;
 }
@@ -455,7 +454,7 @@ printf ("pseudoPins: %d\n", pinBase) ;
  *********************************************************************************
  */
 
-static int doExtensionBmp180 (char *progName, int pinBase, char *params)
+static int doExtensionBmp180 (UNU char *progName, int pinBase, UNU char *params)
 {
   bmp180Setup (pinBase) ;
 
@@ -470,7 +469,7 @@ static int doExtensionBmp180 (char *progName, int pinBase, char *params)
  *********************************************************************************
  */
 
-static int doExtensionHtu21d (char *progName, int pinBase, char *params)
+static int doExtensionHtu21d (UNU char *progName, int pinBase, UNU char *params)
 {
   htu21dSetup (pinBase) ;
 
@@ -633,7 +632,7 @@ static int doExtensionMcp4802 (char *progName, int pinBase, char *params)
  *********************************************************************************
  */
 
-static int doExtensionSn3218 (char *progName, int pinBase, char *params)
+static int doExtensionSn3218 (UNU char *progName, int pinBase, UNU char *params)
 {
   sn3218Setup (pinBase) ;
   return TRUE ;

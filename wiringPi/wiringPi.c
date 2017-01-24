@@ -1,7 +1,7 @@
 /*
  * wiringPi:
  *	Arduino look-a-like Wiring library for the Raspberry Pi
- *	Copyright (c) 2012-2015 Gordon Henderson
+ *	Copyright (c) 2012-2017 Gordon Henderson
  *	Additional code for pwmSetClock by Chris Hall <chris@kchall.plus.com>
  *
  *	Thanks to code samples from Gert Jan van Loo and the
@@ -75,6 +75,7 @@
 #include "softTone.h"
 
 #include "wiringPi.h"
+#include "../version.h"
 
 // Environment Variables
 
@@ -196,11 +197,6 @@ static volatile uint32_t *timer ;
 static volatile uint32_t *timerIrqRaw ;
 #endif
 
-// GCC warning suppressor
-
-#define	UNU	__attribute__((unused))
-
-
 // Data for use with the boardId functions.
 //	The order of entries here to correspond with the PI_MODEL_X
 //	and PI_VERSION_X defines in wiringPi.h
@@ -226,7 +222,7 @@ const char *piModelNames [16] =
   "Unknown07",	// 07
   "Pi 3",	// 08
   "Pi Zero",	// 09
-  "Unknown10",	// 10
+  "CM3",	// 10
   "Unknown11",	// 11
   "Unknown12",	// 12
   "Unknown13",	// 13
@@ -804,20 +800,17 @@ int piGpioLayout (void)
   return gpioLayout ;
 }
 
-/***
-  if (strstr (line, "BCM2709") != NULL)	// Pi v2 - no point doing anything more at this point
-  {
-    piModel2 = TRUE ;
-    fclose (cpuFd) ;
-    return gpioLayout = 2 ;
-  }
-  else if (strstr (line, "BCM2708") == NULL)
-  {
-  }
-***/
+/*
+ * piBoardRev:
+ *	Deprecated, but does the same as piGpioLayout
+ *********************************************************************************
+ */
 
-// Now do the rest of it as before - we just need to see if it's an older
-//	Rev 1 as anything else is rev 2.
+int piBoardRev (void)
+{
+  return piGpioLayout () ;
+}
+
 
 
 /*
@@ -963,7 +956,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     *warranty = bWarranty ;
 
     if (wiringPiDebug)
-      printf ("piboardId: rev: %d, type: %d, proc: %d, mfg: %d, mem: %d, warranty: %d\n",
+      printf ("piBoardId: rev: %d, type: %d, proc: %d, mfg: %d, mem: %d, warranty: %d\n",
 		bRev, bType, bProc, bMfg, bMem, bWarranty) ;
   }
   else					// Old way
@@ -1938,11 +1931,19 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
 static void initialiseEpoch (void)
 {
+#ifdef	OLD_WAY
   struct timeval tv ;
 
   gettimeofday (&tv, NULL) ;
   epochMilli = (uint64_t)tv.tv_sec * (uint64_t)1000    + (uint64_t)(tv.tv_usec / 1000) ;
   epochMicro = (uint64_t)tv.tv_sec * (uint64_t)1000000 + (uint64_t)(tv.tv_usec) ;
+#else
+  struct timespec ts ;
+
+  clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
+  epochMilli = (uint64_t)ts.tv_sec * (uint64_t)1000    + (uint64_t)(ts.tv_nsec / 1000000L) ;
+  epochMicro = (uint64_t)ts.tv_sec * (uint64_t)1000000 + (uint64_t)(ts.tv_nsec /    1000L) ;
+#endif
 }
 
 
@@ -2016,16 +2017,26 @@ void delayMicroseconds (unsigned int howLong)
 /*
  * millis:
  *	Return a number of milliseconds as an unsigned int.
+ *	Wraps at 49 days.
  *********************************************************************************
  */
 
 unsigned int millis (void)
 {
-  struct timeval tv ;
   uint64_t now ;
+
+#ifdef	OLD_WAY
+  struct timeval tv ;
 
   gettimeofday (&tv, NULL) ;
   now  = (uint64_t)tv.tv_sec * (uint64_t)1000 + (uint64_t)(tv.tv_usec / 1000) ;
+
+#else
+  struct  timespec ts ;
+
+  clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
+  now  = (uint64_t)ts.tv_sec * (uint64_t)1000 + (uint64_t)(ts.tv_nsec / 1000000L) ;
+#endif
 
   return (uint32_t)(now - epochMilli) ;
 }
@@ -2034,18 +2045,39 @@ unsigned int millis (void)
 /*
  * micros:
  *	Return a number of microseconds as an unsigned int.
+ *	Wraps after 71 minutes.
  *********************************************************************************
  */
 
 unsigned int micros (void)
 {
-  struct timeval tv ;
   uint64_t now ;
+#ifdef	OLD_WAY
+  struct timeval tv ;
 
   gettimeofday (&tv, NULL) ;
   now  = (uint64_t)tv.tv_sec * (uint64_t)1000000 + (uint64_t)tv.tv_usec ;
+#else
+  struct  timespec ts ;
+
+  clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
+  now  = (uint64_t)ts.tv_sec * (uint64_t)1000000 + (uint64_t)(ts.tv_nsec / 1000) ;
+#endif
+
 
   return (uint32_t)(now - epochMicro) ;
+}
+
+/*
+ * wiringPiVersion:
+ *	Return our current version number
+ *********************************************************************************
+ */
+
+void wiringPiVersion (int *major, int *minor)
+{
+  *major = VERSION_MAJOR ;
+  *minor = VERSION_MINOR ;
 }
 
 
@@ -2092,7 +2124,7 @@ int wiringPiSetup (void)
 
   piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
 
-  if (model == PI_MODEL_CM)
+  if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3))
     wiringPiMode = WPI_MODE_GPIO ;
   else
     wiringPiMode = WPI_MODE_PINS ;

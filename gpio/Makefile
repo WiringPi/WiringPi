@@ -100,4 +100,4 @@ depend:
 
 # DO NOT DELETE
 
-gpio.o: version.h
+gpio.o: ../version.h
