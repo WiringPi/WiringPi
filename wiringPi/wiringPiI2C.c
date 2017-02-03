@@ -52,6 +52,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <asm/ioctl.h>
 
 #include "wiringPi.h"
 #include "wiringPiI2C.h"
@@ -221,7 +222,7 @@ int wiringPiI2CSetup (const int devId)
   int rev ;
   const char *device ;
 
-  rev = piBoardRev () ;
+  rev = piGpioLayout () ;
 
   if (rev == 1)
     device = "/dev/i2c-0" ;

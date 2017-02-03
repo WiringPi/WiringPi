@@ -228,7 +228,7 @@ static void myDigitalWrite (struct wiringPiNodeStruct *node, int pin, int data)
   {
     if ( (data < 0) || (data > 7) )	// Use default if out of range
       data = 4 ;
-    node->data0 = dataRates [data] ;
+    node->data1 = dataRates [data] ;	// Bugfix 0-1 by "Eric de jong (gm)" <ericdejong@gmx.net> - Thanks.
   }
   
 }

@@ -55,6 +55,10 @@
 #include "ads1115.h"
 #include "sn3218.h"
 #include "drcSerial.h"
+#include "pseudoPins.h"
+#include "bmp180.h"
+#include "htu21d.h"
+#include "ds18b20.h"
 
 #include "wpiExtensions.h"
 
@@ -429,6 +433,69 @@ static int doExtensionPcf8591 (char *progName, int pinBase, char *params)
 
 
 /*
+ * doExtensionPseudoPins:
+ *	64 Memory resident pseudo pins
+ *	pseudoPins:base
+ *********************************************************************************
+ */
+
+static int doExtensionPseudoPins (UNU char *progName, int pinBase, UNU char *params)
+{
+  pseudoPinsSetup (pinBase) ;
+
+  return TRUE ;
+}
+
+
+/*
+ * doExtensionBmp180:
+ *	Analog Temp + Pressure
+ *	bmp180:base
+ *********************************************************************************
+ */
+
+static int doExtensionBmp180 (UNU char *progName, int pinBase, UNU char *params)
+{
+  bmp180Setup (pinBase) ;
+
+  return TRUE ;
+}
+
+
+/*
+ * doExtensionHtu21d:
+ *	Analog humidity + Pressure
+ *	htu21d:base
+ *********************************************************************************
+ */
+
+static int doExtensionHtu21d (UNU char *progName, int pinBase, UNU char *params)
+{
+  htu21dSetup (pinBase) ;
+
+  return TRUE ;
+}
+
+
+/*
+ * doExtensionDs18b20:
+ *	1-Wire Temperature
+ *	htu21d:base:serialNum
+ *********************************************************************************
+ */
+
+static int doExtensionDs18b20 (char *progName, int pinBase, char *params)
+{
+  char *serialNum ;
+
+  if ((params = extractStr (progName, params, &serialNum)) == NULL)
+    return FALSE ;
+
+  return ds18b20Setup (pinBase, serialNum) ;
+}
+
+
+/*
  * doExtensionMax31855:
  *	Analog IO
  *	max31855:base:spiChan
@@ -565,7 +632,7 @@ static int doExtensionMcp4802 (char *progName, int pinBase, char *params)
  *********************************************************************************
  */
 
-static int doExtensionSn3218 (char *progName, int pinBase, char *params)
+static int doExtensionSn3218 (UNU char *progName, int pinBase, UNU char *params)
 {
   sn3218Setup (pinBase) ;
   return TRUE ;
@@ -677,6 +744,10 @@ static struct extensionFunctionStruct extensionFunctions [] =
   { "sr595",		&doExtensionSr595	},
   { "pcf8574",		&doExtensionPcf8574	},
   { "pcf8591",		&doExtensionPcf8591	},
+  { "bmp180",		&doExtensionBmp180	},
+  { "pseudoPins",	&doExtensionPseudoPins	},
+  { "htu21d",		&doExtensionHtu21d	},
+  { "ds18b20",		&doExtensionDs18b20	},
   { "mcp3002",		&doExtensionMcp3002	},
   { "mcp3004",		&doExtensionMcp3004	},
   { "mcp4802",		&doExtensionMcp4802	},

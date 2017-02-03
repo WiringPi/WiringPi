@@ -1,7 +1,7 @@
 /*
  * pins.c:
  *	Just display a handy Pi pinnout diagram.
- *	Copyright (c) 2012-2015 Gordon Henderson
+ *	Copyright (c) 2012-2017 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/

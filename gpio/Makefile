@@ -4,10 +4,10 @@
 #	  A swiss-army knige of GPIO shenanigans.
 #	https://projects.drogon.net/wiring-pi
 #
-#	Copyright (c) 2012-2015 Gordon Henderson
+#	Copyright (c) 2012-2016 Gordon Henderson
 #################################################################################
 # This file is part of wiringPi:
-#	Wiring Compatable library for the Raspberry Pi
+#	A "wiring" library for the Raspberry Pi
 #
 #    wiringPi is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Lesser General Public License as published by
@@ -34,10 +34,10 @@ endif
 DEBUG	= -O2
 CC	= gcc
 INCLUDE	= -I$(DESTDIR)$(PREFIX)/include
-CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
+CFLAGS	= $(DEBUG) -Wall -Wextra $(INCLUDE) -Winline -pipe
 
 LDFLAGS	= -L$(DESTDIR)$(PREFIX)/lib
-LIBS    = -lwiringPi -lwiringPiDev -lpthread
+LIBS    = -lwiringPi -lwiringPiDev -lpthread -lrt -lm
 
 # May not need to  alter anything below this line
 ###############################################################################
@@ -85,6 +85,8 @@ install-deb:	gpio
 	$Q echo "[Install: deb]"
 	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/bin
 	$Q install -m 0755 gpio							~/wiringPi/debian-template/wiringPi/usr/bin
+	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/man/man1
+	$Q install -m 0644 gpio.1						~/wiringPi/debian-template/wiringPi/man/man1
 
 .PHONY:	uninstall
 uninstall:
@@ -98,4 +100,4 @@ depend:
 
 # DO NOT DELETE
 
-gpio.o: version.h
+gpio.o: ../version.h
