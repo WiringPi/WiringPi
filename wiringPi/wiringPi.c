@@ -1189,11 +1189,13 @@ void pwmSetClock (int divisor)
 
 /*
  * gpioClockSet:
- *	Set the freuency on a GPIO clock pin
+ *	Set the frequency on a GPIO clock pin
+ *	Choose source/divi combination to the closest frequency
+ *	Returns the actual frequency
  *********************************************************************************
  */
 
-void gpioClockSet (int pin, int freq)
+int gpioClockSet (int pin, int freq)
 {
   int divi, divr, divf, mash ;
   int clock_source, clock_frequency ;
@@ -1205,19 +1207,38 @@ void gpioClockSet (int pin, int freq)
   else if (wiringPiMode == WPI_MODE_PHYS)
     pin = physToGpio [pin] ;
   else if (wiringPiMode != WPI_MODE_GPIO)
-    return ;
+    return 0;
 
   mash = 0; // experimental
 
-  if (freq > CLOCK_PLLD_FREQ / 4096)
+  if (freq < CLOCK_PLLD_FREQ / 4096) {
+    clock_source    = CLOCK_INTOSC_SRC ;
+    clock_frequency = CLOCK_INTOSC_FREQ ;
+  }	
+  else if (freq > CLOCK_INTOSC_FREQ / 2)
   {
     clock_source    = CLOCK_PLLD_SRC ;
     clock_frequency = CLOCK_PLLD_FREQ ;
   }
   else
   {
-    clock_source    = CLOCK_INTOSC_SRC ;
-    clock_frequency = CLOCK_INTOSC_FREQ ;
+	int delta_intosc, delta_plld;
+
+    divi = rint((double) CLOCK_INTOSC_FREQ / freq) ;
+	delta_intosc = abs (freq - CLOCK_INTOSC_FREQ / divi);
+    
+	divi = rint((double) CLOCK_PLLD_FREQ / freq) ;
+	delta_plld = abs (freq - CLOCK_PLLD_FREQ / divi);
+
+	if (delta_plld < delta_intosc) {
+      clock_source    = CLOCK_PLLD_SRC ;
+      clock_frequency = CLOCK_PLLD_FREQ ;
+	}
+	else
+	{
+      clock_source    = CLOCK_INTOSC_SRC ;
+      clock_frequency = CLOCK_INTOSC_FREQ ;
+	}
   }
 
   if (freq > 25000000) mash = 0 ;
@@ -1261,6 +1282,8 @@ void gpioClockSet (int pin, int freq)
 
   *(clk + gpioToClkDiv [pin]) = BCM_PASSWORD | (divi << 12) | divf ; 				// Set dividers
   *(clk + gpioToClkCon [pin]) = BCM_PASSWORD | (mash << 9)  | 0x10 | clock_source ;	// Start Clock
+  
+  return (int) ((float)clock_frequency / divi + divf/1024.0) ;
 }
 
 

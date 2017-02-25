@@ -209,7 +209,7 @@ extern unsigned int  digitalReadByte     (void) ;
 extern          void pwmSetMode          (int mode) ;
 extern          void pwmSetRange         (unsigned int range) ;
 extern          void pwmSetClock         (int divisor) ;
-extern          void gpioClockSet        (int pin, int freq) ;
+extern          int  gpioClockSet        (int pin, int freq) ;
 
 // Interrupts
 //	(Also Pi hardware specific)
