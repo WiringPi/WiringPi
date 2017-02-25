@@ -85,6 +85,7 @@ char *usage = "Usage: gpio -v\n"
 	      "       gpio wb <value>\n"
 	      "       gpio usbp high/low\n"
 	      "       gpio gbr <channel>\n"
+	      "       gpio clock <pin> <freq>\n"
 	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
 
 
@@ -1170,7 +1171,7 @@ void doClock (int argc, char *argv [])
 
   freq = atoi (argv [3]) ;
 
-  gpioClockSet (pin, freq) ;
+  printf ("Actual frequency: %d\n", gpioClockSet (pin, freq)) ;
 }
 
 
