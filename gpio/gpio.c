@@ -1443,6 +1443,16 @@ int main (int argc, char *argv [])
     wpMode = WPI_MODE_PIFACE ;
   }
 
+// Check for -z argument so we don't actually initialise wiringPi
+
+  else if (strcasecmp (argv [1], "-z") == 0)
+  {
+    for (i = 2 ; i < argc ; ++i)
+      argv [i - 1] = argv [i] ;
+    --argc ;
+    wpMode = WPI_MODE_UNINITIALISED ;
+  }
+
 // Default to wiringPi mode
 
   else
@@ -1460,12 +1470,15 @@ int main (int argc, char *argv [])
   {
     if (argc < 3)
     {
-      fprintf (stderr, "%s: -x missing extension specification.\n", argv [0]) ;
+      fprintf (stderr, "%s: -x missing extension command.\n", argv [0]) ;
       exit (EXIT_FAILURE) ;
     }
 
-    if (!loadWPiExtension (argv [0], argv [2], TRUE))	// Prints its own error messages
+    if (!loadWPiExtension (argv [0], argv [2], TRUE))
+    {
+      fprintf (stderr, "%s: Extension load failed: %s\n", argv [0], strerror (errno)) ;
       exit (EXIT_FAILURE) ;
+    }
 
 // Shift args down by 2
 
