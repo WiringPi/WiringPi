@@ -22,21 +22,146 @@
  ***********************************************************************
  */
 
-//#include <sys/types.h>
-//#include <sys/stat.h>
-//#include <fcntl.h>
-
-//#include <unistd.h>
-//#include <stdint.h>
+#include <sys/time.h>
 #include <stdio.h>
-//#include <string.h>
+#include <stdio.h>
 #include <time.h>
-//#include <ctype.h>
 
 #include "wiringPi.h"
-#include "../devLib/maxdetect.h"
-
 #include "rht03.h"
+
+/*
+ * maxDetectLowHighWait:
+ *	Wait for a transition from low to high on the bus
+ *********************************************************************************
+ */
+
+static int maxDetectLowHighWait (const int pin)
+{
+  struct timeval now, timeOut, timeUp ;
+
+// If already high then wait for pin to go low
+
+  gettimeofday (&now, NULL) ;
+  timerclear   (&timeOut) ;
+  timeOut.tv_usec = 1000 ;
+  timeradd     (&now, &timeOut, &timeUp) ;
+
+  while (digitalRead (pin) == HIGH)
+  {
+    gettimeofday (&now, NULL) ;
+    if (timercmp (&now, &timeUp, >))
+      return FALSE ;
+  }
+
+// Wait for it to go HIGH
+
+  gettimeofday (&now, NULL) ;
+  timerclear (&timeOut) ;
+  timeOut.tv_usec = 1000 ;
+  timeradd (&now, &timeOut, &timeUp) ;
+
+  while (digitalRead (pin) == LOW)
+  {
+    gettimeofday (&now, NULL) ;
+    if (timercmp (&now, &timeUp, >))
+      return FALSE ;
+  }
+
+  return TRUE ;
+}
+
+
+/*
+ * maxDetectClockByte:
+ *	Read in a single byte from the MaxDetect bus
+ *********************************************************************************
+ */
+
+static unsigned int maxDetectClockByte (const int pin)
+{
+  unsigned int byte = 0 ;
+  int bit ;
+
+  for (bit = 0 ; bit < 8 ; ++bit)
+  {
+    if (!maxDetectLowHighWait (pin))
+      return 0 ;
+
+// bit starting now - we need to time it.
+
+    delayMicroseconds (30) ;
+    byte <<= 1 ;
+    if (digitalRead (pin) == HIGH)	// It's a 1
+      byte |= 1 ;
+  }
+
+  return byte ;
+}
+
+
+/*
+ * maxDetectRead:
+ *	Read in and return the 4 data bytes from the MaxDetect sensor.
+ *	Return TRUE/FALSE depending on the checksum validity
+ *********************************************************************************
+ */
+
+static int maxDetectRead (const int pin, unsigned char buffer [4])
+{
+  int i ;
+  unsigned int checksum ;
+  unsigned char localBuf [5] ;
+  struct timeval now, then, took ;
+
+// See how long we took
+
+  gettimeofday (&then, NULL) ;
+
+// Wake up the RHT03 by pulling the data line low, then high
+//	Low for 10mS, high for 40uS.
+
+  pinMode      (pin, OUTPUT) ;
+  digitalWrite (pin, 0) ; delay             (10) ;
+  digitalWrite (pin, 1) ; delayMicroseconds (40) ;
+  pinMode      (pin, INPUT) ;
+
+// Now wait for sensor to pull pin low
+
+  if (!maxDetectLowHighWait (pin))
+    return FALSE ;
+
+// and read in 5 bytes (40 bits)
+
+  for (i = 0 ; i < 5 ; ++i)
+    localBuf [i] = maxDetectClockByte (pin) ;
+
+  checksum = 0 ;
+  for (i = 0 ; i < 4 ; ++i)
+  {
+    buffer [i] = localBuf [i] ;
+    checksum += localBuf [i] ;
+  }
+  checksum &= 0xFF ;
+
+// See how long we took
+  
+  gettimeofday (&now, NULL) ;
+  timersub (&now, &then, &took) ;
+
+// Total time to do this should be:
+//	10mS + 40µS - reset
+//	+ 80µS + 80µS - sensor doing its low -> high thing
+//	+ 40 * (50µS + 27µS (0) or 70µS (1) )
+//	= 15010µS
+// so if we take more than that, we've had a scheduling interruption and the
+// reading is probably bogus.
+
+  if ((took.tv_sec != 0) || (took.tv_usec > 16000))
+    return FALSE ;
+
+  return checksum == localBuf [4] ;
+}
 
 
 /*
@@ -75,6 +200,7 @@ static int myReadRHT03 (const int pin, int *temp, int *rh)
 
   return TRUE ;
 }
+
 
 /*
  * myAnalogRead:

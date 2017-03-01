@@ -41,7 +41,7 @@ INCLUDE	= -I.
 DEFS	= -D_GNU_SOURCE
 CFLAGS	= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC
 
-LIBS    = -lm -lpthread -lrt
+LIBS    = -lm -lpthread -lrt -lcrypt
 
 ###############################################################################
 

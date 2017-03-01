@@ -98,6 +98,7 @@
 #define	PI_MODEL_3		 8
 #define	PI_MODEL_ZERO		 9
 #define	PI_MODEL_CM3		10
+#define	PI_MODEL_ZERO_W		12
 
 #define	PI_VERSION_1		0
 #define	PI_VERSION_1_1		1

@@ -222,7 +222,7 @@ const char *piModelNames [16] =
   "Pi Zero",	// 09
   "CM3",	// 10
   "Unknown11",	// 11
-  "Unknown12",	// 12
+  "Pi Zero-W",	// 12
   "Unknown13",	// 13
   "Unknown14",	// 14
   "Unknown15",	// 15
