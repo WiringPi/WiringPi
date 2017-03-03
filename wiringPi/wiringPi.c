@@ -2187,9 +2187,10 @@ int wiringPiSetup (void)
 
   switch (model)
   {
-    case PI_MODEL_A:  case PI_MODEL_B:
-    case PI_MODEL_AP: case PI_MODEL_BP:
-    case PI_ALPHA:    case PI_MODEL_CM: case PI_MODEL_ZERO:
+    case PI_MODEL_A:	case PI_MODEL_B:
+    case PI_MODEL_AP:	case PI_MODEL_BP:
+    case PI_ALPHA:	case PI_MODEL_CM:
+    case PI_MODEL_ZERO:	case PI_MODEL_ZERO_W:
       piGpioBase = GPIO_PERI_BASE_OLD ;
       break ;
 
