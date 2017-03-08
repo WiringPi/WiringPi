@@ -75,11 +75,6 @@ static void doReadallExternal (void)
  *********************************************************************************
  */
 
-static char *alts [] =
-{
-  "IN", "OUT", "ALT5", "ALT4", "ALT0", "ALT1", "ALT2", "ALT3"
-} ;
-
 static int physToWpi [64] = 
 {
   -1,           // 0
@@ -177,7 +172,7 @@ static void readallPhys (int physPin)
     else
       pin = physToWpi [physPin] ;
 
-    printf (" | %4s", alts [getAlt (pin)]) ;
+    printf (" | %4s", getAltText(pin)) ;
     printf (" | %d", digitalRead (pin)) ;
   }
 
@@ -201,7 +196,7 @@ static void readallPhys (int physPin)
       pin = physToWpi [physPin] ;
 
     printf (" | %d", digitalRead (pin)) ;
-    printf (" | %-4s", alts [getAlt (pin)]) ;
+    printf (" | %-4s", getAltText(pin)) ;
   }
 
   printf (" | %-5s", physNames [physPin]) ;
@@ -233,11 +228,11 @@ static void allReadall (void)
   for (pin = 0 ; pin < 27 ; ++pin)
   {
     printf ("| %3d ", pin) ;
-    printf ("| %-4s ", alts [getAlt (pin)]) ;
+    printf ("| %-4s ", getAltText(pin)) ;
     printf ("| %s  ", digitalRead (pin) == HIGH ? "High" : "Low ") ;
     printf ("|      ") ;
     printf ("| %3d ", pin + 27) ;
-    printf ("| %-4s ", alts [getAlt (pin + 27)]) ;
+    printf ("| %-4s ", getAltText(pin + 27)) ;
     printf ("| %s  ", digitalRead (pin + 27) == HIGH ? "High" : "Low ") ;
     printf ("|\n") ;
   }

@@ -214,6 +214,7 @@ extern          int  wpiPinToGpio        (int wpiPin) ;
 extern          int  physPinToGpio       (int physPin) ;
 extern          void setPadDrive         (int group, int value) ;
 extern          int  getAlt              (int pin) ;
+extern const    char* getAltText         (int pin) ;
 extern          void pwmToneWrite        (int pin, int freq) ;
 extern          void pwmSetMode          (int mode) ;
 extern          void pwmSetRange         (unsigned int range) ;
