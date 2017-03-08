@@ -9,15 +9,15 @@ gpio \- Command-line access to Raspberry Pi's GPIO
 .PP
 .B gpio
 .B [ \-g | \-1 ]
-.B mode/read/write/aread/awrite/wb/pwm/clock ...
+.B mode/read/write/aread/awrite/wb/pwm/clock/toggle/blink ...
 .PP
 .B gpio
 .B [ \-x extension:params ]
-.B mode/read/write/aread/awrite/pwm/pwmTone ...
+.B mode/read/write/aread/awrite/pwm/toggle/blink ...
 .PP
 .B gpio
 .B [ \-p ]
-.B read/write/toggle/wb
+.B read/write/toggle/blink
 .B ...
 .PP
 .B gpio
@@ -119,10 +119,22 @@ Write the given value (0 or 1) to the pin. You need to set the pin
 to output mode first.
 
 .TP
+.B toggle <pin> 
+Changes the state of a GPIO pin; 0 to 1, or 1 to 0.
+
+Note unlike the blink command, the pin must be in output mode first.
+
+.TP
+.B blink <pin> 
+Blinks the given pin on/off. Press Control-C to exit.
+
+Note: This command explicitly sets the pin to output mode.
+
+.TP
 .B aread <pin>
-Read the analog value of the given pin. This needs to be uses in
+Read the analog value of the given pin. This needs to be used in
 conjunction with a -x flag to add in an extension that handles analog
-inputs.  respective logic levels.
+inputs.
 
 e.g. gpio -x mcp3002:200:0 aread 200
 
@@ -132,7 +144,7 @@ will read the first analog input on an mcp3002 SPI ADC chip.
 .B awrite <pin> <value>
 Write the analog value to the given pin. This needs to be used in
 conjunction with a -x flag to add in an extension that handles analog
-inputs.  respective logic levels.
+inputs. 
 
 e.g. gpio -x mcp4802:200:0 awrite 200 128
 
@@ -234,7 +246,7 @@ absolutely sure you know what you're doing.
 high | low
 
 Change the USB current limiter to high (1.2 amps) or low (the default, 600mA)
-This is only applicable to the model B+
+This is only applicable to the Model B+ and the Model B, v2.
 
 .TP
 .B pwm-bal/pwm-ms 
@@ -253,7 +265,6 @@ them. Optionally it will set the I2C baudrate to that supplied in Kb/sec
 
 Note: On recent kernels with the device tree enabled you should use the
 raspi-config program to load/unload the I2C device at boot time.
-(or disable the device tree to continue to use this method)
 
 .TP
 .B load spi
@@ -268,7 +279,6 @@ e.g. 8192 bytes then reboot.
 
 Note: On recent kernels with the device tree enabled you should use the
 raspi-config program to load/unload the SPI device at boot time.
-(or disable the device tree to continue to use this method)
 
 .TP
 .B gbr

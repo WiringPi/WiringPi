@@ -26,6 +26,7 @@
 
 // C doesn't have true/false by default and I can never remember which
 //	way round they are, so ...
+//	(and yes, I know about stdbool.h but I like capitals for these and I'm old)
 
 #ifndef	TRUE
 #  define	TRUE	(1==1)
@@ -35,6 +36,11 @@
 // GCC warning suppressor
 
 #define	UNU	__attribute__((unused))
+
+// Mask for the bottom 64 pins which belong to the Raspberry Pi
+//	The others are available for the other devices
+
+#define	PI_GPIO_MASK	(0xFFFFFFC0)
 
 // Handy defines
 
@@ -92,6 +98,7 @@
 #define	PI_MODEL_3		 8
 #define	PI_MODEL_ZERO		 9
 #define	PI_MODEL_CM3		10
+#define	PI_MODEL_ZERO_W		12
 
 #define	PI_VERSION_1		0
 #define	PI_VERSION_1_1		1
@@ -140,13 +147,15 @@ struct wiringPiNodeStruct
   unsigned int data2 ;	//  ditto
   unsigned int data3 ;	//  ditto
 
-  void   (*pinMode)         (struct wiringPiNodeStruct *node, int pin, int mode) ;
-  void   (*pullUpDnControl) (struct wiringPiNodeStruct *node, int pin, int mode) ;
-  int    (*digitalRead)     (struct wiringPiNodeStruct *node, int pin) ;
-  void   (*digitalWrite)    (struct wiringPiNodeStruct *node, int pin, int value) ;
-  void   (*pwmWrite)        (struct wiringPiNodeStruct *node, int pin, int value) ;
-  int    (*analogRead)      (struct wiringPiNodeStruct *node, int pin) ;
-  void   (*analogWrite)     (struct wiringPiNodeStruct *node, int pin, int value) ;
+           void   (*pinMode)          (struct wiringPiNodeStruct *node, int pin, int mode) ;
+           void   (*pullUpDnControl)  (struct wiringPiNodeStruct *node, int pin, int mode) ;
+           int    (*digitalRead)      (struct wiringPiNodeStruct *node, int pin) ;
+//unsigned int    (*digitalRead8)     (struct wiringPiNodeStruct *node, int pin) ;
+           void   (*digitalWrite)     (struct wiringPiNodeStruct *node, int pin, int value) ;
+//         void   (*digitalWrite8)    (struct wiringPiNodeStruct *node, int pin, int value) ;
+           void   (*pwmWrite)         (struct wiringPiNodeStruct *node, int pin, int value) ;
+           int    (*analogRead)       (struct wiringPiNodeStruct *node, int pin) ;
+           void   (*analogWrite)      (struct wiringPiNodeStruct *node, int pin, int value) ;
 
   struct wiringPiNodeStruct *next ;
 } ;
@@ -179,14 +188,16 @@ extern int  wiringPiSetupSys    (void) ;
 extern int  wiringPiSetupGpio   (void) ;
 extern int  wiringPiSetupPhys   (void) ;
 
-extern void pinModeAlt          (int pin, int mode) ;
-extern void pinMode             (int pin, int mode) ;
-extern void pullUpDnControl     (int pin, int pud) ;
-extern int  digitalRead         (int pin) ;
-extern void digitalWrite        (int pin, int value) ;
-extern void pwmWrite            (int pin, int value) ;
-extern int  analogRead          (int pin) ;
-extern void analogWrite         (int pin, int value) ;
+extern          void pinModeAlt          (int pin, int mode) ;
+extern          void pinMode             (int pin, int mode) ;
+extern          void pullUpDnControl     (int pin, int pud) ;
+extern          int  digitalRead         (int pin) ;
+extern          void digitalWrite        (int pin, int value) ;
+extern unsigned int  digitalRead8        (int pin) ;
+extern          void digitalWrite8       (int pin, int value) ;
+extern          void pwmWrite            (int pin, int value) ;
+extern          int  analogRead          (int pin) ;
+extern          void analogWrite         (int pin, int value) ;
 
 // PiFace specifics 
 //	(Deprecated)
@@ -204,12 +215,14 @@ extern          int  physPinToGpio       (int physPin) ;
 extern          void setPadDrive         (int group, int value) ;
 extern          int  getAlt              (int pin) ;
 extern          void pwmToneWrite        (int pin, int freq) ;
-extern          void digitalWriteByte    (int value) ;
-extern unsigned int  digitalReadByte     (void) ;
 extern          void pwmSetMode          (int mode) ;
 extern          void pwmSetRange         (unsigned int range) ;
 extern          void pwmSetClock         (int divisor) ;
 extern          void gpioClockSet        (int pin, int freq) ;
+extern unsigned int  digitalReadByte     (void) ;
+extern unsigned int  digitalReadByte2    (void) ;
+extern          void digitalWriteByte    (int value) ;
+extern          void digitalWriteByte2   (int value) ;
 
 // Interrupts
 //	(Also Pi hardware specific)

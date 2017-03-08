@@ -161,6 +161,14 @@ fi
   check_make_ok
 
 # echo
+# echo "wiringPi Daemon"
+# cd ../wiringPiD
+# make -j5
+# check_make_ok
+# $sudo make install
+# check_make_ok
+
+# echo
 # echo "Examples"
 # cd ../examples
 # make

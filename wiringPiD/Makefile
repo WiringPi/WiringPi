@@ -1,10 +1,9 @@
 #
 # Makefile:
-#	The gpio command:
-#	  A swiss-army knige of GPIO shenanigans.
+#	The wiringPiD utility:
 #	https://projects.drogon.net/wiring-pi
 #
-#	Copyright (c) 2012-2016 Gordon Henderson
+#	Copyright (c) 2012-2017 Gordon Henderson
 #################################################################################
 # This file is part of wiringPi:
 #	A "wiring" library for the Raspberry Pi
@@ -42,16 +41,13 @@ LIBS    = -lwiringPi -lwiringPiDev -lpthread -lrt -lm -lcrypt
 # May not need to  alter anything below this line
 ###############################################################################
 
-SRC	=	gpio.c readall.c pins.c
+SRC	=	wiringpid.c network.c runRemote.c daemonise.c
 
 OBJ	=	$(SRC:.c=.o)
 
-all:		gpio
+all:		wiringpid
 
-version.h:	../VERSION
-	$Q echo Need to run newVersion above.
-
-gpio:	$(OBJ)
+wiringpid:	$(OBJ)
 	$Q echo [Link]
 	$Q $(CC) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
 
@@ -62,7 +58,7 @@ gpio:	$(OBJ)
 .PHONY:	clean
 clean:
 	$Q echo "[Clean]"
-	$Q rm -f $(OBJ) gpio *~ core tags *.bak
+	$Q rm -f $(OBJ) wiringpid *~ core tags *.bak
 
 .PHONY:	tags
 tags:	$(SRC)
@@ -70,15 +66,14 @@ tags:	$(SRC)
 	$Q ctags $(SRC)
 
 .PHONY:	install
-install: gpio
+install: wiringpid
 	$Q echo "[Install]"
-	$Q cp gpio		$(DESTDIR)$(PREFIX)/bin
-ifneq ($(WIRINGPI_SUID),0)
-	$Q chown root.root	$(DESTDIR)$(PREFIX)/bin/gpio
-	$Q chmod 4755		$(DESTDIR)$(PREFIX)/bin/gpio
-endif
-	$Q mkdir -p		$(DESTDIR)$(PREFIX)/man/man1
-	$Q cp gpio.1		$(DESTDIR)$(PREFIX)/man/man1
+	$Q mkdir -p		$(DESTDIR)$(PREFIX)/sbin
+	$Q cp wiringpid		$(DESTDIR)$(PREFIX)/sbin
+	$Q chown root.root	$(DESTDIR)$(PREFIX)/sbin/wiringpid
+
+#	$Q mkdir -p		$(DESTDIR)$(PREFIX)/man/man8
+#	$Q cp gpio.1		$(DESTDIR)$(PREFIX)/man/man8
 
 .PHONY:	install-deb
 install-deb:	gpio
@@ -91,13 +86,15 @@ install-deb:	gpio
 .PHONY:	uninstall
 uninstall:
 	$Q echo "[UnInstall]"
-	$Q rm -f $(DESTDIR)$(PREFIX)/bin/gpio
-	$Q rm -f $(DESTDIR)$(PREFIX)/man/man1/gpio.1
+	$Q rm -f $(DESTDIR)$(PREFIX)/sbin/wiringpid
+	$Q rm -f $(DESTDIR)$(PREFIX)/man/man8/wiringpid.8
 
 .PHONY:	depend
 depend:
 	makedepend -Y $(SRC)
-
 # DO NOT DELETE
 
-gpio.o: ../version.h
+wiringpid.o: drcNetCmd.h network.h runRemote.h daemonise.h
+network.o: network.h
+runRemote.o: drcNetCmd.h network.h runRemote.h
+daemonise.o: daemonise.h
