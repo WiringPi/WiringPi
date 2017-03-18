@@ -42,10 +42,10 @@ extern void lcdPutchar     (const int fd, unsigned char data) ;
 extern void lcdPuts        (const int fd, const char *string) ;
 extern void lcdPrintf      (const int fd, const char *message, ...) ;
 
-extern int  lcdInit (const int rows, const int cols, const int bits,
-	const int rs, const int strb,
+extern int lcdInit (const int rows, const int cols, const int bits,
+	const int rs, const int strb, int f, int ft,
 	const int d0, const int d1, const int d2, const int d3, const int d4,
-	const int d5, const int d6, const int d7) ;
+	const int d5, const int d6, const int d7);
 
 #ifdef __cplusplus
 }

@@ -365,7 +365,7 @@ void lcdPrintf (const int fd, const char *message, ...)
  */
 
 int lcdInit (const int rows, const int cols, const int bits,
-	const int rs, const int strb,
+	const int rs, const int strb, int f, int ft,
 	const int d0, const int d1, const int d2, const int d3, const int d4,
 	const int d5, const int d6, const int d7)
 {
@@ -457,19 +457,24 @@ int lcdInit (const int rows, const int cols, const int bits,
 //	then can you flip the switch for the rest of the library to work in 4-bit
 //	mode which sends the commands as 2 x 4-bit values.
 
+  // font: 0 - 5x8, 1 - 5x10
+  f = (f & 0x1) << 2;
+  // font table: 0 - eng jap, 1 - eng weurop, 2 - eng rus
+  ft = (ft & 0x3) << 0;
+
   if (bits == 4)
   {
-    func = LCD_FUNC | LCD_FUNC_DL ;			// Set 8-bit mode 3 times
+    func = LCD_FUNC | LCD_FUNC_DL | f | ft;			// Set 8-bit mode 3 times
     put4Command (lcd, func >> 4) ; delay (35) ;
     put4Command (lcd, func >> 4) ; delay (35) ;
     put4Command (lcd, func >> 4) ; delay (35) ;
-    func = LCD_FUNC ;					// 4th set: 4-bit mode
+    func = LCD_FUNC | f | ft ;					// 4th set: 4-bit mode
     put4Command (lcd, func >> 4) ; delay (35) ;
     lcd->bits = 4 ;
   }
   else
   {
-    func = LCD_FUNC | LCD_FUNC_DL ;
+    func = LCD_FUNC | LCD_FUNC_DL | f | ft ;
     putCommand  (lcd, func     ) ; delay (35) ;
     putCommand  (lcd, func     ) ; delay (35) ;
     putCommand  (lcd, func     ) ; delay (35) ;
