@@ -1215,30 +1215,10 @@ int gpioClockSet (int pin, int freq)
     clock_source    = CLOCK_INTOSC_SRC ;
     clock_frequency = CLOCK_INTOSC_FREQ ;
   }	
-  else if (freq > CLOCK_INTOSC_FREQ / 2)
+  else
   {
     clock_source    = CLOCK_PLLD_SRC ;
     clock_frequency = CLOCK_PLLD_FREQ ;
-  }
-  else
-  {
-	int delta_intosc, delta_plld;
-
-    divi = rint((double) CLOCK_INTOSC_FREQ / freq) ;
-	delta_intosc = abs (freq - CLOCK_INTOSC_FREQ / divi);
-    
-	divi = rint((double) CLOCK_PLLD_FREQ / freq) ;
-	delta_plld = abs (freq - CLOCK_PLLD_FREQ / divi);
-
-	if (delta_plld < delta_intosc) {
-      clock_source    = CLOCK_PLLD_SRC ;
-      clock_frequency = CLOCK_PLLD_FREQ ;
-	}
-	else
-	{
-      clock_source    = CLOCK_INTOSC_SRC ;
-      clock_frequency = CLOCK_INTOSC_FREQ ;
-	}
   }
 
   if (freq > 25000000) mash = 0 ;
@@ -1246,7 +1226,7 @@ int gpioClockSet (int pin, int freq)
   if (mash) {
     divi = clock_frequency / freq ;
     divr = clock_frequency % freq ;
-    divf = (int)((double)divr * 1024.0 / freq) ;
+    divf = (int)((double)divr * 4096.0 / freq) ;
   }
   else
   {
@@ -1261,21 +1241,22 @@ int gpioClockSet (int pin, int freq)
   if (mash == 2 && divi < 3) divi = 3 ;
   if (mash == 3 && divi < 5) divi = 5 ;
 
-  if (divf > 1023) divf = 1023 ;
-
-  //printf("DIVI: %d, DIVF: %d, Freq: %.2f\n", 
-  //  divi, divf, (float) clock_frequency / divi );
-
-  //if (mash) {
-  //  printf("MASH: %d, Freq: %.2f - %.2f - %.2f\n", 
-  //    mash,
-  //    (float) clock_frequency / (divi + 1),
-  //    (float) clock_frequency / (divi + divf/1024.0),
-  //    (float) clock_frequency / (divi)
-  //  );
-  //}
-
-
+  if (divf > 4095) divf = 4095 ;
+/*
+  if (mash) {
+    printf("MASH: %d, Freq: %.2f(min) - %.2f(avg) - %.2f(max)\n", 
+      mash,
+      (float) clock_frequency / (divi + 1),
+      (float) clock_frequency / (divi + divf/4096.0),
+      (float) clock_frequency / (divi)
+    );
+  }
+  else
+  {
+    printf("DIVI: %d, DIVF: %d, Freq: %.2f\n", 
+      divi, divf, (float) clock_frequency / divi );
+  }
+*/
   *(clk + gpioToClkCon [pin]) = BCM_PASSWORD | clock_source ;	// Stop GPIO Clock
   while ((*(clk + gpioToClkCon [pin]) & 0x80) != 0)				// ... and wait
     ;
@@ -1283,7 +1264,7 @@ int gpioClockSet (int pin, int freq)
   *(clk + gpioToClkDiv [pin]) = BCM_PASSWORD | (divi << 12) | divf ; 				// Set dividers
   *(clk + gpioToClkCon [pin]) = BCM_PASSWORD | (mash << 9)  | 0x10 | clock_source ;	// Start Clock
   
-  return (int) ((float)clock_frequency / divi + divf/1024.0) ;
+  return (int) ((float)clock_frequency / divi + divf/4096.0) ;
 }
 
 
