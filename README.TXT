@@ -1,3 +1,13 @@
+Note
+====
+
+This is an unofficial mirror of WiringPi to support ports (Python/Ruby/etc).
+
+Please do not email Gordon if you have issues, he will not be able to help.
+
+Pull-requests are not currently accepted, since this is a mirror.
+
+For support, comments, questions, etc please join the WiringPi Discord channel: https://discord.gg/SM4WUVG
 
 wiringPi README
 ===============
