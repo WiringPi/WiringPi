@@ -831,72 +831,41 @@ int piBoardRev (void)
 
 void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
 {
-  FILE *cpuFd ;
-  char line [120] ;
+  FILE *dtcFd ;
   char *c ;
   unsigned int revision ;
   int bRev, bType, bProc, bMfg, bMem, bWarranty ;
+  unsigned char buffer[4];
 
 //	Will deal with the properly later on - for now, lets just get it going...
 //  unsigned int modelNum ;
 
   (void)piGpioLayout () ;	// Call this first to make sure all's OK. Don't care about the result.
 
-  if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
-    piGpioLayoutOops ("Unable to open /proc/cpuinfo") ;
+  if ((dtcFd = fopen("/proc/device-tree/system/linux,revision", "r")) == NULL){
+    piGpioLayoutOops ("Unable to open /proc/device-tree/system/linux,revision") ;
+  }
 
-  while (fgets (line, 120, cpuFd) != NULL)
-    if (strncmp (line, "Revision", 8) == 0)
-      break ;
-
-  fclose (cpuFd) ;
-
-  if (strncmp (line, "Revision", 8) != 0)
-    piGpioLayoutOops ("No \"Revision\" line") ;
-
-// Chomp trailing CR/NL
-
-  for (c = &line [strlen (line) - 1] ; (*c == '\n') || (*c == '\r') ; --c)
-    *c = 0 ;
-  
-  if (wiringPiDebug)
-    printf ("piBoardId: Revision string: %s\n", line) ;
-
-// Need to work out if it's using the new or old encoding scheme:
-
-// Scan to the first character of the revision number
-
-  for (c = line ; *c ; ++c)
-    if (*c == ':')
-      break ;
-
-  if (*c != ':')
-    piGpioLayoutOops ("Bogus \"Revision\" line (no colon)") ;
-
-// Chomp spaces
-
-  ++c ;
-  while (isspace (*c))
-    ++c ;
-
-  if (!isxdigit (*c))
-    piGpioLayoutOops ("Bogus \"Revision\" line (no hex digit at start of revision)") ;
-
-  revision = (unsigned int)strtol (c, NULL, 16) ; // Hex number with no leading 0x
+  fread(buffer,sizeof(buffer),1,dtcFd);
 
 // Check for new way:
+
+  revision = (unsigned int)buffer[0] << 24 |
+             (unsigned int)buffer[1] << 16 |
+             (unsigned int)buffer[2] << 8  |
+             (unsigned int)buffer[3];
 
   if ((revision &  (1 << 23)) != 0)	// New way
   {
     if (wiringPiDebug)
       printf ("piBoardId: New Way: revision is: 0x%08X\n", revision) ;
 
-    bRev      = (revision & (0x0F <<  0)) >>  0 ;
-    bType     = (revision & (0xFF <<  4)) >>  4 ;
-    bProc     = (revision & (0x0F << 12)) >> 12 ;	// Not used for now.
-    bMfg      = (revision & (0x0F << 16)) >> 16 ;
-    bMem      = (revision & (0x07 << 20)) >> 20 ;
-    bWarranty = (revision & (0x03 << 24)) != 0 ;
+    bRev      = (buffer[1] & (0x0F <<  0)) >>  0 ;
+    bType     = (buffer[1] & (0xFF <<  4)) >>  4 ;
+    bProc     = (buffer[2] & (0xFF <<  4)) >>  4 ; // Not used for now.
+    bMfg      = (buffer[2] & (0x0F <<  0)) >>  0 ;
+    bMem      = (buffer[3] & (0x07 <<  4)) >>  4 ;
+    bWarranty = (buffer[3] & (0x03 <<  0)) !=  0 ;
     
     *model    = bType ;
     *rev      = bRev ;
@@ -907,6 +876,8 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     if (wiringPiDebug)
       printf ("piBoardId: rev: %d, type: %d, proc: %d, mfg: %d, mem: %d, warranty: %d\n",
 		bRev, bType, bProc, bMfg, bMem, bWarranty) ;
+
+    fclose(dtcFd);
   }
   else					// Old way
   {
