@@ -733,6 +733,7 @@ int piGpioLayout (void)
       fprintf (stderr, "to projects@drogon.net. If this is not a Raspberry Pi then you\n") ;
       fprintf (stderr, "are on your own as wiringPi is designed to support the\n") ;
       fprintf (stderr, "Raspberry Pi ONLY.\n") ;
+      fclose(dtcFd);
       exit (EXIT_FAILURE) ;
     }
 
@@ -742,6 +743,8 @@ int piGpioLayout (void)
 
   if (wiringPiDebug)
     printf ("piGpioLayoutOops: Returning revision: %d\n", gpioLayout) ;
+
+  fclose(dtcFd);
 
   return gpioLayout ;
 }
