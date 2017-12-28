@@ -88,7 +88,7 @@ $(DYNAMIC):	$(OBJ)
 .PHONY:	clean
 clean:
 	$Q echo "[Clean]"
-	$Q rm -f $(OBJ) $(OBJ_I2C) *~ core tags Makefile.bak libwiringPi.*
+	$Q rm -f $(OBJ) $(OBJ_I2C) *~ core tags Makefile.bak $(DYNAMIC)
 
 .PHONY:	tags
 tags:	$(SRC)
