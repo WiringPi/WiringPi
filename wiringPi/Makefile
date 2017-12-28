@@ -32,7 +32,7 @@ Q ?= @
 endif
 
 STATIC=libwiringPi.a
-DYNAMIC=libwiringPi.so.$(VERSION)
+DYNAMIC=$(LIB_PATH)libwiringPi.so.$(VERSION)
 
 #DEBUG	= -g -O0
 DEBUG	= -O2
@@ -78,7 +78,7 @@ $(STATIC):	$(OBJ)
 
 $(DYNAMIC):	$(OBJ)
 	$Q echo "[Link (Dynamic)]"
-	$Q $(CC) -shared -Wl,-soname,libwiringPi.so$(WIRINGPI_SONAME_SUFFIX) -o libwiringPi.so.$(VERSION) $(LIBS) $(OBJ)
+	$Q $(CC) -shared -Wl,-soname,libwiringPi.so$(WIRINGPI_SONAME_SUFFIX) -o $@ $(LIBS) $(OBJ)
 
 .c.o:
 	$Q echo [Compile] $<
