@@ -99,6 +99,7 @@
 #define	PI_MODEL_ZERO		 9
 #define	PI_MODEL_CM3		10
 #define	PI_MODEL_ZERO_W		12
+#define	PI_MODEL_3P 		13
 
 #define	PI_VERSION_1		0
 #define	PI_VERSION_1_1		1
@@ -161,6 +162,15 @@ struct wiringPiNodeStruct
 } ;
 
 extern struct wiringPiNodeStruct *wiringPiNodes ;
+
+// Export variables for the hardware pointers
+
+extern volatile unsigned int *_wiringPiGpio ;
+extern volatile unsigned int *_wiringPiPwm ;
+extern volatile unsigned int *_wiringPiClk ;
+extern volatile unsigned int *_wiringPiPads ;
+extern volatile unsigned int *_wiringPiTimer ;
+extern volatile unsigned int *_wiringPiTimerIrqRaw ;
 
 
 // Function prototypes

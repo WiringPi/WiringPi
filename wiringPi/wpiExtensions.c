@@ -871,7 +871,7 @@ int loadWPiExtension (char *progName, char *extensionData, int printErrors)
   char *p ;
   char *extension = extensionData ;
   struct extensionFunctionStruct *extensionFn ;
-  unsigned pinBase = 0 ;
+  int pinBase = 0 ;
 
   verbose = printErrors ;
 

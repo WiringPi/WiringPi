@@ -2,7 +2,7 @@
  * gpio.c:
  *	Swiss-Army-Knife, Set-UID command-line interface to the Raspberry
  *	Pi's GPIO.
- *	Copyright (c) 2012-2017 Gordon Henderson
+ *	Copyright (c) 2012-2018 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -48,7 +48,7 @@ extern int wiringPiDebug ;
 
 extern void doReadall    (void) ;
 extern void doAllReadall (void) ;
-extern void doPins       (void) ;
+extern void doQmode      (int argc, char *argv []) ;
 
 #ifndef TRUE
 #  define	TRUE	(1==1)
@@ -56,9 +56,9 @@ extern void doPins       (void) ;
 #endif
 
 #define	PI_USB_POWER_CONTROL	38
-#define	I2CDETECT		"/usr/sbin/i2cdetect"
-#define	MODPROBE		"/sbin/modprobe"
-#define	RMMOD			"/sbin/rmmod"
+#define	I2CDETECT		"i2cdetect"
+#define	MODPROBE		"modprobe"
+#define	RMMOD			"rmmod"
 
 int wpMode ;
 
@@ -68,9 +68,9 @@ char *usage = "Usage: gpio -v\n"
               "       gpio [-d] ...\n"
               "       [-x extension:params] [[ -x ...]] ...\n"
               "       gpio [-p] <read/write/wb> ...\n"
-              "       gpio <read/write/aread/awritewb/pwm/clock/mode> ...\n"
+              "       gpio <mode/read/write/aread/awritewb/pwm/pwmTone/clock> ...\n"
               "       gpio <toggle/blink> <pin>\n"
-	      "       gpio readall/reset\n"
+	      "       gpio readall\n"
 	      "       gpio unexportall/exports\n"
 	      "       gpio export/edge/unexport ...\n"
 	      "       gpio wfi <pin> <mode>\n"
@@ -221,9 +221,7 @@ static void checkDevTree (char *argv [])
     fprintf (stderr,
 "%s: Unable to load/unload modules as this Pi has the device tree enabled.\n"
 "  You need to run the raspi-config program (as root) and select the\n"
-"  modules (SPI or I2C) that you wish to load/unload there and reboot.\n"
-"  There is more information here:\n"
-"      https://www.raspberrypi.org/forums/viewtopic.php?f=28&t=97314\n", argv [0]) ;
+"  modules (SPI or I2C) that you wish to load/unload there and reboot.\n", argv [0]) ;
     exit (1) ;
   }
 }
@@ -1270,7 +1268,7 @@ static void doVersion (char *argv [])
 
   wiringPiVersion (&vMaj, &vMin) ;
   printf ("gpio version: %d.%d\n", vMaj, vMin) ;
-  printf ("Copyright (c) 2012-2017 Gordon Henderson\n") ;
+  printf ("Copyright (c) 2012-2018 Gordon Henderson\n") ;
   printf ("This is free software with ABSOLUTELY NO WARRANTY.\n") ;
   printf ("For details type: %s -warranty\n", argv [0]) ;
   printf ("\n") ;
@@ -1320,8 +1318,11 @@ int main (int argc, char *argv [])
 
   if (argc == 1)
   {
-    fprintf (stderr, "%s\n", usage) ;
-    return 1 ;
+    fprintf (stderr,
+"%s: At your service!\n"
+"  Type: gpio -h for full details and\n"
+"        gpio readall for a quick printout of your connector details\n", argv [0]) ;
+    exit (EXIT_FAILURE) ;
   }
 
 // Help
@@ -1329,7 +1330,7 @@ int main (int argc, char *argv [])
   if (strcasecmp (argv [1], "-h") == 0)
   {
     printf ("%s: %s\n", argv [0], usage) ;
-    return 0 ;
+    exit (EXIT_SUCCESS) ;
   }
 
 // Version & Warranty
@@ -1338,7 +1339,7 @@ int main (int argc, char *argv [])
   if ((strcmp (argv [1], "-R") == 0) || (strcmp (argv [1], "-V") == 0))
   {
     printf ("%d\n", piGpioLayout ()) ;
-    return 0 ;
+    exit (EXIT_SUCCESS) ;
   }
 
 // Version and information
@@ -1346,13 +1347,13 @@ int main (int argc, char *argv [])
   if (strcmp (argv [1], "-v") == 0)
   {
     doVersion (argv) ;
-    return 0 ;
+    exit (EXIT_SUCCESS) ;
   }
 
   if (strcasecmp (argv [1], "-warranty") == 0)
   {
     printf ("gpio version: %s\n", VERSION) ;
-    printf ("Copyright (c) 2012-2017 Gordon Henderson\n") ;
+    printf ("Copyright (c) 2012-2018 Gordon Henderson\n") ;
     printf ("\n") ;
     printf ("    This program is free software; you can redistribute it and/or modify\n") ;
     printf ("    it under the terms of the GNU Leser General Public License as published\n") ;
@@ -1367,13 +1368,13 @@ int main (int argc, char *argv [])
     printf ("    You should have received a copy of the GNU Lesser General Public License\n") ;
     printf ("    along with this program. If not, see <http://www.gnu.org/licenses/>.\n") ;
     printf ("\n") ;
-    return 0 ;
+    exit (EXIT_SUCCESS) ;
   }
 
   if (geteuid () != 0)
   {
     fprintf (stderr, "%s: Must be root to run. Program should be suid root. This is an error.\n", argv [0]) ;
-    return 1 ;
+    exit (EXIT_FAILURE) ;
   }
 
 // Initial test for /sys/class/gpio operations:
@@ -1517,7 +1518,8 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "drive"    ) == 0) doPadDrive   (argc, argv) ;
   else if (strcasecmp (argv [1], "readall"  ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "nreadall" ) == 0) doReadall    () ;
-  else if (strcasecmp (argv [1], "pins"     ) == 0) doPins       () ;
+  else if (strcasecmp (argv [1], "pins"     ) == 0) doReadall    () ;
+  else if (strcasecmp (argv [1], "qmode"    ) == 0) doQmode      (argc, argv) ;
   else if (strcasecmp (argv [1], "i2cdetect") == 0) doI2Cdetect  (argc, argv) ;
   else if (strcasecmp (argv [1], "i2cd"     ) == 0) doI2Cdetect  (argc, argv) ;
   else if (strcasecmp (argv [1], "reset"    ) == 0) doReset      (argv [0]) ;
@@ -1531,5 +1533,6 @@ int main (int argc, char *argv [])
     fprintf (stderr, "%s: Unknown command: %s.\n", argv [0], argv [1]) ;
     exit (EXIT_FAILURE) ;
   }
+
   return 0 ;
 }
