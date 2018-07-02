@@ -1,0 +1,20 @@
+
+wiringPi is no-longer shipped with the ability to statically link it.
+
+Many reasons but the biggest issue is people who have statically linked
+wiringPi into their product - for example a Pi UPS device or a Tetris-like
+game and not subsequently shipped their modified sources. These people are
+no better than common thieves with complete disregard to the conditions
+of the LGPL that wiringPi ships with.
+
+Additionally, many think it's a good idea to statically link wiringPi
+into their favourite language - like Node, and Java and other itsy bitsy
+little things. These people have a complete and utter disregard to what
+happens underneath when e.g. the Linux kernel changes on the Pi then
+wiringPi stops as it depends on some Pi kernel features, then the poor
+user get in-touch with me and I've had over 10,000 emails so-far and
+it's now beyond a joke.
+
+DO NOT STATICALLY LINK WIRINGPI.
+
+Gordon Henderson, March 2018.

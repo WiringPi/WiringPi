@@ -1,7 +1,9 @@
 /*
- * pins.c:
- *	Just display a handy Pi pinnout diagram.
- *	Copyright (c) 2012-2017 Gordon Henderson
+ * blink-thread.c:
+ *	Standard "blink" program in wiringPi. Blinks an LED connected
+ *	to the first GPIO pin.
+ *
+ * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -21,13 +23,39 @@
  ***********************************************************************
  */
 
-
 #include <stdio.h>
+#include <wiringPi.h>
 
-void doPins (void)
+// LED Pin - wiringPi pin 0 is BCM_GPIO 17.
+
+#define	LED	0
+
+PI_THREAD (blinky)
 {
-  printf ("The pins command has been deprecated - sorry. Please use the\n") ;
-  printf ("  gpio readall\n") ;
-  printf ("command to get a list of the pinnouts for your Pi.\n") ;
+  for (;;)
+  {
+    digitalWrite (LED, HIGH) ;	// On
+    delay (500) ;		// mS
+    digitalWrite (LED, LOW) ;	// Off
+    delay (500) ;
+  }
 }
 
+
+int main (void)
+{
+  printf ("Raspberry Pi blink\n") ;
+
+  wiringPiSetup () ;
+  pinMode (LED, OUTPUT) ;
+
+  piThreadCreate (blinky) ;
+
+  for (;;)
+  {
+    printf ("Hello, world\n") ;
+    delay (600) ;
+  }
+
+  return 0 ;
+}

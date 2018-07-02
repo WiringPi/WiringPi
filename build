@@ -64,6 +64,9 @@ if [ x$1 = "xclean" ]; then
   echo -n "PiGlow:     "	; make clean
   cd ../scrollPhat
   echo -n "scrollPhat: "	; make clean
+  cd ../..
+  echo -n "Deb: " ; rm  -f debian-template/wiringpi*.deb
+  echo
   exit
 fi
 

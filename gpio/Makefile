@@ -42,7 +42,7 @@ LIBS    = -lwiringPi -lwiringPiDev -lpthread -lrt -lm -lcrypt
 # May not need to  alter anything below this line
 ###############################################################################
 
-SRC	=	gpio.c readall.c pins.c
+SRC	=	gpio.c readall.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -77,22 +77,22 @@ ifneq ($(WIRINGPI_SUID),0)
 	$Q chown root.root	$(DESTDIR)$(PREFIX)/bin/gpio
 	$Q chmod 4755		$(DESTDIR)$(PREFIX)/bin/gpio
 endif
-	$Q mkdir -p		$(DESTDIR)$(PREFIX)/man/man1
-	$Q cp gpio.1		$(DESTDIR)$(PREFIX)/man/man1
+	$Q mkdir -p		$(DESTDIR)$(PREFIX)/share/man/man1
+	$Q cp gpio.1		$(DESTDIR)$(PREFIX)/share/man/man1
 
 .PHONY:	install-deb
 install-deb:	gpio
 	$Q echo "[Install: deb]"
 	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/bin
 	$Q install -m 0755 gpio							~/wiringPi/debian-template/wiringPi/usr/bin
-	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/man/man1
-	$Q install -m 0644 gpio.1						~/wiringPi/debian-template/wiringPi/man/man1
+	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/share/man/man1
+	$Q install -m 0644 gpio.1						~/wiringPi/debian-template/wiringPi/usr/share/man/man1
 
 .PHONY:	uninstall
 uninstall:
 	$Q echo "[UnInstall]"
 	$Q rm -f $(DESTDIR)$(PREFIX)/bin/gpio
-	$Q rm -f $(DESTDIR)$(PREFIX)/man/man1/gpio.1
+	$Q rm -f $(DESTDIR)$(PREFIX)/share/man/man1/gpio.1
 
 .PHONY:	depend
 depend:
