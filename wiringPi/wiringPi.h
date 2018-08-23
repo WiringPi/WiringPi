@@ -238,7 +238,7 @@ extern          void digitalWriteByte2   (int value) ;
 //	(Also Pi hardware specific)
 
 extern int  waitForInterrupt    (int pin, int mS) ;
-extern int  wiringPiISR         (int pin, int mode, void (*function)(void)) ;
+extern int  wiringPiISR         (int pin, int mode, void (*function)(void *), void *userData) ;
 
 // Threads
 

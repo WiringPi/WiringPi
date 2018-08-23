@@ -33,7 +33,9 @@ endif
 #DEBUG	= -g -O0
 DEBUG	= -O2
 CC	= gcc
-INCLUDE	= -I$(DESTDIR)$(PREFIX)/include
+#INCLUDE	= -I$(DESTDIR)$(PREFIX)/include
+ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+INCLUDE = -I$(DESTDIR)$(PREFIX)/include -I$(ROOT_DIR)/devLib
 CFLAGS	= $(DEBUG) -Wall -Wextra $(INCLUDE) -Winline -pipe
 
 LDFLAGS	= -L$(DESTDIR)$(PREFIX)/lib
