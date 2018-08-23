@@ -1947,7 +1947,7 @@ static void *interruptHandler (UNU void *arg)
  *********************************************************************************
  */
 
-int wiringPiISR (int pin, int mode, void (*function)(void), void* userData)
+int wiringPiISR (int pin, int mode, void (*function)(void *), void* userData)
 {
   pthread_t threadId ;
   const char *modeS ;
