@@ -1,7 +1,7 @@
 /*
  * softPwm.c:
- *	Provide 2 channels of software driven PWM.
- *	Copyright (c) 2012-2014 Gordon Henderson
+ *	Provide many channels of software driven PWM.
+ *	Copyright (c) 2012-2017 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -23,17 +23,18 @@
  */
 
 #include <stdio.h>
+#include <malloc.h>
 #include <pthread.h>
 
 #include "wiringPi.h"
 #include "softPwm.h"
 
 // MAX_PINS:
-//	This is more than the number of Pi pins because we can actually softPwm
-//	pins that are on GPIO expanders. It's not that efficient and more than 1 or
-//	2 pins on e.g. (SPI) mcp23s17 won't really be that effective, however...
+//	This is more than the number of Pi pins because we can actually softPwm.
+//	Once upon a time I let pins on gpio expanders be softPwm'd, but it's really
+//	really not a good thing.
 
-#define	MAX_PINS	1024
+#define	MAX_PINS	64
 
 // The PWM Frequency is derived from the "pulse time" below. Essentially,
 //	the frequency is a function of the range and this pulse time.
@@ -44,7 +45,7 @@
 //	It's possible to get a higher frequency by lowering the pulse time,
 //	however CPU uage will skyrocket as wiringPi uses a hard-loop to time
 //	periods under 100µS - this is because the Linux timer calls are just
-//	accurate at all, and have an overhead.
+//	not accurate at all, and have an overhead.
 //
 //	Another way to increase the frequency is to reduce the range - however
 //	that reduces the overall output accuracy...
@@ -63,13 +64,16 @@ static volatile int newPin = -1 ;
  *********************************************************************************
  */
 
-static PI_THREAD (softPwmThread)
+static void *softPwmThread (void *arg)
 {
   int pin, mark, space ;
   struct sched_param param ;
 
   param.sched_priority = sched_get_priority_max (SCHED_RR) ;
   pthread_setschedparam (pthread_self (), SCHED_RR, &param) ;
+
+  pin = *((int *)arg) ;
+  free (arg) ;
 
   pin    = newPin ;
   newPin = -1 ;
@@ -102,14 +106,15 @@ static PI_THREAD (softPwmThread)
 
 void softPwmWrite (int pin, int value)
 {
-  pin &= (MAX_PINS - 1) ;
+  if (pin < MAX_PINS)
+  {
+    /**/ if (value < 0)
+      value = 0 ;
+    else if (value > range [pin])
+      value = range [pin] ;
 
-  /**/ if (value < 0)
-    value = 0 ;
-  else if (value > range [pin])
-    value = range [pin] ;
-
-  marks [pin] = value ;
+    marks [pin] = value ;
+  }
 }
 
 
@@ -123,21 +128,30 @@ int softPwmCreate (int pin, int initialValue, int pwmRange)
 {
   int res ;
   pthread_t myThread ;
+  int *passPin ;
+
+  if (pin >= MAX_PINS)
+    return -1 ;
 
   if (range [pin] != 0)	// Already running on this pin
     return -1 ;
 
-  if (range <= 0)
+  if (pwmRange <= 0)
     return -1 ;
 
-  pinMode      (pin, OUTPUT) ;
+  passPin = malloc (sizeof (*passPin)) ;
+  if (passPin == NULL)
+    return -1 ;
+
   digitalWrite (pin, LOW) ;
+  pinMode      (pin, OUTPUT) ;
 
   marks [pin] = initialValue ;
   range [pin] = pwmRange ;
 
-  newPin = pin ;
-  res    = pthread_create (&myThread, NULL, softPwmThread, NULL) ;
+  *passPin = pin ;
+  newPin   = pin ;
+  res      = pthread_create (&myThread, NULL, softPwmThread, (void *)passPin) ;
 
   while (newPin != -1)
     delay (1) ;
@@ -156,11 +170,14 @@ int softPwmCreate (int pin, int initialValue, int pwmRange)
 
 void softPwmStop (int pin)
 {
-  if (range [pin] != 0)
+  if (pin < MAX_PINS)
   {
-    pthread_cancel (threads [pin]) ;
-    pthread_join   (threads [pin], NULL) ;
-    range [pin] = 0 ;
-    digitalWrite (pin, LOW) ;
+    if (range [pin] != 0)
+    {
+      pthread_cancel (threads [pin]) ;
+      pthread_join   (threads [pin], NULL) ;
+      range [pin] = 0 ;
+      digitalWrite (pin, LOW) ;
+    }
   }
 }

@@ -6,7 +6,7 @@
 #	Copyright (c) 2012-2015 Gordon Henderson
 #################################################################################
 # This file is part of wiringPi:
-#	Wiring Compatable library for the Raspberry Pi
+#	A "wiring" library for the Raspberry Pi
 #
 #    wiringPi is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Lesser General Public License as published by
@@ -64,6 +64,9 @@ if [ x$1 = "xclean" ]; then
   echo -n "PiGlow:     "	; make clean
   cd ../scrollPhat
   echo -n "scrollPhat: "	; make clean
+  cd ../..
+  echo -n "Deb: " ; rm  -f debian-template/wiringpi*.deb
+  echo
   exit
 fi
 
@@ -159,6 +162,14 @@ fi
   check_make_ok
   $sudo make install
   check_make_ok
+
+# echo
+# echo "wiringPi Daemon"
+# cd ../wiringPiD
+# make -j5
+# check_make_ok
+# $sudo make install
+# check_make_ok
 
 # echo
 # echo "Examples"

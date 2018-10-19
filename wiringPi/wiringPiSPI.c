@@ -28,6 +28,7 @@
 #include <errno.h>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <asm/ioctl.h>
 #include <linux/spi/spidev.h>
 
 #include "wiringPi.h"
@@ -38,10 +39,10 @@
 // The SPI bus parameters
 //	Variables as they need to be passed as pointers later on
 
-const static char       *spiDev0  = "/dev/spidev0.0" ;
-const static char       *spiDev1  = "/dev/spidev0.1" ;
-const static uint8_t     spiBPW   = 8 ;
-const static uint16_t    spiDelay = 0 ;
+static const char       *spiDev0  = "/dev/spidev0.0" ;
+static const char       *spiDev1  = "/dev/spidev0.1" ;
+static const uint8_t     spiBPW   = 8 ;
+static const uint16_t    spiDelay = 0 ;
 
 static uint32_t    spiSpeeds [2] ;
 static int         spiFds [2] ;

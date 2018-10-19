@@ -1,7 +1,6 @@
 /*
- * pins.c:
- *	Just display a handy Pi pinnout diagram.
- *	Copyright (c) 2012-2015 Gordon Henderson
+ * drcNetCmd.c:
+ *	Copyright (c) 2012-2017 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://projects.drogon.net/raspberry-pi/wiringpi/
@@ -21,13 +20,25 @@
  ***********************************************************************
  */
 
+#define	DEFAULT_SERVER_PORT	6124
 
-#include <stdio.h>
+#define	DRCN_PIN_MODE		1
+#define	DRCN_PULL_UP_DN		2
 
-void doPins (void)
+#define	DRCN_DIGITAL_WRITE	3
+#define	DRCN_DIGITAL_WRITE8	4
+#define	DRCN_ANALOG_WRITE	5
+#define	DRCN_PWM_WRITE		6
+
+#define	DRCN_DIGITAL_READ	7
+#define	DRCN_DIGITAL_READ8	8
+#define	DRCN_ANALOG_READ	9
+
+
+struct drcNetComStruct
 {
-  printf ("The pins command has been deprecated - sorry. Please use the\n") ;
-  printf ("  gpio readall\n") ;
-  printf ("command to get a list of the pinnouts for your Pi.\n") ;
-}
+  uint32_t pin ;
+  uint32_t cmd ;
+  uint32_t data ;
+} comDat ;
 

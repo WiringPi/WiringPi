@@ -36,7 +36,7 @@
  *********************************************************************************
  */
 
-static void myAnalogWrite (struct wiringPiNodeStruct *node, int pin, int value)
+static void myAnalogWrite (struct wiringPiNodeStruct *node, UNU int pin, int value)
 {
   unsigned char b [2] ;
   b [0] = 0x40 ;

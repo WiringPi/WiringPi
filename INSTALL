@@ -19,13 +19,6 @@ then run the ldconfig command.
 
   sudo ldconfig
 
-If you want to install a static library, you may need to do this manually:
-
-  cd wiringPi
-  make static
-  sudo make install-static
-
-
 To un-install wiringPi:
 
   ./build uninstall

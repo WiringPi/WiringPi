@@ -1,6 +1,6 @@
 #
 # Makefile:
-#	wiringPi - Wiring Compatable library for the Raspberry Pi
+#	wiringPi - A "wiring" library for the Raspberry Pi
 #	https://projects.drogon.net/wiring-pi
 #
 #	Copyright (c) 2012-2015 Gordon Henderson
@@ -33,7 +33,7 @@ INCLUDE	= -I/usr/local/include
 CFLAGS	= $(DEBUG) -Wall $(INCLUDE) -Winline -pipe
 
 LDFLAGS	= -L/usr/local/lib
-LDLIBS    = -lwiringPi -lwiringPiDev -lpthread -lm
+LDLIBS    = -lwiringPi -lwiringPiDev -lpthread -lm -lcrypt -lrt
 
 # Should not alter anything below this line
 ###############################################################################
