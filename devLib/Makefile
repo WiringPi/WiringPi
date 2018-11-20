@@ -20,112 +20,141 @@
 #    You should have received a copy of the GNU Lesser General Public License
 #    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
 #################################################################################
+PROJECT						=	wiringPi
+VERSION						=	$(shell cat ../VERSION)
 
-VERSION=$(shell cat ../VERSION)
-DESTDIR?=/usr
-PREFIX?=/local
 
-LDCONFIG?=ldconfig
+BASE_INSTALL_DIR			?=	usr/
+LOCAL_INSTALL_DIR			?=	local/
+PROJ_INSTALL_DIR			?=	$(PROJECT)/
+ARCHITECTURE_INSTALL_DIR	?=	armhf/
+
+PUBLIC_INCLUDE_DIR			= /$(BASE_INSTALL_DIR)include/
+PUBLIC_LIB_DIR				= /$(BASE_INSTALL_DIR)lib/
+LOCAL_INCLUDE_DIR			= /$(BASE_INSTALL_DIR)$(LOCAL_INSTALL_DIR)include/
+LOCAL_LIB_DIR				= /$(BASE_INSTALL_DIR)$(LOCAL_INSTALL_DIR)lib/$(PROJ_INSTALL_DIR)/$(ARCHITECTURE_INSTALL_DIR)
+
+DEB_TEMPLATE_DIR			= ../debian-template/$(PROJECT)/
+
+
+LDCONFIG	?=	ldconfig
+
 
 ifneq ($V,1)
 Q ?= @
 endif
 
-STATIC=libwiringPiDev.a
-DYNAMIC=libwiringPiDev.so.$(VERSION)
 
-#DEBUG	= -g -O0
-DEBUG	= -O2
-CC	= gcc
-INCLUDE	= -I.
-DEFS	= -D_GNU_SOURCE
-CFLAGS	= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Winline $(INCLUDE) -pipe -fPIC
+STATIC_LIB	=	lib$(PROJECT)Dev.a
+DYNAMIC_LIB	=	lib$(PROJECT)Dev.so
 
+
+CC		=	arm-linux-gnueabihf-gcc
+#DEBUG	=	-g -O0
+DEBUG	=	-O2
+INCLUDE	=	-I.
+DEFS	=	-D_GNU_SOURCE
+CFLAGS	=	$(DEBUG) $(DEFS) -Wformat=2 -Wall -Winline $(INCLUDE) -pipe -fPIC
 LIBS    =
 
 ###############################################################################
 
-SRC	=	ds1302.c maxdetect.c  piNes.c		\
-		gertboard.c piFace.c			\
-		lcd128x64.c lcd.c			\
-		scrollPhat.c				\
-		piGlow.c
+SOURCES	=	ds1302.c maxdetect.c piNes.c \
+			gertboard.c piFace.c \
+			lcd128x64.c lcd.c \
+			scrollPhat.c \
+			piGlow.c
 
-OBJ	=	$(SRC:.c=.o)
+OBJS	=	$(SOURCES:.c=.o)
 
-HEADERS	=	ds1302.h gertboard.h  lcd128x64.h  lcd.h  maxdetect.h piFace.h  piGlow.h  piNes.h\
-		scrollPhat.h
+HEADERS	=	ds1302.h gertboard.h lcd128x64.h lcd.h maxdetect.h piFace.h piGlow.h piNes.h \
+			scrollPhat.h
 
-all:		$(DYNAMIC)
 
-static:		$(STATIC)
+all:		$(DYNAMIC_LIB).$(VERSION)
 
-$(STATIC):	$(OBJ)
+
+static:		$(STATIC_LIB)
+
+
+$(STATIC_LIB):	$(OBJS)
 	$Q echo "[Link (Static)]"
-	$Q ar rcs $(STATIC) $(OBJ)
-	$Q ranlib $(STATIC)
-#	@size   $(STATIC)
+	$Q ar rcs $(STATIC_LIB) $(OBJS)
+	$Q ranlib $(STATIC_LIB)
+#	@size   $(STATIC_LIB)
 
-$(DYNAMIC):	$(OBJ)
+
+$(DYNAMIC_LIB).$(VERSION):	$(OBJS)
 	$Q echo "[Link (Dynamic)]"
-	$Q $(CC) -shared -Wl,-soname,libwiringPiDev.so$(WIRINGPI_SONAME_SUFFIX) -o libwiringPiDev.so.$(VERSION) -lpthread $(OBJ)
+	$Q $(CC) -shared -Wl,-soname,$(DYNAMIC_LIB)$(WIRINGPI_SONAME_SUFFIX) -o $(DYNAMIC_LIB).$(VERSION) -lpthread $(OBJS)
+
 
 .c.o:
 	$Q echo [Compile] $<
 	$Q $(CC) -c $(CFLAGS) $< -o $@
 
+
 .PHONY:	clean
 clean:
 	$Q echo "[Clean]"
-	$Q rm -f $(OBJ) $(OBJ_I2C) *~ core tags Makefile.bak libwiringPiDev.*
+	$Q rm -f $(OBJS) $(OBJ_I2C) *~ core tags Makefile.bak lib$(PROJECT)Dev*.*
+
 
 .PHONY:	tags
 tags:	$(SRC)
 	$Q echo [ctags]
-	$Q ctags $(SRC)
+	$Q ctags $(SOURCES)
 
 
 .PHONY:	install
-install:	$(DYNAMIC)
+install:	$(DYNAMIC_LIB).$(VERSION)
 	$Q echo "[Install Headers]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/include
-	$Q install -m 0644 $(HEADERS)					$(DESTDIR)$(PREFIX)/include
+	$Q install	-m 0755 -d										$(LOCAL_INCLUDE_DIR)
+	$Q install	-m 0644 $(HEADERS)								$(LOCAL_INCLUDE_DIR)
+
 	$Q echo "[Install Dynamic Lib]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/lib
-	$Q install -m 0755 libwiringPiDev.so.$(VERSION)			$(DESTDIR)$(PREFIX)/lib/libwiringPiDev.so.$(VERSION)
-	$Q ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPiDev.so.$(VERSION)	$(DESTDIR)/lib/libwiringPiDev.so
+	$Q install	-m 0755 -d										$(LOCAL_LIB_DIR)
+	$Q install	-m 0755 $(DYNAMIC_LIB).$(VERSION)				$(LOCAL_LIB_DIR)$(DYNAMIC_LIB).$(VERSION)
+	$Q ln 		-sf $(LOCAL_LIB_DIR)$(DYNAMIC_LIB).$(VERSION)	$(PUBLIC_LIB_DIR)$(DYNAMIC_LIB)
 	$Q $(LDCONFIG)
+
 
 .PHONY:	install-static
 install-static:	$(STATIC)
 	$Q echo "[Install Headers]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/include
-	$Q install -m 0644 $(HEADERS)					$(DESTDIR)$(PREFIX)/include
+	$Q install	-m 0755 -d				$(LOCAL_INCLUDE_DIR)
+	$Q install	-m 0644 $(HEADERS)		$(LOCAL_INCLUDE_DIR)
+
 	$Q echo "[Install Static Lib]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/lib
-	$Q install -m 0755 libwiringPiDev.a				$(DESTDIR)$(PREFIX)/lib
+	$Q install	-m 0755 -d				$(LOCAL_LIB_DIR)
+	$Q install	-m 0755 $(STATIC_LIB)	$(LOCAL_LIB_DIR)
+
 
 .PHONY:	install-deb
 install-deb:	$(DYNAMIC)
 	$Q echo "[Install Headers: deb]"
-	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/include
-	$Q install -m 0644 $(HEADERS)						~/wiringPi/debian-template/wiringPi/usr/include
+	$Q install -m 0755 -d						$(DEB_TEMPLATE_DIR)$(PUBLIC_INCLUDE_DIR)
+	$Q install -m 0644 $(HEADERS)				$(DEB_TEMPLATE_DIR)$(PUBLIC_INCLUDE_DIR)
+
 	$Q echo "[Install Dynamic Lib: deb]"
-	install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/lib
-	install -m 0755 libwiringPiDev.so.$(VERSION)				~/wiringPi/debian-template/wiringPi/usr/lib/libwiringPiDev.so.$(VERSION)
-	ln -sf ~/wiringPi/debian-template/wiringPi/usr/lib/libwiringPiDev.so.$(VERSION)	~/wiringPi/debian-template/wiringPi/usr/lib/libwiringPiDev.so
+	install -m 0755 -d							$(DEB_TEMPLATE_DIR)$(PUBLIC_LIB_DIR)
+	install -m 0755 $(DYNAMIC_LIB).$(VERSION)	$(DEB_TEMPLATE_DIR)$(PUBLIC_LIB_DIR)/$(DYNAMIC_LIB).$(VERSION)
+	ln -sf $(DEB_TEMPLATE_DIR)$(PUBLIC_LIB_DIR)/$(DYNAMIC_LIB).$(VERSION)	$(DEB_TEMPLATE_DIR)$(PUBLIC_LIB_DIR)/$(DYNAMIC_LIB)
+
 
 .PHONY:	uninstall
 uninstall:
 	$Q echo "[UnInstall]"
-	$Q cd $(DESTDIR)$(PREFIX)/include/ && rm -f $(HEADERS)
-	$Q cd $(DESTDIR)$(PREFIX)/lib/     && rm -f libwiringPiDev.*
+	$Q cd $(LOCAL_INCLUDE_DIR) && rm -f $(HEADERS)
+	$Q if [ -d "$(LOCAL_LIB_DIR)" ]; then cd $(LOCAL_LIB_DIR) && rm -f $(DYNAMIC_LIB).* && rm -f $(STATIC_LIB).*; fi
+	$Q cd $(PUBLIC_LIB_DIR) && rm -f $(DYNAMIC_LIB)
 	$Q $(LDCONFIG)
 
 
 .PHONY:	depend
 depend:
-	makedepend -Y $(SRC)
+	makedepend -Y $(SOURCES)
+
 
 # DO NOT DELETE
 

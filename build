@@ -31,6 +31,25 @@
 #	back into education!
 #################################################################################
 
+# NOTE: Windows Msys/mingw environment not currently usable - suggest WSL
+# (Windows Subsystem for Linux) for cross-compiling on Windows hosts
+
+GCCTARGET=`gcc -dumpmachine`
+BUILDTYPE='CROSS'
+INVOKESU=sudo
+
+case "$GCCTARGET" in
+  arm-linux-gnueabihf)
+    BUILDTYPE='NATIVE';;
+#   *mingw*)
+#      INVOKESU= ;;
+esac
+
+echo "gcc default architecture: $GCCTARGET"
+echo "Build type:               $BUILDTYPE"
+echo ""
+
+
 check_make_ok() {
   if [ $? != 0 ]; then
     echo ""
@@ -43,7 +62,6 @@ check_make_ok() {
   fi
 }
 
-sudo=${WIRINGPI_SUDO-sudo}
 
 if [ x$1 = "xclean" ]; then
   cd wiringPi
@@ -72,31 +90,32 @@ fi
 
 if [ x$1 = "xuninstall" ]; then
   cd wiringPi
-  echo -n "wiringPi: " ; $sudo make uninstall
+  echo -n "wiringPi: " ; $INVOKESU make uninstall
   cd ../devLib
-  echo -n "DevLib:   " ; $sudo make uninstall
+  echo -n "DevLib:   " ; $INVOKESU make uninstall
   cd ../gpio
-  echo -n "gpio:     " ; $sudo make uninstall
+  echo -n "gpio:     " ; $INVOKESU make uninstall
   exit
 fi
+
 
 # Only if you know what you're doing!
 
 if [ x$1 = "xdebian" ]; then
-  here=`pwd`
   cd debian-template/wiringPi
   rm -rf usr
-  cd $here/wiringPi
+  cd ../../wiringPi
   make install-deb
-  cd $here/devLib
+  cd ../devLib
   make install-deb INCLUDE='-I. -I../wiringPi'
-  cd $here/gpio
+  cd ../gpio
   make install-deb INCLUDE='-I../wiringPi -I../devLib' LDFLAGS=-L../debian-template/wiringPi/usr/lib
-  cd $here/debian-template
+  cd ../debian-template
   fakeroot dpkg-deb --build wiringPi
-  mv wiringPi.deb  wiringpi-`cat $here/VERSION`-1.deb
+  mv wiringPi.deb  wiringpi-`cat ../VERSION`-1.deb
   exit
 fi
+
 
 if [ x$1 != "x" ]; then
   echo "Usage: $0 [clean | uninstall]"
@@ -107,7 +126,7 @@ fi
   echo "====================="
   echo
 
-  hardware=`fgrep Hardware /proc/cpuinfo | head -1 | awk '{ print $3 }'`
+#  hardware=`fgrep Hardware /proc/cpuinfo | head -1 | awk '{ print $3 }'`
 
 #  if [ x$hardware != "xBCM2708" ]; then
 #    echo ""
@@ -126,41 +145,41 @@ fi
 
 
   echo
-  echo "WiringPi Library"
+  echo "--- WiringPi Library"
   cd wiringPi
-  $sudo make uninstall
+  $INVOKESU make uninstall
   if [ x$1 = "xstatic" ]; then
     make -j5 static
     check_make_ok
-    $sudo make install-static
+    $INVOKESU make install-static
   else
     make -j5
     check_make_ok
-    $sudo make install
+    $INVOKESU make install
   fi
   check_make_ok
 
   echo
-  echo "WiringPi Devices Library"
+  echo "--- WiringPi Devices Library"
   cd ../devLib
-  $sudo make uninstall
+  $INVOKESU make uninstall
   if [ x$1 = "xstatic" ]; then
     make -j5 static
     check_make_ok
-    $sudo make install-static
+    $INVOKESU make install-static
   else
     make -j5
     check_make_ok
-    $sudo make install
+    $INVOKESU make install
   fi
   check_make_ok
 
   echo
-  echo "GPIO Utility"
+  echo "--- GPIO Utility"
   cd ../gpio
   make -j5
   check_make_ok
-  $sudo make install
+  $INVOKESU make install
   check_make_ok
 
 # echo
@@ -168,7 +187,7 @@ fi
 # cd ../wiringPiD
 # make -j5
 # check_make_ok
-# $sudo make install
+# $INVOKESU make install
 # check_make_ok
 
 # echo

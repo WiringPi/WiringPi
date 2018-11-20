@@ -22,81 +22,113 @@
 #    You should have received a copy of the GNU Lesser General Public License
 #    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
 #################################################################################
+PROJECT						=	wiringPi
+VERSION						=	$(shell cat ../VERSION)
 
-DESTDIR?=/usr
-PREFIX?=/local
+
+BASE_INSTALL_DIR			?=	usr/
+LOCAL_INSTALL_DIR			?=	local/
+PROJ_INSTALL_DIR			?=	$(PROJECT)/
+ARCHITECTURE_INSTALL_DIR	?=	armhf/
+
+PUBLIC_BIN_DIR				= $(BASE_INSTALL_DIR)bin/
+PUBLIC_INCLUDE_DIR			= $(BASE_INSTALL_DIR)include/
+PUBLIC_LIB_DIR				= $(BASE_INSTALL_DIR)lib/
+PUBLIC_MAN_DIR				= $(BASE_INSTALL_DIR)share/man/man1/
+
+LOCAL_BIN_DIR				= $(BASE_INSTALL_DIR)$(LOCAL_INSTALL_DIR)bin/
+LOCAL_INCLUDE_DIR			= $(BASE_INSTALL_DIR)$(LOCAL_INSTALL_DIR)include/
+LOCAL_LIB_DIR				= $(BASE_INSTALL_DIR)$(LOCAL_INSTALL_DIR)lib/$(PROJ_INSTALL_DIR)/$(ARCHITECTURE_INSTALL_DIR)
+LOCAL_MAN_DIR				= $(BASE_INSTALL_DIR)$(LOCAL_INSTALL_DIR)share/man/man1/
+
+DEB_TEMPLATE_DIR			= ../debian-template/$(PROJECT)/
+
 
 ifneq ($V,1)
 Q ?= @
 endif
 
-#DEBUG	= -g -O0
-DEBUG	= -O2
-CC	= gcc
-INCLUDE	= -I$(DESTDIR)$(PREFIX)/include
-CFLAGS	= $(DEBUG) -Wall -Wextra $(INCLUDE) -Winline -pipe
 
-LDFLAGS	= -L$(DESTDIR)$(PREFIX)/lib
-LIBS    = -lwiringPi -lwiringPiDev -lpthread -lrt -lm -lcrypt
+CC		=	arm-linux-gnueabihf-gcc
+#DEBUG	=	-g -O0
+DEBUG	=	-O2
+INCLUDE	=	-I/$(LOCAL_INCLUDE_DIR)
+CFLAGS	=	$(DEBUG) -Wall -Wextra $(INCLUDE) -Winline -pipe
+LDFLAGS	=	-L/$(LOCAL_LIB_DIR)
+LIBS    =	-lwiringPi -lwiringPiDev -lpthread -lrt -lm -lcrypt
 
 # May not need to  alter anything below this line
 ###############################################################################
+SOURCES	=	gpio.c readall.c
 
-SRC	=	gpio.c readall.c
+OBJS	=	$(SOURCES:.c=.o)
 
-OBJ	=	$(SRC:.c=.o)
 
 all:		gpio
 
 version.h:	../VERSION
 	$Q echo Need to run newVersion above.
 
-gpio:	$(OBJ)
+
+gpio:	$(OBJS)
 	$Q echo [Link]
-	$Q $(CC) -o $@ $(OBJ) $(LDFLAGS) $(LIBS)
+	$Q $(CC) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
+
 
 .c.o:
 	$Q echo [Compile] $<
 	$Q $(CC) -c $(CFLAGS) $< -o $@
 
+
 .PHONY:	clean
 clean:
 	$Q echo "[Clean]"
-	$Q rm -f $(OBJ) gpio *~ core tags *.bak
+	$Q rm -f $(OBJS) gpio *~ core tags *.bak
+
 
 .PHONY:	tags
-tags:	$(SRC)
+tags:	$(SOURCES)
 	$Q echo [ctags]
-	$Q ctags $(SRC)
+	$Q ctags $(SOURCES)
+
 
 .PHONY:	install
 install: gpio
 	$Q echo "[Install]"
-	$Q cp gpio		$(DESTDIR)$(PREFIX)/bin
-ifneq ($(WIRINGPI_SUID),0)
-	$Q chown root.root	$(DESTDIR)$(PREFIX)/bin/gpio
-	$Q chmod 4755		$(DESTDIR)$(PREFIX)/bin/gpio
-endif
-	$Q mkdir -p		$(DESTDIR)$(PREFIX)/share/man/man1
-	$Q cp gpio.1		$(DESTDIR)$(PREFIX)/share/man/man1
+	$Q if [ "$(shell gcc -dumpmachine)" != "arm-linux-gnueabihf" ]; then \
+		echo " *** Cross-build environment, NOT installing binaries ***"; \
+	else \
+		cp gpio		/$(LOCAL_BIN_DIR); \
+		if [ "$(WIRINGPI_SUID)" != "0" ]; then \
+				chown root.root	/$(LOCAL_BIN_DIR)gpio; \
+				chmod 4755		/$(LOCAL_BIN_DIR)gpio; \
+		fi; \
+		mkdir -p	/$(LOCAL_MAN_DIR); \
+		cp gpio.1	/$(LOCAL_MAN_DIR); \
+	fi;
+
 
 .PHONY:	install-deb
 install-deb:	gpio
 	$Q echo "[Install: deb]"
-	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/bin
-	$Q install -m 0755 gpio							~/wiringPi/debian-template/wiringPi/usr/bin
-	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/share/man/man1
-	$Q install -m 0644 gpio.1						~/wiringPi/debian-template/wiringPi/usr/share/man/man1
+	$Q install -m 0755 -d		$(DEB_TEMPLATE_DIR)$(PUBLIC_BIN_DIR)
+	$Q install -m 0755 gpio		$(DEB_TEMPLATE_DIR)$(PUBLIC_BIN_DIR)
+	
+	$Q install -m 0755 -d		$(DEB_TEMPLATE_DIR)$(PUBLIC_MAN_DIR)
+	$Q install -m 0644 gpio.1	$(DEB_TEMPLATE_DIR)$(PUBLIC_MAN_DIR)
+
 
 .PHONY:	uninstall
 uninstall:
 	$Q echo "[UnInstall]"
-	$Q rm -f $(DESTDIR)$(PREFIX)/bin/gpio
-	$Q rm -f $(DESTDIR)$(PREFIX)/share/man/man1/gpio.1
+	$Q rm -f /$(LOCAL_BIN_DIR)gpio
+	$Q rm -f /$(LOCAL_MAN_DIR)gpio.1
+
 
 .PHONY:	depend
 depend:
-	makedepend -Y $(SRC)
+	makedepend -Y $(SOURCES)
+
 
 # DO NOT DELETE
 
