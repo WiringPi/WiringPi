@@ -53,7 +53,7 @@ CC		=	arm-linux-gnueabihf-gcc
 #DEBUG	=	-g -O0
 DEBUG	=	-O2
 INCLUDE	=	-I/$(LOCAL_INCLUDE_DIR)
-CFLAGS	=	$(DEBUG) -Wall -Wextra $(INCLUDE) -Winline -pipe
+CFLAGS	=	$(DEBUG) -Wall -Wextra -Werror $(INCLUDE) -Winline -pipe
 LDFLAGS	=	-L/$(LOCAL_LIB_DIR)
 LIBS    =	-lwiringPi -lwiringPiDev -lpthread -lrt -lm -lcrypt
 

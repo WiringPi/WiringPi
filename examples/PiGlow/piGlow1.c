@@ -32,9 +32,9 @@
 
 #define	PIGLOW_BASE	533
 
-#ifndef	TRUE
-#  define TRUE  (1==1)
-#  define FALSE (!TRUE)
+#ifndef	true
+#  define true  (1==1)
+#  define false (!true)
 #endif
 
 

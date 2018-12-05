@@ -24,9 +24,12 @@
  */
 
 #include <unistd.h>
+#include <errno.h>
+#include <string.h>
 
 #include "wiringPi.h"
 #include "wiringPiI2C.h"
+#include "wiring_private.h"
 
 #include "pcf8591.h"
 
@@ -38,10 +41,20 @@
 
 static void myAnalogWrite (struct wiringPiNodeStruct *node, UNU int pin, int value)
 {
-  unsigned char b [2] ;
-  b [0] = 0x40 ;
-  b [1] = value & 0xFF ;
-  write (node->fd, b, 2) ;
+  unsigned char b[]               = { 0x40, (value & 0xFF) };
+  ssize_t       num_bytes_to_send = (ssize_t)sizeof( b ); 
+  ssize_t       num_bytes_sent;
+
+  num_bytes_sent = TEMP_FAILURE_RETRY( write(node->fd, b, num_bytes_to_send) );
+
+  if( num_bytes_sent == IO_FAIL )
+  {
+    wiringPiFailure( WPI_ALMOST, "pcf8591:myAnalogWrite: %s\n", strerror(errno) );
+  }
+  else if( num_bytes_sent != num_bytes_to_send )
+  {
+    wiringPiFailure( WPI_ALMOST, "pcf8591:myAnalogWrite: sent %d bytes instead of %d", num_bytes_sent, num_bytes_to_send );
+  }
 }
 
 
@@ -78,7 +91,7 @@ int pcf8591Setup (const int pinBase, const int i2cAddress)
   struct wiringPiNodeStruct *node ;
 
   if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, 4) ;
 
@@ -86,5 +99,5 @@ int pcf8591Setup (const int pinBase, const int i2cAddress)
   node->analogRead  = myAnalogRead ;
   node->analogWrite = myAnalogWrite ;
 
-  return TRUE ;
+  return true ;
 }

@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>
+#include <error.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -50,9 +51,9 @@ extern void doReadall    (void) ;
 extern void doAllReadall (void) ;
 extern void doQmode      (int argc, char *argv []) ;
 
-#ifndef TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(1==2)
+#ifndef true
+#  define	true	(1==1)
+#  define	false	(1==2)
 #endif
 
 #define	PI_USB_POWER_CONTROL	38
@@ -118,33 +119,41 @@ static int decodePin (const char *str)
  *********************************************************************************
  */
 
-static const char *searchPath [] =
-{
-  "/sbin",
-  "/usr/sbin",
-  "/bin",
-  "/usr/bin",
-  NULL,
-} ;
-
 static char *findExecutable (const char *progName)
 {
+  static const char *searchPath [] =
+  {
+    "/sbin",
+    "/usr/sbin",
+    "/bin",
+    "/usr/bin",
+    NULL,
+  } ;
+
   static char *path = NULL ;
-  int len = strlen (progName) ;
-  int i = 0 ;
+  size_t len = strlen (progName) ;
+  unsigned int i = 0 ;
   struct stat statBuf ;
 
   for (i = 0 ; searchPath [i] != NULL ; ++i)
   {
-    path = malloc (strlen (searchPath [i]) + len + 2) ;
+    if( (path = malloc (strlen (searchPath [i]) + len + 2)) == NULL )
+    {
+      error( EXIT_FAILURE, 0, "Insufficient memory\n" );
+    }
+    
     sprintf (path, "%s/%s", searchPath [i], progName) ;
 
     if (stat (path, &statBuf) == 0)
-      return path ;
+    {
+      break;
+    }
+
     free (path) ;
+    path = NULL;
   }
 
-  return NULL ;
+  return path;
 }
 
 
@@ -181,7 +190,7 @@ static void changeOwner (char *cmd, char *file)
 static int moduleLoaded (char *modName)
 {
   int len   = strlen (modName) ;
-  int found = FALSE ;
+  int found = false ;
   FILE *fd = fopen ("/proc/modules", "r") ;
   char line [80] ;
 
@@ -196,7 +205,7 @@ static int moduleLoaded (char *modName)
     if (strncmp (line, modName, len) != 0)
       continue ;
 
-    found = TRUE ;
+    found = true ;
     break ;
   }
 
@@ -234,7 +243,7 @@ static void _doLoadUsage (char *argv [])
 
 static void doLoad (int argc, char *argv [])
 {
-  char *module1, *module2 ;
+  char *module1, *module2, *loader_path ;
   char cmd [80] ;
   char *file1, *file2 ;
   char args1 [32], args2 [32] ;
@@ -274,19 +283,27 @@ static void doLoad (int argc, char *argv [])
   else
     _doLoadUsage (argv) ;
 
-  if (findExecutable ("modprobe") == NULL)
-    printf ("No found\n") ;
+  if ((loader_path = findExecutable (MODPROBE)) == NULL)
+  {
+    error( EXIT_FAILURE, 0, "\"%s\" not found, unable to load module\n", loader_path );
+  }
 
   if (!moduleLoaded (module1))
   {
-    sprintf (cmd, "%s %s%s", findExecutable (MODPROBE), module1, args1) ;
-    system (cmd) ;
+    sprintf (cmd, "%s %s%s", loader_path, module1, args1) ;
+    if( system(cmd) == -1 )
+    {
+      error( EXIT_FAILURE, 0, "Can't execute %s", cmd);
+    }
   }
 
   if (!moduleLoaded (module2))
   {
-    sprintf (cmd, "%s %s%s", findExecutable (MODPROBE), module2, args2) ;
-    system (cmd) ;
+    sprintf (cmd, "%s %s%s", loader_path, module2, args2) ;
+    if( system(cmd) == -1 )
+    {
+      error( EXIT_FAILURE, 0, "Can't execute %s", cmd);
+    }
   }
 
   if (!moduleLoaded (module2))
@@ -294,6 +311,9 @@ static void doLoad (int argc, char *argv [])
     fprintf (stderr, "%s: Unable to load %s\n", argv [0], module2) ;
     exit (1) ;
   }
+
+
+  free( loader_path );
 
   sleep (1) ;	// To let things get settled
 
@@ -316,7 +336,7 @@ static void _doUnLoadUsage (char *argv [])
 
 static void doUnLoad (int argc, char *argv [])
 {
-  char *module1, *module2 ;
+  char *module1, *module2, *unloader_path ;
   char cmd [80] ;
 
   checkDevTree (argv) ;
@@ -335,18 +355,35 @@ static void doUnLoad (int argc, char *argv [])
     module2 = "i2c_bcm2708" ;
   }
   else
-    _doUnLoadUsage (argv) ;
-
-  if (moduleLoaded (module1))
   {
-    sprintf (cmd, "%s %s", findExecutable (RMMOD), module1) ;
-    system (cmd) ;
+    _doUnLoadUsage (argv) ;
   }
 
-  if (moduleLoaded (module2))
+  if ((unloader_path = findExecutable (RMMOD)) == NULL)
   {
-    sprintf (cmd, "%s %s", findExecutable (RMMOD), module2) ;
-    system (cmd) ;
+    error( 0, 0, "\"%s\" not found, unable to unload modules\n", unloader_path );
+  }
+  else
+  {
+    if (moduleLoaded (module1))
+    {
+      sprintf (cmd, "%s %s", unloader_path, module1) ;
+      if( system(cmd) == -1 )
+      {
+        error( 0, 0, "Can't execute %s", cmd);
+      }
+    }
+
+    if (moduleLoaded (module2))
+    {
+      sprintf (cmd, "%s %s", unloader_path, module2) ;
+      if( system(cmd) == -1 )
+      {
+        error( 0, 0, "Can't execute %s", cmd);
+      }
+    }
+
+    free( unloader_path );
   }
 }
 
@@ -1287,9 +1324,12 @@ static void doVersion (char *argv [])
   {
     if ((fd = fopen ("/proc/device-tree/model", "r")) != NULL)
     {
-      fgets (name, 80, fd) ;
+      if( fgets (name, 80, fd) != NULL )
+      {
+        printf ("  *--> %s\n", name) ;
+      }
+      
       fclose (fd) ;
-      printf ("  *--> %s\n", name) ;
     }
   }
 
@@ -1313,7 +1353,7 @@ int main (int argc, char *argv [])
   if (getenv ("WIRINGPI_DEBUG") != NULL)
   {
     printf ("gpio: wiringPi debug mode enabled\n") ;
-    wiringPiDebug = TRUE ;
+    wiringPiDebug = true ;
   }
 
   if (argc == 1)
@@ -1475,7 +1515,7 @@ int main (int argc, char *argv [])
       exit (EXIT_FAILURE) ;
     }
 
-    if (!loadWPiExtension (argv [0], argv [2], TRUE))
+    if (!loadWPiExtension (argv [0], argv [2], true))
     {
       fprintf (stderr, "%s: Extension load failed: %s\n", argv [0], strerror (errno)) ;
       exit (EXIT_FAILURE) ;
@@ -1524,8 +1564,8 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "i2cd"     ) == 0) doI2Cdetect  (argc, argv) ;
   else if (strcasecmp (argv [1], "reset"    ) == 0) doReset      (argv [0]) ;
   else if (strcasecmp (argv [1], "wb"       ) == 0) doWriteByte  (argc, argv) ;
-  else if (strcasecmp (argv [1], "rbx"      ) == 0) doReadByte   (argc, argv, TRUE) ;
-  else if (strcasecmp (argv [1], "rbd"      ) == 0) doReadByte   (argc, argv, FALSE) ;
+  else if (strcasecmp (argv [1], "rbx"      ) == 0) doReadByte   (argc, argv, true) ;
+  else if (strcasecmp (argv [1], "rbd"      ) == 0) doReadByte   (argc, argv, false) ;
   else if (strcasecmp (argv [1], "clock"    ) == 0) doClock      (argc, argv) ;
   else if (strcasecmp (argv [1], "wfi"      ) == 0) doWfi        (argc, argv) ;
   else

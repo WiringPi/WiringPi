@@ -28,11 +28,15 @@
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "wiringPi.h"
 #include "wiringSerial.h"
+#include "wiring_private.h"
+
 
 /*
  * serialOpen:
@@ -155,7 +159,18 @@ void serialClose (const int fd)
 
 void serialPutchar (const int fd, const unsigned char c)
 {
-  write (fd, &c, 1) ;
+  ssize_t num_bytes_sent;
+
+  num_bytes_sent = TEMP_FAILURE_RETRY( write(fd, &c, NUM_BYTES_PER_CHAR) );
+
+  if( num_bytes_sent == IO_FAIL )
+  {
+    wiringPiFailure( WPI_ALMOST, "serialPutchar: %s\n", strerror(errno) );
+  }
+  else if( num_bytes_sent != NUM_BYTES_PER_CHAR )
+  {
+    wiringPiFailure( WPI_ALMOST, "serialPutchar: sent %d bytes instead of %d", num_bytes_sent, NUM_BYTES_PER_CHAR );
+  }
 }
 
 
@@ -167,7 +182,19 @@ void serialPutchar (const int fd, const unsigned char c)
 
 void serialPuts (const int fd, const char *s)
 {
-  write (fd, s, strlen (s)) ;
+  ssize_t num_char_to_send = (ssize_t)strlen( s );
+  ssize_t num_bytes_sent;
+
+  num_bytes_sent = TEMP_FAILURE_RETRY( write(fd, s, num_char_to_send) );
+
+  if( num_bytes_sent == IO_FAIL )
+  {
+    wiringPiFailure( WPI_ALMOST, "serialPuts: %s\n", strerror(errno) );
+  }
+  else if( num_bytes_sent != num_char_to_send )
+  {
+    wiringPiFailure( WPI_ALMOST, "serialPuts: sent %d bytes instead of %d", num_bytes_sent, num_char_to_send );
+  }
 }
 
 /*

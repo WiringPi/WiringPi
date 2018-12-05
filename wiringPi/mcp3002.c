@@ -65,12 +65,12 @@ int mcp3002Setup (const int pinBase, int spiChannel)
   struct wiringPiNodeStruct *node ;
 
   if (wiringPiSPISetup (spiChannel, 1000000) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, 2) ;
 
   node->fd         = spiChannel ;
   node->analogRead = myAnalogRead ;
 
-  return TRUE ;
+  return true ;
 }

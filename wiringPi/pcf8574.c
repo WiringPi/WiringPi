@@ -112,7 +112,7 @@ int pcf8574Setup (const int pinBase, const int i2cAddress)
   struct wiringPiNodeStruct *node ;
 
   if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, 8) ;
 
@@ -122,5 +122,5 @@ int pcf8574Setup (const int pinBase, const int i2cAddress)
   node->digitalWrite = myDigitalWrite ;
   node->data2        = wiringPiI2CRead (fd) ;
 
-  return TRUE ;
+  return true ;
 }

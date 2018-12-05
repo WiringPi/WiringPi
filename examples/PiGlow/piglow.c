@@ -27,9 +27,9 @@
 #include <string.h>
 #include <stdlib.h>
 
-#ifndef	TRUE
-#  define TRUE  (1==1)
-#  define FALSE (!TRUE)
+#ifndef	true
+#  define true  (1==1)
+#  define false (!true)
 #endif
 
 #include <wiringPi.h>
@@ -81,7 +81,7 @@ int main (int argc, char *argv [])
 
 // Initialise the piGlow devLib
 
-  piGlowSetup (FALSE) ;
+  piGlowSetup (false) ;
 
   if (argc == 1)
     failUsage () ;

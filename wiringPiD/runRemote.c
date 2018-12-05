@@ -40,7 +40,7 @@
 
 
 
-int noLocalPins = FALSE ;
+int noLocalPins = false ;
 
 
 void runRemoteCommands (int fd)

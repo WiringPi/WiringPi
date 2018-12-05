@@ -37,9 +37,9 @@
 
 extern int wpMode ;
 
-#ifndef TRUE
-#  define       TRUE    (1==1)
-#  define       FALSE   (1==2)
+#ifndef true
+#  define       true    (1==1)
+#  define       false   (1==2)
 #endif
 
 /*

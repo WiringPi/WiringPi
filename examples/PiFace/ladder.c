@@ -13,9 +13,9 @@
 #include <wiringPi.h>
 #include <piFace.h>
 
-#ifndef	TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(1==2)
+#ifndef	true
+#  define	true	(1==1)
+#  define	false	(1==2)
 #endif
 
 #undef	DEBUG
@@ -244,7 +244,7 @@ void ledOnAction (void)
   if (digitalRead (PIFACE) == LOW)
   {
     chargeCapacitor () ;
-    ledBargraph (vCap, TRUE) ;
+    ledBargraph (vCap, true) ;
   }
 }
 
@@ -264,7 +264,7 @@ void ledOffAction (void)
   if (digitalRead (PIFACE) == LOW)
   {
     vCap = vCapLast = 0.0 ;
-    ledBargraph (vCap, FALSE) ;
+    ledBargraph (vCap, false) ;
 
 // Wait until we release the button
 
@@ -300,7 +300,7 @@ int main (void)
 
 // LED ON:
 
-    (void)ledBargraph (vCap, TRUE) ;
+    (void)ledBargraph (vCap, true) ;
     then = millis () + ledOnTime ;
     while (millis () < then)
     {
@@ -323,7 +323,7 @@ int main (void)
 
 // LED OFF:
 
-    (void)ledBargraph (vCap, FALSE) ;
+    (void)ledBargraph (vCap, false) ;
     then = millis () + ledOffTime ;
     while (millis () < then)
     {

@@ -24,14 +24,18 @@
 #ifndef	__WIRING_PI_H__
 #define	__WIRING_PI_H__
 
+/* 
 // C doesn't have true/false by default and I can never remember which
 //	way round they are, so ...
 //	(and yes, I know about stdbool.h but I like capitals for these and I'm old)
 
-#ifndef	TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(!TRUE)
-#endif
+#ifndef	true
+#  define	true	(1==1)
+#  define	false	(!true)
+#endif 
+*/
+#include <stdbool.h> // "True today, false tomorrow": C has boolean data types and "true"/"false" as of C11
+
 
 // GCC warning suppressor
 
@@ -125,8 +129,14 @@ extern const int   piMemorySize    [ 8] ;
 
 // Failure modes
 
-#define	WPI_FATAL	(1==1)
-#define	WPI_ALMOST	(1==2)
+typedef enum {
+  WPI_ALMOST = 0,
+  WPI_FATAL  = 1
+} wpi_fail_t;
+//#define	WPI_FATAL	(1==1)
+//#define	WPI_ALMOST	(1==2)
+
+enum { PIN_NOT_CONFIGURED = -2 };
 
 
 // wiringPiNodeStruct:
@@ -185,7 +195,7 @@ extern "C" {
 
 // Internal
 
-extern int wiringPiFailure (int fatal, const char *message, ...) ;
+extern int wiringPiFailure (wpi_fail_t fatal, const char *message, ...) ;
 
 // Core wiringPi functions
 

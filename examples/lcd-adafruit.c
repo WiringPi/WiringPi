@@ -34,9 +34,9 @@
 #include <mcp23017.h>
 #include <lcd.h>
 
-#ifndef	TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(1==2)
+#ifndef	true
+#  define	true	(1==1)
+#  define	false	(1==2)
 #endif
 
 
@@ -251,7 +251,7 @@ int main (int argc, char *argv[])
 {
   int colour ;
   int cols = 16 ;
-  int waitForRelease = FALSE ;
+  int waitForRelease = false ;
 
   struct tm *t ;
   time_t tim ;
@@ -287,13 +287,13 @@ int main (int argc, char *argv[])
   lcdPuts     (lcdHandle, "User Char: ") ;
   lcdPutchar  (lcdHandle, 2) ;
 
-  lcdCursor      (lcdHandle, TRUE) ;
-  lcdCursorBlink (lcdHandle, TRUE) ;
+  lcdCursor      (lcdHandle, true) ;
+  lcdCursorBlink (lcdHandle, true) ;
 
   waitForEnter () ;
 
-  lcdCursor      (lcdHandle, FALSE) ;
-  lcdCursorBlink (lcdHandle, FALSE) ;
+  lcdCursor      (lcdHandle, false) ;
+  lcdCursorBlink (lcdHandle, false) ;
 
   speedTest () ;
 
@@ -320,7 +320,7 @@ int main (int argc, char *argv[])
       if ((digitalRead (AF_UP) == LOW) || (digitalRead (AF_DOWN) == LOW))
 	continue ;
       else
-	waitForRelease = FALSE ;
+	waitForRelease = false ;
     }
 
     if (digitalRead (AF_UP) == LOW)	// Pushed
@@ -329,7 +329,7 @@ int main (int argc, char *argv[])
       if (colour == 8)
 	colour = 0 ;
       setBacklightColour (colour) ;
-      waitForRelease = TRUE ;
+      waitForRelease = true ;
     }
 
     if (digitalRead (AF_DOWN) == LOW)	// Pushed
@@ -338,7 +338,7 @@ int main (int argc, char *argv[])
       if (colour == -1)
 	colour = 7 ;
       setBacklightColour (colour) ;
-      waitForRelease = TRUE ;
+      waitForRelease = true ;
     }
 
   }
