@@ -76,6 +76,8 @@
 
 #include "wiringPi.h"
 #include "../version.h"
+#include "wiring_private.h"
+
 
 // Environment Variables
 
@@ -139,8 +141,8 @@ static volatile unsigned int GPIO_PWM ;
 #define	PAGE_SIZE		(4*1024)
 #define	BLOCK_SIZE		(4*1024)
 
-static unsigned int usingGpioMem    = FALSE ;
-static          int wiringPiSetuped = FALSE ;
+static unsigned int usingGpioMem    = false ;
+static          int wiringPiSetuped = false ;
 
 // PWM
 //	Word offsets into the PWM control region
@@ -302,12 +304,12 @@ static pthread_mutex_t pinMutex ;
 
 // Debugging & Return codes
 
-int wiringPiDebug       = FALSE ;
-int wiringPiReturnCodes = FALSE ;
+int wiringPiDebug       = false ;
+int wiringPiReturnCodes = false ;
 
 // Use /dev/gpiomem ?
 
-int wiringPiTryGpioMem  = FALSE ;
+int wiringPiTryGpioMem  = false ;
 
 // sysFds:
 //	Map a file descriptor from the /sys/class/gpio/gpioX/value
@@ -642,13 +644,16 @@ static uint8_t gpioToClkDiv [] =
  *********************************************************************************
  */
 
-int wiringPiFailure (int fatal, const char *message, ...)
+//int wiringPiFailure (int fatal, const char *message, ...)
+int wiringPiFailure (wpi_fail_t is_fatal, const char *message, ...)
 {
   va_list argp ;
   char buffer [1024] ;
 
-  if (!fatal && wiringPiReturnCodes)
+  if( (is_fatal != WPI_FATAL) && (wiringPiReturnCodes == true) )
+  {
     return -1 ;
+  }
 
   va_start (argp, message) ;
     vsnprintf (buffer, 1023, message, argp) ;
@@ -1305,13 +1310,18 @@ struct wiringPiNodeStruct *wiringPiFindNode (int pin)
 
 static         void pinModeDummy             (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int mode)  { return ; }
 static         void pullUpDnControlDummy     (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int pud)   { return ; }
+
+#if defined (DUMMY_8)
 static unsigned int digitalRead8Dummy        (UNU struct wiringPiNodeStruct *node, UNU int UNU pin)            { return 0 ; }
 static         void digitalWrite8Dummy       (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value) { return ; }
+#endif
+
 static          int digitalReadDummy         (UNU struct wiringPiNodeStruct *node, UNU int UNU pin)            { return LOW ; }
 static         void digitalWriteDummy        (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value) { return ; }
 static         void pwmWriteDummy            (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value) { return ; }
 static          int analogReadDummy          (UNU struct wiringPiNodeStruct *node, UNU int pin)            { return 0 ; }
 static         void analogWriteDummy         (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value) { return ; }
+
 
 struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
 {
@@ -1338,9 +1348,13 @@ struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
   node->pinMode          = pinModeDummy ;
   node->pullUpDnControl  = pullUpDnControlDummy ;
   node->digitalRead      = digitalReadDummy ;
-//node->digitalRead8     = digitalRead8Dummy ;
+#if defined (DUMMY_8)
+  node->digitalRead8     = digitalRead8Dummy ;
+#endif
   node->digitalWrite     = digitalWriteDummy ;
-//node->digitalWrite8    = digitalWrite8Dummy ;
+#if defined (DUMMY_8)
+  node->digitalWrite8    = digitalWrite8Dummy ;
+#endif  
   node->pwmWrite         = pwmWriteDummy ;
   node->analogRead       = analogReadDummy ;
   node->analogWrite      = analogWriteDummy ;
@@ -1505,7 +1519,7 @@ void pullUpDnControl (int pin, int pud)
       return ;
 
     *(gpio + GPPUD)              = pud & 3 ;		delayMicroseconds (5) ;
-    *(gpio + gpioToPUDCLK [pin]) = 1 << (pin & 31) ;	delayMicroseconds (5) ;
+    *(gpio + gpioToPUDCLK [pin]) = GPIO_PIN_N_REGISTER_MASK( pin ) ;	delayMicroseconds (5) ;
     
     *(gpio + GPPUD)              = 0 ;			delayMicroseconds (5) ;
     *(gpio + gpioToPUDCLK [pin]) = 0 ;			delayMicroseconds (5) ;
@@ -1527,38 +1541,63 @@ void pullUpDnControl (int pin, int pud)
 
 int digitalRead (int pin)
 {
-  char c ;
-  struct wiringPiNodeStruct *node = wiringPiNodes ;
+  int pin_value = LOW;
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
-    /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
+    if( wiringPiMode == WPI_MODE_GPIO_SYS )	// Sys mode
     {
-      if (sysFds [pin] == -1)
-	return LOW ;
+        if (sysFds [pin] != -1)
+        {
+          uint8_t pin_value_char = '0';
+          ssize_t num_bytes_read;
 
-      lseek  (sysFds [pin], 0L, SEEK_SET) ;
-      read   (sysFds [pin], &c, 1) ;
-      return (c == '0') ? LOW : HIGH ;
+          num_bytes_read = pread( sysFds [pin], &pin_value_char, 1, 0 );
+
+          if( num_bytes_read == IO_FAIL )
+          {
+            wiringPiFailure( WPI_ALMOST, "digitalRead: %s\n", strerror(errno) );
+          }
+          else if( num_bytes_read > 1 )
+          {
+            wiringPiFailure( WPI_FATAL, "digitalRead: read %d bytes instead of 1", num_bytes_read );
+          }
+
+          pin_value = (pin_value_char == '0') ? LOW : HIGH ;
+        }
     }
-    else if (wiringPiMode == WPI_MODE_PINS)
-      pin = pinToGpio [pin] ;
-    else if (wiringPiMode == WPI_MODE_PHYS)
-      pin = physToGpio [pin] ;
-    else if (wiringPiMode != WPI_MODE_GPIO)
-      return LOW ;
+    else if( (wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO) )
+    {
+      if( wiringPiMode == WPI_MODE_PINS )
+      {
+        pin = pinToGpio [pin] ; // Translate wiringPi pin number to GPIO pin number
+      }
+      else if( wiringPiMode == WPI_MODE_PHYS ) // Translate physical pin number to GPIO number
+      {
+        pin = physToGpio [pin] ;
+      }
 
-    if ((*(gpio + gpioToGPLEV [pin]) & (1 << (pin & 31))) != 0)
-      return HIGH ;
-    else
-      return LOW ;
+      if( (*(gpio + gpioToGPLEV [pin]) & GPIO_PIN_N_REGISTER_MASK(pin)) != 0 )
+      {
+        pin_value = HIGH ;
+      }
+      else
+      {
+        pin_value = LOW ;
+      }
+    }
   }
-  else
+  else // "Off-board" pin
   {
-    if ((node = wiringPiFindNode (pin)) == NULL)
-      return LOW ;
-    return node->digitalRead (node, pin) ;
+    struct wiringPiNodeStruct *node = wiringPiNodes ;
+
+    if( (node = wiringPiFindNode (pin)) != NULL )
+    {
+      pin_value = node->digitalRead (node, pin) ;
+    }
   }
+
+  return pin_value;
 }
 
 
@@ -1599,26 +1638,51 @@ void digitalWrite (int pin, int value)
     {
       if (sysFds [pin] != -1)
       {
-	if (value == LOW)
-	  write (sysFds [pin], "0\n", 2) ;
-	else
-	  write (sysFds [pin], "1\n", 2) ;
-      }
-      return ;
-    }
-    else if (wiringPiMode == WPI_MODE_PINS)
-      pin = pinToGpio [pin] ;
-    else if (wiringPiMode == WPI_MODE_PHYS)
-      pin = physToGpio [pin] ;
-    else if (wiringPiMode != WPI_MODE_GPIO)
-      return ;
+        char *val_string;
 
-    if (value == LOW)
-      *(gpio + gpioToGPCLR [pin]) = 1 << (pin & 31) ;
-    else
-      *(gpio + gpioToGPSET [pin]) = 1 << (pin & 31) ;
-  }
-  else
+        if (value == LOW)
+        {
+          val_string = "0\n";
+        }
+        else
+        {
+          val_string = "1\n";
+        }
+
+        // Write value string to device file, excluding terminating NULL      
+        ssize_t num_bytes_sent;
+        ssize_t num_bytes_to_send = (ssize_t)(sizeof(val_string) - sizeof(char)); 
+
+        num_bytes_sent = TEMP_FAILURE_RETRY( write(sysFds [pin], val_string, num_bytes_to_send) );
+
+        if( num_bytes_sent == IO_FAIL )
+        {
+          wiringPiFailure( WPI_ALMOST, "digitalWrite: %s\n", strerror(errno) );
+        }
+        else if( num_bytes_sent != num_bytes_to_send )
+        {
+          wiringPiFailure( WPI_ALMOST, "digitalWrite: sent %d bytes instead of %d", num_bytes_sent, num_bytes_to_send );
+        }
+      }
+    } // end if Sys mode
+    else if( (wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO) ) // On-board, not Sys mode
+    {
+      if (wiringPiMode == WPI_MODE_PINS)
+      {
+        pin = pinToGpio [pin] ;
+      }
+      else if (wiringPiMode == WPI_MODE_PHYS)
+      {
+        pin = physToGpio [pin] ;
+      }
+
+      if (value == LOW)
+        *(gpio + gpioToGPCLR [pin]) = GPIO_PIN_N_REGISTER_MASK( pin ) ;
+      else
+        *(gpio + gpioToGPSET [pin]) = GPIO_PIN_N_REGISTER_MASK( pin ) ;
+    } // end if not Sys mode
+  } // end if On-board pin
+  else // "Off-board" pin
   {
     if ((node = wiringPiFindNode (pin)) != NULL)
       node->digitalWrite (node, pin, value) ;
@@ -1880,9 +1944,7 @@ unsigned int digitalReadByte2 (void)
 
 int waitForInterrupt (int pin, int mS)
 {
-  int fd, x ;
-  uint8_t c ;
-  struct pollfd polls ;
+  int fd, x = 0 ;
 
   /**/ if (wiringPiMode == WPI_MODE_PINS)
     pin = pinToGpio [pin] ;
@@ -1890,9 +1952,10 @@ int waitForInterrupt (int pin, int mS)
     pin = physToGpio [pin] ;
 
   if ((fd = sysFds [pin]) == -1)
-    return -2 ;
+    return PIN_NOT_CONFIGURED ;
 
 // Setup poll structure
+  struct pollfd polls ;
 
   polls.fd     = fd ;
   polls.events = POLLPRI | POLLERR ;
@@ -1906,8 +1969,12 @@ int waitForInterrupt (int pin, int mS)
 
   if (x > 0)
   {
-    lseek (fd, 0, SEEK_SET) ;	// Rewind
-    (void)read (fd, &c, 1) ;	// Read & clear
+    uint8_t c ;
+
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-result"
+    pread( fd, &c, sizeof(c), 0 ); // If an error occurs, should result really be ignored?
+    #pragma GCC diagnostic pop
   }
 
   return x ;
@@ -1955,7 +2022,6 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
   char  pinS [8] ;
   pid_t pid ;
   int   count, i ;
-  char  c ;
   int   bcmGpioPin ;
 
   if ((pin < 0) || (pin > 63))
@@ -2023,7 +2089,14 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
   ioctl (sysFds [bcmGpioPin], FIONREAD, &count) ;
   for (i = 0 ; i < count ; ++i)
-    read (sysFds [bcmGpioPin], &c, 1) ;
+  {
+    uint8_t c ;
+
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-result"
+    pread( sysFds [bcmGpioPin], &c, sizeof(c), 0 ); // If an error occurs, should result really be ignored?
+    #pragma GCC diagnostic pop
+  }
 
   isrFunctions [pin] = function ;
 
@@ -2220,13 +2293,13 @@ int wiringPiSetup (void)
   if (wiringPiSetuped)
     return 0 ;
 
-  wiringPiSetuped = TRUE ;
+  wiringPiSetuped = true ;
 
   if (getenv (ENV_DEBUG) != NULL)
-    wiringPiDebug = TRUE ;
+    wiringPiDebug = true ;
 
   if (getenv (ENV_CODES) != NULL)
-    wiringPiReturnCodes = TRUE ;
+    wiringPiReturnCodes = true ;
 
   if (wiringPiDebug)
     printf ("wiringPi: wiringPiSetup called\n") ;
@@ -2281,7 +2354,7 @@ int wiringPiSetup (void)
     if ((fd = open ("/dev/gpiomem", O_RDWR | O_SYNC | O_CLOEXEC) ) >= 0)	// We're using gpiomem
     {
       piGpioBase   = 0 ;
-      usingGpioMem = TRUE ;
+      usingGpioMem = true ;
     }
     else
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Unable to open /dev/mem or /dev/gpiomem: %s.\n"
@@ -2413,13 +2486,13 @@ int wiringPiSetupSys (void)
   if (wiringPiSetuped)
     return 0 ;
 
-  wiringPiSetuped = TRUE ;
+  wiringPiSetuped = true ;
 
   if (getenv (ENV_DEBUG) != NULL)
-    wiringPiDebug = TRUE ;
+    wiringPiDebug = true ;
 
   if (getenv (ENV_CODES) != NULL)
-    wiringPiReturnCodes = TRUE ;
+    wiringPiReturnCodes = true ;
 
   if (wiringPiDebug)
     printf ("wiringPi: wiringPiSetupSys called\n") ;

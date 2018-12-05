@@ -29,10 +29,13 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <string.h>
 #include <sys/ioctl.h>
 
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
+#include "wiring_private.h"
 
 #include "mcp3422.h"
 
@@ -45,12 +48,25 @@
 
 void waitForConversion (int fd, unsigned char *buffer, int n)
 {
-  for (;;)
+  enum { MAX_CONVERSION_WAIT = 400 }; // Slowest conversion @ 3.75 samples/second = 266.7ms, x 1.5 "fudge factor"
+
+  for( uint16_t conversion_time_ms=0; conversion_time_ms<MAX_CONVERSION_WAIT; conversion_time_ms++ )
   {
-    read (fd, buffer, n) ;
+    ssize_t num_bytes_read;
+
+    num_bytes_read = pread( fd, buffer, n, 0 );
+
+    if( (num_bytes_read == IO_FAIL) && (errno != EINTR) && (errno != EAGAIN) )
+    {
+      wiringPiFailure( WPI_ALMOST, "mcp3422:waitForConversion: %s\n", strerror(errno) );
+    }
+
     if ((buffer [n-1] & 0x80) == 0)
+    {
       break ;
-    delay (1) ;
+    }
+
+    delay (1) ; // Milliseconds
   }
 }
 
@@ -94,6 +110,10 @@ int myAnalogRead (struct wiringPiNodeStruct *node, int chan)
       waitForConversion (node->fd, buffer, 3) ;
       value = ((buffer [0] & 0x0F) << 8) | buffer [1] ;
       break ;
+
+    default:
+      wiringPiFailure( WPI_ALMOST, "mcp3422:myAnalogRead: unhandled sample rate value %u", node->data0 );
+      break;
   }
 
   return value ;
@@ -112,7 +132,7 @@ int mcp3422Setup (int pinBase, int i2cAddress, int sampleRate, int gain)
   struct wiringPiNodeStruct *node ;
 
   if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, 4) ;
 
@@ -121,5 +141,5 @@ int mcp3422Setup (int pinBase, int i2cAddress, int sampleRate, int gain)
   node->data1      = gain ;
   node->analogRead = myAnalogRead ;
 
-  return TRUE ;
+  return true ;
 }

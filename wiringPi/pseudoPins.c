@@ -79,10 +79,10 @@ int pseudoPinsSetup (const int pinBase)
   node->fd = shm_open (SHARED_NAME, O_CREAT | O_RDWR, 0666) ;
 
   if (node->fd < 0)
-    return FALSE ;
+    return false ;
 
   if (ftruncate (node->fd, PSEUDO_PINS * sizeof (int)) < 0)
-    return FALSE ;
+    return false ;
 
   ptr = mmap (NULL, PSEUDO_PINS * sizeof (int), PROT_READ | PROT_WRITE, MAP_SHARED, node->fd, 0) ;
 
@@ -91,5 +91,5 @@ int pseudoPinsSetup (const int pinBase)
   node->analogRead  = myAnalogRead ;
   node->analogWrite = myAnalogWrite ;
 
-  return TRUE ;
+  return true ;
 }

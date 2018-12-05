@@ -23,9 +23,9 @@
 #include <wiringPi.h>
 #include <gertboard.h>
 
-#ifndef	TRUE
-#define	TRUE	(1==1)
-#define	FALSE	(!TRUE)
+#ifndef	true
+#define	true	(1==1)
+#define	false	(!true)
 #endif
 
 #define	B_SIZE	1000

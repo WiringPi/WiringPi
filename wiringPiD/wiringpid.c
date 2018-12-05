@@ -46,7 +46,7 @@
 // Globals
 
 static const char *usage = "[-h] [-d] [-g | -1 | -z] [[-x extension:pin:params] ...] password" ;
-static int doDaemon = FALSE ;
+static int doDaemon = false ;
 
 //
 
@@ -156,7 +156,7 @@ int main (int argc, char *argv [])
       exit (EXIT_FAILURE) ;
     }
 
-    doDaemon = TRUE ;
+    doDaemon = true ;
     daemonise (PIDFILE) ;
 
     for (i = 2 ; i < argc ; ++i)
@@ -216,7 +216,7 @@ int main (int argc, char *argv [])
       for (i = 2 ; i < argc ; ++i)
 	argv [i - 1] = argv [i] ;
       --argc ;
-      noLocalPins = TRUE ;
+      noLocalPins = true ;
       ++wpiSetup ;
       continue ;
     }
@@ -263,7 +263,7 @@ int main (int argc, char *argv [])
 
       logMsg ("Loading extension: %s", argv [2]) ;
 
-      if (!loadWPiExtension (argv [0], argv [2], TRUE))
+      if (!loadWPiExtension (argv [0], argv [2], true))
       {
 	logMsg ("Extension load failed: %s", strerror (errno)) ;
 	exit (EXIT_FAILURE) ;

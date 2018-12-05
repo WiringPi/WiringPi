@@ -32,6 +32,7 @@
 #include <string.h>
 #include <errno.h>
 #include <crypt.h>
+#include <stdlib.h>
 
 
 #include "wiringPi.h"
@@ -103,31 +104,44 @@ static char *getChallenge (int fd)
 static int authenticate (int fd, const char *pass)
 {
   char *challenge ;
-  char *encrypted ;
-  char salted [1024] ;
 
-  if ((challenge = getChallenge (fd)) == NULL)
-    return -1 ;
+  int   return_value = -1;
 
-  sprintf (salted, "$6$%s$", challenge) ;
-  encrypted = crypt (pass, salted) ;
-  
-// This is an assertion, or sanity check on my part...
-//	The '20' comes from the $6$ then the 16 characters of the salt,
-//	then the terminating $.
 
-  if (strncmp (encrypted, salted, 20) != 0)
+  if ((challenge = getChallenge (fd)) != NULL)
   {
-    errno = EBADE ;
-    return -1 ;
+    char *salted ;
+
+    if( asprintf(&salted, "$6$%s$", challenge) >=0 )
+    {    
+      char *encrypted ;
+
+      encrypted = crypt (pass, salted) ;
+
+      // This is an assertion, or sanity check on my part...
+      //	The '20' comes from the $6$ then the 16 characters of the salt,
+      //	then the terminating $.
+
+      if (strncmp (encrypted, salted, 20) == 0)
+      {
+
+        // 86 characters is the length of the SHA-256 hash
+
+        if (write (fd, encrypted + 20, 86) == 86)
+        {
+          return_value = 0 ;
+        }
+      }
+      else
+      {
+        errno = EBADE ;
+      }
+
+      free( salted );
+    }
   }
-
-// 86 characters is the length of the SHA-256 hash
-
-  if (write (fd, encrypted + 20, 86) == 86)
-    return 0 ;
-  else
-    return -1 ;
+  
+  return return_value ;
 }
 
 
@@ -380,12 +394,12 @@ int drcSetupNet (const int pinBase, const int numPins, const char *ipAddress, co
   struct wiringPiNodeStruct *node ;
 
   if ((fd = _drcSetupNet (ipAddress, port, password)) < 0)
-    return FALSE ;
+    return false ;
 
   len = sizeof (struct drcNetComStruct) ;
 
   if (setsockopt (fd, SOL_SOCKET, SO_RCVLOWAT, (void *)&len, sizeof (len)) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, numPins) ;
 
@@ -401,5 +415,5 @@ int drcSetupNet (const int pinBase, const int numPins, const char *ipAddress, co
 //node->digitalWrite8    = myDigitalWrite8 ;
   node->pwmWrite         = myPwmWrite ;
 
-  return TRUE ;
+  return true ;
 }

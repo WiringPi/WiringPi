@@ -32,9 +32,9 @@
 
 #include "lcd.h"
 
-#ifndef	TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(1==2)
+#ifndef	true
+#  define	true	(1==1)
+#  define	false	(1==2)
 #endif
 
 // HD44780U Commands
@@ -483,9 +483,9 @@ int lcdInit (const int rows, const int cols, const int bits,
 
 // Rest of the initialisation sequence
 
-  lcdDisplay     (lcdFd, TRUE) ;
-  lcdCursor      (lcdFd, FALSE) ;
-  lcdCursorBlink (lcdFd, FALSE) ;
+  lcdDisplay     (lcdFd, true) ;
+  lcdCursor      (lcdFd, false) ;
+  lcdCursorBlink (lcdFd, false) ;
   lcdClear       (lcdFd) ;
 
   putCommand (lcd, LCD_ENTRY   | LCD_ENTRY_ID) ;

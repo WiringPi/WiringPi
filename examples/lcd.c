@@ -47,9 +47,9 @@
 #include <wiringPi.h>
 #include <lcd.h>
 
-#ifndef	TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(1==2)
+#ifndef	true
+#  define	true	(1==1)
+#  define	false	(1==2)
 #endif
 
 static unsigned char newChar [8] = 
@@ -247,13 +247,13 @@ int main (int argc, char *argv[])
   lcdPuts     (lcdHandle, "User Char: ") ;
   lcdPutchar  (lcdHandle, 2) ;
 
-  lcdCursor      (lcdHandle, TRUE) ;
-  lcdCursorBlink (lcdHandle, TRUE) ;
+  lcdCursor      (lcdHandle, true) ;
+  lcdCursorBlink (lcdHandle, true) ;
 
   waitForEnter () ;
 
-  lcdCursor      (lcdHandle, FALSE) ;
-  lcdCursorBlink (lcdHandle, FALSE) ;
+  lcdCursor      (lcdHandle, false) ;
+  lcdCursorBlink (lcdHandle, false) ;
   lcdClear       (lcdHandle) ;
 
   for (;;)

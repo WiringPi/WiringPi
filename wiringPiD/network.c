@@ -36,8 +36,8 @@
 
 #include "network.h"
 
-#define	TRUE	(1==1)
-#define	FALSE	(!TRUE)
+#define	true	(1==1)
+#define	false	(!true)
 
 // Local data
 

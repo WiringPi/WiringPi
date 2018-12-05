@@ -88,12 +88,12 @@ int max31855Setup (const int pinBase, int spiChannel)
   struct wiringPiNodeStruct *node ;
 
   if (wiringPiSPISetup (spiChannel, 5000000) < 0)	// 5MHz - prob 4 on the Pi
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, 4) ;
 
   node->fd         = spiChannel ;
   node->analogRead = myAnalogRead ;
 
-  return TRUE ;
+  return true ;
 }

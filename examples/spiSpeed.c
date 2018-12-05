@@ -36,8 +36,8 @@
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 
-#define	TRUE	(1==1)
-#define	FALSE	(!TRUE)
+#define	true	(1==1)
+#define	false	(!true)
 
 #define	SPI_CHAN		0
 #define	NUM_TIMES		100
@@ -78,7 +78,7 @@ int main (void)
     printf ("|   MHz |   Size | mS/Trans |      TpS |    Mb/Sec | Latency mS |\n") ;
     printf ("+-------+--------+----------+----------+-----------+------------+\n") ;
 
-    spiFail = FALSE ;
+    spiFail = false ;
     spiSetup (speed * 1000000) ;
     for (size = 1 ; size <= MAX_SIZE ; size *= 2)
     {
@@ -89,7 +89,7 @@ int main (void)
 	if (wiringPiSPIDataRW (SPI_CHAN, myData, size) == -1)
 	{
 	  printf ("SPI failure: %s\n", strerror (errno)) ;
-	  spiFail = TRUE ;
+	  spiFail = true ;
 	  break ;
 	}
       end = millis () ;

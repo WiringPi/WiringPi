@@ -192,7 +192,7 @@ int bmp180Setup (const int pinBase)
   struct wiringPiNodeStruct *node ;
 
   if ((fd = wiringPiI2CSetup (I2C_ADDRESS)) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, 4) ;
 
@@ -233,5 +233,5 @@ int bmp180Setup (const int pinBase)
   p1 = 1.0 - 7357.0 * pow (2.0, -20.0) ;
   p2 = 3038.0 * 100.0 * pow (2.0,  -36.0) ;
 
-  return TRUE ;
+  return true ;
 }
