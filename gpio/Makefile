@@ -32,7 +32,19 @@ endif
 
 #DEBUG	= -g -O0
 DEBUG	= -O2
-CC	= gcc
+
+GCC_ARCH := $(shell gcc -dumpmachine)
+
+ifeq ($(OS),Windows_NT)
+	CROSS_COMPILE ?= arm-linux-gnueabihf-
+else
+	ifneq ($(GCC_ARCH),arm-linux-gnueabihf)
+	CROSS_COMPILE ?= arm-linux-gnueabihf-
+	endif
+endif
+
+CC = $(CROSS_COMPILE)gcc
+
 INCLUDE	= -I$(DESTDIR)$(PREFIX)/include
 CFLAGS	= $(DEBUG) -Wall -Wextra $(INCLUDE) -Winline -pipe
 

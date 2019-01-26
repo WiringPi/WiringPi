@@ -36,7 +36,19 @@ DYNAMIC=libwiringPi.so.$(VERSION)
 
 #DEBUG	= -g -O0
 DEBUG	= -O2
-CC	= gcc
+
+GCC_ARCH := $(shell gcc -dumpmachine)
+
+ifeq ($(OS),Windows_NT)
+	CROSS_COMPILE ?= arm-linux-gnueabihf-
+else
+	ifneq ($(GCC_ARCH),arm-linux-gnueabihf)
+	CROSS_COMPILE ?= arm-linux-gnueabihf-
+	endif
+endif
+
+CC = $(CROSS_COMPILE)gcc
+
 INCLUDE	= -I.
 DEFS	= -D_GNU_SOURCE
 CFLAGS	= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fPIC
