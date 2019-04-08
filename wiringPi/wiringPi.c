@@ -220,7 +220,7 @@ volatile unsigned int *_wiringPiTimerIrqRaw ;
 
 static volatile unsigned int piGpioBase = 0 ;
 
-const char *piModelNames [16] =
+const char *piModelNames [20] =
 {
   "Model A",	//  0
   "Model B",	//  1
@@ -235,9 +235,13 @@ const char *piModelNames [16] =
   "CM3",	// 10
   "Unknown11",	// 11
   "Pi Zero-W",	// 12
-  "Pi 3+",	// 13
-  "Unknown14",	// 14
+  "Pi 3B+",	// 13
+  "Pi 3A+",	// 14
   "Unknown15",	// 15
+  "CM3+",	// 16
+  "Unknown17",	// 17
+  "Unknown18",	// 18
+  "Unknown19",	// 19
 } ;
 
 const char *piRevisionNames [16] =
