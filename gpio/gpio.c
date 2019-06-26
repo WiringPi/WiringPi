@@ -173,40 +173,6 @@ static void changeOwner (char *cmd, char *file)
 
 
 /*
- * moduleLoaded:
- *	Return true/false if the supplied module is loaded
- *********************************************************************************
- */
-
-static int moduleLoaded (char *modName)
-{
-  int len   = strlen (modName) ;
-  int found = FALSE ;
-  FILE *fd = fopen ("/proc/modules", "r") ;
-  char line [80] ;
-
-  if (fd == NULL)
-  {
-    fprintf (stderr, "gpio: Unable to check /proc/modules: %s\n", strerror (errno)) ;
-    exit (1) ;
-  }
-
-  while (fgets (line, 80, fd) != NULL)
-  {
-    if (strncmp (line, modName, len) != 0)
-      continue ;
-
-    found = TRUE ;
-    break ;
-  }
-
-  fclose (fd) ;
-
-  return found ;
-}
-
-
-/*
  * doLoad:
  *	Load either the spi or i2c modules and change device ownerships, etc.
  *********************************************************************************
@@ -812,6 +778,7 @@ static void doPadDrive (int argc, char *argv [])
 
 static void doUsbP (int argc, char *argv [])
 {
+/*
   int model, rev, mem, maker, overVolted ;
 
   if (argc != 3)
@@ -852,6 +819,8 @@ static void doUsbP (int argc, char *argv [])
 
   fprintf (stderr, "Usage: %s usbp high|low\n", argv [0]) ;
   exit (1) ;
+  */
+  return;
 }
 
 
@@ -1417,7 +1386,7 @@ int main (int argc, char *argv [])
     for (i = 2 ; i < argc ; ++i)
       argv [i - 1] = argv [i] ;
     --argc ;
-    wpMode = WPI_MODE_GPIO ;
+    wpMode = MODE_GPIO ;
   }
 
 // Check for -1 argument
@@ -1429,7 +1398,7 @@ int main (int argc, char *argv [])
     for (i = 2 ; i < argc ; ++i)
       argv [i - 1] = argv [i] ;
     --argc ;
-    wpMode = WPI_MODE_PHYS ;
+    wpMode = MODE_PHYS ;
   }
 
 // Check for -p argument for PiFace
@@ -1441,7 +1410,7 @@ int main (int argc, char *argv [])
     for (i = 2 ; i < argc ; ++i)
       argv [i - 1] = argv [i] ;
     --argc ;
-    wpMode = WPI_MODE_PIFACE ;
+    wpMode = MODE_PIFACE ;
   }
 
 // Check for -z argument so we don't actually initialise wiringPi
@@ -1451,7 +1420,7 @@ int main (int argc, char *argv [])
     for (i = 2 ; i < argc ; ++i)
       argv [i - 1] = argv [i] ;
     --argc ;
-    wpMode = WPI_MODE_UNINITIALISED ;
+    wpMode = MODE_UNINITIALISED ;
   }
 
 // Default to wiringPi mode
@@ -1459,7 +1428,7 @@ int main (int argc, char *argv [])
   else
   {
     wiringPiSetup () ;
-    wpMode = WPI_MODE_PINS ;
+    wpMode = MODE_PINS ;
   }
 
 // Check for -x argument to load in a new extension

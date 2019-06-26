@@ -77,8 +77,13 @@ static void doReadallExternal (void)
 
 static char *alts [] =
 {
-  "IN", "OUT", "ALT5", "ALT4", "ALT0", "ALT1", "ALT2", "ALT3"
+  "IN", "OUT", "ALT0", "ALT1", "ALT2", "ALT3", "ALT4", "ALT5"
 } ;
+
+static const char *pupd [] =
+{
+	"DSBLD", "P/U", "P/D"
+};
 
 static int physToWpi [64] = 
 {
@@ -113,283 +118,249 @@ static int physToWpi [64] =
   -1, -1, -1, -1, -1, -1, -1, -1, -1
 } ;
 
-static char *physNames [64] = 
+/*------------------------------------------------------------------------------------------*/
+static const char *physNamesKhadasVim1[64] = {
+	NULL,
+	"      5V","GND     ",
+	"      5V","PIN.DV25",
+	" HUB_DM1","PIN.DV24",
+	" HUB_DP1","GND     ",
+	"     GND","PIN.DV27",
+	"      5V","PIN.DV26",
+	" HUB_DM2","3.3V    ",
+	" HUB_DP2","GND     ",
+	"     GND","PIN.H7  ",
+	" ADC.CH0","PIN.H6  ",
+	"     GND","PIN.H9  ",
+	" ADC.CH2","PIN.H8  ",
+	"   SPDIF","PIN.AO6 ",
+	"     GND","GND     ",
+	" PIN.AO5","PIN.AO3 ",
+	" PIN.AO4","RTC_CLK ",
+	"     GND","PIN.H5  ",
+	" PIN.AO1","PWR_EN  ",
+	" PIN.AO2","PWM_F   ",
+	"    3.3V","GND     ",
+	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	NULL,NULL,NULL,
+};
+
+static const char *physNamesKhadasVim2[64] = {
+	NULL,
+	"      5V","GND     ",
+	"      5v","PIN.DV25",
+	"  USB_DM","PIN.DV24",
+	"  USB_DP","GND     ",
+	"     GND","PIN.DV27",
+	"PIN.DV21","PIN.DV26",
+	"PIN.DV22","3.3V    ",
+	"PIN.DV23","GND     ",
+	"     GND","PIN.H7  ",
+	"    ADC0","PIN.H6  ",
+	"    1.8V","PIN.H9  ",
+	"    ADC1","PIN.H8  ",
+	"   SPDIF","PIN.AO6 ",
+	"     GND","GND     ",
+	" PIN.AO5","PIN.DV29",
+	" PIN.AO4","RTC_CLK ",
+	"     GND","PIN.H5  ",
+	" PIN.AO1","EXP_INT ",
+	" PIN.AO0","PIN.DV13",
+	"    3.3v","GND     ",
+	//Not used
+	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	NULL,NULL,NULL,
+};
+
+static const char *physNamesKhadasVim3[64] = {
+	NULL,
+	"      5V","GND     ",
+	"      5V","PIN.A15 ",
+	"  USB_DM","PIN.A14 ",
+	"  USB_DP","GND     ",
+	"     GND","PIN.AO2 ",
+	"  MCU3V3","PIN.AO3 ",
+	" MCUNRST","3V3     ",
+	" MCUSWIM","GND     ",
+	"     GND","PIN.A1  ",
+	"    ADC0","PIN.A0  ",
+	"     1V8","PIN.A3  ",
+	"    ADC1","PIN.A2  ",
+	"   SPDIF","PIN.A4  ",
+	"    GND3","GND     ",
+	"  PIN.H6","PWM-F   ",
+	"  PIN.H7","RTC     ",
+	"     GND","PIN.H4  ",
+	" PIN.AO1","MCU-FA1 ",
+	" PIN.AO0","PIN.Z15 ",
+	"     3V3","GND     ",
+	//Not used
+	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+	NULL,NULL,NULL,
+};
+
+
+static void readallPhysKhadas (int model, int rev, int physPin, const char *physNames[])
 {
-  NULL,
+	int pin;
 
-  "   3.3v", "5v     ",
-  "  SDA.1", "5v     ",
-  "  SCL.1", "0v     ",
-  "GPIO. 7", "TxD    ",
-  "     0v", "RxD    ",
-  "GPIO. 0", "GPIO. 1",
-  "GPIO. 2", "0v     ",
-  "GPIO. 3", "GPIO. 4",
-  "   3.3v", "GPIO. 5",
-  "   MOSI", "0v     ",
-  "   MISO", "GPIO. 6",
-  "   SCLK", "CE0    ",
-  "     0v", "CE1    ",
-  "  SDA.0", "SCL.0  ",
-  "GPIO.21", "0v     ",
-  "GPIO.22", "GPIO.26",
-  "GPIO.23", "0v     ",
-  "GPIO.24", "GPIO.27",
-  "GPIO.25", "GPIO.28",
-  "     0v", "GPIO.29",
-       NULL, NULL,
-       NULL, NULL,
-       NULL, NULL,
-       NULL, NULL,
-       NULL, NULL,
-  "GPIO.17", "GPIO.18",
-  "GPIO.19", "GPIO.20",
-   NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-} ;
+	//GPIO, wPi pin number
+	if ((physPinToGpio (physPin) == -1) && (physToWpi [physPin] == -1))
+		printf (" |      |    ") ;
+	else if (physPinToGpio (physPin) != -1)
+		printf (" |  %3d | %3d", physPinToGpio (physPin), physToWpi [physPin]);
+	else
+		printf (" |      | %3d", physToWpi [physPin]);
 
+	// GPIO pin name
+	printf (" | %s", physNames [physPin]);
 
-/*
- * readallPhys:
- *	Given a physical pin output the data on it and the next pin:
- *| BCM | wPi |   Name  | Mode | Val| Physical |Val | Mode | Name    | wPi | BCM |
- *********************************************************************************
- */
+	// GPIO pin mode, value, drive strength, pupd
+	if ((physToWpi [physPin] == -1) || (physPinToGpio (physPin) == -1)){
+		printf (" |      |   |    |      ") ;
+	}
 
-static void readallPhys (int physPin)
-{
-  int pin ;
+	else {
+		if (wpMode == MODE_GPIO)
+			pin = physPinToGpio (physPin);
+		else if(wpMode == MODE_PHYS)
+			pin = physPin;
+		else{
+			pin = physToWpi [physPin];
+		}
+		printf (" | %4s", alts [getAlt (pin)]);
+		printf (" | %d", digitalRead (pin));	
+		switch(model) {
+			case MODEL_KHADAS_VIM1:
+			case MODEL_KHADAS_VIM2:
+			case MODEL_KHADAS_VIM3:
+				printf (" |    | %5s", pupd[getPUPD(pin)]);
+				break;
+			default:
+				break;
+		}
+	}
 
-  if (physPinToGpio (physPin) == -1)
-    printf (" |     |    ") ;
-  else
-    printf (" | %3d | %3d", physPinToGpio (physPin), physToWpi [physPin]) ;
+	// Physical pin number
+	printf (" | %2d", physPin);
+	++physPin;
+	printf (" || %-2d", physPin);
 
-  printf (" | %s", physNames [physPin]) ;
+	// GPIO pin mode, value, drive strength, pupd
+	if ((physToWpi [physPin] == -1) || (physPinToGpio (physPin) == -1))
+		printf (" |       |    |   |     ");
+	else {
+		if(wpMode == MODE_GPIO)
+			pin = physPinToGpio (physPin);
+		else if(wpMode == MODE_PHYS)
+			pin = physPin;
+		else
+			pin = physToWpi [physPin];
 
-  if (physToWpi [physPin] == -1)
-    printf (" |      |  ") ;
-  else
-  {
-    /**/ if (wpMode == WPI_MODE_GPIO)
-      pin = physPinToGpio (physPin) ;
-    else if (wpMode == WPI_MODE_PHYS)
-      pin = physPin ;
-    else
-      pin = physToWpi [physPin] ;
+		switch(model){
+			case MODEL_KHADAS_VIM1:
+			case MODEL_KHADAS_VIM2:
+			case MODEL_KHADAS_VIM3:
+				printf (" | %-5s |   ", pupd[getPUPD(pin)]);
+				break;
+			default:
+				break;
+		}
+		printf (" | %d", digitalRead (pin));
+		printf (" | %-4s", alts [getAlt (pin)]);
+	}
 
-    printf (" | %4s", alts [getAlt (pin)]) ;
-    printf (" | %d", digitalRead (pin)) ;
-  }
+	// GPIO pin name
+	printf (" | %-6s", physNames [physPin]);
 
-// Pin numbers:
-
-  printf (" | %2d", physPin) ;
-  ++physPin ;
-  printf (" || %-2d", physPin) ;
-
-// Same, reversed
-
-  if (physToWpi [physPin] == -1)
-    printf (" |   |     ") ;
-  else
-  {
-    /**/ if (wpMode == WPI_MODE_GPIO)
-      pin = physPinToGpio (physPin) ;
-    else if (wpMode == WPI_MODE_PHYS)
-      pin = physPin ;
-    else
-      pin = physToWpi [physPin] ;
-
-    printf (" | %d", digitalRead (pin)) ;
-    printf (" | %-4s", alts [getAlt (pin)]) ;
-  }
-
-  printf (" | %-5s", physNames [physPin]) ;
-
-  if (physToWpi     [physPin] == -1)
-    printf (" |     |    ") ;
-  else
-    printf (" | %-3d | %-3d", physToWpi [physPin], physPinToGpio (physPin)) ;
-
-  printf (" |\n") ;
+	//GPIO, wPi pin number
+	if ((physPinToGpio (physPin) == -1) && (physToWpi [physPin] == -1))
+		printf (" |     |     ") ;
+	else if(physPinToGpio (physPin) != -1)
+		printf (" | %-3d |  %-3d", physToWpi [physPin], physPinToGpio (physPin));
+	else
+		printf (" | %-3d |     ", physToWpi [physPin]);
+	
+	printf (" |\n") ;
 }
 
-
-/*
- * allReadall:
- *	Read all the pins regardless of the model. Primarily of use for
- *	the compute module, but handy for other fiddling...
- *********************************************************************************
- */
-
-static void allReadall (void)
+/*--------------------------------------------------------------------------------------*/
+void ReadallKhadas(int model, int rev, const char *physNames[])
 {
-  int pin ;
+	int pin;
 
-  printf ("+-----+------+-------+      +-----+------+-------+\n") ;
-  printf ("| Pin | Mode | Value |      | Pin | Mode | Value |\n") ;
-  printf ("+-----+------+-------+      +-----+------+-------+\n") ;
-
-  for (pin = 0 ; pin < 27 ; ++pin)
-  {
-    printf ("| %3d ", pin) ;
-    printf ("| %-4s ", alts [getAlt (pin)]) ;
-    printf ("| %s  ", digitalRead (pin) == HIGH ? "High" : "Low ") ;
-    printf ("|      ") ;
-    printf ("| %3d ", pin + 27) ;
-    printf ("| %-4s ", alts [getAlt (pin + 27)]) ;
-    printf ("| %s  ", digitalRead (pin + 27) == HIGH ? "High" : "Low ") ;
-    printf ("|\n") ;
-  }
-
-  printf ("+-----+------+-------+      +-----+------+-------+\n") ;
-
+	printf (" | GPIO | wPi |   Name   | Mode | V | DS | PU/PD | Physical | PU/PD | DS | V | Mode |   Name   | wPi | GPIO |\n");
+	printf (" +------+-----+----------+------+---+----+-------+----++----+-------+----+---+------+----------+-----+------+\n");
+	for (pin = 1 ; pin <= 40 ; pin += 2)
+		readallPhysKhadas (model, rev, pin, physNames);
+	printf (" +------+-----+----------+------+---+----+-------+----++----+-------+----+---+------+----------+-----+------+\n");
 }
 
-
-/*
- * abReadall:
- *	Read all the pins on the model A or B.
- *********************************************************************************
- */
-
-void abReadall (int model, int rev)
+/*--------------------------------------------------------------------------------------*/
+/*									doReadall											*/
+/*	Read all the GPIO pins																*/
+/*	We also want to use this to read the state of pins on an externally					*/
+/*	connected device, so we need to do some fiddling with the internal					*/
+/*	wiringPi node structures - since the gpio command can only use						*/
+/*	one external device at a time, we'll use that to our advantage...					*/
+/*--------------------------------------------------------------------------------------*/
+void doReadall(void)
 {
-  int pin ;
-  char *type ;
+	int model, rev, mem, maker, overVolted;
+	
+	const char **physNames;
 
-  if (model == PI_MODEL_A)
-    type = " A" ;
-  else
-    if (rev == PI_VERSION_2)
-      type = "B2" ;
-    else
-      type = "B1" ;
+	// External readall
+	if (wiringPiNodes != NULL) {
+		doReadallExternal ();
+		return;
+	}
 
-  printf (" +-----+-----+---------+------+---+-Model %s-+---+------+---------+-----+-----+\n", type) ;
-  printf (" | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |\n") ;
-  printf (" +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+\n") ;
-  for (pin = 1 ; pin <= 26 ; pin += 2)
-    readallPhys (pin) ;
+	piBoardId(&model, &rev, &mem, &maker, &overVolted);
 
-  if (rev == PI_VERSION_2) // B version 2
-  {
-    printf (" +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+\n") ;
-    for (pin = 51 ; pin <= 54 ; pin += 2)
-      readallPhys (pin) ;
-  }
-
-  printf (" +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+\n") ;
-  printf (" | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |\n") ;
-  printf (" +-----+-----+---------+------+---+-Model %s-+---+------+---------+-----+-----+\n", type) ;
+	switch(model){
+		case MODEL_KHADAS_VIM1:
+			printf (" +------+-----+----------+------+---+----+---- Model  KDADAS-VIM1---+----+---+------+----------+-----+------+\n") ;
+			physNames = physNamesKhadasVim1;
+			break;
+		case MODEL_KHADAS_VIM2:
+			printf (" +------+-----+----------+------+---+----+---- Model  KDADAS-VIM2---+----+---+------+----------+-----+------+\n") ;
+			physNames = physNamesKhadasVim2;
+			break;
+		case MODEL_KHADAS_VIM3:
+			printf (" +------+-----+----------+------+---+----+---- Model  KDADAS-VIM3---+----+---+------+----------+-----+------+\n") ;
+			physNames = physNamesKhadasVim3;
+			break;
+		default:
+			printf ("Oops - unable to determine board type... model: %d\n", model);
+			return;
+	}
+	ReadallKhadas(model, rev, physNames);
 }
 
-
-/*
- * piPlusReadall:
- *	Read all the pins on the model A+ or the B+ or actually, all 40-pin Pi's
- *********************************************************************************
- */
-
-static void plus2header (int model)
+/*--------------------------------------------------------------------------------------*/
+/*								doAllReadall											*/
+/*	Force reading of all pins regardless of Pi model									*/
+/*--------------------------------------------------------------------------------------*/
+void doAllReadall(void)
 {
-  /**/ if (model == PI_MODEL_AP)
-    printf (" +-----+-----+---------+------+---+---Pi A+--+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_BP)
-    printf (" +-----+-----+---------+------+---+---Pi B+--+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_ZERO)
-    printf (" +-----+-----+---------+------+---+-Pi Zero--+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_ZERO_W)
-    printf (" +-----+-----+---------+------+---+-Pi ZeroW-+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_2)
-    printf (" +-----+-----+---------+------+---+---Pi 2---+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_3)
-    printf (" +-----+-----+---------+------+---+---Pi 3---+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_3P)
-    printf (" +-----+-----+---------+------+---+---Pi 3+--+---+------+---------+-----+-----+\n") ;
-  else
-    printf (" +-----+-----+---------+------+---+---Pi ?---+---+------+---------+-----+-----+\n") ;
+	doReadall();
 }
 
-
-static void piPlusReadall (int model)
+/*--------------------------------------------------------------------------------------*/
+void doQmode(int argc, char *argv[])
 {
-  int pin ;
+	int pin;
+	if(argc != 3){
+		fprintf (stderr, "Usage: %s qmode pin\n", argv [0]) ;
+		exit(EXIT_FAILURE);
+	}
 
-  plus2header (model) ;
-
-  printf (" | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |\n") ;
-  printf (" +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+\n") ;
-  for (pin = 1 ; pin <= 40 ; pin += 2)
-    readallPhys (pin) ;
-  printf (" +-----+-----+---------+------+---+----++----+---+------+---------+-----+-----+\n") ;
-  printf (" | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |\n") ;
-
-  plus2header (model) ;
+	pin = atoi(argv[2]);
+	printf("%s\n", alts[getAlt(pin)]);
 }
-
-
-/*
- * doReadall:
- *	Generic read all pins called from main program. Works out the Pi type
- *	and calls the appropriate function.
- *********************************************************************************
- */
-
-void doReadall (void)
-{
-  int model, rev, mem, maker, overVolted ;
-
-  if (wiringPiNodes != NULL)	// External readall
-  {
-    doReadallExternal () ;
-    return ;
-  }
-
-  piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
-
-  /**/ if ((model == PI_MODEL_A) || (model == PI_MODEL_B))
-    abReadall (model, rev) ;
-  else if ((model == PI_MODEL_BP) || (model == PI_MODEL_AP) ||
-	(model == PI_MODEL_2) ||
-	(model == PI_MODEL_3) || (model == PI_MODEL_3P) ||
-	(model == PI_MODEL_ZERO) || (model == PI_MODEL_ZERO_W))
-    piPlusReadall (model) ;
-  else if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3))
-    allReadall () ;
-  else
-    printf ("Oops - unable to determine board type... model: %d\n", model) ;
-}
-
-
-/*
- * doAllReadall:
- *	Force reading of all pins regardless of Pi model
- *********************************************************************************
- */
-
-void doAllReadall (void)
-{
-  allReadall () ;
-}
-
-
-/*
- * doQmode:
- *	Query mode on a pin
- *********************************************************************************
- */
-
-void doQmode (int argc, char *argv [])
-{
-  int pin ;
-
-  if (argc != 3)
-  {
-    fprintf (stderr, "Usage: %s qmode pin\n", argv [0]) ;
-    exit (EXIT_FAILURE) ;
-  }
-
-  pin = atoi (argv [2]) ;
-  printf ("%s\n", alts [getAlt (pin)]) ;
-}
+/*--------------------------------------------------------------------------------------*/
+/*--------------------------------------------------------------------------------------*/

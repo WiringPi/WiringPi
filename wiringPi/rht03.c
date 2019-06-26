@@ -238,8 +238,8 @@ int rht03Setup (const int pinBase, const int piPin)
 {
   struct wiringPiNodeStruct *node ;
 
-  if ((piPin & PI_GPIO_MASK) != 0)	// Must be an on-board pin
-    return FALSE ;
+  //if ((piPin & PI_GPIO_MASK) != 0)	// Must be an on-board pin
+   // return FALSE ;
   
 // 2 pins - temperature and humidity
 

@@ -61,7 +61,10 @@ SRC	=	wiringPi.c						\
 		bmp180.c htu21d.c ds18b20.c rht03.c			\
 		drcSerial.c drcNet.c					\
 		pseudoPins.c						\
-		wpiExtensions.c
+		wpiExtensions.c					\
+		khadas_vim1.c					\
+		khadas_vim2.c					\
+		khadas_vim3.c
 
 HEADERS =	$(shell ls *.h)
 
@@ -127,6 +130,11 @@ depend:
 	makedepend -Y $(SRC) $(SRC_I2C)
 
 # DO NOT DELETE
+
+#KHADAS Boards
+khadas_vim1.o	: wiringPi.h khadas_vim1.h
+khadas_vim2.o	: wiringPi.h khadas_vim2.h
+khadas_vim3.o	: wiringPi.h khadas_vim3.h
 
 wiringPi.o: softPwm.h softTone.h wiringPi.h ../version.h
 wiringSerial.o: wiringSerial.h

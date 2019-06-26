@@ -24,34 +24,43 @@
 #ifndef	__WIRING_PI_H__
 #define	__WIRING_PI_H__
 
-// C doesn't have true/false by default and I can never remember which
-//	way round they are, so ...
-//	(and yes, I know about stdbool.h but I like capitals for these and I'm old)
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdlib.h>
+
 
 #ifndef	TRUE
 #  define	TRUE	(1==1)
 #  define	FALSE	(!TRUE)
 #endif
 
-// GCC warning suppressor
+#define PIN_NUM_CALC_SYSFD(x) (x>225 ? x - libwiring.pinBase : x)
 
+// GCC warning suppressor
 #define	UNU	__attribute__((unused))
 
-// Mask for the bottom 64 pins which belong to the Raspberry Pi
-//	The others are available for the other devices
+#define ENV_DEBUG	"WIRINGPI_DEBUG"
+#define ENV_CODES   "WIRINGPI_CODES"
+#define ENV_GPIOMEM	"WIRINGPI_GPIOMEM"
 
-#define	PI_GPIO_MASK	(0xFFFFFFC0)
+#define MODEL_UNKNOWN		0
+#define MODEL_KHADAS_VIM1	1
+#define MODEL_KHADAS_VIM2	2
+#define MODEL_KHADAS_VIM3	3
 
-// Handy defines
+#define MAKER_UNKNOWN		0
+#define MAKER_AMLOGIC		1
+#define MAKER_ROCKCHIP		2
 
 // wiringPi modes
 
-#define	WPI_MODE_PINS		 0
-#define	WPI_MODE_GPIO		 1
-#define	WPI_MODE_GPIO_SYS	 2
-#define	WPI_MODE_PHYS		 3
-#define	WPI_MODE_PIFACE		 4
-#define	WPI_MODE_UNINITIALISED	-1
+#define	MODE_PINS		  	 0
+#define	MODE_GPIO		 	 1
+#define	MODE_GPIO_SYS	  	 2
+#define	MODE_PHYS			 3
+#define MODE_PIFACE			 4
+#define	MODE_UNINITIALISED	-1
 
 // Pin modes
 
@@ -84,32 +93,8 @@
 #define	INT_EDGE_RISING		2
 #define	INT_EDGE_BOTH		3
 
-// Pi model types and version numbers
-//	Intended for the GPIO program Use at your own risk.
-
-#define	PI_MODEL_A		 0
-#define	PI_MODEL_B		 1
-#define	PI_MODEL_AP		 2
-#define	PI_MODEL_BP		 3
-#define	PI_MODEL_2		 4
-#define	PI_ALPHA		 5
-#define	PI_MODEL_CM		 6
-#define	PI_MODEL_07		 7
-#define	PI_MODEL_3		 8
-#define	PI_MODEL_ZERO		 9
-#define	PI_MODEL_CM3		10
-#define	PI_MODEL_ZERO_W		12
-#define	PI_MODEL_3P 		13
-
-#define	PI_VERSION_1		0
-#define	PI_VERSION_1_1		1
-#define	PI_VERSION_1_2		2
-#define	PI_VERSION_2		3
-
-#define	PI_MAKER_SONY		0
-#define	PI_MAKER_EGOMAN		1
-#define	PI_MAKER_EMBEST		2
-#define	PI_MAKER_UNKNOWN	3
+//Module names
+#define AML_MODULE_I2C		"aml_i2c"
 
 extern const char *piModelNames    [16] ;
 extern const char *piRevisionNames [16] ;
@@ -127,6 +112,87 @@ extern const int   piMemorySize    [ 8] ;
 
 #define	WPI_FATAL	(1==1)
 #define	WPI_ALMOST	(1==2)
+
+#define PAGE_SIZE	(4*1024)
+#define BLOCK_SIZE	(4*1024)
+
+#define MSG_ERR 	-1
+#define MSG_WARN	-2
+
+struct libkhadas
+{
+	/* H/W model info */
+	int model, rev, mem, maker;
+
+	/* wiringPi init mode */
+	int mode;
+
+	/* wiringPi core func */
+	int (*getModeToGpio)    (int mode, int pin);
+	void    (*setPadDrive)      (int pin, int value);
+	int (*getPadDrive)      (int pin);
+	void    (*pinMode)      (int pin, int mode);
+	int (*getAlt)       (int pin);
+	int (*getPUPD)      (int pin);
+	void    (*pullUpDnControl)  (int pin, int pud);
+	int (*digitalRead)      (int pin);
+	void    (*digitalWrite)     (int pin, int value);
+	int (*analogRead)       (int pin);
+	void    (*digitalWriteByte) (const int value);
+	unsigned int (*digitalReadByte) (void);
+
+	/* ISR Function pointer */
+	void    (*isrFunctions[256])(void);
+
+	/* GPIO sysfs file discripter */
+	int     sysFds[256];
+
+	/* GPIO pin base number */
+	int pinBase;
+
+	// Time for easy calculations
+	uint64_t epochMilli, epochMicro ;
+};
+
+
+union reg_bitfield {
+	unsigned int wvalue;
+	struct {
+		unsigned int 	bit0  : 1;
+		unsigned int 	bit1  : 1;
+		unsigned int 	bit2  : 1;
+		unsigned int 	bit3  : 1;
+		unsigned int 	bit4  : 1;
+		unsigned int 	bit5  : 1;
+		unsigned int 	bit6  : 1;
+		unsigned int 	bit7  : 1;
+		unsigned int 	bit8  : 1;
+		unsigned int 	bit9  : 1;
+		unsigned int 	bit10 : 1;
+		unsigned int 	bit11 : 1;
+		unsigned int 	bit12 : 1;
+		unsigned int 	bit13 : 1;
+		unsigned int 	bit14 : 1;
+		unsigned int 	bit15 : 1;
+		unsigned int 	bit16 : 1;
+		unsigned int 	bit17 : 1;
+		unsigned int 	bit18 : 1;
+		unsigned int 	bit19 : 1;
+		unsigned int 	bit20 : 1;
+		unsigned int 	bit21 : 1;
+		unsigned int 	bit22 : 1;
+		unsigned int 	bit23 : 1;
+		unsigned int 	bit24 : 1;
+		unsigned int 	bit25 : 1;
+		unsigned int 	bit26 : 1;
+		unsigned int 	bit27 : 1;
+		unsigned int 	bit28 : 1;
+		unsigned int 	bit29 : 1;
+		unsigned int 	bit30 : 1;
+		unsigned int 	bit31 : 1;
+
+	} bits;
+};
 
 
 // wiringPiNodeStruct:
@@ -165,12 +231,12 @@ extern struct wiringPiNodeStruct *wiringPiNodes ;
 
 // Export variables for the hardware pointers
 
-extern volatile unsigned int *_wiringPiGpio ;
-extern volatile unsigned int *_wiringPiPwm ;
-extern volatile unsigned int *_wiringPiClk ;
-extern volatile unsigned int *_wiringPiPads ;
-extern volatile unsigned int *_wiringPiTimer ;
-extern volatile unsigned int *_wiringPiTimerIrqRaw ;
+//extern volatile unsigned int *_wiringPiGpio ;
+//extern volatile unsigned int *_wiringPiPwm ;
+//extern volatile unsigned int *_wiringPiClk ;
+//extern volatile unsigned int *_wiringPiPads ;
+//extern volatile unsigned int *_wiringPiTimer ;
+//extern volatile unsigned int *_wiringPiTimerIrqRaw ;
 
 
 // Function prototypes
@@ -183,9 +249,11 @@ extern "C" {
 
 // Data
 
-// Internal
+// Internal WiringPi functions
 
 extern int wiringPiFailure (int fatal, const char *message, ...) ;
+extern int msg (int type, const char *message, ...);
+extern int moduleLoaded (char *);
 
 // Core wiringPi functions
 
@@ -198,67 +266,60 @@ extern int  wiringPiSetupSys    (void) ;
 extern int  wiringPiSetupGpio   (void) ;
 extern int  wiringPiSetupPhys   (void) ;
 
-extern          void pinModeAlt          (int pin, int mode) ;
-extern          void pinMode             (int pin, int mode) ;
-extern          void pullUpDnControl     (int pin, int pud) ;
-extern          int  digitalRead         (int pin) ;
-extern          void digitalWrite        (int pin, int value) ;
-extern unsigned int  digitalRead8        (int pin) ;
-extern          void digitalWrite8       (int pin, int value) ;
-extern          void pwmWrite            (int pin, int value) ;
-extern          int  analogRead          (int pin) ;
-extern          void analogWrite         (int pin, int value) ;
+extern 			int	 getModeToGpio		(int wpiPin);
+extern 			void setPadDrive		(int pin, int value);
+extern 			int  getPadDrive		(int pin);
+extern			int  getAlt				(int pin);
+extern			int  getPUPD			(int pin);
+extern 			void pinMode			(int pin,int mode);
+extern 			void pullUpDnControl	(int pin, int pud);
+extern 			int  digitalRead		(int pin);
+extern 			void digitalWrite		(int pin, int value);
+extern unsigned int  digitalReadByte	(void);
+extern			void digitalWriteByte	(const int vaule);
+extern			void pwmWrite			(int pin, int value);
+extern 			int  analogRead			(int pin);
 
-// PiFace specifics 
-//	(Deprecated)
+//Hardware Specific stuffs
+extern			int  piGpioLayout		(void);
+extern 			int  piBoardRev			(void);
+extern 			void piBoardId			(int *model, int *rev, int *mem, int *maker, int *warranty);
+extern 			int  wpiPinToGpio 		(int wpiPin);
+extern 			int  physPinToGpio		(int physPin);
 
-extern int  wiringPiSetupPiFace (void) ;
-extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio program only
+//Unsupported
+extern 			void pinModeAlt			(int pin, int mode);
+extern 			void analogWrite		(int pin, int value);
+extern 			void pwmToneWrite		(int pin, int freq);
+extern			void pwmSetMode			(int mode);
+extern 			void pwmSetRange		(unsigned int range);
+extern			void pwmSetClock		(int divisor);
+extern			void gpioClockSet		(int pin, int freq);
+extern unsigned int  digitalReadByte	(void);
+extern unsigned int  digitalReadByte2	(void);
+extern			void digitalWriteByte	(int value);
+extern 			void digitalWriteByte2	(int value);
 
-// On-Board Raspberry Pi hardware specific stuff
+//Interrupt
+extern			int  waitForInterrupt	(int pin, int mS);
+extern			int  wiringPiISR		(int pin, int mode, void (*function)(void));
 
-extern          int  piGpioLayout        (void) ;
-extern          int  piBoardRev          (void) ;	// Deprecated
-extern          void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
-extern          int  wpiPinToGpio        (int wpiPin) ;
-extern          int  physPinToGpio       (int physPin) ;
-extern          void setPadDrive         (int group, int value) ;
-extern          int  getAlt              (int pin) ;
-extern          void pwmToneWrite        (int pin, int freq) ;
-extern          void pwmSetMode          (int mode) ;
-extern          void pwmSetRange         (unsigned int range) ;
-extern          void pwmSetClock         (int divisor) ;
-extern          void gpioClockSet        (int pin, int freq) ;
-extern unsigned int  digitalReadByte     (void) ;
-extern unsigned int  digitalReadByte2    (void) ;
-extern          void digitalWriteByte    (int value) ;
-extern          void digitalWriteByte2   (int value) ;
+//Threads
+extern			int  piThreadCreate		(void *(*fn)(void *));
+extern			void piLock				(int key);
+extern			void piUnlock			(int key);
 
-// Interrupts
-//	(Also Pi hardware specific)
+//Schedulling priority
+//extern			void piHiPri			(unsigned int howLong);
 
-extern int  waitForInterrupt    (int pin, int mS) ;
-extern int  wiringPiISR         (int pin, int mode, void (*function)(void)) ;
-
-// Threads
-
-extern int  piThreadCreate      (void *(*fn)(void *)) ;
-extern void piLock              (int key) ;
-extern void piUnlock            (int key) ;
-
-// Schedulling priority
-
-extern int piHiPri (const int pri) ;
-
-// Extras from arduino land
-
-extern void         delay             (unsigned int howLong) ;
-extern void         delayMicroseconds (unsigned int howLong) ;
-extern unsigned int millis            (void) ;
-extern unsigned int micros            (void) ;
+//From Arduino land
+extern			void delay				(unsigned int howLang);
+extern			void delayMicroseconds	(unsigned int howLang);
+extern unsigned int  millis				(void);
+extern unsigned int  micros				(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif  /* __WIRING_H__ */
