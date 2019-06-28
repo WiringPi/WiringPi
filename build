@@ -87,11 +87,11 @@ if [ x$1 = "xdebian" ]; then
   cd debian-template/wiringPi
   rm -rf usr
   cd $here/wiringPi
-  make install-deb
+  DEBTEMPDIR=$here make install-deb
   cd $here/devLib
-  make install-deb INCLUDE='-I. -I../wiringPi'
+  DEBTEMPDIR=$here make install-deb INCLUDE='-I. -I../wiringPi'
   cd $here/gpio
-  make install-deb INCLUDE='-I../wiringPi -I../devLib' LDFLAGS=-L../debian-template/wiringPi/usr/lib
+  DEBTEMPDIR=$here make install-deb INCLUDE='-I../wiringPi -I../devLib' LDFLAGS=-L../debian-template/wiringPi/usr/lib
   cd $here/debian-template
   fakeroot dpkg-deb --build wiringPi
   mv wiringPi.deb  wiringpi-`cat $here/VERSION`-1.deb
