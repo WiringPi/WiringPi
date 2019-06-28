@@ -94,7 +94,7 @@ if [ x$1 = "xdebian" ]; then
   DEBTEMPDIR=$here make install-deb INCLUDE='-I../wiringPi -I../devLib' LDFLAGS=-L../debian-template/wiringPi/usr/lib
   cd $here/debian-template
   fakeroot dpkg-deb --build wiringPi
-  mv wiringPi.deb  wiringpi-`cat $here/VERSION`-1.deb
+  mv wiringPi.deb  wiringpi-`cat $here/VERSION`-1_arm64.deb
   exit
 fi
 
