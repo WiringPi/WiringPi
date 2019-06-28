@@ -2,9 +2,9 @@ Package: wiringpi
 Version: 2.46
 Section: libraries
 Priority: optional
-Architecture: armhf
+Architecture: arm64
 Depends: libc6
-Maintainer: Gordon Henderson <projects@drogon.net>
+Maintainer: Nick Xie <nick@khadas.com>
 Description: The wiringPi libraries, headers and gpio command
   Libraries to allow GPIO access on a Raspberry Pi from C and C++
   and BASIC programs as well as from the command-line
