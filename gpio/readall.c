@@ -245,9 +245,9 @@ static void readallPhysKhadas (int model, int rev, int physPin, const char *phys
 	}
 
 	// Physical pin number
-	printf (" | %2d", physPin);
+	printf (" | %2d", (physPin+1)/2);
+	printf (" || %-2d", (physPin+41)/2);
 	++physPin;
-	printf (" || %-2d", physPin);
 
 	// GPIO pin mode, value, drive strength, pupd
 	if ((physToWpi [physPin] == -1) || (physPinToGpio (physPin) == -1))
