@@ -24,6 +24,7 @@
 VERSION=$(shell cat ../VERSION)
 DESTDIR?=/usr
 PREFIX?=/local
+DEBTEMPDIR?=~/WiringPi
 
 LDCONFIG?=ldconfig
 
@@ -89,7 +90,6 @@ $(DYNAMIC):	$(OBJ)
 clean:
 	$Q echo "[Clean]"
 	$Q rm -f $(OBJ) $(OBJ_I2C) *~ core tags Makefile.bak libwiringPi.*
-
 .PHONY:	tags
 tags:	$(SRC)
 	$Q echo [ctags]
@@ -110,12 +110,12 @@ install:	$(DYNAMIC)
 .PHONY:	install-deb
 install-deb:	$(DYNAMIC)
 	$Q echo "[Install Headers: deb]"
-	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/include
-	$Q install -m 0644 $(HEADERS)						~/wiringPi/debian-template/wiringPi/usr/include
+	$Q install -m 0755 -d							$(DEBTEMPDIR)/debian-template/wiringPi/usr/local/include
+	$Q install -m 0644 $(HEADERS)						$(DEBTEMPDIR)/debian-template/wiringPi/usr/local/include
 	$Q echo "[Install Dynamic Lib: deb]"
-	install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/lib
-	install -m 0755 libwiringPi.so.$(VERSION)				~/wiringPi/debian-template/wiringPi/usr/lib/libwiringPi.so.$(VERSION)
-	ln -sf ~/wiringPi/debian-template/wiringPi/usr/lib/libwiringPi.so.$(VERSION)	~/wiringPi/debian-template/wiringPi/usr/lib/libwiringPi.so
+	install -m 0755 -d							$(DEBTEMPDIR)/debian-template/wiringPi/usr/local/lib
+	install -m 0755 libwiringPi.so.$(VERSION)				$(DEBTEMPDIR)/debian-template/wiringPi/usr/local/lib/libwiringPi.so.$(VERSION)
+	cd  $(DEBTEMPDIR)/debian-template/wiringPi/usr/local/lib && ln -sf libwiringPi.so.$(VERSION)	libwiringPi.so && cd -
 
 .PHONY:	uninstall
 uninstall:
