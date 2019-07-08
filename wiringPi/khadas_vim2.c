@@ -344,10 +344,19 @@ static int _getAlt(int pin)
 					if(*(gpio + VIM2_MUX_1_REG_OFFSET) & (1 << 12))    { mode = 3; break; }
 					if(*(gpio + VIM2_MUX_2_REG_OFFSET) & (1 << 13))    { mode = 4; break; }
 					break;
+				case 29:
+					if(*(gpio + VIM2_MUX_2_REG_OFFSET) & (1 << 11))    { mode = 2; break; }
+					if(*(gpio + VIM2_MUX_2_REG_OFFSET) & (1 << 10))    { mode = 3; break; }
+					if(*(gpio + VIM2_MUX_2_REG_OFFSET) & (1 << 5))	   { mode = 4; break; }
+					break;
 			}
 			break;
 		case VIM2_GPIOH_PIN_START ...VIM2_GPIOH_PIN_END:
 			switch(shift){
+				case 26:
+					if(*(gpio + VIM2_MUX_6_REG_OFFSET) & (1 << 26))    { mode = 4; break; }
+					if(*(gpio + VIM2_MUX_6_REG_OFFSET) & (1 << 20))    { mode = 6; break; }
+					break;
 				case 27:
 					if(*(gpio + VIM2_MUX_6_REG_OFFSET) & (1 << 25))    { mode = 4; break; }
 					if(*(gpio + VIM2_MUX_6_REG_OFFSET) & (1 << 22))    { mode = 5; break; }
