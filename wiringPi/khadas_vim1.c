@@ -31,20 +31,20 @@
   	//wiringPi number to native gpio number
 		-1,175,		//	0 |  1 :					 | GPIODV_26
 		-1,	-1,		//	2 |  3 :
-		-1,123,		//	4 |  5 : 					 | GPIOH_7 
+	   122,123,		//	4 |  5 : 					 | GPIOH_7 
 	   125,	-1,		//	6 |  7 :			 GPIOH_9 |
 		-1,	-1,		//	8 |  9 :
 	   124,136,		// 10 | 11 :			 GPIOH_8 | GPIOAO_6
 		-1,	-1,		// 12 | 13 :
-		-1,	-1,		// 14 | 15 :
+		-1,174,		// 14 | 15 :
 	   176,	-1,		// 16 | 17 :      	   GPIODV_27 |
 		-1,	-1,		// 18 | 19 :
 		-1,135,		// 20 | 21 :					 | GPIOAO_5
 	   134,	-1,		// 22 | 23 :	  		GPIOAO_4 |
 	   121,132,		// 24 | 25 :	   		GPIOAO_1 | GPIOAO_2
 		-1,	-1,		// 26 | 27 :		
-		-1,	-1,		// 28 | 29 :
-		-1,	-1,		// 30 | 31 :
+		-1,173,		// 28 | 29 :
+		-1,121,		// 30 | 31 :
 		// Padding:
 		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	-1,	-1, //32to47
 		-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //48to63
@@ -55,22 +55,22 @@
   	//physical header pin number to native gpio number
 	-1,			//  0
 	-1,	-1,		//  1 | 21 :   			   	     5v | GND
-	-1,	-1,		//  2 | 22 : 		  		     5V | I2C_SCK_A(GPIODV_25)
-	-1,	-1,		//  3 | 23 :   	 		    HUB_DM1 | I2C_SDA_A(GPIODV_24)
+	-1,174,		//  2 | 22 : 		  		     5V | I2C_SCK_A(GPIODV_25)
+	-1,173,		//  3 | 23 :   	 		    HUB_DM1 | I2C_SDA_A(GPIODV_24)
 	-1,	-1,		//  4 | 24 :   	  		    HUB_DP1 | GND
 	-1,176,		//  5 | 25 :	  	  		    GND | I2C_SCK_B(GPIODV_27)
 	-1,175,		// 	6 | 26 :     	  		     5V | I2C_SDA_B(GPIODV_26)
 	-1,	-1,		// 	7 | 27 :  			    HUB_DM2 | 3.3V
 	-1,	-1,		// 	8 | 28 :    		    HUB_DP2 | GND
 	-1,123,		// 	9 | 29 :     		   	    GND | GPIOH_7
-	-1, -1,		// 10 | 30 :   			    ADC_CH0 | GPIOH_6
+	-1,122,		// 10 | 30 :   			    ADC_CH0 | GPIOH_6
 	-1,125,		// 11 | 31 :     			    GND | GPIOH_9
 	-1,124,		// 12 | 32 :  			    ADC_CH2 | GPIOH_8
 	-1,136,		// 13 | 33 :      			  SPDIF | GPIOAO_6
 	-1,	-1,		// 14 | 34 : 			        GND | GND
    135,	-1,		// 15 | 35 : (GPIOAO_5)UART_RX_AO_B | PWM_AO_A(GPIOAO_3)
    134,	-1,		// 16 | 36 : (GPIOAO_4)UART_TX_AO_B | RTC_CLK
-	-1,	-1,		// 17 | 37 :  		  			GND | GPIOH_5
+	-1,121,		// 17 | 37 :  		  			GND | GPIOH_5
    121,	-1,		// 18 | 38 :	 (GPIOAO_1)Linux_RX | PWR_EN
    122,	-1,		// 19 | 39 :     (GPIOAO_2)Linux_Tx | PWM_F
 	-1,	-1,		// 20 | 40 : 				   3.3V | GND
@@ -320,6 +320,14 @@ static int _getAlt (int pin)
 	switch(pin){
 		case VIM1_GPIODV_PIN_START ...VIM1_GPIODV_PIN_END:
 			switch(shift){
+				case 24:
+					if(*(gpio + VIM1_MUX_2_REG_OFFSET) & (1 << 16))		{ mode = 2; break; }
+					if(*(gpio + VIM1_MUX_1_REG_OFFSET) & (1 << 15))     { mode = 4; break; }
+					break;
+				case 25:
+					if(*(gpio + VIM1_MUX_2_REG_OFFSET) & (1 << 15))     { mode = 2; break; }
+					if(*(gpio + VIM1_MUX_1_REG_OFFSET) & (1 << 14))     { mode = 4; break; }
+					break;
 				case 26:
 					if(*(gpio + VIM1_MUX_2_REG_OFFSET) & (1 << 14))		{ mode = 2; break; }
 					if(*(gpio + VIM1_MUX_1_REG_OFFSET) & (1 << 13))     { mode = 4; break; }
@@ -332,6 +340,9 @@ static int _getAlt (int pin)
 			break;
 		case VIM1_GPIOH_PIN_START ...VIM1_GPIOH_PIN_END:
 			switch(shift){
+				case 26:	//GPIOH6
+					if(*(gpio + VIM1_MUX_6_REG_OFFSET) & (1 << 26)) 	{ mode = 4; break; }
+					break;
 				case 27:	//GPIOH7
 					if(*(gpio + VIM1_MUX_6_REG_OFFSET) & (1 << 22)) 	{ mode = 4; break; }
 					if(*(gpio + VIM1_MUX_6_REG_OFFSET) & (1 << 25))		{ mode = 5; break; }
