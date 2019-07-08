@@ -148,6 +148,8 @@ static int gpioToGPSETReg (int pin)
 		return VIM3_GPIOH_OUTP_REG_OFFSET;
 	if(pin >= VIM3_GPIOAO_PIN_START && pin <= VIM3_GPIOAO_PIN_END)
 		return VIM3_GPIOAO_OUTP_REG_OFFSET;
+	if(pin >= VIM3_GPIOZ_PIN_START && pin <= VIM3_GPIOZ_PIN_END)
+		return VIM3_GPIOZ_OUTP_REG_OFFSET;
 	return -1; 
 }
 
@@ -162,6 +164,8 @@ static int gpioToGPLEVReg (int pin)
 		return VIM3_GPIOH_INP_REG_OFFSET;
 	if(pin >= VIM3_GPIOAO_PIN_START && pin <= VIM3_GPIOAO_PIN_END)
 		return VIM3_GPIOAO_INP_REG_OFFSET;
+	if(pin >= VIM3_GPIOZ_PIN_START && pin <= VIM3_GPIOZ_PIN_END)
+		return VIM3_GPIOZ_INP_REG_OFFSET;
 	return -1; 
 }
 
@@ -174,6 +178,8 @@ static int gpioToPUENReg(int pin)
 		return VIM3_GPIOA_PUEN_REG_OFFSET;
 	if(pin >= VIM3_GPIOH_PIN_START && pin <= VIM3_GPIOH_PIN_END)
 		return VIM3_GPIOH_PUEN_REG_OFFSET;
+	if(pin >= VIM3_GPIOZ_PIN_START && pin <= VIM3_GPIOZ_PIN_END)
+		return VIM3_GPIOZ_PUEN_REG_OFFSET;
 	if(pin >= VIM3_GPIOAO_PIN_START && pin <= VIM3_GPIOAO_PIN_END)
 		return VIM3_GPIOAO_PUEN_REG_OFFSET;
 	return -1;
@@ -188,6 +194,8 @@ static int gpioToPUPDReg(int pin)
 		return VIM3_GPIOA_PUPD_REG_OFFSET;
 	if(pin >= VIM3_GPIOH_PIN_START && pin <= VIM3_GPIOH_PIN_END)
 		return VIM3_GPIOH_PUPD_REG_OFFSET;
+	if(pin >= VIM3_GPIOZ_PIN_START && pin <= VIM3_GPIOZ_PIN_END)
+		return VIM3_GPIOZ_PUPD_REG_OFFSET;
 	if(pin >= VIM3_GPIOAO_PIN_START && pin <= VIM3_GPIOAO_PIN_END)
 		return VIM3_GPIOAO_PUPD_REG_OFFSET;
 	return -1;
@@ -202,6 +210,8 @@ static int gpioToShiftReg (int pin)
 		return pin - VIM3_GPIOA_PIN_START;
 	if(pin >= VIM3_GPIOH_PIN_START && pin <= VIM3_GPIOH_PIN_END)
 		return pin - VIM3_GPIOH_PIN_START;
+	if(pin >= VIM3_GPIOZ_PIN_START && pin <= VIM3_GPIOZ_PIN_END)
+		return pin - VIM3_GPIOZ_PIN_START;
 	if(pin >= VIM3_GPIOAO_PIN_START && pin <= VIM3_GPIOAO_PIN_END)
 		return pin - VIM3_GPIOAO_PIN_START;
 	return -1;
@@ -216,6 +226,8 @@ static int gpioToGPFSELReg(int pin)
 	    return VIM3_GPIOA_FSEL_REG_OFFSET;
 	if(pin >= VIM3_GPIOH_PIN_START && pin <= VIM3_GPIOH_PIN_END)
 		return VIM3_GPIOH_FSEL_REG_OFFSET;
+	if(pin >= VIM3_GPIOZ_PIN_START && pin <= VIM3_GPIOZ_PIN_END)
+		return VIM3_GPIOZ_FSEL_REG_OFFSET;
 	if(pin >= VIM3_GPIOAO_PIN_START && pin <= VIM3_GPIOAO_PIN_END)
 		return VIM3_GPIOAO_FSEL_REG_OFFSET;
 	return -1;
@@ -230,6 +242,8 @@ static int gpioToDSReg (int pin)
 	    return VIM3_GPIOA_DS_REG_5A_OFFSET;
 	if(pin >= VIM3_GPIOH_PIN_START && pin <= VIM3_GPIOH_PIN_END)
 		return VIM3_GPIOH_DS_REG_3A_OFFSET;
+	if(pin >= VIM3_GPIOZ_PIN_START && pin <= VIM3_GPIOZ_PIN_END)
+		return VIM3_GPIOZ_DS_REG_4_OFFSET;
 	if(pin >= VIM3_GPIOAO_PIN_START && pin <= VIM3_GPIOAO_PIN_END)
 		return VIM3_GPIOAO_DS_REG_A_OFFSET;
 	return -1;
@@ -243,6 +257,8 @@ static int gpioToMuxReg(int pin)
 	switch(pin){
 		case VIM3_GPIOA_PIN_START  ...VIM3_GPIOA_PIN_START + 7:
 			return  VIM3_GPIOA_MUX_D_REG_OFFSET;
+		case VIM3_GPIOZ_PIN_START  ...VIM3_GPIOZ_PIN_START + 7:
+			return  VIM3_GPIOZ_MUX_B_REG_OFFSET;
 		case VIM3_GPIOA_PIN_START + 8  ...VIM3_GPIOA_PIN_END:
 			return  VIM3_GPIOA_MUX_E_REG_OFFSET;
 		case VIM3_GPIOH_PIN_START  ...VIM3_GPIOH_PIN_END:
