@@ -102,7 +102,7 @@ static int physToWpi [64] =
   14, 10,
   -1, 11,       // 25, 26
   30, -1,	// Actually I2C, but not used
-  21, -1,
+  21, 30,
   22, 26,
   23, 31,
   24, 27,
