@@ -219,7 +219,8 @@ struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
 	node->pinMode			= pinModeDummy;
 	node->pullUpDnControl	= pullUpDnControlDummy;
 	node->digitalRead		= digitalReadDummy;
-	node->pwmWrite			= digitalWriteDummy;
+	node->digitalWrite		= digitalWriteDummy;
+	node->pwmWrite			= pwmWriteDummy;
 	node->analogRead		= analogReadDummy;
 	node->analogWrite		= analogWriteDummy;
 	node->next				= wiringPiNodes;
