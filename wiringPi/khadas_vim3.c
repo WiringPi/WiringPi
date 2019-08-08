@@ -93,7 +93,7 @@ static const int phyToGpio_rev[64] = {
 const int *pinToGpio, *phyToGpio;
 
 /*	ADC file descriptor	*/
-static char *adcFds[2];
+//static char *adcFds[2];
 
 /*	GPIO mmap control	*/
 static volatile uint32_t *gpio,*gpio1;
@@ -119,7 +119,7 @@ static int	gpioToMuxReg	(int pin);
 /*--------------------------------------------------------------------------------------*/
 static int      _getModeToGpio      (int mode, int pin);
 static void		_setPadDrive		(int pin, int value);
-static void		_getPadDrive		(int pin);
+static int		_getPadDrive		(int pin);
 static void     _pinMode        (int pin, int mode);
 static int      _getAlt         (int pin);
 static int      _getPUPD        (int pin);
@@ -134,7 +134,7 @@ static unsigned int _digitalReadByte    (void);
 /*								board init function										*/
 /*--------------------------------------------------------------------------------------*/
 static  int init_gpio_mmap (void);
-static  void init_adc_fds   (void);
+//static  void init_adc_fds   (void);
 void init_khadas_vim3(struct libkhadas *libwiring);
 
 /*--------------------------------------------------------------------------------------*/
@@ -268,6 +268,7 @@ static int gpioToMuxReg(int pin)
 		case VIM3_GPIOAO_PIN_START + 8 ...VIM3_GPIOAO_PIN_END:
 			return VIM3_GPIOAO_MUX_1_REG_OFFSET;
 	}
+	return VIM3_GPIOAO_MUX_1_REG_OFFSET;
 }
 
 /*------------------------------------------------------------------------------------------*/
@@ -328,15 +329,15 @@ static void _setPadDrive(int pin, int value)
 }
 
 /*-----------------------------------------------------------------------------------------*/
-static void _getPadDrive(int pin)
+static int _getPadDrive(int pin)
 {	
 	int ds, shift;
 
 	if(lib->mode == MODE_GPIO_SYS)
-		return;
+		return -1;
 
 	if((pin = _getModeToGpio(lib->mode, pin)) < 0)
-		return;
+		return -1;
 
 	ds = gpioToDSReg(pin);
 	shift = gpioToShiftReg(pin);
@@ -566,13 +567,13 @@ static void _digitalWrite(int pin, int value)
 }
 
 /*------------------------------------------------------------------------------------------*/
-static int _analogRead (int pin)
+static int _analogRead (int UNU pin)
 {
 	return -1;
 }
 
 /*-------------------------------------------------------------------------------------------*/
-static void _digitalWriteByte(const int value)
+static void _digitalWriteByte(const int UNU value)
 {
 	return;
 }
@@ -610,12 +611,13 @@ static int init_gpio_mmap(void)
 		return msg (MSG_ERR,
 				"wiringPiSetup: mmap (GPIO) failed: %s\n",
 				strerror (errno));
+	return 0;
 }
 
-/*------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------------------
 static void init_adc_fds(void)
 {
-}
+}*/
 
 /*------------------------------------------------------------------------------------------*/
 void init_khadas_vim3(struct libkhadas *libwiring)

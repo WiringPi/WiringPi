@@ -32,6 +32,7 @@
 #include "khadas_vim1.h"
 #include "khadas_vim2.h"
 #include "khadas_vim3.h"
+#include "khadas_edge.h"
 
 /*--------------------------------------------------------------------------------------*/
 /*							Const string define											*/
@@ -42,6 +43,7 @@ const char *piModelNames [16] = {
 	"KHADAS-VIM1",
 	"KHADAS-VIM2",
 	"KHADAS-VIM3",
+	"KHADAS-EDGE",
 };
 
 const char *piRevisionNames [16] = {
@@ -99,6 +101,13 @@ const int piMemorySize [8] = {
 static volatile int pinPass = -1;
 static pthread_mutex_t pinMutex ;
 
+/*----------------------------------------------------------------------------*/
+#ifdef __ANDROID__
+int pthread_cancel(pthread_t h) {
+    return pthread_kill(h, 0);
+}
+#endif /* __ANDROID__ */
+/*----------------------------------------------------------------------------*/
 //Debugging & return codes
 int wiringPiDebug		= FALSE;
 int wiringPiReturnCodes = FALSE;
@@ -157,18 +166,18 @@ static void warn_msg(const char *func)
 /*------------------------------------------------------------------------------------------*/	
 /*                       Unsupport Function list on KHADAs									*/
 /*------------------------------------------------------------------------------------------*/
-static void piGpioLayoutOps	(const char *why) 		{warn_msg(__func__);return;}
-void pwmSetMode				(int mode)				{warn_msg(__func__);return;}
-void pwmSetRange			(unsigned int range)	{warn_msg(__func__);return;}
-void pwmSetClock			(int divisor)			{warn_msg(__func__);return;}
-void gpioClockSet			(int pin, int freq)		{warn_msg(__func__);return;}
+static void UNU piGpioLayoutOps	(const char UNU *why) 		{warn_msg(__func__);return;}
+void pwmSetMode				(int UNU mode)				{warn_msg(__func__);return;}
+	void pwmSetRange	(unsigned int UNU range)	{ warn_msg(__func__); return; }
+	void pwmSetClock	(int UNU divisor)		{ warn_msg(__func__); return; }
+	void gpioClockSet	(int UNU pin, int UNU freq)	{ warn_msg(__func__); return; }
 
 /* core unsupport function */
-void pinModeAlt				(int pin, int mode)		{warn_msg(__func__);return;}
-void pwmWrite				(int pin, int value)	{warn_msg(__func__);return;}
-void analogWrite			(int pin, int value)	{warn_msg(__func__);return;}
-void pwmToneWrite			(int pin, int freq)		{warn_msg(__func__);return;}
-void digitalWriteByte2		(const int vaule)		{warn_msg(__func__);return;}
+	void pinModeAlt		(int UNU pin, int UNU mode)	{ warn_msg(__func__); return; }
+	void pwmWrite		(int UNU pin, int UNU value)	{ warn_msg(__func__); return; }
+	void analogWrite	(int UNU pin, int UNU value)	{ warn_msg(__func__); return; }
+	void pwmToneWrite	(int UNU pin, int UNU freq)	{ warn_msg(__func__); return; }
+	void digitalWriteByte2	(const int UNU value)	{ warn_msg(__func__); return; }
 unsigned int digitalReadByte2	(void)				{warn_msg(__func__); return -1;}
 
 /*------------------------------------------------------------------------------------------*/
@@ -177,15 +186,15 @@ unsigned int digitalReadByte2	(void)				{warn_msg(__func__); return -1;}
 /*------------------------------------------------------------------------------------------*/
 
 struct wiringPiNodeStruct *wiringPiNodes = NULL;
-struct wiringPiNodeStruct *wiringPiFindNode(int pin)	{return NULL;}
+struct wiringPiNodeStruct *wiringPiFindNode(int UNU pin)	{return NULL;}
 
 static void pinModeDummy		(UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int mode)
 {return;}
 static void pullUpDnControlDummy(UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int pud)
 {return;}
-static unsigned int digitalRead8Dummy (UNU struct wiringPiNodeStruct *node, UNU int UNU pin)
+static unsigned int UNU digitalRead8Dummy (UNU struct wiringPiNodeStruct *node, UNU int UNU pin)
 {return 0;}
-static void digitalWrite8Demmy	(UNU struct wiringPiNodeStruct *node, UNU int pin,UNU int value)
+static void UNU digitalWrite8Demmy	(UNU struct wiringPiNodeStruct *node, UNU int pin,UNU int value)
 {return;}
 static int digitalReadDummy		(UNU struct wiringPiNodeStruct *node, UNU int UNU pin)
 {return LOW;}
@@ -194,8 +203,8 @@ static void pwmWriteDummy		(UNU struct wiringPiNodeStruct *node, UNU int pin, UN
 {return;}
 static int analogReadDummy		(UNU struct wiringPiNodeStruct *node, UNU int pin)
 {return 0;}
-static int analogWriteDummy		(UNU struct wiringPiNodeStruct *node,UNU int pin, UNU int value)
-{return 0;}
+static	void analogWriteDummy		(UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value)
+{return;}
 
 struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
 {
@@ -219,8 +228,8 @@ struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
 	node->pinMode			= pinModeDummy;
 	node->pullUpDnControl	= pullUpDnControlDummy;
 	node->digitalRead		= digitalReadDummy;
-	node->digitalWrite		= digitalWriteDummy;
-	node->pwmWrite			= pwmWriteDummy;
+	node->digitalWrite	    = digitalWriteDummy ;
+	node->pwmWrite		    = pwmWriteDummy ;
 	node->analogRead		= analogReadDummy;
 	node->analogWrite		= analogWriteDummy;
 	node->next				= wiringPiNodes;
@@ -256,7 +265,6 @@ int piGpioLayout(void)
 {
 	FILE *cpuFd;
 	char line[120];
-	char *c;
 	static int gpioLayout = -1;
 
 	if(-1 != gpioLayout)
@@ -271,15 +279,21 @@ int piGpioLayout(void)
 		if(0 == strncmp(line, "Hardware", 8))
 			break;
 
-	if(0 != strncmp(line, "Hardware", 8) != 0)
-		wiringPiFailure(WPI_FATAL, "No \"Hardware\" line");
-
+	if(0 != strncmp(line, "Hardware", 8) != 0){
+		//wiringPiFailure(WPI_FATAL, "No \"Hardware\" line");
+		libwiring.model = MODEL_KHADAS_EDGE;
+		libwiring.maker = MAKER_ROCKCHIP;
+		libwiring.mem	= 4;
+		libwiring.rev	= 1;
+		goto exit;
+	}
 	if(wiringPiDebug)
 		printf ("piGpioLayout: Hardware: %s\n", line) ;
 	
 	if (!(strstr (line, "Khadas")))
 		wiringPiFailure (WPI_FATAL, "** This board is not KHADAS. **");
-
+	
+exit:
 	rewind(cpuFd);
 
 	gpioLayout = 1;
@@ -485,7 +499,9 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 	const char *modeS;
 	char fName   [64];
 	char  pinS [8];
+#ifndef __ANDROID__	
 	pid_t pid;
+#endif	
 	int   count, i;
 	char  c;
 	int   GpioPin;
@@ -519,6 +535,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
 		sprintf (pinS, "%d", GpioPin);
 
+#ifndef __ANDROID__
 		if ((pid = fork ()) < 0)
 		return wiringPiFailure (
 			WPI_FATAL,
@@ -547,6 +564,36 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 					"wiringPiISR: Can't find gpio program\n");
 		}else
 			wait (NULL) ;
+#else
+		FILE *export, *direct, *edge;
+		export = fopen("/sys/class/gpio/export", "w") ;
+		fprintf (export, "%d\n", GpioPin) ;
+		fclose (export) ;
+
+		char fDirection[64];
+		sprintf (fDirection, "/sys/class/gpio/gpio%d/direction", GpioPin) ;
+		while ((direct= fopen(fDirection, "w")) == NULL) {
+			sleep(1);
+		}
+		fprintf (direct, "in\n") ;
+		fclose (direct) ;
+
+		char fEdge[64];
+		sprintf (fEdge, "/sys/class/gpio/gpio%d/edge", GpioPin) ;
+		while ((edge= fopen(fEdge, "w")) == NULL) {
+			sleep(1);
+		}
+
+		if (mode  == INT_EDGE_FALLING)
+			fprintf (edge, "falling\n");
+		else if (mode  == INT_EDGE_RISING)
+			fprintf (edge, "rising\n");
+		else if (mode == INT_EDGE_BOTH)
+			fprintf (edge, "both\n");
+		else
+			fprintf (edge, "none\n");
+		fclose (edge) ;
+#endif
 	}
 
 	// Now pre-open the /sys/class node - but it may already be open if
@@ -733,6 +780,9 @@ int wiringPiSetup(void)
 		case MODEL_KHADAS_VIM3:
 			init_khadas_vim3(&libwiring);
 			break;
+		case MODEL_KHADAS_EDGE:
+			init_khadas_edge(&libwiring);
+			break;
 		default:
 			return wiringPiFailure (WPI_ALMOST,"wiringPiSetup: Unknown model\n");
 	 }
@@ -801,6 +851,9 @@ int wiringPiSetupSys (void)
 	for (pin = 0 ; pin < 256 ; ++pin)
 	{
 		switch(libwiring.model){
+		case	MODEL_KHADAS_EDGE:
+			sprintf (fName, "/sys/class/gpio/gpio%d/value", pin + libwiring.pinBase);
+			break;
 			default:
 				sprintf (fName, "/sys/class/gpio/gpio%d/value", pin);
 				break;

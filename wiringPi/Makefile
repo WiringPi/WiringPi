@@ -65,7 +65,8 @@ SRC	=	wiringPi.c						\
 		wpiExtensions.c					\
 		khadas_vim1.c					\
 		khadas_vim2.c					\
-		khadas_vim3.c
+		khadas_vim3.c                                   \
+		khadas_edge.c						
 
 HEADERS =	$(shell ls *.h)
 
@@ -135,6 +136,7 @@ depend:
 khadas_vim1.o	: wiringPi.h khadas_vim1.h
 khadas_vim2.o	: wiringPi.h khadas_vim2.h
 khadas_vim3.o	: wiringPi.h khadas_vim3.h
+khadas_edge.o   : wiringPi.h khadas_edge.h
 
 wiringPi.o: softPwm.h softTone.h wiringPi.h ../version.h
 wiringSerial.o: wiringSerial.h

@@ -48,6 +48,7 @@
 #define MODEL_KHADAS_VIM1	1
 #define MODEL_KHADAS_VIM2	2
 #define MODEL_KHADAS_VIM3	3
+#define	MODEL_KHADAS_EDGE	4
 
 #define MAKER_UNKNOWN		0
 #define MAKER_AMLOGIC		1
@@ -113,7 +114,9 @@ extern const int   piMemorySize    [ 8] ;
 #define	WPI_FATAL	(1==1)
 #define	WPI_ALMOST	(1==2)
 
+#if !defined(ANDROID)
 #define PAGE_SIZE	(4*1024)
+#endif
 #define BLOCK_SIZE	(4*1024)
 
 #define MSG_ERR 	-1
@@ -310,7 +313,7 @@ extern			void piLock				(int key);
 extern			void piUnlock			(int key);
 
 //Schedulling priority
-//extern			void piHiPri			(unsigned int howLong);
+extern		int  piHiPri		(const int pri);
 
 //From Arduino land
 extern			void delay				(unsigned int howLang);

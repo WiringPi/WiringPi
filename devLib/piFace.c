@@ -40,7 +40,7 @@
  *********************************************************************************
  */
 
-void myDigitalWrite (struct wiringPiNodeStruct *node, int pin, int value)
+void myDigitalWrite (UNU struct wiringPiNodeStruct *node, int pin, int value)
 {
   digitalWrite (pin + 16, value) ;
 }
@@ -69,7 +69,7 @@ int myDigitalRead (struct wiringPiNodeStruct *node, int pin)
  *********************************************************************************
  */
 
-void myPullUpDnControl (struct wiringPiNodeStruct *node, int pin, int pud)
+void myPullUpDnControl (UNU struct wiringPiNodeStruct *node, int pin, int pud)
 {
   pullUpDnControl (pin + 16 + 8, pud) ;
 }

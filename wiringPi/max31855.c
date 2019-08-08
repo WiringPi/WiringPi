@@ -30,6 +30,11 @@
 
 #include "max31855.h"
 
+#if defined ANDROID
+#define __bswap_16(x) bswap_16(x)
+#define __bswap_32(x) bswap_32(x)
+#endif
+
 static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
 {
   uint32_t spiData ;

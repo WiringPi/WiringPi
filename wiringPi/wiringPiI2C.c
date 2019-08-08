@@ -221,6 +221,7 @@ int wiringPiI2CSetup (const int devId)
 {
   int rev ;
   const char *device ;
+  int model, mem, maker, overVolted ;
 
   rev = piGpioLayout () ;
 
@@ -228,6 +229,14 @@ int wiringPiI2CSetup (const int devId)
     device = "/dev/i2c-0" ;
   else
     device = "/dev/i2c-1" ;
+	piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+	switch(model)	{
+	case MODEL_KHADAS_EDGE:
+		device = "/dev/i2c-2";
+	    break;
+	default:
+		break;
+	}
 
   return wiringPiI2CSetupInterface (device, devId) ;
 }

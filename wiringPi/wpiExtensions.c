@@ -61,8 +61,9 @@
 #include "bmp180.h"
 #include "htu21d.h"
 #include "ds18b20.h"
+#if !defined ANDROID
 #include "rht03.h"
-
+#endif
 #include "wpiExtensions.h"
 
 extern int wiringPiDebug ;
@@ -463,7 +464,7 @@ static int doExtensionPcf8591 (char *progName, int pinBase, char *params)
  *********************************************************************************
  */
 
-static int doExtensionPseudoPins (UNU char *progName, int pinBase, UNU char *params)
+static int UNU doExtensionPseudoPins (UNU char *progName, int pinBase, UNU char *params)
 {
   pseudoPinsSetup (pinBase) ;
 
@@ -517,6 +518,7 @@ static int doExtensionDs18b20 (char *progName, int pinBase, char *params)
 
   return ds18b20Setup (pinBase, serialNum) ;
 }
+#if !defined ANDROID
 
 
 /*
@@ -535,7 +537,7 @@ static int doExtensionRht03 (char *progName, int pinBase, char *params)
 
   return rht03Setup (pinBase, piPin) ;
 }
-
+#endif
 
 /*
  * doExtensionMax31855:
@@ -769,7 +771,7 @@ static int doExtensionDrcS (char *progName, int pinBase, char *params)
   return TRUE ;
 }
 
-
+#if !defined ANDROID
 /*
  * doExtensionDrcNet:
  *	Interface to a DRC Network system
@@ -822,7 +824,7 @@ static int doExtensionDrcNet (char *progName, int pinBase, char *params)
   return drcSetupNet (pinBase, pins, ipAddress, port, password) ;
 }
 
-
+#endif
 
 /*
  * Function list
@@ -840,10 +842,14 @@ static struct extensionFunctionStruct extensionFunctions [] =
   { "pcf8574",		&doExtensionPcf8574	},
   { "pcf8591",		&doExtensionPcf8591	},
   { "bmp180",		&doExtensionBmp180	},
+#if !defined ANDROID
   { "pseudoPins",	&doExtensionPseudoPins	},
+#endif
   { "htu21d",		&doExtensionHtu21d	},
   { "ds18b20",		&doExtensionDs18b20	},
+#if !defined ANDROID  
   { "rht03",		&doExtensionRht03	},
+#endif
   { "mcp3002",		&doExtensionMcp3002	},
   { "mcp3004",		&doExtensionMcp3004	},
   { "mcp4802",		&doExtensionMcp4802	},
@@ -853,7 +859,9 @@ static struct extensionFunctionStruct extensionFunctions [] =
   { "max5322",		&doExtensionMax5322	},
   { "sn3218",		&doExtensionSn3218	},
   { "drcs",		&doExtensionDrcS	},
+#if !defined ANDROID
   { "drcn",		&doExtensionDrcNet	},
+#endif
   { NULL,		NULL		 	},
 } ;
 

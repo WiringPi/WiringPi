@@ -1,0 +1,119 @@
+cc_library_headers {
+    name: "wiringPi-headers",
+    export_include_dirs: ["wiringPi"],
+
+    vendor_available: true,
+    host_supported: true,
+}
+
+cc_library_shared {
+    header_libs: ["wiringPi-headers"],
+
+    name: "libwiringPi",
+    srcs: [
+        "wiringPi/ads1115.c",
+        "wiringPi/mcp23008.c",
+        "wiringPi/mcp4802.c",
+        "wiringPi/piHiPri.c",
+        "wiringPi/sr595.c",
+        "wiringPi/bmp180.c",
+        "wiringPi/mcp23016.c",
+        "wiringPi/piThread.c",
+        "wiringPi/wiringPi.c",
+        "wiringPi/mcp23017.c",
+        "wiringPi/drcSerial.c",
+        "wiringPi/mcp23s08.c",
+        "wiringPi/wiringPiI2C.c",
+        "wiringPi/ds18b20.c",
+        "wiringPi/mcp23s17.c",
+        "wiringPi/sn3218.c",
+        "wiringPi/wiringPiSPI.c",
+        "wiringPi/htu21d.c",
+        "wiringPi/mcp3002.c",
+        "wiringPi/softPwm.c",
+        "wiringPi/wiringSerial.c",
+        "wiringPi/max31855.c",
+        "wiringPi/mcp3004.c",
+        "wiringPi/pcf8574.c",
+        "wiringPi/softServo.c",
+        "wiringPi/wiringShift.c",
+        "wiringPi/max5322.c",
+        "wiringPi/mcp3422.c",
+        "wiringPi/pcf8591.c",
+        "wiringPi/softTone.c",
+        "wiringPi/wpiExtensions.c",
+        "wiringPi/khadas_vim1.c",
+        "wiringPi/khadas_vim2.c",
+        "wiringPi/khadas_vim3.c",
+        "wiringPi/khadas_edge.c",		
+    ],
+
+    vendor_available: true,
+
+    cflags: [
+        "-UNDEBUG",
+        "-DANDROID",
+        "-Wno-return-type",
+    ],
+
+    host_ldlibs: [
+        "-ldl",
+        "-llog",
+    ],
+}
+
+cc_library_shared {
+    header_libs: ["wiringPi-headers"],
+
+    name: "libwiringPiDev",
+    srcs: [
+        "devLib/ds1302.c",
+        "devLib/maxdetect.c",
+        "devLib/piNes.c",
+        "devLib/gertboard.c",
+        "devLib/lcd128x64.c",
+        "devLib/lcd.c",
+        "devLib/piGlow.c",
+        "devLib/scrollPhat.c",
+        "devLib/piFace.c",
+    ],
+
+    shared_libs: ["libwiringPi"],
+
+    host_ldlibs: [
+        "-ldl",
+        "-llog",
+    ],
+
+    cflags: [
+        "-UNDEBUG",
+        "-DANDROID",
+        "-Wno-return-type",
+    ],
+}
+
+cc_binary {
+
+    name: "gpio",
+    srcs: [
+        "gpio/gpio.c",
+        "gpio/readall.c",
+    ],
+    header_libs: ["wiringPi-headers"],
+
+    local_include_dirs: [
+        "devLib",
+    ],
+
+    cflags: [
+        "-UNDEBUG",
+        "-DANDROID",
+        "-Wno-return-type",
+    ],
+    host_ldlibs: ["-llog"],
+    shared_libs: [
+        "libwiringPi",
+        "libwiringPiDev",
+    ],
+
+}

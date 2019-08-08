@@ -41,6 +41,7 @@
 
 static const char       *spiDev0  = "/dev/spidev0.0" ;
 static const char       *spiDev1  = "/dev/spidev0.1" ;
+static const char       *spiDevType3    = "/dev/spidev3.0";
 static const uint8_t     spiBPW   = 8 ;
 static const uint16_t    spiDelay = 0 ;
 
@@ -100,13 +101,22 @@ int wiringPiSPIDataRW (int channel, unsigned char *data, int len)
 int wiringPiSPISetupMode (int channel, int speed, int mode)
 {
   int fd ;
+	int model, rev, mem, maker, overVolted ;
+	const char *device ;
 
+	piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
   mode    &= 3 ;	// Mode is 0, 1, 2 or 3
   channel &= 1 ;	// Channel is 0 or 1
 
-  if ((fd = open (channel == 0 ? spiDev0 : spiDev1, O_RDWR)) < 0)
-    return wiringPiFailure (WPI_ALMOST, "Unable to open SPI device: %s\n", strerror (errno)) ;
-
+	if (model == MODEL_KHADAS_EDGE) {
+		device = spiDevType3;
+		if ((fd = open (device, O_RDWR)) < 0)
+			return wiringPiFailure (WPI_ALMOST, "Unable to open SPI device: %s\n", strerror (errno)) ;
+	}
+	else{
+	  if ((fd = open (channel == 0 ? spiDev0 : spiDev1, O_RDWR)) < 0)
+	    return wiringPiFailure (WPI_ALMOST, "Unable to open SPI device: %s\n", strerror (errno)) ;
+}
   spiSpeeds [channel] = speed ;
   spiFds    [channel] = fd ;
 

@@ -116,6 +116,10 @@
 
 #define	CONFIG_DEFAULT		(0x8583)	// From the datasheet
 
+#if defined ANDROID
+#define __bswap_16(x) bswap_16(x)
+#define __bswap_32(x) bswap_32(x)
+#endif
 
 static const uint16_t dataRates [8] =
 {

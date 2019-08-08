@@ -15,6 +15,7 @@
 #include <asm/ioctl.h>
 #include <sys/mman.h>
 #include <sys/utsname.h>
+#include <string.h>
 
 #include "softPwm.h"
 #include "softTone.h"
@@ -92,7 +93,7 @@ static const int phyToGpio_rev[64] = {
 const int *pinToGpio, *phyToGpio;
 
 /*	ADC file descriptor	*/
-static char *adcFds[2];
+//static char *adcFds[2];
 
 /*	GPIO mmap control	*/
 static volatile uint32_t *gpio,*gpio1;
@@ -129,7 +130,7 @@ static unsigned int _digitalReadByte    (void);
 /*								board init function										*/
 /*--------------------------------------------------------------------------------------*/
 static  int init_gpio_mmap (void);
-static  void init_adc_fds   (void);
+//static  void init_adc_fds   (void);
 void init_khadas_vim2(struct libkhadas *libwiring);
 
 /*--------------------------------------------------------------------------------------*/
@@ -527,13 +528,13 @@ static void _digitalWrite(int pin, int value)
 }
 
 /*------------------------------------------------------------------------------------------*/
-static int _analogRead (int pin)
+static int _analogRead (int UNU pin)
 {
 	return -1;
 }
 
 /*-------------------------------------------------------------------------------------------*/
-static void _digitalWriteByte(const int value)
+static void _digitalWriteByte(const int UNU value)
 {
 	return;
 }
@@ -571,12 +572,14 @@ static int init_gpio_mmap(void)
 		return msg (MSG_ERR,
 				"wiringPiSetup: mmap (GPIO) failed: %s\n",
 				strerror (errno));
+	return 0;
 }
 
-/*------------------------------------------------------------------------------------------*/
+/*------------------------------------------------------------------------------------------
 static void init_adc_fds(void)
 {
 }
+*/
 
 /*------------------------------------------------------------------------------------------*/
 void init_khadas_vim2(struct libkhadas *libwiring)
