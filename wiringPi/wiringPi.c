@@ -313,6 +313,11 @@ exit:
 		libwiring.maker = MAKER_AMLOGIC;
 		libwiring.mem   = 2;
 		libwiring.rev	= 1;
+	}else if(strstr(line,"Edge-V")){
+		libwiring.model = MODEL_KHADAS_EDGE;
+		libwiring.maker = MAKER_ROCKCHIP;
+		libwiring.mem   = 2;
+		libwiring.rev   = 1;
 	}else
 		printf("MODEL SETUP ERROR\n");
 	fclose(cpuFd);
