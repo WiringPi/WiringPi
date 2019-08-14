@@ -71,8 +71,8 @@
    435,	-1,		// 15 | 35 : (GPIOAO_5)UART_RX_AO_B | PWM_AO_A(GPIOAO_3)
    434,	-1,		// 16 | 36 : (GPIOAO_4)UART_TX_AO_B | RTC_CLK
 	-1,421,		// 17 | 37 :  		  			GND | GPIOH_5
-   421,	-1,		// 18 | 38 :	 (GPIOAO_1)Linux_RX | PWR_EN
-   422,	-1,		// 19 | 39 :     (GPIOAO_2)Linux_Tx | PWM_F
+   431,	-1,		// 18 | 38 :	 (GPIOAO_1)Linux_RX | PWR_EN
+   432,	-1,		// 19 | 39 :     (GPIOAO_2)Linux_Tx | PWM_F
 	-1,	-1,		// 20 | 40 : 				   3.3V | GND
 	//  Not used
 	-1,	-1,	-1,	-1,	-1,	-1,	-1,	-1,	-1,	-1,
