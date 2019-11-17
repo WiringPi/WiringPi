@@ -215,10 +215,12 @@ volatile unsigned int *_wiringPiTimerIrqRaw ;
 
 #define	GPIO_PERI_BASE_OLD	0x20000000
 #define	GPIO_PERI_BASE_NEW	0x3F000000
+#define	GPIO_PERI_BASE_PI4	0xFE000000
 
 static volatile unsigned int piGpioBase = 0 ;
+static volatile unsigned int piModel = 0 ;
 
-const char *piModelNames [16] =
+const char *piModelNames [20] =
 {
   "Model A",	//  0
   "Model B",	//  1
@@ -228,17 +230,21 @@ const char *piModelNames [16] =
   "Alpha",	//  5
   "CM",		//  6
   "Unknown07",	// 07
-  "Pi 3",	// 08
+  "Pi 3B",	// 08
   "Pi Zero",	// 09
   "CM3",	// 10
   "Unknown11",	// 11
   "Pi Zero-W",	// 12
-  "Pi 3+",	// 13
-  "Unknown14",	// 14
+  "Pi 3B+",	// 13
+  "Pi 3A+",	// 14
   "Unknown15",	// 15
+  "CM3+",	// 16
+  "Pi 4B",	// 17
+  "Unknown18",	// 18
+  "Unknown19",	// 19
 } ;
 
-const char *piRevisionNames [16] =
+const char *piRevisionNames [18] =
 {
   "00",
   "01",
@@ -256,6 +262,8 @@ const char *piRevisionNames [16] =
   "13",
   "14",
   "15",
+  "16",
+  "17",
 } ;
 
 const char *piMakerNames [16] =
@@ -265,7 +273,7 @@ const char *piMakerNames [16] =
   "Embest",	//	 2
   "Unknown",	//	 3
   "Embest",	//	 4
-  "Unknown05",	//	 5
+  "Stadium",	//	 5
   "Unknown06",	//	 6
   "Unknown07",	//	 7
   "Unknown08",	//	 8
@@ -283,8 +291,8 @@ const int piMemorySize [8] =
    256,		//	 0
    512,		//	 1
   1024,		//	 2
-     0,		//	 3
-     0,		//	 4
+  2048,		//	 3
+  4096,		//	 4
      0,		//	 5
      0,		//	 6
      0,		//	 7
@@ -537,6 +545,10 @@ static uint8_t gpioToFEN [] =
 //	GPIO Pin pull up/down register
 
 #define	GPPUD	37
+#define GPPUD0  57   //Pi4 Pins 15:0
+#define GPPUD1  58   //Pi4 Pins 31:16
+#define GPPUD2  59   //Pi4 Pins 47:32
+#define GPPUD3  60   //Pi4 Pins 57:48
 
 // gpioToPUDCLK
 //	(Word) offset to the Pull Up Down Clock regsiter
@@ -1493,6 +1505,9 @@ void pullUpDnControl (int pin, int pud)
 {
   struct wiringPiNodeStruct *node = wiringPiNodes ;
 
+  uint32_t  pull, bits;
+  int shift = (pin & 0xf) << 1;
+
   setupCheck ("pullUpDnControl") ;
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
@@ -1504,20 +1519,40 @@ void pullUpDnControl (int pin, int pud)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
-    *(gpio + GPPUD)              = pud & 3 ;		delayMicroseconds (5) ;
-    *(gpio + gpioToPUDCLK [pin]) = 1 << (pin & 31) ;	delayMicroseconds (5) ;
-    
-    *(gpio + GPPUD)              = 0 ;			delayMicroseconds (5) ;
-    *(gpio + gpioToPUDCLK [pin]) = 0 ;			delayMicroseconds (5) ;
-  }
-  else						// Extension module
-  {
+    if ( piModel == PI_MODEL_4B )
+    {
+      switch (pud) {  // The PI4B uses different numbering than previous pi's
+        case PUD_OFF: //0
+          pull = 0;
+          break;
+        case PUD_UP:  //2
+          pull = 1;
+          break;
+        case PUD_DOWN: //1
+          pull = 2;
+          break;
+        default:
+          pull = 0;
+          break;  
+      }
+      bits = *(gpio + GPPUD0 + (pin>>4));
+      bits &= ~(3 << shift);
+      bits |= (pull << shift);
+      *(gpio + GPPUD0 + (pin>>4)) = bits;
+
+    } else {
+        *(gpio + GPPUD)              = pud & 3 ;		delayMicroseconds (5) ;
+        *(gpio + gpioToPUDCLK [pin]) = 1 << (pin & 31) ;	delayMicroseconds (5) ;
+        *(gpio + GPPUD)              = 0 ;			delayMicroseconds (5) ;
+        *(gpio + gpioToPUDCLK [pin]) = 0 ;			delayMicroseconds (5) ;
+    }
+
+  } else {						// Extension module
     if ((node = wiringPiFindNode (pin)) != NULL)
       node->pullUpDnControl (node, pin, pud) ;
     return ;
   }
 }
-
 
 /*
  * digitalRead:
@@ -2238,8 +2273,10 @@ int wiringPiSetup (void)
 //	don't really many anything, so force native BCM mode anyway.
 
   piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+  // set global variable for model, as we need to reuse it later in the pull up/down routine.
+  piModel = model;
 
-  if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3))
+  if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3) || (model == PI_MODEL_CM3P))
     wiringPiMode = WPI_MODE_GPIO ;
   else
     wiringPiMode = WPI_MODE_PINS ;
@@ -2265,7 +2302,9 @@ int wiringPiSetup (void)
     case PI_MODEL_ZERO:	case PI_MODEL_ZERO_W:
       piGpioBase = GPIO_PERI_BASE_OLD ;
       break ;
-
+    case PI_MODEL_4B:
+      piGpioBase = GPIO_PERI_BASE_PI4 ;
+      break ;
     default:
       piGpioBase = GPIO_PERI_BASE_NEW ;
       break ;

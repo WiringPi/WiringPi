@@ -1,13 +1,7 @@
 /*
- * okLed.c:
- *      Make the OK LED on the Pi Pulsate...
- *
- * Originally posted to the Raspberry Pi forums:
- *  http://www.raspberrypi.org/phpBB3/viewtopic.php?p=162581#p162581
- *
- * Compile this and store it somewhere, then kick it off at boot time
- *    e.g. by putting it in /etc/rc.local and running it in the
- *    background &
+ * pwm.c:
+ *	Test of the software PWM driver. Needs 12 LEDs connected
+ *	to the Pi.
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -32,54 +26,68 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <math.h>
 
 #include <wiringPi.h>
 #include <softPwm.h>
 
-// The OK/Act LED is connected to BCM_GPIO pin 16
+#define RANGE		100
+#define	NUM_LEDS	 12
 
-#define OK_LED  16
+int ledMap [NUM_LEDS] = { 0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13 } ;
+
+int values [NUM_LEDS] = { 0, 17, 32, 50, 67, 85, 100, 85, 67, 50, 32, 17 } ;
 
 int main ()
 {
-  int fd, i ;
+  int i, j ;
+  char buf [80] ;
 
-  if (wiringPiSetupGpio() < 0)
+  if (wiringPiSetup () == -1)
   {
-    fprintf (stderr, "Unable to setup GPIO: %s\n", strerror (errno)) ;
+    fprintf (stdout, "oops: %s\n", strerror (errno)) ;
     return 1 ;
   }
 
-  // Change the trigger on the OK/Act LED to "none"
-  if ((fd = open ("/sys/class/leds/led0/trigger", O_RDWR)) < 0)
+  for (i = 0 ; i < NUM_LEDS ; ++i)
   {
-    fprintf (stderr, "Unable to change LED trigger: %s\n", strerror (errno)) ;
-    return 1 ;
+    softPwmCreate (ledMap [i], 0, RANGE) ;
+    printf ("%3d, %3d, %3d\n", i, ledMap [i], values [i]) ;
   }
-  write (fd, "none\n", 5) ;
-  close (fd) ;
 
-  softPwmCreate (OK_LED, 0, 100) ;
+  fgets (buf, 80, stdin) ;
 
-  for (;;)
+// Bring all up one by one:
+
+  for (i = 0 ; i < NUM_LEDS ; ++i)
+    for (j = 0 ; j <= 100 ; ++j)
+    {
+      softPwmWrite (ledMap [i], j) ;
+      delay (10) ;
+    }
+
+  fgets (buf, 80, stdin) ;
+
+// Down fast
+
+  for (i = 100 ; i > 0 ; --i)
   {
-    for (i = 0 ; i <= 100 ; ++i)
-    {
-      softPwmWrite (OK_LED, i) ;
-      delay (10) ;
-    }
-    delay (50) ;
-
-    for (i = 100 ; i >= 0 ; --i)
-    {
-      softPwmWrite (OK_LED, i) ;
-      delay (10) ;
-    }
+    for (j = 0 ; j < NUM_LEDS ; ++j)
+      softPwmWrite (ledMap [j], i) ;
     delay (10) ;
   }
 
-  return 0 ;
+  fgets (buf, 80, stdin) ;
+
+  for (;;)
+  {
+    for (i = 0 ; i < NUM_LEDS ; ++i)
+      softPwmWrite (ledMap [i], values [i]) ;
+
+    delay (50) ;
+
+    i = values [0] ;
+    for (j = 0 ; j < NUM_LEDS - 1 ; ++j)
+      values [j] = values [j + 1] ;
+    values [NUM_LEDS - 1] = i ;
+  }
 }

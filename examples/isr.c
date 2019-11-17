@@ -36,14 +36,22 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <wiringPi.h>
+#include <signal.h>
 
+//**********************************************************************************************************************
 
 // globalCounter:
 //	Global variable to count interrupts
 //	Should be declared volatile to make sure the compiler doesn't cache it.
-
 static volatile int globalCounter [8] ;
 
+static int terminate_process = 0;
+
+//**********************************************************************************************************************
+
+static void Signal_handler(int sig);
+
+//**********************************************************************************************************************
 
 /*
  * myInterrupt:
@@ -71,10 +79,15 @@ int main (void)
   int gotOne, pin ;
   int myCounter [8] ;
 
-  for (pin = 0 ; pin < 8 ; ++pin) 
+  for (pin = 0 ; pin < 8 ; ++pin) {
     globalCounter [pin] = myCounter [pin] = 0 ;
+  }
 
-  wiringPiSetup () ;
+  if (wiringPiSetup() < 0) {
+    fprintf(stderr, "Unable to setup wiringPi: %s\n", strerror(errno));
+    return 1;
+  }
+
 
   wiringPiISR (0, INT_EDGE_FALLING, &myInterrupt0) ;
   wiringPiISR (1, INT_EDGE_FALLING, &myInterrupt1) ;
@@ -85,26 +98,52 @@ int main (void)
   wiringPiISR (6, INT_EDGE_FALLING, &myInterrupt6) ;
   wiringPiISR (7, INT_EDGE_FALLING, &myInterrupt7) ;
 
-  for (;;)
-  {
-    gotOne = 0 ;
-    printf ("Waiting ... ") ; fflush (stdout) ;
+  // Set the handler for SIGTERM (15)
+  signal(SIGTERM, Signal_handler);
+  signal(SIGHUP, Signal_handler);
+  signal(SIGINT, Signal_handler);
+  signal(SIGQUIT, Signal_handler);
+  signal(SIGTRAP, Signal_handler);
+  signal(SIGABRT, Signal_handler);
+  signal(SIGALRM, Signal_handler);
+  signal(SIGUSR1, Signal_handler);
+  signal(SIGUSR2, Signal_handler);
 
-    for (;;)
+  while (!terminate_process) {
+    gotOne = 0 ;
+    printf("Waiting ... ");
+    fflush(stdout);
+
+    while (!terminate_process)
     {
       for (pin = 0 ; pin < 8 ; ++pin)
       {
-	if (globalCounter [pin] != myCounter [pin])
-	{
-	  printf (" Int on pin %d: Counter: %5d\n", pin, globalCounter [pin]) ;
-	  myCounter [pin] = globalCounter [pin] ;
-	  ++gotOne ;
-	}
+        if (globalCounter [pin] != myCounter [pin])
+        {
+          printf (" Int on pin %d: Counter: %5d\n", pin, globalCounter [pin]) ;
+          myCounter [pin] = globalCounter [pin] ;
+          ++gotOne ;
+        }
       }
       if (gotOne != 0)
-	break ;
+        break ;
     }
   }
 
-  return 0 ;
+  return 0;
 }
+
+//**********************************************************************************************************************
+
+/**
+ * Intercepts and handles signals from QNX
+ * This function is called when the SIGTERM signal is raised by QNX
+ */
+void Signal_handler(int sig) {
+  printf("Received signal %d\n", sig);
+
+  // Signal process to exit.
+  terminate_process = 1;
+}
+
+//**********************************************************************************************************************

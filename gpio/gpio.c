@@ -62,31 +62,29 @@ extern void doQmode      (int argc, char *argv []) ;
 
 int wpMode ;
 
-char *usage = "Usage: gpio -v\n"
-              "       gpio -h\n"
-              "       gpio [-g|-1] ...\n"
-              "       gpio [-d] ...\n"
+char *usage = "Usage: gpio -v                Show Version\n"
+              "       gpio -h                Show Help\n"
+              "       gpio -V                Show gpio Layout version\n"
+              "       gpio [-g|-1|-p] ...    Use bcm-gpio | physical | piFace pin numbering scheme...\n"
               "       [-x extension:params] [[ -x ...]] ...\n"
-              "       gpio [-p] <read/write/wb> ...\n"
               "       gpio <mode/read/write/aread/awritewb/pwm/pwmTone/clock> ...\n"
               "       gpio <toggle/blink> <pin>\n"
-	      "       gpio readall\n"
-	      "       gpio unexportall/exports\n"
-	      "       gpio export/edge/unexport ...\n"
-	      "       gpio wfi <pin> <mode>\n"
-	      "       gpio drive <group> <value>\n"
-	      "       gpio pwm-bal/pwm-ms \n"
-	      "       gpio pwmr <range> \n"
-	      "       gpio pwmc <divider> \n"
-	      "       gpio load spi/i2c\n"
-	      "       gpio unload spi/i2c\n"
-	      "       gpio i2cd/i2cdetect\n"
-	      "       gpio rbx/rbd\n"
-	      "       gpio wb <value>\n"
-	      "       gpio usbp high/low\n"
-	      "       gpio gbr <channel>\n"
-	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
-
+              "       gpio readall\n"
+              "       gpio unexportall/exports\n"
+              "       gpio export/edge/unexport ...\n"
+              "       gpio wfi <pin> <mode>\n"
+              "       gpio drive <group> <value>\n"
+              "       gpio pwm-bal/pwm-ms \n"
+              "       gpio pwmr <range> \n"
+              "       gpio pwmc <divider> \n"
+              "       gpio load spi/i2c\n"
+              "       gpio unload spi/i2c\n"
+              "       gpio i2cd/i2cdetect\n"
+              "       gpio rbx/rbd\n"
+              "       gpio wb <value>\n"
+              "       gpio usbp high/low\n"
+              "       gpio gbr <channel>\n"
+              "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
 
 #ifdef	NOT_FOR_NOW
 /*
@@ -124,6 +122,8 @@ static const char *searchPath [] =
   "/usr/sbin",
   "/bin",
   "/usr/bin",
+  "/usr/local/bin",
+  "/usr/local/sbin",
   NULL,
 } ;
 
