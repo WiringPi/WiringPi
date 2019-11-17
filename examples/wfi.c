@@ -101,6 +101,8 @@ PI_THREAD (waitForIt)
       debounceTime = millis () + DEBOUNCE_TIME ;
     }
   }
+
+  return (void *) NULL ;
 }
 
 
@@ -143,7 +145,8 @@ int main (void)
 
   for (;;)
   {
-    printf ("Waiting ... ") ; fflush (stdout) ;
+    printf ("Waiting ... ");
+    fflush (stdout) ;
 
     while (myCounter == lastCounter)
     {

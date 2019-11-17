@@ -1,13 +1,7 @@
 /*
- * okLed.c:
- *      Make the OK LED on the Pi Pulsate...
- *
- * Originally posted to the Raspberry Pi forums:
- *  http://www.raspberrypi.org/phpBB3/viewtopic.php?p=162581#p162581
- *
- * Compile this and store it somewhere, then kick it off at boot time
- *    e.g. by putting it in /etc/rc.local and running it in the
- *    background &
+ * tone.c:
+ *	Test of the softTone module in wiringPi
+ *	Plays a scale out on pin 3 - connect pizeo disc to pin 3 & 0v
  *
  * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
  ***********************************************************************
@@ -32,54 +26,34 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <math.h>
 
 #include <wiringPi.h>
-#include <softPwm.h>
+#include <softTone.h>
 
-// The OK/Act LED is connected to BCM_GPIO pin 16
+#define	PIN	3
 
-#define OK_LED  16
+int scale [8] = { 262, 294, 330, 349, 392, 440, 494, 525 } ;
 
 int main ()
 {
-  int fd, i ;
+  int i ;
 
-  if (wiringPiSetupGpio() < 0)
+  if (wiringPiSetup () == -1)
   {
-    fprintf (stderr, "Unable to setup GPIO: %s\n", strerror (errno)) ;
+    fprintf (stdout, "oops: %s\n", strerror (errno)) ;
     return 1 ;
   }
 
-  // Change the trigger on the OK/Act LED to "none"
-  if ((fd = open ("/sys/class/leds/led0/trigger", O_RDWR)) < 0)
-  {
-    fprintf (stderr, "Unable to change LED trigger: %s\n", strerror (errno)) ;
-    return 1 ;
-  }
-  write (fd, "none\n", 5) ;
-  close (fd) ;
-
-  softPwmCreate (OK_LED, 0, 100) ;
+  softToneCreate (PIN) ;
 
   for (;;)
   {
-    for (i = 0 ; i <= 100 ; ++i)
+    for (i = 0 ; i < 8 ; ++i)
     {
-      softPwmWrite (OK_LED, i) ;
-      delay (10) ;
+      printf ("%3d\n", i) ;
+      softToneWrite (PIN, scale [i]) ;
+      delay (500) ;
     }
-    delay (50) ;
-
-    for (i = 100 ; i >= 0 ; --i)
-    {
-      softPwmWrite (OK_LED, i) ;
-      delay (10) ;
-    }
-    delay (10) ;
   }
 
-  return 0 ;
 }

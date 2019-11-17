@@ -48,7 +48,9 @@ SRC	=	blink.c blink8.c blink12.c					\
 		delayTest.c serialRead.c serialTest.c okLed.c ds1302.c		\
 		lowPower.c							\
 		max31855.c							\
-		rht03.c
+		rht03.c \
+		servo.c \
+		isr1.c test1.c test2.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -145,6 +147,14 @@ tone:	tone.o
 	$Q echo [link]
 	$Q $(CC) -o $@ tone.o $(LDFLAGS) $(LDLIBS)
 
+servo:	servo.o softServo.o
+	$Q echo [link]
+	$Q $(CC) -o $@ servo.o softServo.o $(LDFLAGS) $(LDLIBS)
+
+softServo.o: ../wiringPi/softServo.c ../wiringPi/softServo.h
+	$Q echo [softServo]
+	$Q $(CC) -c $(CFLAGS) $< -o softServo.o
+
 ds1302:	ds1302.o
 	$Q echo [link]
 	$Q $(CC) -o $@ ds1302.o $(LDFLAGS) $(LDLIBS)
@@ -160,6 +170,9 @@ max31855:	max31855.o
 clean:
 	$Q echo "[Clean]"
 	$Q rm -f $(OBJ) *~ core tags $(BINS)
+
+echo:
+	$Q echo "[BINS] $(BINS)"
 
 tags:	$(SRC)
 	$Q echo [ctags]

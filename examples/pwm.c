@@ -27,32 +27,77 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <signal.h>
+#include <unistd.h>
 
-int main (void)
+//**********************************************************************************************************************
+
+static int terminate_process = 0;
+
+static void Signal_handler(int sig);
+
+//**********************************************************************************************************************
+
+int main(void)
 {
-  int bright ;
+    int bright;
 
-  printf ("Raspberry Pi wiringPi PWM test program\n") ;
+    printf("Raspberry Pi wiringPi PWM test program\n");
 
-  if (wiringPiSetup () == -1)
-    exit (1) ;
-
-  pinMode (1, PWM_OUTPUT) ;
-
-  for (;;)
-  {
-    for (bright = 0 ; bright < 1024 ; ++bright)
+    if (wiringPiSetup() == -1)
     {
-      pwmWrite (1, bright) ;
-      delay (1) ;
+        printf("ERROR: wiringPi setup failed\n");
+        return EXIT_FAILURE;
     }
 
-    for (bright = 1023 ; bright >= 0 ; --bright)
-    {
-      pwmWrite (1, bright) ;
-      delay (1) ;
-    }
-  }
+    // Set the handler for SIGTERM (15)
+    signal(SIGTERM, Signal_handler);
+    signal(SIGHUP, Signal_handler);
+    signal(SIGINT, Signal_handler);
+    signal(SIGQUIT, Signal_handler);
+    signal(SIGTRAP, Signal_handler);
+    signal(SIGABRT, Signal_handler);
+    signal(SIGALRM, Signal_handler);
+    signal(SIGUSR1, Signal_handler);
+    signal(SIGUSR2, Signal_handler);
 
-  return 0 ;
+    pinMode(1, PWM_OUTPUT);
+
+    printf("Going into +/- loop...\n");
+    while (!terminate_process)
+    {
+        for (bright = 0; !terminate_process && bright < 1024; ++bright)
+        {
+            printf("+"); fflush(stdout);
+            pwmWrite(1, bright);
+            //delay (1) ;
+            usleep(5 * 1000);
+        }
+
+        for (bright = 1023; !terminate_process && bright >= 0; --bright)
+        {
+            printf("-"); fflush(stdout);
+            pwmWrite(1, bright);
+            //delay (1) ;
+            usleep(5 * 1000);
+        }
+    }
+
+    return 0;
 }
+
+//**********************************************************************************************************************
+
+/**
+ * Intercepts and handles signals
+ * This function is called when the SIGTERM signal is raised
+ */
+void Signal_handler(int sig)
+{
+    printf("Received signal %d\n", sig);
+
+    // Signal process to exit.
+    terminate_process = 1;
+}
+
+//**********************************************************************************************************************

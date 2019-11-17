@@ -74,6 +74,7 @@ int main (void)
 
   for (speed = 1 ; speed <= 32 ; speed *= 2)
   {
+    printf ("SPEED: %d\n", speed) ;
     printf ("+-------+--------+----------+----------+-----------+------------+\n") ;
     printf ("|   MHz |   Size | mS/Trans |      TpS |    Mb/Sec | Latency mS |\n") ;
     printf ("+-------+--------+----------+----------+-----------+------------+\n") ;
@@ -86,16 +87,16 @@ int main (void)
 
       start = millis () ;
       for (times = 0 ; times < NUM_TIMES ; ++times)
-	if (wiringPiSPIDataRW (SPI_CHAN, myData, size) == -1)
-	{
-	  printf ("SPI failure: %s\n", strerror (errno)) ;
-	  spiFail = TRUE ;
-	  break ;
-	}
+        if (wiringPiSPIDataRW (SPI_CHAN, myData, size) == -1)
+        {
+          printf ("SPI failure: %s\n", strerror (errno)) ;
+          spiFail = TRUE ;
+          break ;
+        }
       end = millis () ;
 
       if (spiFail)
-	break ;
+        break ;
 
       timePerTransaction        = ((double)(end - start) / (double)NUM_TIMES) / 1000.0 ;
       dataSpeed                 =  (double)(size * 8)    / (1024.0 * 1024.0) / timePerTransaction  ;

@@ -25,24 +25,63 @@
 
 #include <stdio.h>
 #include <wiringPi.h>
+#include <signal.h>
 
-// LED Pin - wiringPi pin 0 is BCM_GPIO 17.
+// LED Pin - wiringPi
+//  pin 0 is BCM_GPIO 17
+//  pin 1 is BCM_GPIO 18
+//  pin 2 is BCM_GPIO 27
+#define LED 2
 
-#define	LED	0
+static int terminate_process = 0;
+
+static void Signal_handler(int sig);
 
 int main (void)
 {
   printf ("Raspberry Pi blink\n") ;
 
-  wiringPiSetup () ;
+  if (wiringPiSetup () == -1)
+    return 1 ;
+
   pinMode (LED, OUTPUT) ;
 
-  for (;;)
+  // Set the handler for SIGTERM (15)
+  signal(SIGTERM, Signal_handler);
+  signal(SIGHUP,  Signal_handler);
+  signal(SIGINT,  Signal_handler);
+  signal(SIGQUIT, Signal_handler);
+  signal(SIGTRAP, Signal_handler);
+  signal(SIGABRT, Signal_handler);
+  signal(SIGALRM, Signal_handler);
+  signal(SIGUSR1, Signal_handler);
+  signal(SIGUSR2, Signal_handler);
+
+  while (!terminate_process)
   {
     digitalWrite (LED, HIGH) ;	// On
     delay (500) ;		// mS
     digitalWrite (LED, LOW) ;	// Off
     delay (500) ;
   }
+
+  digitalWrite (LED, LOW) ; // Off
+
   return 0 ;
 }
+
+//**********************************************************************************************************************
+
+/**
+ * Intercepts and handles signals from QNX
+ * This function is called when the SIGTERM signal is raised by QNX
+ */
+void Signal_handler(int sig)
+{
+  printf("Received signal %d\n", sig);
+
+  // Signal process to exit.
+  terminate_process = 1;
+}
+
+//**********************************************************************************************************************
