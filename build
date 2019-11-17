@@ -46,6 +46,8 @@ check_make_ok() {
 sudo=${WIRINGPI_SUDO-sudo}
 
 if [ x$1 = "xclean" ]; then
+  echo Cleaning
+  echo
   cd wiringPi
   echo -n "wiringPi:   "	; make clean
   cd ../devLib
@@ -71,6 +73,9 @@ if [ x$1 = "xclean" ]; then
 fi
 
 if [ x$1 = "xuninstall" ]; then
+  echo Uninstalling
+  echo
+  echo "WiringPi library"
   cd wiringPi
   echo -n "wiringPi: " ; $sudo make uninstall
   cd ../devLib
