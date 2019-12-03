@@ -45,7 +45,7 @@ static const int pinToGpio_rev[64] = {
 	351,350, 		//	24 | 25 :					   GPIOAO_1 | GPIOAO_0
 	 -1, -1,		//	26 | 27 :								|
 	 -1,314,		//	28 | 29 :					  		    | GPIOA_14
-	 -1,324,		//	30 | 31 : 								| GPIOH_4
+	325,324,		//	30 | 31 : 						GPIOH_5 | GPIOH_4
 	// Padding:
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //32to47
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, //48to63
@@ -69,7 +69,7 @@ static const int phyToGpio_rev[64] = {
 	 -1,302,			//	12 | 32 :					   ADC1	| GPIOA_2
 	360,304,			//	13 | 33 :				  GPIOAO_10 | GPIOA_4
 	 -1, -1,			//	14 | 34 :						GND	| GND
-	326, -1,			//	15 | 35 :	  (GPIOH_6)UART_RX_AO_B | PWM-F
+	326,325,			//	15 | 35 :	  (GPIOH_6)UART_RX_AO_B | PWM-F(GPIOH_5)
 	327, -1,			//	16 | 36 :	  (GPIOH_7)UART_TX_AO_B | RTC_CLK
 	 -1,324,			//	17 | 37 :						GND	| GPIOH_4
 	351, -1,			//	18 | 38 :		 (GPIOAO_1)Linux_RX	| MCUFA_1
