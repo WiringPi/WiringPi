@@ -525,8 +525,6 @@ static int _digitalRead(int pin)
 	if ((pin = _getModeToGpio(lib->mode, pin)) < 0)
 		return 0;
 	if(pin >= VIM3_GPIOAO_PIN_START && pin <= VIM3_GPIOAO_PIN_END){
-		printf("frank_debug : pin: %x\n\n", *(gpio1 + gpioToGPLEVReg(pin)));
-	//	printf("frank_debug : gpioToShiftReg(pin): %x\n\n", gpioToShiftReg(pin));
 		if ((*(gpio1 + gpioToGPLEVReg(pin)) & (1 << gpioToShiftReg(pin))) != 0)
 			return HIGH;
 		else
