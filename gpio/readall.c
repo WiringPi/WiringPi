@@ -80,7 +80,7 @@ static char *alts [] =
   "IN", "OUT", "ALT5", "ALT4", "ALT0", "ALT1", "ALT2", "ALT3"
 } ;
 
-static int physToWpi [64] = 
+static int physToWpi [64] =
 {
   -1,           // 0
   -1, -1,       // 1, 2
@@ -113,7 +113,7 @@ static int physToWpi [64] =
   -1, -1, -1, -1, -1, -1, -1, -1, -1
 } ;
 
-static char *physNames [64] = 
+static char *physNames [64] =
 {
   NULL,
 
@@ -309,6 +309,8 @@ static void plus2header (int model)
     printf (" +-----+-----+---------+------+---+---Pi 3B+-+---+------+---------+-----+-----+\n") ;
   else if (model == PI_MODEL_3AP)
     printf (" +-----+-----+---------+------+---+---Pi 3A+-+---+------+---------+-----+-----+\n") ;
+  else if (model == PI_MODEL_4B)
+    printf (" +-----+-----+---------+------+---+---Pi 4B--+---+------+---------+-----+-----+\n") ;
   else
     printf (" +-----+-----+---------+------+---+---Pi ?---+---+------+---------+-----+-----+\n") ;
 }
@@ -356,6 +358,7 @@ void doReadall (void)
 	(model == PI_MODEL_2)    ||
 	(model == PI_MODEL_3AP)  ||
 	(model == PI_MODEL_3B)   || (model == PI_MODEL_3BP) ||
+	(model == PI_MODEL_4B)   ||
 	(model == PI_MODEL_ZERO) || (model == PI_MODEL_ZERO_W))
     piPlusReadall (model) ;
   else if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3) || ((model == PI_MODEL_CM3P)))
