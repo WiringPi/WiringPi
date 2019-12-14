@@ -213,8 +213,9 @@ volatile unsigned int *_wiringPiTimerIrqRaw ;
 // piGpioBase:
 //	The base address of the GPIO memory mapped hardware IO
 
-#define	GPIO_PERI_BASE_OLD	0x20000000
-#define	GPIO_PERI_BASE_NEW	0x3F000000
+#define	GPIO_PERI_BASE_OLD  0x20000000
+#define	GPIO_PERI_BASE_2708 0x3F000000
+#define	GPIO_PERI_BASE_2711 0xFE000000
 
 static volatile unsigned int piGpioBase = 0 ;
 
@@ -1533,7 +1534,6 @@ int digitalRead (int pin)
 {
   char c ;
   struct wiringPiNodeStruct *node = wiringPiNodes ;
-
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
     /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
@@ -2243,7 +2243,9 @@ int wiringPiSetup (void)
 
   piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
 
-  if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3) || (model == PI_MODEL_CM3P))
+  if ((model == PI_MODEL_CM) ||
+      (model == PI_MODEL_CM3) ||
+      (model == PI_MODEL_CM3P))
     wiringPiMode = WPI_MODE_GPIO ;
   else
     wiringPiMode = WPI_MODE_PINS ;
@@ -2270,8 +2272,12 @@ int wiringPiSetup (void)
       piGpioBase = GPIO_PERI_BASE_OLD ;
       break ;
 
+    case PI_MODEL_4B:
+      piGpioBase = GPIO_PERI_BASE_2711 ;
+      break ;
+
     default:
-      piGpioBase = GPIO_PERI_BASE_NEW ;
+      piGpioBase = GPIO_PERI_BASE_2708 ;
       break ;
   }
 
