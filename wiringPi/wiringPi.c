@@ -1218,6 +1218,11 @@ void pwmSetRange (unsigned int range)
 void pwmSetClock (int divisor)
 {
   uint32_t pwm_control ;
+
+  if (piGpioBase == GPIO_PERI_BASE_2711)
+  {
+    divisor = 540*divisor/192;
+  }
   divisor &= 4095 ;
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
