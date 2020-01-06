@@ -1,5 +1,5 @@
-Note
-====
+Note. - Unofficial WiringPi Mirror
+==========================
 This is an unofficial mirror of WiringPi. I have made my own changes to the repository,
 including updates for RaspberryPi 4. I'm not sure if the changes are complete, and I
 don't guarantee that everything works. I just needed to have some things working for my Pi4.

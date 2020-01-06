@@ -137,7 +137,7 @@ extern const int   piMemorySize    [ 8] ;
 // wiringPiNodeStruct:
 //	This describes additional device nodes in the extended wiringPi
 //	2.0 scheme of things.
-//	It's a simple linked list for now, but will hopefully migrate to 
+//	It's a simple linked list for now, but will hopefully migrate to
 //	a binary tree for efficiency reasons - but then again, the chances
 //	of more than 1 or 2 devices being added are fairly slim, so who
 //	knows....
@@ -214,7 +214,7 @@ extern          void pwmWrite            (int pin, int value) ;
 extern          int  analogRead          (int pin) ;
 extern          void analogWrite         (int pin, int value) ;
 
-// PiFace specifics 
+// PiFace specifics
 //	(Deprecated)
 
 extern int  wiringPiSetupPiFace (void) ;

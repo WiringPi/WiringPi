@@ -213,12 +213,11 @@ volatile unsigned int *_wiringPiTimerIrqRaw ;
 // piGpioBase:
 //	The base address of the GPIO memory mapped hardware IO
 
-#define	GPIO_PERI_BASE_OLD	0x20000000
-#define	GPIO_PERI_BASE_NEW	0x3F000000
-#define	GPIO_PERI_BASE_PI4	0xFE000000
+#define	GPIO_PERI_BASE_OLD  0x20000000
+#define	GPIO_PERI_BASE_2835 0x3F000000
+#define	GPIO_PERI_BASE_2711 0xFE000000
 
 static volatile unsigned int piGpioBase = 0 ;
-static volatile unsigned int piModel = 0 ;
 
 const char *piModelNames [20] =
 {
@@ -545,10 +544,14 @@ static uint8_t gpioToFEN [] =
 //	GPIO Pin pull up/down register
 
 #define	GPPUD	37
-#define GPPUD0  57   //Pi4 Pins 15:0
-#define GPPUD1  58   //Pi4 Pins 31:16
-#define GPPUD2  59   //Pi4 Pins 47:32
-#define GPPUD3  60   //Pi4 Pins 57:48
+
+/* 2711 has a different mechanism for pin pull-up/down/enable  */
+#define GPPUPPDN0                57        /* Pin pull-up/down for pins 15:0  */
+#define GPPUPPDN1                58        /* Pin pull-up/down for pins 31:16 */
+#define GPPUPPDN2                59        /* Pin pull-up/down for pins 47:32 */
+#define GPPUPPDN3                60        /* Pin pull-up/down for pins 57:48 */
+
+static volatile unsigned int piGpioPupOffset = 0 ;
 
 // gpioToPUDCLK
 //	(Word) offset to the Pull Up Down Clock regsiter
@@ -826,7 +829,7 @@ int piGpioLayout (void)
 
   for (c = &line [strlen (line) - 1] ; (*c == '\n') || (*c == '\r') ; --c)
     *c = 0 ;
-  
+
   if (wiringPiDebug)
     printf ("piGpioLayout: Revision string: %s\n", line) ;
 
@@ -895,7 +898,7 @@ int piBoardRev (void)
  *	So the distinction between boards that I can see is:
  *
  *		0000 - Error
- *		0001 - Not used 
+ *		0001 - Not used
  *
  *	Original Pi boards:
  *		0002 - Model B,  Rev 1,   256MB, Egoman
@@ -980,7 +983,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
 
   for (c = &line [strlen (line) - 1] ; (*c == '\n') || (*c == '\r') ; --c)
     *c = 0 ;
-  
+
   if (wiringPiDebug)
     printf ("piBoardId: Revision string: %s\n", line) ;
 
@@ -1019,7 +1022,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     bMfg      = (revision & (0x0F << 16)) >> 16 ;
     bMem      = (revision & (0x07 << 20)) >> 20 ;
     bWarranty = (revision & (0x03 << 24)) != 0 ;
-    
+
     *model    = bType ;
     *rev      = bRev ;
     *mem      = bMem ;
@@ -1046,7 +1049,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
 // If longer than 4, we'll assume it's been overvolted
 
     *warranty = strlen (c) > 4 ;
-  
+
 // Extract last 4 characters:
 
     c = c + strlen (c) - 4 ;
@@ -1086,7 +1089,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     else                              { *model = 0           ; *rev = 0              ; *mem =   0 ; *maker = 0 ;               }
   }
 }
- 
+
 
 
 /*
@@ -1217,6 +1220,11 @@ void pwmSetRange (unsigned int range)
 void pwmSetClock (int divisor)
 {
   uint32_t pwm_control ;
+
+  if (piGpioBase == GPIO_PERI_BASE_2711)
+  {
+    divisor = 540*divisor/192;
+  }
   divisor &= 4095 ;
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
@@ -1272,7 +1280,7 @@ void gpioClockSet (int pin, int freq)
     pin = physToGpio [pin] ;
   else if (wiringPiMode != WPI_MODE_GPIO)
     return ;
-  
+
   divi = 19200000 / freq ;
   divr = 19200000 % freq ;
   divf = (int)((double)divr * 4096.0 / 19200000.0) ;
@@ -1505,9 +1513,6 @@ void pullUpDnControl (int pin, int pud)
 {
   struct wiringPiNodeStruct *node = wiringPiNodes ;
 
-  uint32_t  pull, bits;
-  int shift = (pin & 0xf) << 1;
-
   setupCheck ("pullUpDnControl") ;
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
@@ -1519,40 +1524,45 @@ void pullUpDnControl (int pin, int pud)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
-    if ( piModel == PI_MODEL_4B )
+    if (piGpioPupOffset == GPPUPPDN0)
     {
-      switch (pud) {  // The PI4B uses different numbering than previous pi's
-        case PUD_OFF: //0
-          pull = 0;
-          break;
-        case PUD_UP:  //2
-          pull = 1;
-          break;
-        case PUD_DOWN: //1
-          pull = 2;
-          break;
-        default:
-          pull = 0;
-          break;  
+      // Pi 4B pull up/down method
+      int pullreg = GPPUPPDN0 + (pin>>4);
+      int pullshift = (pin & 0xf) << 1;
+      unsigned int pullbits;
+      unsigned int pull;
+
+      switch (pud)
+      {
+        case PUD_OFF: pull = 0; break;
+        case PUD_UP: pull = 1; break;
+        case PUD_DOWN: pull = 2; break;
+        default: return ; /* An illegal value */
       }
-      bits = *(gpio + GPPUD0 + (pin>>4));
-      bits &= ~(3 << shift);
-      bits |= (pull << shift);
-      *(gpio + GPPUD0 + (pin>>4)) = bits;
 
-    } else {
-        *(gpio + GPPUD)              = pud & 3 ;		delayMicroseconds (5) ;
-        *(gpio + gpioToPUDCLK [pin]) = 1 << (pin & 31) ;	delayMicroseconds (5) ;
-        *(gpio + GPPUD)              = 0 ;			delayMicroseconds (5) ;
-        *(gpio + gpioToPUDCLK [pin]) = 0 ;			delayMicroseconds (5) ;
+      pullbits = *(gpio + pullreg);
+      pullbits &= ~(3 << pullshift);
+      pullbits |= (pull << pullshift);
+      *(gpio + pullreg) = pullbits;
     }
+    else
+    {
+      // legacy pull up/down method
+      *(gpio + GPPUD)              = pud & 3 ;		delayMicroseconds (5) ;
+      *(gpio + gpioToPUDCLK [pin]) = 1 << (pin & 31) ;	delayMicroseconds (5) ;
 
-  } else {						// Extension module
+      *(gpio + GPPUD)              = 0 ;			delayMicroseconds (5) ;
+      *(gpio + gpioToPUDCLK [pin]) = 0 ;			delayMicroseconds (5) ;
+    }
+  }
+  else						// Extension module
+  {
     if ((node = wiringPiFindNode (pin)) != NULL)
       node->pullUpDnControl (node, pin, pud) ;
     return ;
   }
 }
+
 
 /*
  * digitalRead:
@@ -1564,7 +1574,6 @@ int digitalRead (int pin)
 {
   char c ;
   struct wiringPiNodeStruct *node = wiringPiNodes ;
-
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
     /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
@@ -1715,7 +1724,7 @@ void pwmWrite (int pin, int value)
 
 /*
  * analogRead:
- *	Read the analog value of a given Pin. 
+ *	Read the analog value of a given Pin.
  *	There is no on-board Pi analog hardware,
  *	so this needs to go to a new node.
  *********************************************************************************
@@ -1734,7 +1743,7 @@ int analogRead (int pin)
 
 /*
  * analogWrite:
- *	Write the analog value to the given Pin. 
+ *	Write the analog value to the given Pin.
  *	There is no on-board Pi analog hardware,
  *	so this needs to go to a new node.
  *********************************************************************************
@@ -1783,7 +1792,7 @@ void pwmToneWrite (int pin, int freq)
  *	Write an 8-bit byte to the first 8 GPIO pins - try to do it as
  *	fast as possible.
  *	However it still needs 2 operations to set the bits, so any external
- *	hardware must not rely on seeing a change as there will be a change 
+ *	hardware must not rely on seeing a change as there will be a change
  *	to set the outputs bits to zero, then another change to set the 1's
  *	Reading is just bit fiddling.
  *	These are wiringPi pin numbers 0..7, or BCM_GPIO pin numbers
@@ -1839,7 +1848,7 @@ unsigned int digitalReadByte (void)
       data = (data << 1) | x ;
     }
   }
-  else 
+  else
   {
     raw = *(gpio + gpioToGPLEV [0]) ; // First bank for these pins
     for (pin = 0 ; pin < 8 ; ++pin)
@@ -1896,7 +1905,7 @@ unsigned int digitalReadByte2 (void)
       data = (data << 1) | x ;
     }
   }
-  else 
+  else
     data = ((*(gpio + gpioToGPLEV [0])) >> 20) & 0xFF ; // First bank for these pins
 
   return data ;
@@ -2273,10 +2282,10 @@ int wiringPiSetup (void)
 //	don't really many anything, so force native BCM mode anyway.
 
   piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
-  // set global variable for model, as we need to reuse it later in the pull up/down routine.
-  piModel = model;
 
-  if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3) || (model == PI_MODEL_CM3P))
+  if ((model == PI_MODEL_CM) ||
+      (model == PI_MODEL_CM3) ||
+      (model == PI_MODEL_CM3P))
     wiringPiMode = WPI_MODE_GPIO ;
   else
     wiringPiMode = WPI_MODE_PINS ;
@@ -2301,18 +2310,23 @@ int wiringPiSetup (void)
     case PI_ALPHA:	case PI_MODEL_CM:
     case PI_MODEL_ZERO:	case PI_MODEL_ZERO_W:
       piGpioBase = GPIO_PERI_BASE_OLD ;
+      piGpioPupOffset = GPPUD ;
       break ;
+
     case PI_MODEL_4B:
-      piGpioBase = GPIO_PERI_BASE_PI4 ;
+      piGpioBase = GPIO_PERI_BASE_2711 ;
+      piGpioPupOffset = GPPUPPDN0 ;
       break ;
+
     default:
-      piGpioBase = GPIO_PERI_BASE_NEW ;
+      piGpioBase = GPIO_PERI_BASE_2835 ;
+      piGpioPupOffset = GPPUD ;
       break ;
   }
 
 // Open the master /dev/ memory control device
 // Device strategy: December 2016:
-//	Try /dev/mem. If that fails, then 
+//	Try /dev/mem. If that fails, then
 //	try /dev/gpiomem. If that fails then game over.
 
   if ((fd = open ("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC)) < 0)
@@ -2350,13 +2364,13 @@ int wiringPiSetup (void)
   pwm = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PWM) ;
   if (pwm == MAP_FAILED)
     return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PWM) failed: %s\n", strerror (errno)) ;
- 
+
 //	Clock control (needed for PWM)
 
   clk = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_CLOCK_BASE) ;
   if (clk == MAP_FAILED)
     return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (CLOCK) failed: %s\n", strerror (errno)) ;
- 
+
 //	The drive pads
 
   pads = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PADS) ;
@@ -2476,7 +2490,7 @@ int wiringPiSetupSys (void)
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open
 //	the 'value' interface to speed things up for later
-  
+
   for (pin = 0 ; pin < 64 ; ++pin)
   {
     sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;

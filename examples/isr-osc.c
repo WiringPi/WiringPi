@@ -75,8 +75,10 @@ static void Signal_handler(int sig);
 
 void myInterrupt (void)
 {
+  digitalWrite (OUT_PIN, 1) ;
   ++globalCounter;
-    printf ("    %d\n", globalCounter);
+  printf ("    %d\n", globalCounter);
+  digitalWrite (OUT_PIN, 0) ;
 }
 
 
