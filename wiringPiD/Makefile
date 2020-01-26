@@ -35,11 +35,11 @@ DEBUG	= -O2
 GCC_ARCH := $(shell gcc -dumpmachine)
 
 ifeq ($(OS),Windows_NT)
-	CROSS_COMPILE ?= arm-linux-gnueabihf-
+  CROSS_COMPILE ?= arm-linux-gnueabihf-
 else
-	ifneq ($(GCC_ARCH),arm-linux-gnueabihf)
-	CROSS_COMPILE ?= arm-linux-gnueabihf-
-	endif
+  ifneq ($(GCC_ARCH),arm-linux-gnueabihf)
+    CROSS_COMPILE ?= arm-linux-gnueabihf-
+  endif
 endif
 
 CC = $(CROSS_COMPILE)gcc
