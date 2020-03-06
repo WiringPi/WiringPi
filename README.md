@@ -17,3 +17,17 @@ Pull-requests may be accepted to add or fix support for newer hardware, but new 
 other changes will not be accepted.
 
 For support, comments, questions, etc please join the WiringPi Discord channel: https://discord.gg/SM4WUVG
+
+## CMake
+You can use CMake to cross compile WiringPi. This is heavily inspired by Alex C. U.'s article [The Useful RaspberryPi Cross Compile Guide](https://medium.com/@au42/the-useful-raspberrypi-cross-compile-guide-ea56054de187).
+
+The main difference is that it assumes you are using [Embedded Development Infrastructure (edi)](https://docs.get-edi.io/en/latest/introduction.html). For more info, follow Matthias Lüscher’s [Cross Compiling for Raspbian Buster](https://www.get-edi.io/Cross-Compiling-for-Raspbian-Buster/) guide to set up an edi container.
+
+Do the following steps in a local clone of this repository inside a `raspbian-buster-cross` lxd container:
+```
+$ mkdir build_cmake
+$ cd build_cmake
+$ cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/rpi.cmake
+$ make
+$ sudo make install
+```
