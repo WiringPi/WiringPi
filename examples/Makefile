@@ -50,7 +50,9 @@ SRC	=	blink.c blink8.c blink12.c					\
 		max31855.c							\
 		rht03.c \
 		servo.c \
-		isr1.c test1.c test2.c
+		isr1.c \
+		test1.c \
+		test2.c
 
 OBJ	=	$(SRC:.c=.o)
 
