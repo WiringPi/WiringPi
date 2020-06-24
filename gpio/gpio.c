@@ -1436,6 +1436,7 @@ int main (int argc, char *argv [])
 
   else if (strcasecmp (argv [1], "-p") == 0)
   {
+    wiringPiSetupSys () ;
     piFaceSetup (200) ;
 
     for (i = 2 ; i < argc ; ++i)
