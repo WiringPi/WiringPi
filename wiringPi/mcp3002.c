@@ -49,7 +49,7 @@ static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
 
   wiringPiSPIDataRW (node->fd, spiData, 2) ;
 
-  return ((spiData [0] << 8) | (spiData [1] >> 1)) & 0x3FF ;
+  return ((spiData [0] << 7) | (spiData [1] >> 1)) & 0x3FF ;
 }
 
 
