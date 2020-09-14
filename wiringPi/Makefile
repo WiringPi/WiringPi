@@ -104,15 +104,21 @@ install:	$(DYNAMIC)
 	$Q ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION)	$(DESTDIR)/lib/libwiringPi.so
 	$Q $(LDCONFIG)
 
+.PHONY: check-deb-destdir
+check-deb-destdir:
+ifndef DEB_DESTDIR
+	$(error DEB_DESTDIR is undefined)
+endif
+
 .PHONY:	install-deb
-install-deb:	$(DYNAMIC)
+install-deb:	$(DYNAMIC) check-deb-destdir
 	$Q echo "[Install Headers: deb]"
-	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/include
-	$Q install -m 0644 $(HEADERS)						~/wiringPi/debian-template/wiringPi/usr/include
+	$Q install -m 0755 -d							$(DEB_DESTDIR)/usr/include
+	$Q install -m 0644 $(HEADERS)						$(DEB_DESTDIR)/usr/include
 	$Q echo "[Install Dynamic Lib: deb]"
-	install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/lib
-	install -m 0755 libwiringPi.so.$(VERSION)				~/wiringPi/debian-template/wiringPi/usr/lib/libwiringPi.so.$(VERSION)
-	ln -sf ~/wiringPi/debian-template/wiringPi/usr/lib/libwiringPi.so.$(VERSION)	~/wiringPi/debian-template/wiringPi/usr/lib/libwiringPi.so
+	install -m 0755 -d							$(DEB_DESTDIR)/usr/lib
+	install -m 0755 libwiringPi.so.$(VERSION)				$(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION)
+	ln -sf $(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION)	$(DEB_DESTDIR)/usr/lib/libwiringPi.so
 
 .PHONY:	uninstall
 uninstall:
