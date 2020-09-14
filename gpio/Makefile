@@ -32,9 +32,9 @@ endif
 
 #DEBUG	= -g -O0
 DEBUG	= -O2
-CC	= gcc
+CC	?= gcc
 INCLUDE	= -I$(DESTDIR)$(PREFIX)/include
-CFLAGS	= $(DEBUG) -Wall -Wextra $(INCLUDE) -Winline -pipe
+CFLAGS	= $(DEBUG) -Wall -Wextra $(INCLUDE) -Winline -pipe $(EXTRA_CFLAGS)
 
 LDFLAGS	= -L$(DESTDIR)$(PREFIX)/lib
 LIBS    = -lwiringPi -lwiringPiDev -lpthread -lrt -lm -lcrypt
