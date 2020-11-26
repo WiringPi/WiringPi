@@ -36,8 +36,8 @@ check_make_ok() {
     echo ""
     echo "Make Failed..."
     echo "Please check the messages and fix any problems. If you're still stuck,"
-    echo "then please email all the output and as many details as you can to"
-    echo "  projects@drogon.net"
+    echo "then raise a GitHub issue with the output and as many details as you can"
+    echo "  https://github.com/WiringPi/WiringPi/issues"
     echo ""
     exit 1
   fi
