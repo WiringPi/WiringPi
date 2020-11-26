@@ -34,15 +34,6 @@
 #define	DRCN_DIGITAL_READ8	8
 #define	DRCN_ANALOG_READ	9
 
-// Multiple definition for comDat fix
-/*
-struct drcNetComStruct
-{
-  uint32_t pin ;
-  uint32_t cmd ;
-  uint32_t data ;
-} comDat ;
-*/
 
 struct drcNetComStruct
 {
