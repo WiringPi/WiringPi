@@ -2284,7 +2284,8 @@ int wiringPiSetup (void)
 
   if ((model == PI_MODEL_CM) ||
       (model == PI_MODEL_CM3) ||
-      (model == PI_MODEL_CM3P))
+      (model == PI_MODEL_CM3P) ||
+      (model == PI_MODEL_CM4))
     wiringPiMode = WPI_MODE_GPIO ;
   else
     wiringPiMode = WPI_MODE_PINS ;
