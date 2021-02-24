@@ -2049,7 +2049,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 	return wiringPiFailure (WPI_FATAL, "wiringPiISR: Can't find gpio program\n") ;
     }
     else		// Parent, wait
-      wait (NULL) ;
+      waitpid (pid, NULL, 0) ;
   }
 
 // Now pre-open the /sys/class node - but it may already be open if
