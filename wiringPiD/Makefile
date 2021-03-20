@@ -31,9 +31,9 @@ endif
 
 #DEBUG	= -g -O0
 DEBUG	= -O2
-CC	= gcc
+CC	?= gcc
 INCLUDE	= -I$(DESTDIR)$(PREFIX)/include
-CFLAGS	= $(DEBUG) -Wall -Wextra $(INCLUDE) -Winline -pipe
+CFLAGS	= $(DEBUG) -Wall -Wextra $(INCLUDE) -Winline -pipe $(EXTRA_CFLAGS)
 
 LDFLAGS	= -L$(DESTDIR)$(PREFIX)/lib
 LIBS    = -lwiringPi -lwiringPiDev -lpthread -lrt -lm -lcrypt
@@ -78,10 +78,10 @@ install: wiringpid
 .PHONY:	install-deb
 install-deb:	gpio
 	$Q echo "[Install: deb]"
-	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/usr/bin
-	$Q install -m 0755 gpio							~/wiringPi/debian-template/wiringPi/usr/bin
-	$Q install -m 0755 -d							~/wiringPi/debian-template/wiringPi/man/man1
-	$Q install -m 0644 gpio.1						~/wiringPi/debian-template/wiringPi/man/man1
+	$Q install -m 0755 -d							$(DEB_DESTDIR)/usr/bin
+	$Q install -m 0755 gpio							$(DEB_DESTDIR)/usr/bin
+	$Q install -m 0755 -d							$(DEB_DESTDIR)/man/man1
+	$Q install -m 0644 gpio.1						$(DEB_DESTDIR)/man/man1
 
 .PHONY:	uninstall
 uninstall:

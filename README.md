@@ -1,39 +1,19 @@
-wiringPi README
-===============
+Unofficial WiringPi Mirror
+==========================
 
-Please note that the official way to get wiringPi is via git from
-git.drogon.net and not GitHub.
+This is an unofficial mirror of WiringPi to support ports (Python/Ruby/etc).  With the
+[end of official development](http://wiringpi.com/wiringpi-deprecated/), this repository
+has become a mirror of the last "official" source release as well as a source for small
+updates to support newer hardware (primarily for use by the ports).
 
-ie.
+  * The final "official" source release can be found at the
+    [`final_source_2.50`](https://github.com/WiringPi/WiringPi/tree/final_official_2.50) tag.
+  * The default `master` branch contains code that has been written since that final source
+    release to provide support for newer hardware.
 
-  git clone git://git.drogon.net/wiringPi
+Please do not email Gordon if you have issues, he will not be able to help.
 
-   
+Pull-requests may be accepted to add or fix support for newer hardware, but new features or
+other changes will not be accepted.
 
-The version of wiringPi held on GitHub by "Gadgetoid" is used to build the
-wiringPython, Ruby, Perl, etc. wrappers for these other languages. This
-version may lag the official Drogon release.  Pull requests may not be
-accepted to Github....
-
-Please see
-
-  http://wiringpi.com/
-
-for the official documentation, etc. and the best way to submit bug reports, etc.
-is by sending an email to projects@drogon.net
-
-Thanks!
-
-  -Gordon
-
-
-   同步  git://git.drogon.net/wiringPi 最新源代码到项目当中。
-     此修改基于 原来的master 分支  
-
-   `   git remote add upstream git://git.drogon.net/wiringPi  `
-
-   `    git fetch upstream master:upstream/master  `
-
-   `     git merge upstream/master     `
-
-   `     git push origin master:master  `
+For support, comments, questions, etc please join the WiringPi Discord channel: https://discord.gg/SM4WUVG

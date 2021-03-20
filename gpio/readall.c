@@ -80,7 +80,7 @@ static char *alts [] =
   "IN", "OUT", "ALT5", "ALT4", "ALT0", "ALT1", "ALT2", "ALT3"
 } ;
 
-static int physToWpi [64] = 
+static int physToWpi [64] =
 {
   -1,           // 0
   -1, -1,       // 1, 2
@@ -113,7 +113,7 @@ static int physToWpi [64] =
   -1, -1, -1, -1, -1, -1, -1, -1, -1
 } ;
 
-static char *physNames [64] = 
+static char *physNames [64] =
 {
   NULL,
 
@@ -303,10 +303,16 @@ static void plus2header (int model)
     printf (" +-----+-----+---------+------+---+-Pi ZeroW-+---+------+---------+-----+-----+\n") ;
   else if (model == PI_MODEL_2)
     printf (" +-----+-----+---------+------+---+---Pi 2---+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_3)
-    printf (" +-----+-----+---------+------+---+---Pi 3---+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_3P)
-    printf (" +-----+-----+---------+------+---+---Pi 3+--+---+------+---------+-----+-----+\n") ;
+  else if (model == PI_MODEL_3B)
+    printf (" +-----+-----+---------+------+---+---Pi 3B--+---+------+---------+-----+-----+\n") ;
+  else if (model == PI_MODEL_3BP)
+    printf (" +-----+-----+---------+------+---+---Pi 3B+-+---+------+---------+-----+-----+\n") ;
+  else if (model == PI_MODEL_3AP)
+    printf (" +-----+-----+---------+------+---+---Pi 3A+-+---+------+---------+-----+-----+\n") ;
+  else if (model == PI_MODEL_4B)
+    printf (" +-----+-----+---------+------+---+---Pi 4B--+---+------+---------+-----+-----+\n") ;
+  else if (model == PI_MODEL_400)
+    printf (" +-----+-----+---------+------+---+---Pi 400-+---+------+---------+-----+-----+\n") ;
   else
     printf (" +-----+-----+---------+------+---+---Pi ?---+---+------+---------+-----+-----+\n") ;
 }
@@ -351,11 +357,13 @@ void doReadall (void)
   /**/ if ((model == PI_MODEL_A) || (model == PI_MODEL_B))
     abReadall (model, rev) ;
   else if ((model == PI_MODEL_BP) || (model == PI_MODEL_AP) ||
-	(model == PI_MODEL_2) ||
-	(model == PI_MODEL_3) || (model == PI_MODEL_3P) ||
+	(model == PI_MODEL_2)    ||
+	(model == PI_MODEL_3AP)  ||
+	(model == PI_MODEL_3B)   || (model == PI_MODEL_3BP) ||
+	(model == PI_MODEL_4B)   || (model == PI_MODEL_400) ||
 	(model == PI_MODEL_ZERO) || (model == PI_MODEL_ZERO_W))
     piPlusReadall (model) ;
-  else if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3))
+  else if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3) || (model == PI_MODEL_CM3P) || (model == PI_MODEL_CM4))
     allReadall () ;
   else
     printf ("Oops - unable to determine board type... model: %d\n", model) ;
