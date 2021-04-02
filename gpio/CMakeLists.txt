@@ -17,6 +17,7 @@
 #     along with WiringPi.  If not, see <https://www.gnu.org/licenses/>.
 
 include_directories(${PROJECT_SOURCE_DIR}/wiringPi)
+include_directories(${PROJECT_SOURCE_DIR}/devLib)
 
 add_compile_options(-D_FILE_OFFSET_BITS=64 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast)
 
