@@ -35,13 +35,17 @@
 #include "wiringSerial.h"
 
 /*
- * serialOpen:
+ * serialOpenWithTimeout:
  *	Open and initialise the serial port, setting all the right
  *	port parameters - or as many as are required - hopefully!
+ *
+ *	need to specify timeout in tenth of seconds as that is the minimum resolution
+ *	max 255 (25.5 seconds)
+ *	use timeout = 0 for non-blocking polling
  *********************************************************************************
  */
 
-int serialOpen (const char *device, const int baud)
+int serialOpenWithTimeout (const char *device, const int baud, int timeout)
 {
   struct termios options ;
   speed_t myBaud ;
@@ -89,24 +93,26 @@ int serialOpen (const char *device, const int baud)
 
   fcntl (fd, F_SETFL, O_RDWR) ;
 
-// Get and modify current options:
+  // Get and modify current options:
 
   tcgetattr (fd, &options) ;
 
-    cfmakeraw   (&options) ;
-    cfsetispeed (&options, myBaud) ;
-    cfsetospeed (&options, myBaud) ;
+  cfmakeraw   (&options) ;
+  cfsetispeed (&options, myBaud) ;
+  cfsetospeed (&options, myBaud) ;
 
-    options.c_cflag |= (CLOCAL | CREAD) ;
-    options.c_cflag &= ~PARENB ;
-    options.c_cflag &= ~CSTOPB ;
-    options.c_cflag &= ~CSIZE ;
-    options.c_cflag |= CS8 ;
-    options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG) ;
-    options.c_oflag &= ~OPOST ;
+  options.c_cflag |= (CLOCAL | CREAD) ;
+  options.c_cflag &= ~PARENB ;
+  options.c_cflag &= ~CSTOPB ;
+  options.c_cflag &= ~CSIZE ;
+  options.c_cflag |= CS8 ;
+  options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG) ;
+  options.c_oflag &= ~OPOST ;
 
-    options.c_cc [VMIN]  =   0 ;
-    options.c_cc [VTIME] = 100 ;	// Ten seconds (100 deciseconds)
+  if (timeout < 0) timeout = 0;
+  if (timeout > 255) timeout = 255;
+  options.c_cc [VMIN]  =   0 ;
+  options.c_cc [VTIME] = (cc_t)timeout ;	// tenth of seconds
 
   tcsetattr (fd, TCSANOW, &options) ;
 
@@ -120,6 +126,19 @@ int serialOpen (const char *device, const int baud)
   usleep (10000) ;	// 10mS
 
   return fd ;
+}
+
+
+/*
+ * serialOpen:
+ *	Open and initialise the serial port, setting all the right
+ *	port parameters - or as many as are required - hopefully!
+ *	using default timeout of 10 seconds
+ *********************************************************************************
+ */
+
+int serialOpen (const char *device, const int baud) {
+  return serialOpenWithTimeout(device, baud, 100);
 }
 
 

@@ -24,6 +24,7 @@
 extern "C" {
 #endif
 
+extern int   serialOpenWithTimeout (const char *device, const int baud, int timeout) ;
 extern int   serialOpen      (const char *device, const int baud) ;
 extern void  serialClose     (const int fd) ;
 extern void  serialFlush     (const int fd) ;
