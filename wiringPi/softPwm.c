@@ -153,6 +153,9 @@ int softPwmCreate (int pin, int initialValue, int pwmRange)
   newPin   = pin ;
   res      = pthread_create (&myThread, NULL, softPwmThread, (void *)passPin) ;
 
+  if (res != 0)
+    return res ;
+  
   while (newPin != -1)
     delay (1) ;
 
