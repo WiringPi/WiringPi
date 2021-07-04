@@ -1921,32 +1921,96 @@ unsigned int digitalReadByte2 (void)
  *********************************************************************************
  */
 
-int waitForInterrupt (int pin, int mS)
+int waitForInterrupt (int pin, int mS, int mode)
 {
-  int fd, x ;
+  const char *modeS ;
+  char fName   [64] ;
+  char  pinS [8] ;
+  pid_t pid ;
+  int   count, i, fd, x ;
+  char  z ;
+  int   bcmGpioPin ;
   uint8_t c ;
   struct pollfd polls ;
 
-  /**/ if (wiringPiMode == WPI_MODE_PINS)
-    pin = pinToGpio [pin] ;
-  else if (wiringPiMode == WPI_MODE_PHYS)
-    pin = physToGpio [pin] ;
+  if ((pin < 0) || (pin > 63))
+    return wiringPiFailure (WPI_FATAL, "waitForInterrupt: pin must be 0-63 (%d)\n", pin) ;
 
-  if ((fd = sysFds [pin]) == -1)
-    return -2 ;
+  /**/ if (wiringPiMode == WPI_MODE_UNINITIALISED)
+    return wiringPiFailure (WPI_FATAL, "waitForInterrupt: wiringPi has not been initialised. Unable to continue.\n") ;
+  else if (wiringPiMode == WPI_MODE_PINS)
+    bcmGpioPin = pinToGpio [pin] ;
+  else if (wiringPiMode == WPI_MODE_PHYS)
+    bcmGpioPin = physToGpio [pin] ;
+  else
+    bcmGpioPin = pin ;
+
+// Now export the pin and set the right edge
+//	We're going to use the gpio program to do this, so it assumes
+//	a full installation of wiringPi. It's a bit 'clunky', but it
+//	is a way that will work when we're running in "Sys" mode, as
+//	a non-root user. (without sudo)
+
+  if (mode != INT_EDGE_SETUP)
+  {
+    /**/ if (mode == INT_EDGE_FALLING)
+      modeS = "falling" ;
+    else if (mode == INT_EDGE_RISING)
+      modeS = "rising" ;
+    else
+      modeS = "both" ;
+
+    sprintf (pinS, "%d", bcmGpioPin) ;
+
+    if ((pid = fork ()) < 0)	// Fail
+      return wiringPiFailure (WPI_FATAL, "waitForInterrupt: fork failed: %s\n", strerror (errno)) ;
+
+    if (pid == 0)	// Child, exec
+    {
+      /**/ if (access ("/usr/local/bin/gpio", X_OK) == 0)
+      {
+	execl ("/usr/local/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL) ;
+	return wiringPiFailure (WPI_FATAL, "waitForInterrupt: execl failed: %s\n", strerror (errno)) ;
+      }
+      else if (access ("/usr/bin/gpio", X_OK) == 0)
+      {
+	execl ("/usr/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL) ;
+	return wiringPiFailure (WPI_FATAL, "waitForInterrupt: execl failed: %s\n", strerror (errno)) ;
+      }
+      else
+	return wiringPiFailure (WPI_FATAL, "waitForInterrupt: Can't find gpio program\n") ;
+    }
+    else		// Parent, wait
+      waitpid (pid, NULL, 0) ;
+  }
+
+// Now pre-open the /sys/class node - but it may already be open if
+//	we are in Sys mode...
+
+  if ((fd=sysFds [bcmGpioPin]) == -1)
+  {
+    sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
+    if ((sysFds [bcmGpioPin] = open (fName, O_RDWR)) < 0)
+      return wiringPiFailure (WPI_FATAL, "waitForInterrupt: unable to open %s: %s\n", fName, strerror (errno)) ;
+  }
+
+// Clear any initial pending interrupt
+
+  ioctl (sysFds [bcmGpioPin], FIONREAD, &count) ;
+  for (i = 0 ; i < count ; ++i)
+    read (sysFds [bcmGpioPin], &z, 1) ;
+
+  (void)piHiPri (55) ;	// Only effective if we run as root
 
 // Setup poll structure
+  polls.fd = fd	;
+  polls.events = POLLPRI | POLLERR ;	
 
-  polls.fd     = fd ;
-  polls.events = POLLPRI | POLLERR ;
-
-// Wait for it ...
-
+// Wait for it...
   x = poll (&polls, 1, mS) ;
 
 // If no error, do a dummy read to clear the interrupt
-//	A one character read appars to be enough.
-
+//     A one character read appars to be enough.
   if (x > 0)
   {
     lseek (fd, 0, SEEK_SET) ;	// Rewind
@@ -1955,7 +2019,6 @@ int waitForInterrupt (int pin, int mS)
 
   return x ;
 }
-
 
 /*
  * interruptHandler:
@@ -1975,7 +2038,7 @@ static void *interruptHandler (UNU void *arg)
   pinPass = -1 ;
 
   for (;;)
-    if (waitForInterrupt (myPin, -1) > 0)
+    if (waitForInterrupt (myPin, -1, INT_EDGE_SETUP) > 0)
       isrFunctions [myPin] () ;
 
   return NULL ;
