@@ -72,6 +72,7 @@ tags:	$(SRC)
 .PHONY:	install
 install: gpio
 	$Q echo "[Install]"
+	$Q install -d 		$(DESTDIR)$(PREFIX)/bin
 	$Q cp gpio		$(DESTDIR)$(PREFIX)/bin
 ifneq ($(WIRINGPI_SUID),0)
 	$Q chown root.root	$(DESTDIR)$(PREFIX)/bin/gpio
