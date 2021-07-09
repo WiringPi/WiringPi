@@ -171,6 +171,17 @@ void serialPuts (const int fd, const char *s)
 }
 
 /*
+ * serialPut:
+ *	Send an n character buffer to the serial port
+ *********************************************************************************
+ */
+
+void serialPut (const int fd, const char *s, const int n)
+{
+  write (fd, s, n) ;
+}
+
+/*
  * serialPrintf:
  *	Printf over Serial
  *********************************************************************************
