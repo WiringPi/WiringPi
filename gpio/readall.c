@@ -361,9 +361,9 @@ void doReadall (void)
 	(model == PI_MODEL_3AP)  ||
 	(model == PI_MODEL_3B)   || (model == PI_MODEL_3BP) ||
 	(model == PI_MODEL_4B)   || (model == PI_MODEL_400) ||
-	(model == PI_MODEL_ZERO) || (model == PI_MODEL_ZERO_W))
+	(model == PI_MODEL_ZERO) || (model == PI_MODEL_ZERO_W) || (model == PI_MODEL_CM4))
     piPlusReadall (model) ;
-  else if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3) || (model == PI_MODEL_CM3P) || (model == PI_MODEL_CM4))
+  else if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3) || (model == PI_MODEL_CM3P) )
     allReadall () ;
   else
     printf ("Oops - unable to determine board type... model: %d\n", model) ;
