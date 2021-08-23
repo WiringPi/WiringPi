@@ -44,6 +44,20 @@ CFLAGS	= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Wextra -Winline $(INCLUDE) -pipe -fP
 
 LIBS    = -lm -lpthread -lrt -lcrypt
 
+ifeq ($(BOARD),)
+  BOARD = clockworkpi-a06-rk3399
+endif
+
+ifeq ($(BOARD), clockworkpi-a04-h6)
+EXTRA_CFLAGS = -DCONFIG_CLOCKWORKPI_A04
+endif
+
+ifeq ($(BOARD), clockworkpi-a06-rk3399)
+EXTRA_CFLAGS = -DCONFIG_CLOCKWORKPI_A06
+endif
+
+EXTRA_CFLAGS += -DCONFIG_CLOCKWORKPI
+
 ###############################################################################
 
 SRC	=	wiringPi.c						\
@@ -61,7 +75,8 @@ SRC	=	wiringPi.c						\
 		bmp180.c htu21d.c ds18b20.c rht03.c			\
 		drcSerial.c drcNet.c					\
 		pseudoPins.c						\
-		wpiExtensions.c
+		wpiExtensions.c 					\
+		wiringCPi.c
 
 HEADERS =	$(shell ls *.h)
 
@@ -79,7 +94,7 @@ $(DYNAMIC):	$(OBJ)
 
 .c.o:
 	$Q echo [Compile] $<
-	$Q $(CC) -c $(CFLAGS) $< -o $@
+	$Q $(CC) -c $(EXTRA_CFLAGS) $(CFLAGS) $< -o $@
 
 
 .PHONY:	clean

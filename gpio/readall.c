@@ -35,6 +35,10 @@
 
 #include <wiringPi.h>
 
+#ifdef CONFIG_CLOCKWORKPI
+#include "CPi.h"
+#endif
+
 extern int wpMode ;
 
 #ifndef TRUE
@@ -341,7 +345,9 @@ static void piPlusReadall (int model)
 void doReadall (void)
 {
   int model, rev, mem, maker, overVolted ;
-
+#ifdef CONFIG_CLOCKWORKPI
+  CPiReadAll();
+#else
   if (wiringPiNodes != NULL)	// External readall
   {
     doReadallExternal () ;
@@ -362,6 +368,7 @@ void doReadall (void)
     allReadall () ;
   else
     printf ("Oops - unable to determine board type... model: %d\n", model) ;
+#endif
 }
 
 

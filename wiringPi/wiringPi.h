@@ -44,6 +44,10 @@
 
 // Handy defines
 
+#ifdef CONFIG_CLOCKWORKPI
+extern int wiringPiDebug;
+#endif
+
 // wiringPi modes
 
 #define	WPI_MODE_PINS		 0
@@ -102,7 +106,10 @@
 #define	PI_MODEL_3BP 		13
 #define	PI_MODEL_3AP 		14
 #define	PI_MODEL_CM3P 		16
-
+#ifdef CONFIG_CLOCKWORKPI
+#define	CPI_MODEL_A04   24
+#define	CPI_MODEL_A06   26
+#endif
 #define	PI_VERSION_1		0
 #define	PI_VERSION_1_1		1
 #define	PI_VERSION_1_2		2
@@ -186,6 +193,10 @@ extern "C" {
 // Data
 
 // Internal
+
+#ifdef CONFIG_CLOCKWORKPI
+extern void piGpioLayoutOops (const char *why);
+#endif
 
 extern int wiringPiFailure (int fatal, const char *message, ...) ;
 

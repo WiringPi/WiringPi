@@ -109,7 +109,11 @@ int wiringPiSPISetupMode (int channel, int speed, int mode)
 // Channel can be anything - lets hope for the best
 //  channel &= 1 ;	// Channel is 0 or 1
 
+#ifdef CONFIG_CLOCKWORKPI
+  snprintf (spiDev, 31, "/dev/spidev2.%d", channel) ;
+#else
   snprintf (spiDev, 31, "/dev/spidev0.%d", channel) ;
+#endif
 
   if ((fd = open (spiDev, O_RDWR)) < 0)
     return wiringPiFailure (WPI_ALMOST, "Unable to open SPI device: %s\n", strerror (errno)) ;

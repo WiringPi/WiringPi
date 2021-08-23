@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 
 # build
 #	Simple wiringPi build and install script
@@ -41,6 +41,47 @@ check_make_ok() {
     echo ""
     exit 1
   fi
+}
+
+select_boards()
+{
+    local cnt=0
+    local choice
+    local call=${1}
+
+    boards=("clockworkpi-a04" "clockworkpi-a06" )
+
+    if [[ -f /etc/armbian-release ]]; then 
+
+	source /etc/armbian-release
+
+    else
+
+	printf "All available boards:\n"
+    	for var in ${boards[@]} ; do
+       		 printf "%4d. %s\n" $cnt ${boards[$cnt]}
+			((cnt+=1))
+    	done
+
+    	while true ; do
+        	read -p "Choice: " choice
+        	if [ -z "${choice}" ] ; then
+            		continue
+        	fi
+        	if [ -z "${choice//[0-9]/}" ] ; then
+            		if [ $choice -ge 0 -a $choice -lt $cnt ] ; then
+				export BOARD="${boards[$choice]}"
+				break
+            		fi
+        	fi
+        	printf "Invalid input ...\n"
+    	done
+    fi
+
+	[[ $BOARD == clockworkpi-a04 ]] && BOARD=clockworkpi-a04-h6
+	[[ $BOARD == clockworkpi-a06 ]] && BOARD=clockworkpi-a06-rk3399
+
+	export BOARD="${BOARD}"
 }
 
 sudo=${WIRINGPI_SUDO-sudo}
@@ -102,6 +143,8 @@ if [ x$1 != "x" ]; then
   echo "Usage: $0 [clean | uninstall]"
   exit 1
 fi
+
+  select_boards
 
   echo "wiringPi Build script"
   echo "====================="

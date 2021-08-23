@@ -77,6 +77,10 @@
 #include "wiringPi.h"
 #include "../version.h"
 
+#ifdef CONFIG_CLOCKWORKPI
+#include "wiringCPi.h"
+#endif
+
 // Environment Variables
 
 #define	ENV_DEBUG	"WIRINGPI_DEBUG"
@@ -237,9 +241,15 @@ const char *piModelNames [20] =
   "Pi 3A+",	// 14
   "Unknown15",	// 15
   "CM3+",	// 16
-  "Unknown17",	// 17
-  "Unknown18",	// 18
-  "Unknown19",	// 19
+#ifdef CONFIG_CLOCKWORKPI
+  "CPi A04",	// 17
+  "CPi A06",	// 18
+  "Unknown",	// 19
+#else
+  "Unknown17",  // 17
+  "Unknown18",  // 18
+  "Unknown19",  // 19
+#endif
 } ;
 
 const char *piRevisionNames [16] =
@@ -287,8 +297,8 @@ const int piMemorySize [8] =
    256,		//	 0
    512,		//	 1
   1024,		//	 2
-     0,		//	 3
-     0,		//	 4
+  2048,		//	 3
+  4096,		//	 4
      0,		//	 5
      0,		//	 6
      0,		//	 7
@@ -725,7 +735,7 @@ static void usingGpioMemCheck (const char *what)
  *********************************************************************************
  */
 
-static void piGpioLayoutOops (const char *why)
+void piGpioLayoutOops (const char *why)
 {
   fprintf (stderr, "Oops: Unable to determine board revision from /proc/cpuinfo\n") ;
   fprintf (stderr, " -> %s\n", why) ;
@@ -754,6 +764,12 @@ int piGpioLayout (void)
   while (fgets (line, 120, cpuFd) != NULL)
     if (strncmp (line, "Hardware", 8) == 0)
       break ;
+
+#ifdef CONFIG_CLOCKWORKPI_A06
+  strcpy(line, "Hardware		 : Rockchip rk3399 Family");	
+#elif defined(CONFIG_CLOCKWORKPI_A04)
+  strcpy(line, "Hardware		 : Allwinner H6 Family");	
+#endif
 
   if (strncmp (line, "Hardware", 8) != 0)
     piGpioLayoutOops ("No \"Hardware\" line") ;
@@ -810,6 +826,10 @@ int piGpioLayout (void)
       break ;
 
   fclose (cpuFd) ;
+
+#ifdef CONFIG_CLOCKWORKPI
+	  strcpy(line, "Revision  : 0000");
+#endif
 
   if (strncmp (line, "Revision", 8) != 0)
     piGpioLayoutOops ("No \"Revision\" line") ;
@@ -953,6 +973,11 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
 
 //	Will deal with the properly later on - for now, lets just get it going...
 //  unsigned int modelNum ;
+
+#ifdef CONFIG_CLOCKWORKPI
+  CPiBoardId(model, rev, mem, maker);
+  return;
+#endif
 
   (void)piGpioLayout () ;	// Call this first to make sure all's OK. Don't care about the result.
 
@@ -1420,6 +1445,11 @@ void pinMode (int pin, int mode)
 
   setupCheck ("pinMode") ;
 
+#ifdef CONFIG_CLOCKWORKPI
+  CPiPinMode(pin, mode);
+  return;
+#endif
+
   if ((pin & PI_GPIO_MASK) == 0)		// On-board pin
   {
     /**/ if (wiringPiMode == WPI_MODE_PINS)
@@ -1534,6 +1564,10 @@ int digitalRead (int pin)
   char c ;
   struct wiringPiNodeStruct *node = wiringPiNodes ;
 
+#ifdef CONFIG_CLOCKWORKPI
+  return CPiDigitalRead(pin);
+#endif
+
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
     /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
@@ -1596,6 +1630,11 @@ unsigned int digitalRead8 (int pin)
 void digitalWrite (int pin, int value)
 {
   struct wiringPiNodeStruct *node = wiringPiNodes ;
+
+#ifdef CONFIG_CLOCKWORKPI
+  CPiDigitalWrite(pin, value);
+  return;
+#endif
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
@@ -2294,6 +2333,9 @@ int wiringPiSetup (void)
 	"  Try running with sudo?\n", strerror (errno)) ;
   }
 
+#ifdef CONFIG_CLOCKWORKPI
+  CPiSetup(fd);
+#else
 // Set the offsets into the memory interface.
 
   GPIO_PADS 	  = piGpioBase + 0x00100000 ;
@@ -2349,6 +2391,7 @@ int wiringPiSetup (void)
   _wiringPiClk   = clk ;
   _wiringPiPads  = pads ;
   _wiringPiTimer = timer ;
+#endif
 
   initialiseEpoch () ;
 
@@ -2377,6 +2420,19 @@ int wiringPiSetupGpio (void)
   return 0 ;
 }
 
+int wiringPiSetupRaw (void)
+{
+  (void)wiringPiSetup () ;
+
+  if (wiringPiDebug)
+    printf ("wiringPi: wiringPiSetupRaw called\n") ;
+
+  wiringPiMode = WPI_MODE_GPIO ;
+#ifdef CONFIG_CLOCKWORKPI
+  CPiSetupRaw();
+#endif
+  return 0 ;
+}
 
 /*
  * wiringPiSetupPhys:

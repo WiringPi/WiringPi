@@ -42,6 +42,10 @@
 
 #include "../version.h"
 
+#ifdef CONFIG_CLOCKWORKPI
+#include "CPi.h"
+#endif
+
 extern int wiringPiDebug ;
 
 // External functions I can't be bothered creating a separate .h file for:
@@ -742,7 +746,18 @@ void doMode (int argc, char *argv [])
   pin = atoi (argv [2]) ;
 
   mode = argv [3] ;
-
+#ifdef CONFIG_CLOCKWORKPI
+  if (strcasecmp (mode, "in")	  == 0) pinMode (pin, INPUT) ;
+  else if (strcasecmp (mode, "input")   == 0) pinMode (pin, INPUT) ;
+  else if (strcasecmp (mode, "out")	  == 0) pinMode (pin, OUTPUT) ;
+  else if (strcasecmp (mode, "output")  == 0) pinMode (pin, OUTPUT) ;
+  else if (strcasecmp (mode, "alt2")    == 0) pinModeAlt (pin, 0b010) ;
+  else if (strcasecmp (mode, "alt3")    == 0) pinModeAlt (pin, 0b011) ;
+  else if (strcasecmp (mode, "alt4")    == 0) pinModeAlt (pin, 0b100) ;
+  else if (strcasecmp (mode, "alt5")    == 0) pinModeAlt (pin, 0b101) ;
+  else if (strcasecmp (mode, "alt6")    == 0) pinModeAlt (pin, 0b110) ;
+  else if (strcasecmp (mode, "alt7")    == 0) pinModeAlt (pin, 0b111) ;
+#else
   /**/ if (strcasecmp (mode, "in")      == 0) pinMode         (pin, INPUT) ;
   else if (strcasecmp (mode, "input")   == 0) pinMode         (pin, INPUT) ;
   else if (strcasecmp (mode, "out")     == 0) pinMode         (pin, OUTPUT) ;
@@ -760,6 +775,7 @@ void doMode (int argc, char *argv [])
   else if (strcasecmp (mode, "alt3")    == 0) pinModeAlt (pin, 0b111) ;
   else if (strcasecmp (mode, "alt4")    == 0) pinModeAlt (pin, 0b011) ;
   else if (strcasecmp (mode, "alt5")    == 0) pinModeAlt (pin, 0b010) ;
+#endif
   else
   {
     fprintf (stderr, "%s: Invalid mode: %s. Should be in/out/pwm/clock/up/down/tri\n", argv [1], mode) ;
@@ -1299,6 +1315,90 @@ static void doVersion (char *argv [])
     printf ("  * Root or sudo required for GPIO access.\n") ;
 }
 
+static void doReadRaw (int argc, char *argv []) 
+{
+#ifdef CONFIG_CLOCKWORKPI
+	int pin, val ;
+
+	if (argc != 3) {
+		fprintf (stderr, "Usage: %s readraw pin\n", argv [0]) ;
+		exit (1) ;
+	}
+
+	pin = atoi (argv [2]) ;
+	val = CPi_digitalRead(pin);	
+
+	printf ("%s\n", val == 0 ? "0" : "1") ;
+#endif
+}
+
+static void doWriteRaw (int argc, char *argv [])
+{
+#ifdef CONFIG_CLOCKWORKPI
+	int pin, val ;
+
+	if (argc != 4) {
+		fprintf (stderr, "Usage: %s writeraw pin value\n", argv [0]) ;
+		exit (1) ;
+	}
+
+	pin = atoi (argv [2]) ;
+
+	if ((strcasecmp (argv [3], "up") == 0) || (strcasecmp (argv [3], "on") == 0))
+		val = 1 ;
+	else if ((strcasecmp (argv [3], "down") == 0) || (strcasecmp (argv [3], "off") == 0))
+		val = 0 ;
+	else
+		val = atoi (argv [3]) ;
+
+	if (val == 0)
+		CPi_digitalWrite (pin, LOW) ;
+	else
+		CPi_digitalWrite (pin, HIGH) ;
+#endif
+}
+
+static void doModeRaw (int argc, char *argv [])
+{
+#ifdef CONFIG_CLOCKWORKPI
+  int pin ;
+  char *mode ;
+
+  if (argc != 4)
+  {
+    fprintf (stderr, "Usage: %s mode pin mode\n", argv [0]) ;
+    exit (1) ;
+  }
+  wiringPiSetupRaw();
+
+  pin = atoi (argv [2]) ;
+
+  mode = argv [3] ;
+
+  /**/ if (strcasecmp (mode, "in")      == 0) pinMode         (pin, INPUT) ;
+  else if (strcasecmp (mode, "input")   == 0) pinMode         (pin, INPUT) ;
+  else if (strcasecmp (mode, "out")     == 0) pinMode         (pin, OUTPUT) ;
+  else if (strcasecmp (mode, "output")  == 0) pinMode         (pin, OUTPUT) ;
+  else if (strcasecmp (mode, "pwm")     == 0) pinMode         (pin, PWM_OUTPUT) ;
+  else if (strcasecmp (mode, "pwmTone") == 0) pinMode         (pin, PWM_TONE_OUTPUT) ;
+  else if (strcasecmp (mode, "clock")   == 0) pinMode         (pin, GPIO_CLOCK) ;
+  else if (strcasecmp (mode, "up")      == 0) pullUpDnControl (pin, PUD_UP) ;
+  else if (strcasecmp (mode, "down")    == 0) pullUpDnControl (pin, PUD_DOWN) ;
+  else if (strcasecmp (mode, "tri")     == 0) pullUpDnControl (pin, PUD_OFF) ;
+  else if (strcasecmp (mode, "off")     == 0) pullUpDnControl (pin, PUD_OFF) ;
+  else if (strcasecmp (mode, "alt2")    == 0) pinModeAlt (pin, 0b010) ;
+  else if (strcasecmp (mode, "alt3")    == 0) pinModeAlt (pin, 0b011) ;
+  else if (strcasecmp (mode, "alt4")    == 0) pinModeAlt (pin, 0b100) ;
+  else if (strcasecmp (mode, "alt5")    == 0) pinModeAlt (pin, 0b101) ;
+  else if (strcasecmp (mode, "alt6")    == 0) pinModeAlt (pin, 0b110) ;
+  else if (strcasecmp (mode, "alt7")    == 0) pinModeAlt (pin, 0b111) ;
+  else
+  {
+    fprintf (stderr, "%s: Invalid mode: %s. Should be in/out/pwm/clock/up/down/tri\n", argv [1], mode) ;
+    exit (1) ;
+  }
+#endif
+}
 
 /*
  * main:
@@ -1376,7 +1476,7 @@ int main (int argc, char *argv [])
     fprintf (stderr, "%s: Must be root to run. Program should be suid root. This is an error.\n", argv [0]) ;
     exit (EXIT_FAILURE) ;
   }
-
+#ifndef CONFIG_CLOCKWORKPI
 // Initial test for /sys/class/gpio operations:
 
   /**/ if (strcasecmp (argv [1], "exports"    ) == 0)	{ doExports     (argc, argv) ;	return 0 ; }
@@ -1398,7 +1498,7 @@ int main (int argc, char *argv [])
 
   if (strcasecmp (argv [1], "gbr" ) == 0)	{ doGbr (argc, argv) ; return 0 ; }
   if (strcasecmp (argv [1], "gbw" ) == 0)	{ doGbw (argc, argv) ; return 0 ; }
-
+#endif
 // Check for allreadall command, force Gpio mode
 
   if (strcasecmp (argv [1], "allreadall") == 0)
@@ -1453,7 +1553,16 @@ int main (int argc, char *argv [])
     --argc ;
     wpMode = WPI_MODE_UNINITIALISED ;
   }
-
+#ifdef CONFIG_CLOCKWORKPI
+  else if (strcasecmp (argv [1], "-r") == 0)
+  {
+    wiringPiSetupRaw();
+    for (i = 2 ; i < argc ; ++i)
+      argv [i - 1] = argv [i] ;
+    --argc ;
+    wpMode = WPI_MODE_GPIO ;
+  }
+#endif
 // Default to wiringPi mode
 
   else
@@ -1494,6 +1603,16 @@ int main (int argc, char *argv [])
     exit (EXIT_FAILURE) ;
   }
 
+#ifdef CONFIG_CLOCKWORKPI
+  /**/ if (strcasecmp (argv [1], "mode"   ) == 0) doMode      (argc, argv) ;
+  else if (strcasecmp (argv [1], "moderaw"   ) == 0) doModeRaw      (argc, argv) ;  
+  else if (strcasecmp (argv [1], "read"   ) == 0) doRead      (argc, argv) ;
+  else if (strcasecmp (argv [1], "readraw"   ) == 0) doReadRaw      (argc, argv) ;
+  else if (strcasecmp (argv [1], "write"  ) == 0) doWrite     (argc, argv) ;
+  else if (strcasecmp (argv [1], "writeraw"  ) == 0) doWriteRaw     (argc, argv) ;
+  else if (strcasecmp (argv [1], "readall"  ) == 0) CPiReadAll    () ;
+  else if (strcasecmp (argv [1], "readallraw"  ) == 0) CPiReadAllRaw    () ;
+#else
 // Core wiringPi functions
 
   /**/ if (strcasecmp (argv [1], "mode"   ) == 0) doMode      (argc, argv) ;
@@ -1528,6 +1647,7 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "rbd"      ) == 0) doReadByte   (argc, argv, FALSE) ;
   else if (strcasecmp (argv [1], "clock"    ) == 0) doClock      (argc, argv) ;
   else if (strcasecmp (argv [1], "wfi"      ) == 0) doWfi        (argc, argv) ;
+#endif
   else
   {
     fprintf (stderr, "%s: Unknown command: %s.\n", argv [0], argv [1]) ;

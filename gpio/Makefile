@@ -39,10 +39,24 @@ CFLAGS	= $(DEBUG) -Wall -Wextra $(INCLUDE) -Winline -pipe
 LDFLAGS	= -L$(DESTDIR)$(PREFIX)/lib
 LIBS    = -lwiringPi -lwiringPiDev -lpthread -lrt -lm -lcrypt
 
+ifeq ($(BOARD),)
+  BOARD = clockworkpi-a06-rk3399
+endif
+
+ifeq ($(BOARD), clockworkpi-a04-h6)
+EXTRA_CFLAGS = -DCONFIG_CLOCKWORKPI_A04
+endif
+
+ifeq ($(BOARD), clockworkpi-a06-rk3399)
+EXTRA_CFLAGS = -DCONFIG_CLOCKWORKPI_A06
+endif
+
+EXTRA_CFLAGS += -DCONFIG_CLOCKWORKPI
+
 # May not need to  alter anything below this line
 ###############################################################################
 
-SRC	=	gpio.c readall.c
+SRC	=	gpio.c readall.c CPi_readall.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -57,7 +71,7 @@ gpio:	$(OBJ)
 
 .c.o:
 	$Q echo [Compile] $<
-	$Q $(CC) -c $(CFLAGS) $< -o $@
+	$Q $(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) $< -o $@
 
 .PHONY:	clean
 clean:
