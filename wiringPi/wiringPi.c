@@ -2294,7 +2294,7 @@ int wiringPiSetup (void)
      pinToGpio =  pinToGpioR1 ;
     physToGpio = physToGpioR1 ;
   }
-  else 					// A2, B2, A+, B+, CM, Pi2, Pi3, Zero
+  else 					// A2, B2, A+, B+, CM, Pi2, Pi3, Zero, Zero W, Zero 2 W
   {
      pinToGpio =  pinToGpioR2 ;
     physToGpio = physToGpioR2 ;
