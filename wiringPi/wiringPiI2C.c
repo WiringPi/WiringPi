@@ -201,6 +201,21 @@ int wiringPiI2CWriteBlockData (int fd, int size, int reg, uint8_t *value)
     return i2c_smbus_access (fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_BLOCK_DATA, &data) ;
 }
 
+/* Returns the number of read bytes */
+int wiringPiI2CReadBlockData(int fd, uint8_t reg, uint8_t *values)
+{
+	union i2c_smbus_data data;
+	int i, err;
+
+	err = i2c_smbus_access(fd, I2C_SMBUS_READ, reg,
+			       I2C_SMBUS_BLOCK_DATA, &data);
+	if (err < 0)
+		return err;
+
+	for (i = 1; i <= data.block[0]; i++)
+		values[i-1] = data.block[i];
+	return data.block[0];
+}
 
 /*
  * wiringPiI2CSetupInterface:
