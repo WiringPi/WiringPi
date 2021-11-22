@@ -2256,10 +2256,6 @@ int wiringPiSetup (void)
   int   fd ;
   int   model, rev, mem, maker, overVolted ;
 
-// It's actually a fatal error to call any of the wiringPiSetup routines more than once,
-//	(you run out of file handles!) but I'm fed-up with the useless twats who email
-//	me bleating that there is a bug in my code, so screw-em.
-
   if (wiringPiSetuped)
     return 0 ;
 
