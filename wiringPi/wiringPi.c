@@ -219,7 +219,7 @@ volatile unsigned int *_wiringPiTimerIrqRaw ;
 
 static volatile unsigned int piGpioBase = 0 ;
 
-const char *piModelNames [20] =
+const char *piModelNames [21] =
 {
   "Model A",	//  0
   "Model B",	//  1
@@ -240,10 +240,11 @@ const char *piModelNames [20] =
   "CM3+",	// 16
   "Pi 4B",	// 17
   "Unknown18",	// 18
-  "Unknown19",	// 19
+  "Pi 400",	// 19
+  "CM4",	// 20
 } ;
 
-const char *piRevisionNames [18] =
+const char *piRevisionNames [21] =
 {
   "00",
   "01",
@@ -263,6 +264,9 @@ const char *piRevisionNames [18] =
   "15",
   "16",
   "17",
+  "18",
+  "19",
+  "20",
 } ;
 
 const char *piMakerNames [16] =
@@ -292,7 +296,7 @@ const int piMemorySize [8] =
   1024,		//	 2
   2048,		//	 3
   4096,		//	 4
-     0,		//	 5
+  8192,		//	 5
      0,		//	 6
      0,		//	 7
 } ;
@@ -1325,8 +1329,8 @@ struct wiringPiNodeStruct *wiringPiFindNode (int pin)
 
 static         void pinModeDummy             (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int mode)  { return ; }
 static         void pullUpDnControlDummy     (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int pud)   { return ; }
-static unsigned int digitalRead8Dummy        (UNU struct wiringPiNodeStruct *node, UNU int UNU pin)            { return 0 ; }
-static         void digitalWrite8Dummy       (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value) { return ; }
+//static unsigned int digitalRead8Dummy        (UNU struct wiringPiNodeStruct *node, UNU int UNU pin)            { return 0 ; }
+//static         void digitalWrite8Dummy       (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value) { return ; }
 static          int digitalReadDummy         (UNU struct wiringPiNodeStruct *node, UNU int UNU pin)            { return LOW ; }
 static         void digitalWriteDummy        (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value) { return ; }
 static         void pwmWriteDummy            (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value) { return ; }
@@ -2050,7 +2054,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 	return wiringPiFailure (WPI_FATAL, "wiringPiISR: Can't find gpio program\n") ;
     }
     else		// Parent, wait
-      wait (NULL) ;
+      waitpid (pid, NULL, 0) ;
   }
 
 // Now pre-open the /sys/class node - but it may already be open if
@@ -2257,10 +2261,8 @@ int wiringPiSetup (void)
   int   fd ;
   int   model, rev, mem, maker, overVolted ;
 
-// It's actually a fatal error to call any of the wiringPiSetup routines more than once,
-//	(you run out of file handles!) but I'm fed-up with the useless twats who email
-//	me bleating that there is a bug in my code, so screw-em.
-
+  // It's actually a fatal error to call any of the wiringPiSetup routines more than once,
+  // you run out of file handles.
   if (wiringPiSetuped)
     return 0 ;
 
@@ -2314,6 +2316,8 @@ int wiringPiSetup (void)
       break ;
 
     case PI_MODEL_4B:
+    case PI_MODEL_400:
+    case PI_MODEL_CM4:
       piGpioBase = GPIO_PERI_BASE_2711 ;
       piGpioPupOffset = GPPUPPDN0 ;
       break ;

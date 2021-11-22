@@ -36,8 +36,8 @@ check_make_ok() {
     echo ""
     echo "Make Failed..."
     echo "Please check the messages and fix any problems. If you're still stuck,"
-    echo "then please email all the output and as many details as you can to"
-    echo "  projects@drogon.net"
+    echo "then raise a GitHub issue with the output and as many details as you can"
+    echo "  https://github.com/WiringPi/WiringPi/issues"
     echo ""
     exit 1
   fi
@@ -89,14 +89,15 @@ fi
 
 if [ x$1 = "xdebian" ]; then
   here=`pwd`
+  deb_destdir=${here}/debian-template/wiringPi
   cd debian-template/wiringPi
   rm -rf usr
   cd $here/wiringPi
-  make install-deb
+  make install-deb DEB_DESTDIR=${deb_destdir}
   cd $here/devLib
-  make install-deb INCLUDE='-I. -I../wiringPi'
+  make install-deb INCLUDE='-I. -I../wiringPi' DEB_DESTDIR=${deb_destdir}
   cd $here/gpio
-  make install-deb INCLUDE='-I../wiringPi -I../devLib' LDFLAGS=-L../debian-template/wiringPi/usr/lib
+  make install-deb INCLUDE='-I../wiringPi -I../devLib' LDFLAGS=-L../debian-template/wiringPi/usr/lib DEB_DESTDIR=${deb_destdir}
   cd $here/debian-template
   fakeroot dpkg-deb --build wiringPi
   mv wiringPi.deb  wiringpi-`cat $here/VERSION`-1.deb
