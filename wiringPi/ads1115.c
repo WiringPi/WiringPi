@@ -168,7 +168,7 @@ static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
   config = __bswap_16 (config) ;
   wiringPiI2CWriteReg16 (node->fd, 1, config) ;
 
-//	Wait for the conversion's end
+//	Wait for the conversion to complete
   for (;;)
   {    
     delayMicroseconds (node->data3) ;
