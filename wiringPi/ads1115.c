@@ -138,26 +138,15 @@ static const uint16_t gains [6] =
 
 static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
 {
-  int chan = pin - node->pinBase ;
   int16_t  result ;
-  uint16_t config = CONFIG_DEFAULT ;
 
-  chan &= 7 ;
+//	Setup the configuration register
 
-// Setup the configuration register
-
-//	Set PGA/voltage range
-
-  config &= ~CONFIG_PGA_MASK ;
-  config |= node->data0 ;
-
-//	Set sample speed
-
-  config &= ~CONFIG_DR_MASK ;
-  config |= node->data1 ;
+  uint16_t config = node->data2 ;
 
 //	Set single-ended channel or differential mode
 
+  int chan = (pin - node->pinBase) & 7 ;
   config &= ~CONFIG_MUX_MASK ;
 
   switch (chan)
@@ -179,17 +168,17 @@ static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
   config = __bswap_16 (config) ;
   wiringPiI2CWriteReg16 (node->fd, 1, config) ;
 
-// Wait for the conversion to complete
-
+//	Wait for the conversion's end
   for (;;)
-  {
+  {    
+    delayMicroseconds (node->data3) ;
     result =  wiringPiI2CReadReg16 (node->fd, 1) ;
     result = __bswap_16 (result) ;
     if ((result & CONFIG_OS_MASK) != 0)
       break ;
-    delayMicroseconds (100) ;
   }
 
+//	Read the result
   result =  wiringPiI2CReadReg16 (node->fd, 0) ;
   result = __bswap_16 (result) ;
 
@@ -213,6 +202,8 @@ static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
  *********************************************************************************
  */
 
+int ads1115Config (struct wiringPiNodeStruct *node);
+
 static void myDigitalWrite (struct wiringPiNodeStruct *node, int pin, int data)
 {
   int chan = pin - node->pinBase ;
@@ -230,7 +221,7 @@ static void myDigitalWrite (struct wiringPiNodeStruct *node, int pin, int data)
       data = 4 ;
     node->data1 = dataRates [data] ;	// Bugfix 0-1 by "Eric de jong (gm)" <ericdejong@gmx.net> - Thanks.
   }
-  
+  ads1115Config (node) ;
 }
 
 
@@ -264,6 +255,46 @@ static void myAnalogWrite (struct wiringPiNodeStruct *node, int pin, int data)
 }
 
 
+/*
+ * ads115Config:
+ *	Calculate the base content of the config register
+ *	Calculate the time (us) to wait for the conversion to complete
+ *********************************************************************************
+ */
+
+int ads1115Config (struct wiringPiNodeStruct *node)
+{
+  uint16_t config = CONFIG_DEFAULT ;
+
+//	Set PGA/voltage range
+  config &= ~CONFIG_PGA_MASK ;
+  config |= node->data0 ;
+
+//	Set sample speed
+  config &= ~CONFIG_DR_MASK ;
+  config |= node->data1 ;
+  
+  node->data2 = config ;
+
+//	Calculate the time (us) to wait for the conversion to complete
+  uint32_t dus ;
+  switch (node->data1>>5)
+  {
+    case 0: dus = 1000000 / 8; break ;
+    case 1: dus = 1000000 / 16; break ;
+    case 2: dus = 1000000 / 32; break ;
+    case 3: dus = 1000000 / 64; break ;    
+    case 4: dus = 1000000 / 128 ;break ;
+    case 5: dus = 1000000 / 475 ;break ;
+    case 6: dus = 1000000 / 860 ;break ;
+    default: dus = 10000; break ;
+  }
+  dus = 20 + 11 * dus / 10 ;
+  node->data3 = dus ;
+  
+  return TRUE ;
+}
+
 
 /*
  * ads1115Setup:
@@ -288,6 +319,7 @@ int ads1115Setup (const int pinBase, int i2cAddr)
   node->analogRead   = myAnalogRead ;
   node->analogWrite  = myAnalogWrite ;
   node->digitalWrite = myDigitalWrite ;
+  ads1115Config (node) ;
 
   return TRUE ;
 }
