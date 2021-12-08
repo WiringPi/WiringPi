@@ -2156,16 +2156,15 @@ void delayMicrosecondsHard (unsigned int howLong)
 
 void delayMicroseconds (unsigned int howLong)
 {
-  struct timespec sleeper ;
-  unsigned int uSecs = howLong % 1000000 ;
-  unsigned int wSecs = howLong / 1000000 ;
-
-  /**/ if (howLong ==   0)
+  if (howLong ==   0)
     return ;
   else if (howLong  < 100)
     delayMicrosecondsHard (howLong) ;
   else
   {
+    struct timespec sleeper ;
+    unsigned int uSecs = howLong % 1000000 ;
+    unsigned int wSecs = howLong / 1000000 ;
     sleeper.tv_sec  = wSecs ;
     sleeper.tv_nsec = (long)(uSecs * 1000L) ;
     nanosleep (&sleeper, NULL) ;
