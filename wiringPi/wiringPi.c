@@ -239,7 +239,7 @@ const char *piModelNames [21] =
   "Unknown15",	// 15
   "CM3+",	// 16
   "Pi 4B",	// 17
-  "Unknown18",	// 18
+  "Pi Zero2-W",	// 18
   "Pi 400",	// 19
   "CM4",	// 20
 } ;
