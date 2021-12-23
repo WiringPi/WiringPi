@@ -301,6 +301,8 @@ static void plus2header (int model)
     printf (" +-----+-----+---------+------+---+-Pi Zero--+---+------+---------+-----+-----+\n") ;
   else if (model == PI_MODEL_ZERO_W)
     printf (" +-----+-----+---------+------+---+-Pi ZeroW-+---+------+---------+-----+-----+\n") ;
+  else if (model == PI_MODEL_ZERO_2W)
+    printf (" +-----+-----+---------+------+---+Pi Zero 2W+---+------+---------+-----+-----+\n") ;
   else if (model == PI_MODEL_2)
     printf (" +-----+-----+---------+------+---+---Pi 2---+---+------+---------+-----+-----+\n") ;
   else if (model == PI_MODEL_3B)
@@ -360,8 +362,8 @@ void doReadall (void)
 	(model == PI_MODEL_2)    ||
 	(model == PI_MODEL_3AP)  ||
 	(model == PI_MODEL_3B)   || (model == PI_MODEL_3BP) ||
-	(model == PI_MODEL_4B)   || (model == PI_MODEL_400) ||
-	(model == PI_MODEL_ZERO) || (model == PI_MODEL_ZERO_W) || (model == PI_MODEL_CM4))
+	(model == PI_MODEL_4B)   || (model == PI_MODEL_400) || (model == PI_MODEL_CM4) ||
+	(model == PI_MODEL_ZERO) || (model == PI_MODEL_ZERO_W) || (model == PI_MODEL_ZERO_2W))
     piPlusReadall (model) ;
   else if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3) || (model == PI_MODEL_CM3P) )
     allReadall () ;
