@@ -239,7 +239,7 @@ const char *piModelNames [21] =
   "Unknown15",	// 15
   "CM3+",	// 16
   "Pi 4B",	// 17
-  "Unknown18",	// 18
+  "Pi Zero2-W",	// 18
   "Pi 400",	// 19
   "CM4",	// 20
 } ;
@@ -2297,7 +2297,7 @@ int wiringPiSetup (void)
      pinToGpio =  pinToGpioR1 ;
     physToGpio = physToGpioR1 ;
   }
-  else 					// A2, B2, A+, B+, CM, Pi2, Pi3, Zero
+  else 					// A2, B2, A+, B+, CM, Pi2, Pi3, Zero, Zero W, Zero 2 W
   {
      pinToGpio =  pinToGpioR2 ;
     physToGpio = physToGpioR2 ;
