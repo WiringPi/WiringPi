@@ -22,6 +22,8 @@
  ***********************************************************************
  */
 
+#include <stddef.h>
+
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
 
@@ -37,7 +39,7 @@ static void myAnalogWrite (struct wiringPiNodeStruct *node, int pin, int value)
 {
   int fd   = node->fd ;
   int chan = 0x01 + (pin - node->pinBase) ;
-  
+
   wiringPiI2CWriteReg8 (fd, chan, value & 0xFF) ;	// Value
   wiringPiI2CWriteReg8 (fd, 0x16, 0x00) ;		// Update
 }
@@ -54,8 +56,15 @@ int sn3218Setup (const int pinBase)
   int fd ;
   struct wiringPiNodeStruct *node ;
 
-  if ((fd = wiringPiI2CSetup (0x54)) < 0)
+  node = wiringPiNewNode (pinBase, 18) ;
+  if (node == NULL)
     return FALSE ;
+
+  if ((fd = wiringPiI2CSetup (0x54)) < 0)
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return FALSE ;
+  }
 
 // Setup the chip - initialise all 18 LEDs to off
 
@@ -65,8 +74,7 @@ int sn3218Setup (const int pinBase)
   wiringPiI2CWriteReg8 (fd, 0x14, 0x3F) ;	// Enable LEDs  6-11
   wiringPiI2CWriteReg8 (fd, 0x15, 0x3F) ;	// Enable LEDs 12-17
   wiringPiI2CWriteReg8 (fd, 0x16, 0x00) ;	// Update
-  
-  node = wiringPiNewNode (pinBase, 18) ;
+
 
   node->fd          = fd ;
   node->analogWrite = myAnalogWrite ;

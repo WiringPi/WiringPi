@@ -93,7 +93,8 @@ int piFaceSetup (const int pinBase)
 
 // Create an mcp23s17 instance:
 
-   mcp23s17Setup (pinBase + 16, 0, 0) ;
+   if (mcp23s17Setup (pinBase + 16, 0, 0) == FALSE)
+    return -1;
 
 // Set the direction bits
 

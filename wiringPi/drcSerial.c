@@ -178,11 +178,14 @@ int drcSetupSerial (const int pinBase, const int numPins, const char *device, co
 
   if (!ok)
   {
-    serialClose (fd) ;
     return FALSE ;
   }
 
   node = wiringPiNewNode (pinBase, numPins) ;
+  if(node == NULL) {
+    serialClose (fd) ;
+    return FALSE ;
+  }
 
   node->fd              = fd ;
   node->pinMode         = myPinMode ;

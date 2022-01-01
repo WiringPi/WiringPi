@@ -138,6 +138,11 @@ int ds18b20Setup (const int pinBase, const char *deviceId)
 //	although it's very slow reading these things anyway )-:
 
   node = wiringPiNewNode (pinBase, 1) ;
+  if(node == NULL)
+  {
+    close(fd) ;
+    return FALSE ;
+  }
 
   node->fd         = fd ;
   node->analogRead = myAnalogRead ;

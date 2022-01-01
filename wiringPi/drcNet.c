@@ -111,7 +111,7 @@ static int authenticate (int fd, const char *pass)
 
   sprintf (salted, "$6$%s$", challenge) ;
   encrypted = crypt (pass, salted) ;
-  
+
 // This is an assertion, or sanity check on my part...
 //	The '20' comes from the $6$ then the 16 characters of the salt,
 //	then the terminating $.
@@ -379,15 +379,23 @@ int drcSetupNet (const int pinBase, const int numPins, const char *ipAddress, co
   int fd, len ;
   struct wiringPiNodeStruct *node ;
 
-  if ((fd = _drcSetupNet (ipAddress, port, password)) < 0)
+  node = wiringPiNewNode (pinBase, numPins) ;
+  if(node == NULL)
     return FALSE ;
+
+  if ((fd = _drcSetupNet (ipAddress, port, password)) < 0)
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return FALSE ;
+  }
 
   len = sizeof (struct drcNetComStruct) ;
 
   if (setsockopt (fd, SOL_SOCKET, SO_RCVLOWAT, (void *)&len, sizeof (len)) < 0)
+  {
+    wiringPiRemoveNode(pinBase) ;
     return FALSE ;
-
-  node = wiringPiNewNode (pinBase, numPins) ;
+  }
 
   node->fd               = fd ;
   node->pinMode          = myPinMode ;

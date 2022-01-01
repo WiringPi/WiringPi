@@ -24,6 +24,8 @@
  ***********************************************************************
  */
 
+#include <stddef.h>
+
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 
@@ -64,10 +66,15 @@ int mcp3004Setup (const int pinBase, int spiChannel)
 {
   struct wiringPiNodeStruct *node ;
 
-  if (wiringPiSPISetup (spiChannel, 1000000) < 0)
+  node = wiringPiNewNode (pinBase, 8) ;
+  if (node == NULL)
     return FALSE ;
 
-  node = wiringPiNewNode (pinBase, 8) ;
+  if (wiringPiSPISetup (spiChannel, 1000000) < 0)
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return FALSE ;
+  }
 
   node->fd         = spiChannel ;
   node->analogRead = myAnalogRead ;

@@ -196,7 +196,7 @@ static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
 // Sometimes with a 0v input on a single-ended channel the internal 0v reference
 //	can be higher than the input, so you get a negative result...
 
-  if ( (chan < 4) && (result < 0) ) 
+  if ( (chan < 4) && (result < 0) )
     return 0 ;
   else
     return (int)result ;
@@ -230,7 +230,7 @@ static void myDigitalWrite (struct wiringPiNodeStruct *node, int pin, int data)
       data = 4 ;
     node->data1 = dataRates [data] ;	// Bugfix 0-1 by "Eric de jong (gm)" <ericdejong@gmx.net> - Thanks.
   }
-  
+
 }
 
 
@@ -277,10 +277,15 @@ int ads1115Setup (const int pinBase, int i2cAddr)
   struct wiringPiNodeStruct *node ;
   int fd ;
 
-  if ((fd = wiringPiI2CSetup (i2cAddr)) < 0)
+  node = wiringPiNewNode (pinBase, 8) ;
+  if(node == NULL)
     return FALSE ;
 
-  node = wiringPiNewNode (pinBase, 8) ;
+  if ((fd = wiringPiI2CSetup (i2cAddr)) < 0)
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return FALSE ;
+  }
 
   node->fd           = fd ;
   node->data0        = CONFIG_PGA_4_096V ;	// Gain in data0

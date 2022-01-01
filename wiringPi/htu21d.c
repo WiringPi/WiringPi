@@ -126,10 +126,16 @@ int htu21dSetup (const int pinBase)
   uint8_t data ;
   int status ;
 
-  if ((fd = wiringPiI2CSetup (I2C_ADDRESS)) < 0)
+  node = wiringPiNewNode (pinBase, 2) ;
+  if (node == NULL)
     return FALSE ;
 
-  node = wiringPiNewNode (pinBase, 2) ;
+  if ((fd = wiringPiI2CSetup (I2C_ADDRESS)) < 0)
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return FALSE ;
+  }
+
 
   node->fd         = fd ;
   node->analogRead = myAnalogRead ;

@@ -22,6 +22,8 @@
  ***********************************************************************
  */
 
+#include <stddef.h>
+
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 
@@ -65,10 +67,15 @@ int max5322Setup (const int pinBase, int spiChannel)
   struct wiringPiNodeStruct *node ;
   unsigned char spiData [2] ;
 
-  if (wiringPiSPISetup (spiChannel, 8000000) < 0)	// 10MHz Max
+  node = wiringPiNewNode (pinBase, 2) ;
+  if (node == NULL)
     return FALSE ;
 
-  node = wiringPiNewNode (pinBase, 2) ;
+  if (wiringPiSPISetup (spiChannel, 8000000) < 0)	// 10MHz Max
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return FALSE ;
+  }
 
   node->fd          = spiChannel ;
   node->analogWrite = myAnalogWrite ;
@@ -77,7 +84,7 @@ int max5322Setup (const int pinBase, int spiChannel)
 
   spiData [0] = 0b11100000 ;
   spiData [1] = 0 ;
-  
+
   wiringPiSPIDataRW (node->fd, spiData, 2) ;
 
   return TRUE ;

@@ -1340,17 +1340,17 @@ struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
 // Minimum pin base is 64
 
   if (pinBase < 64)
-    (void)wiringPiFailure (WPI_FATAL, "wiringPiNewNode: pinBase of %d is < 64\n", pinBase) ;
+    return NULL;
 
 // Check all pins in-case there is overlap:
 
   for (pin = pinBase ; pin < (pinBase + numPins) ; ++pin)
     if (wiringPiFindNode (pin) != NULL)
-      (void)wiringPiFailure (WPI_FATAL, "wiringPiNewNode: Pin %d overlaps with existing definition\n", pin) ;
+      return NULL;
 
   node = (struct wiringPiNodeStruct *)calloc (sizeof (struct wiringPiNodeStruct), 1) ;	// calloc zeros
   if (node == NULL)
-    (void)wiringPiFailure (WPI_FATAL, "wiringPiNewNode: Unable to allocate memory: %s\n", strerror (errno)) ;
+    (void)wiringPiFailure (WPI_ALMOST, "wiringPiNewNode: Unable to allocate memory: %s\n", strerror (errno)) ;
 
   node->pinBase          = pinBase ;
   node->pinMax           = pinBase + numPins - 1 ;
@@ -1411,7 +1411,7 @@ int wiringPiRemoveNode (int pinBase)
   //!@todo Run device specific code
 
   // Recover memory allocated to node
-  free(node);
+  free(node) ;
 
   return TRUE ;
 }

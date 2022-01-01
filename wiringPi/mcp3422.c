@@ -70,7 +70,7 @@ int myAnalogRead (struct wiringPiNodeStruct *node, int chan)
 // One-shot mode, trigger plus the other configs.
 
   config = 0x80 | (realChan << 5) | (node->data0 << 2) | (node->data1) ;
-  
+
   wiringPiI2CWrite (node->fd, config) ;
 
   switch (node->data0)	// Sample rate
@@ -111,10 +111,15 @@ int mcp3422Setup (int pinBase, int i2cAddress, int sampleRate, int gain)
   int fd ;
   struct wiringPiNodeStruct *node ;
 
-  if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
+  node = wiringPiNewNode (pinBase, 4) ;
+  if (node == NULL)
     return FALSE ;
 
-  node = wiringPiNewNode (pinBase, 4) ;
+  if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return FALSE ;
+  }
 
   node->fd         = fd ;
   node->data0      = sampleRate ;

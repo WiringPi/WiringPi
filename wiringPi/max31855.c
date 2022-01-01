@@ -24,6 +24,7 @@
 
 #include <byteswap.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
@@ -87,10 +88,16 @@ int max31855Setup (const int pinBase, int spiChannel)
 {
   struct wiringPiNodeStruct *node ;
 
-  if (wiringPiSPISetup (spiChannel, 5000000) < 0)	// 5MHz - prob 4 on the Pi
+  node = wiringPiNewNode (pinBase, 4) ;
+  if (node == NULL)
     return FALSE ;
 
-  node = wiringPiNewNode (pinBase, 4) ;
+  if (wiringPiSPISetup (spiChannel, 5000000) < 0)	// 5MHz - prob 4 on the Pi
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return FALSE ;
+  }
+
 
   node->fd         = spiChannel ;
   node->analogRead = myAnalogRead ;

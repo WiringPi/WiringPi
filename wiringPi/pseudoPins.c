@@ -75,6 +75,8 @@ int pseudoPinsSetup (const int pinBase)
   void *ptr ;
 
   node = wiringPiNewNode (pinBase, PSEUDO_PINS) ;
+  if (node == NULL)
+    return FALSE ;
 
   node->fd = shm_open (SHARED_NAME, O_CREAT | O_RDWR, 0666) ;
 

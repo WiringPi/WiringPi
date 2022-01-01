@@ -127,7 +127,7 @@ static int myDigitalRead (struct wiringPiNodeStruct *node, int pin)
 
   if ((value & mask) == 0)
     return LOW ;
-  else 
+  else
     return HIGH ;
 }
 
@@ -145,13 +145,19 @@ int mcp23016Setup (const int pinBase, const int i2cAddress)
   int fd ;
   struct wiringPiNodeStruct *node ;
 
-  if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
+  node = wiringPiNewNode (pinBase, 16) ;
+  if (node == NULL)
     return FALSE ;
+
+  if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return FALSE ;
+  }
 
   wiringPiI2CWriteReg8 (fd, MCP23016_IOCON0, IOCON_INIT) ;
   wiringPiI2CWriteReg8 (fd, MCP23016_IOCON1, IOCON_INIT) ;
 
-  node = wiringPiNewNode (pinBase, 16) ;
 
   node->fd              = fd ;
   node->pinMode         = myPinMode ;

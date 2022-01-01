@@ -191,10 +191,15 @@ int bmp180Setup (const int pinBase)
   int fd ;
   struct wiringPiNodeStruct *node ;
 
-  if ((fd = wiringPiI2CSetup (I2C_ADDRESS)) < 0)
+  node = wiringPiNewNode (pinBase, 4) ;
+  if(node == NULL)
     return FALSE ;
 
-  node = wiringPiNewNode (pinBase, 4) ;
+  if ((fd = wiringPiI2CSetup (I2C_ADDRESS)) < 0)
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return FALSE ;
+  }
 
   node->fd          = fd ;
   node->analogRead  = myAnalogRead ;

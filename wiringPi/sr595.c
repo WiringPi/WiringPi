@@ -83,11 +83,13 @@ static void myDigitalWrite (struct wiringPiNodeStruct *node, int pin, int value)
  */
 
 int sr595Setup (const int pinBase, const int numPins,
-	const int dataPin, const int clockPin, const int latchPin) 
+	const int dataPin, const int clockPin, const int latchPin)
 {
   struct wiringPiNodeStruct *node ;
 
   node = wiringPiNewNode (pinBase, numPins) ;
+  if (node == NULL)
+    return FALSE ;
 
   node->data0           = dataPin ;
   node->data1           = clockPin ;

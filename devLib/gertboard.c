@@ -153,10 +153,15 @@ int gertboardAnalogSetup (const int pinBase)
   struct wiringPiNodeStruct *node ;
   int    x ;
 
-  if (( x = gertboardSPISetup ()) != 0)
-    return  x;
+  if ((node = wiringPiNewNode (pinBase, 2)) == NULL)
+    return -1 ;
 
-  node = wiringPiNewNode (pinBase, 2) ;
+  if (( x = gertboardSPISetup ()) != 0)
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return  x ;
+  }
+
   node->analogRead  = myAnalogRead ;
   node->analogWrite = myAnalogWrite ;
 

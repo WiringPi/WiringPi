@@ -145,7 +145,7 @@ static int maxDetectRead (const int pin, unsigned char buffer [4])
   checksum &= 0xFF ;
 
 // See how long we took
-  
+
   gettimeofday (&now, NULL) ;
   timersub (&now, &then, &took) ;
 
@@ -177,7 +177,7 @@ static int myReadRHT03 (const int pin, int *temp, int *rh)
   unsigned char buffer [4] ;
 
 // Read ...
-  
+
   result = maxDetectRead (pin, buffer) ;
 
   if (!result)
@@ -240,10 +240,12 @@ int rht03Setup (const int pinBase, const int piPin)
 
   if ((piPin & PI_GPIO_MASK) != 0)	// Must be an on-board pin
     return FALSE ;
-  
+
 // 2 pins - temperature and humidity
 
   node = wiringPiNewNode (pinBase, 2) ;
+  if (node == NULL)
+    return FALSE ;
 
   node->fd         = piPin ;
   node->analogRead = myAnalogRead ;

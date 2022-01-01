@@ -152,7 +152,7 @@ static int myDigitalRead (struct wiringPiNodeStruct *node, int pin)
 
   if ((value & mask) == 0)
     return LOW ;
-  else 
+  else
     return HIGH ;
 }
 
@@ -169,12 +169,18 @@ int mcp23s08Setup (const int pinBase, const int spiPort, const int devId)
 {
   struct wiringPiNodeStruct *node ;
 
-  if (wiringPiSPISetup (spiPort, MCP_SPEED) < 0)
+  node = wiringPiNewNode (pinBase, 8) ;
+  if (node == NULL)
     return FALSE ;
+
+  if (wiringPiSPISetup (spiPort, MCP_SPEED) < 0)
+  {
+    wiringPiRemoveNode(pinBase) ;
+    return FALSE ;
+  }
 
   writeByte (spiPort, devId, MCP23x08_IOCON, IOCON_INIT) ;
 
-  node = wiringPiNewNode (pinBase, 8) ;
 
   node->data0           = spiPort ;
   node->data1           = devId ;
