@@ -198,6 +198,7 @@ extern int wiringPiFailure (int fatal, const char *message, ...) ;
 
 extern struct wiringPiNodeStruct *wiringPiFindNode (int pin) ;
 extern struct wiringPiNodeStruct *wiringPiNewNode  (int pinBase, int numPins) ;
+extern int wiringPiRemoveNode  (int pinBase) ;
 
 extern void wiringPiVersion	(int *major, int *minor) ;
 extern int  wiringPiSetup       (void) ;

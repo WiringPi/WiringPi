@@ -1369,6 +1369,53 @@ struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
   return node ;
 }
 
+/*
+ * wiringPiRemoveNode:
+ *	Remove an existing GPIO node from the wiringPi handling system
+ *********************************************************************************
+ */
+
+int wiringPiRemoveNode (int pinBase)
+{
+  struct wiringPiNodeStruct *node ;
+  struct wiringPiNodeStruct *nodePrevious ;
+
+// Don't try if there are no nodes in the tree or pinBase in naitive GPI range
+  if (wiringPiNodes == NULL || pinBase < 64)
+    return FALSE;
+
+// Find node
+  node = wiringPiFindNode (pinBase) ;
+  if (node == NULL)
+    return FALSE;
+
+// Remove node pointer from tree
+  if (node == wiringPiNodes)
+  {
+    wiringPiNodes = node->next;
+  }
+  else
+  {
+
+    nodePrevious = wiringPiNodes;
+
+    while (nodePrevious != NULL) {
+      if (nodePrevious->next == node) {
+        nodePrevious->next = node->next;
+        break;
+      }
+      nodePrevious = nodePrevious->next;
+    }
+  }
+
+  //!@todo Run device specific code
+
+  // Recover memory allocated to node
+  free(node);
+
+  return TRUE ;
+}
+
 
 #ifdef notYetReady
 /*
