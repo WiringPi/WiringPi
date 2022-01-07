@@ -246,6 +246,7 @@ extern          void digitalWriteByte2   (int value) ;
 
 extern int  waitForInterrupt    (int pin, int mS) ;
 extern int  wiringPiISR         (int pin, int mode, void (*function)(void)) ;
+extern int  wiringPiISRX        (int pin, int mode, void (*function)(void)) ;
 
 // Threads
 

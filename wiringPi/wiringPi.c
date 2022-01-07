@@ -304,6 +304,7 @@ static uint64_t epochMilli, epochMicro ;
 
 static int wiringPiMode = WPI_MODE_UNINITIALISED ;
 static volatile int    pinPass = -1 ;
+static volatile int    withPinPass = -1 ;
 static pthread_mutex_t pinMutex ;
 
 // Debugging & Return codes
@@ -328,7 +329,9 @@ static int sysFds [64] =
 
 // ISR Data
 
-static void (*isrFunctions [64])(void) ;
+typedef void isr_function_t();
+typedef void isr_function1_t();
+static void *isrFunctions [64] ;
 
 
 // Doing it the Arduino way with lookup tables...
@@ -1968,29 +1971,36 @@ int waitForInterrupt (int pin, int mS)
 static void *interruptHandler (UNU void *arg)
 {
   int myPin ;
+  int withPin;
 
   (void)piHiPri (55) ;	// Only effective if we run as root
 
   myPin   = pinPass ;
+  withPin = withPinPass ;
   pinPass = -1 ;
 
   for (;;)
+  {
     if (waitForInterrupt (myPin, -1) > 0)
-      isrFunctions [myPin] () ;
+    {
+      if (withPin < 0)
+        ((isr_function_t*) isrFunctions [myPin]) () ;
+      else
+        ((isr_function1_t*) isrFunctions [myPin]) (withPin) ;
+    }
+  }
 
   return NULL ;
 }
 
-
 /*
- * wiringPiISR:
- *	Pi Specific.
- *	Take the details and create an interrupt handler that will do a call-
- *	back to the user supplied function.
+ * _wiringPiISR :
+ *	Internal function that adds an ISR
  *********************************************************************************
  */
 
-int wiringPiISR (int pin, int mode, void (*function)(void))
+
+int  _wiringPiISR (int pin, int mode, int withPin, void *function)
 {
   pthread_t threadId ;
   const char *modeS ;
@@ -2072,12 +2082,39 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
   pthread_mutex_lock (&pinMutex) ;
     pinPass = pin ;
+    withPinPass = withPin;
     pthread_create (&threadId, NULL, interruptHandler, NULL) ;
     while (pinPass != -1)
       delay (1) ;
   pthread_mutex_unlock (&pinMutex) ;
 
   return 0 ;
+}
+
+/*
+ * wiringPiISR:
+ *	Pi Specific.
+ *	Take the details and create an interrupt handler that will do a call-
+ *	back to the user supplied function.
+ *********************************************************************************
+ */
+
+int wiringPiISR (int pin, int mode, void (*function)(void))
+{
+  return _wiringPiISR (pin, mode, -1, function);
+}
+
+/*
+ * wiringPiISR:
+ *	Pi Specific.
+ *	Take the details and create an interrupt handler that will do a call-
+ *	back to the user supplied function passing the pin that triggered interrupt.
+ *********************************************************************************
+ */
+
+int wiringPiISRX (int pin, int mode, void (*function)(int))
+{
+  return _wiringPiISR (pin, mode, pin, function);
 }
 
 
