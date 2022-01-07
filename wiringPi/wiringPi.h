@@ -245,7 +245,7 @@ extern          void digitalWriteByte2   (int value) ;
 //	(Also Pi hardware specific)
 
 typedef void isr_function_t();
-typedef void isr_functionx_t();
+typedef void isr_functionx_t(int);
 
 extern int  waitForInterrupt    (int pin, int mS) ;
 extern int  wiringPiISR         (int pin, int mode, isr_function_t function);
