@@ -329,8 +329,6 @@ static int sysFds [64] =
 
 // ISR Data
 
-typedef void isr_function_t();
-typedef void isr_function1_t();
 static void *isrFunctions [64] ;
 
 
@@ -1986,7 +1984,7 @@ static void *interruptHandler (UNU void *arg)
       if (withPin < 0)
         ((isr_function_t*) isrFunctions [myPin]) () ;
       else
-        ((isr_function1_t*) isrFunctions [myPin]) (withPin) ;
+        ((isr_functionx_t*) isrFunctions [myPin]) (withPin) ;
     }
   }
 
