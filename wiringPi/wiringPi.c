@@ -2097,7 +2097,7 @@ int  _wiringPiISR (int pin, int mode, int withPin, void *function)
  *********************************************************************************
  */
 
-int wiringPiISR (int pin, int mode, void (*function)(void))
+int wiringPiISR (int pin, int mode, isr_function_t function)
 {
   return _wiringPiISR (pin, mode, -1, function);
 }
@@ -2110,7 +2110,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
  *********************************************************************************
  */
 
-int wiringPiISRX (int pin, int mode, void (*function)(int))
+int wiringPiISRX (int pin, int mode, isr_functionx_t function)
 {
   return _wiringPiISR (pin, mode, pin, function);
 }
