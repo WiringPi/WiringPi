@@ -86,6 +86,7 @@
 
 // Pi model types and version numbers
 //	Intended for the GPIO program Use at your own risk.
+// https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#new-style-revision-codes
 
 #define	PI_MODEL_A		 0
 #define	PI_MODEL_B		 1
@@ -103,6 +104,7 @@
 #define	PI_MODEL_3AP 		14
 #define	PI_MODEL_CM3P 		16
 #define	PI_MODEL_4B 		17
+#define	PI_MODEL_ZERO_2W	18
 #define	PI_MODEL_400		19
 #define	PI_MODEL_CM4		20
 
