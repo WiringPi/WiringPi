@@ -45,20 +45,23 @@ int main()
 
     softServoSetup(cPin, -1, -1, -1, -1, -1, -1, -1);
 
-//    softServoWrite(1, -250);
-//    delay(1000);
-//    softServoWrite(1, 0);
-//    delay(1000);
-//    softServoWrite(1, 50);
-//    delay(1000);
-//    softServoWrite(1, 150);
-//    delay(1000);
-//    softServoWrite(1, 200);
-//    delay(1000);
-//    softServoWrite(1, 250);
-//    delay(1000);
-//    softServoWrite(1, 1250);
-//    delay(1000);
+	/*
+    softServoWrite(1, -250);
+    delay(1000);
+    softServoWrite(1, 0);
+    delay(1000);
+    softServoWrite(1, 50);
+    delay(1000);
+    softServoWrite(1, 150);
+    delay(1000);
+    softServoWrite(1, 200);
+    delay(1000);
+    softServoWrite(1, 250);
+    delay(1000);
+    softServoWrite(1, 1250);
+    delay(1000);
+	*/
+
     /*
      softServoWrite (1, 1000) ;  delay(1000);
      softServoWrite (2, 1100) ;  delay(1000);
