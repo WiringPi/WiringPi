@@ -3,7 +3,7 @@ Section: electronics
 Priority: optional
 Maintainer: Ian Jackson <ijackson@chiark.greenend.org.uk>
 Standards-Version: 3.8.0
-Homepage: http://wiringpi.com/
+Homepage: https://github.com/WiringPi/WiringPi
 Build-Depends: debhelper (>= 8)
 
 Package: libwiringpi2
