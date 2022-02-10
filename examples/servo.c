@@ -3,10 +3,10 @@
  *	Test of the softServo code.
  *	Do not use this code - use the servoBlaster kernel module instead
  *
- * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
+ * Copyright (c) 2012-2013 Gordon Henderson.
  ***********************************************************************
  * This file is part of wiringPi:
- *	https://projects.drogon.net/raspberry-pi/wiringpi/
+ *      https://github.com/WiringPi/WiringPi
  *
  *    wiringPi is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Lesser General Public License as published by
@@ -45,7 +45,7 @@ int main()
 
     softServoSetup(cPin, -1, -1, -1, -1, -1, -1, -1);
 
-	/*
+/*
     softServoWrite(1, -250);
     delay(1000);
     softServoWrite(1, 0);
@@ -60,7 +60,7 @@ int main()
     delay(1000);
     softServoWrite(1, 1250);
     delay(1000);
-	*/
+*/
 
     /*
      softServoWrite (1, 1000) ;  delay(1000);

@@ -1,12 +1,12 @@
 /*
  * scphat.c:
- *	Little program to allow use of the Pimoroni Sctoll Phat
+ *	Little program to allow use of the Pimoroni Scroll pHAT
  *	from the command-line.
  *
- * Copyright (c) 2015-2016 Gordon Henderson. <projects@drogon.net>
+ * Copyright (c) 2015-2016 Gordon Henderson.
  ***********************************************************************
  * This file is part of wiringPi:
- *	https://projects.drogon.net/raspberry-pi/wiringpi/
+ *      https://github.com/WiringPi/WiringPi
  *
  *    wiringPi is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Lesser General Public License as published by

@@ -14,7 +14,7 @@
  * Copyright (c) 2013 Gordon Henderson.
  ***********************************************************************
  * This file is part of wiringPi:
- *	https://projects.drogon.net/raspberry-pi/wiringpi/
+ *	https://github.com/WiringPi/WiringPi/
  *
  *    wiringPi is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Lesser General Public License as published by
@@ -28,8 +28,6 @@
  *
  *    You should have received a copy of the GNU Lesser General Public License
  *    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
- ***********************************************************************
- * Updates: 2021 J. Parziale
  ***********************************************************************
  */
 

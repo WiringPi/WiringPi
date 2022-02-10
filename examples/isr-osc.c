@@ -5,7 +5,7 @@
  *	How to test:
  *
  *	IMPORTANT: To run this test we connect 2 GPIO pins together, but
- *	before we do that YOU must make sure that they are both setup
+ *	before we do that YOU must make sure that they are both set up
  *	the right way. If they are set to outputs and one is high and one low,
  *	then you connect the wire, you'll create a short and that won't be good.
  *
@@ -23,10 +23,10 @@
  *	then do the up/down toggling for itself and run at full speed, and
  *	it will report the number of interrupts recieved every second.
  *
- *	Copyright (c) 2013 Gordon Henderson. projects@drogon.net
+ *	Copyright (c) 2013 Gordon Henderson.
  ***********************************************************************
  * This file is part of wiringPi:
- *	https://projects.drogon.net/raspberry-pi/wiringpi/
+ *      https://github.com/WiringPi/WiringPi
  *
  *    wiringPi is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Lesser General Public License as published by

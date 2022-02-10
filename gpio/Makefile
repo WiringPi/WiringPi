@@ -2,7 +2,7 @@
 # Makefile:
 #	The gpio command:
 #	  A swiss-army knige of GPIO shenanigans.
-#	https://projects.drogon.net/wiring-pi
+#	https://github.com/wiringPi/wiringPi
 #
 #	Copyright (c) 2012-2016 Gordon Henderson
 #################################################################################

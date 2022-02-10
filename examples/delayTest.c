@@ -3,10 +3,10 @@
  *	Just a little test program I'm using to experiment with
  *	various timings and latency, etc.
  *
- * Copyright (c) 2012-2013 Gordon Henderson. <projects@drogon.net>
+ * Copyright (c) 2012-2013 Gordon Henderson.
  ***********************************************************************
  * This file is part of wiringPi:
- *	https://projects.drogon.net/raspberry-pi/wiringpi/
+ *      https://github.com/WiringPi/WiringPi
  *
  *    wiringPi is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Lesser General Public License as published by

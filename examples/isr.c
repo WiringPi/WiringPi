@@ -14,7 +14,7 @@
  * Copyright (c) 2013 Gordon Henderson.
  ***********************************************************************
  * This file is part of wiringPi:
- *	https://projects.drogon.net/raspberry-pi/wiringpi/
+ *	https://github.com/WiringPi/WiringPi/
  *
  *    wiringPi is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Lesser General Public License as published by
@@ -28,8 +28,6 @@
  *
  *    You should have received a copy of the GNU Lesser General Public License
  *    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
- ***********************************************************************
- * Updates: 2021 J. Parziale
  ***********************************************************************
  */
 
@@ -81,11 +79,13 @@ int main (void)
   int gotOne, pin ;
   int myCounter [8] ;
 
-  for (pin = 0 ; pin < 8 ; ++pin) {
+  for (pin = 0 ; pin < 8 ; ++pin)
+  {
     globalCounter [pin] = myCounter [pin] = 0 ;
   }
 
-  if (wiringPiSetup() < 0) {
+  if (wiringPiSetup() < 0)
+  {
     fprintf(stderr, "Unable to setup wiringPi: %s\n", strerror(errno));
     return 1;
   }
@@ -111,7 +111,8 @@ int main (void)
   signal(SIGUSR1, Signal_handler);
   signal(SIGUSR2, Signal_handler);
 
-  while (!terminate_process) {
+  while (!terminate_process)
+  {
     gotOne = 0 ;
     printf("Waiting ... ");
     fflush(stdout);
