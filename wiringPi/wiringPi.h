@@ -121,7 +121,7 @@
 #define	PI_MAKER_STADIUM	5
 
 extern const char *piModelNames    [21] ;
-extern const char *piRevisionNames [21] ;
+extern const char *piRevisionNames [16] ;
 extern const char *piMakerNames    [16] ;
 extern const int   piMemorySize    [ 8] ;
 
