@@ -76,12 +76,12 @@ static int remoteReadline (int fd, char *buf, int max)
 
 static char *getChallenge (int fd)
 {
-  static char buf [1024] ;
+  static char buf [512] ;
   int num ;
 
   for (;;)
   {
-    if ((num = remoteReadline (fd, buf, 1023)) < 0)
+    if ((num = remoteReadline (fd, buf, 511)) < 0)
       return NULL ;
     buf [num] = 0 ;
 
