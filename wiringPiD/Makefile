@@ -1,7 +1,7 @@
 #
 # Makefile:
 #	The wiringPiD utility:
-#	https://projects.drogon.net/wiring-pi
+#	https://github.com/wiringPi/wiringPi
 #
 #	Copyright (c) 2012-2017 Gordon Henderson
 #################################################################################
