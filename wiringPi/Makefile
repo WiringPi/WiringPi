@@ -1,4 +1,4 @@
-#
+#################################################################################
 # Makefile:
 #	wiringPi - Wiring Compatable library for the Raspberry Pi
 #
@@ -27,11 +27,11 @@ PREFIX?=/local
 
 LDCONFIG?=ldconfig
 
+# Specify "V=1" on the make command line to enable
 ifneq ($V,1)
 Q ?= @
 endif
 
-STATIC=libwiringPi.a
 DYNAMIC=libwiringPi.so.$(VERSION)
 
 #DEBUG	= -g -O0
@@ -46,28 +46,30 @@ LIBS    = -lm -lpthread -lrt -lcrypt
 
 ###############################################################################
 
-SRC	=	wiringPi.c						\
-		wiringSerial.c wiringShift.c				\
+SRC	=	wiringPi.c								\
+		wiringSerial.c wiringShift.c			\
 		piHiPri.c piThread.c					\
 		wiringPiSPI.c wiringPiI2C.c				\
 		softPwm.c softTone.c					\
-		mcp23008.c mcp23016.c mcp23017.c			\
+		mcp23008.c mcp23016.c mcp23017.c		\
 		mcp23s08.c mcp23s17.c					\
-		sr595.c							\
-		pcf8574.c pcf8591.c					\
-		mcp3002.c mcp3004.c mcp4802.c mcp3422.c			\
-		max31855.c max5322.c ads1115.c				\
-		sn3218.c						\
-		bmp180.c htu21d.c ds18b20.c rht03.c			\
+		sr595.c									\
+		pcf8574.c pcf8591.c						\
+		mcp3002.c mcp3004.c mcp4802.c mcp3422.c	\
+		max31855.c max5322.c ads1115.c			\
+		sn3218.c								\
+		bmp180.c htu21d.c ds18b20.c rht03.c		\
 		drcSerial.c drcNet.c					\
-		pseudoPins.c						\
+		pseudoPins.c							\
 		wpiExtensions.c
 
 HEADERS =	$(shell ls *.h)
 
 OBJ	=	$(SRC:.c=.o)
 
-all:		$(DYNAMIC)
+#################################################################################
+
+all:	$(DYNAMIC)
 
 .PHONY:	static
 static:	
@@ -81,27 +83,29 @@ $(DYNAMIC):	$(OBJ)
 	$Q echo [Compile] $<
 	$Q $(CC) -c $(CFLAGS) $< -o $@
 
+#################################################################################
 
 .PHONY:	clean
 clean:
 	$Q echo "[Clean]"
-	$Q rm -f $(OBJ) $(OBJ_I2C) *~ core tags Makefile.bak libwiringPi.*
+	$Q rm -vf $(OBJ) $(OBJ_I2C) *~ core tags Makefile.bak libwiringPi.*
 
 .PHONY:	tags
 tags:	$(SRC)
 	$Q echo [ctags]
 	$Q ctags $(SRC)
 
+#################################################################################
 
 .PHONY:	install
 install:	$(DYNAMIC)
 	$Q echo "[Install Headers]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/include
-	$Q install -m 0644 $(HEADERS)					$(DESTDIR)$(PREFIX)/include
+	$Q install -m 0755 -d $(DESTDIR)$(PREFIX)/include
+	$Q install -m 0644 $(HEADERS) $(DESTDIR)$(PREFIX)/include
 	$Q echo "[Install Dynamic Lib]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/lib
-	$Q install -m 0755 libwiringPi.so.$(VERSION)			$(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION)
-	$Q ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION)	$(DESTDIR)/lib/libwiringPi.so
+	$Q install -m 0755 -d $(DESTDIR)$(PREFIX)/lib
+	$Q install -m 0755 libwiringPi.so.$(VERSION) $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION)
+	$Q ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION) $(DESTDIR)/lib/libwiringPi.so
 	$Q $(LDCONFIG)
 
 .PHONY: check-deb-destdir
@@ -113,18 +117,18 @@ endif
 .PHONY:	install-deb
 install-deb:	$(DYNAMIC) check-deb-destdir
 	$Q echo "[Install Headers: deb]"
-	$Q install -m 0755 -d							$(DEB_DESTDIR)/usr/include
-	$Q install -m 0644 $(HEADERS)						$(DEB_DESTDIR)/usr/include
+	$Q install -m 0755 -d $(DEB_DESTDIR)/usr/include
+	$Q install -m 0644 $(HEADERS) $(DEB_DESTDIR)/usr/include
 	$Q echo "[Install Dynamic Lib: deb]"
-	install -m 0755 -d							$(DEB_DESTDIR)/usr/lib
-	install -m 0755 libwiringPi.so.$(VERSION)				$(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION)
-	ln -sf $(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION)	$(DEB_DESTDIR)/usr/lib/libwiringPi.so
+	install -m 0755 -d $(DEB_DESTDIR)/usr/lib
+	install -m 0755 libwiringPi.so.$(VERSION) $(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION)
+	ln -sf $(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION) $(DEB_DESTDIR)/usr/lib/libwiringPi.so
 
 .PHONY:	uninstall
 uninstall:
 	$Q echo "[UnInstall]"
-	$Q cd $(DESTDIR)$(PREFIX)/include/ && rm -f $(HEADERS)
-	$Q cd $(DESTDIR)$(PREFIX)/lib/     && rm -f libwiringPi.*
+	$Q cd $(DESTDIR)$(PREFIX)/include/ && rm -vf $(HEADERS)
+	$Q cd $(DESTDIR)$(PREFIX)/lib/     && rm -vf libwiringPi.*
 	$Q $(LDCONFIG)
 
 
@@ -132,6 +136,7 @@ uninstall:
 depend:
 	makedepend -Y $(SRC) $(SRC_I2C)
 
+#################################################################################
 # DO NOT DELETE
 
 wiringPi.o: softPwm.h softTone.h wiringPi.h ../version.h
@@ -169,3 +174,5 @@ wpiExtensions.o: mcp23s17.h sr595.h pcf8574.h pcf8591.h mcp3002.h mcp3004.h
 wpiExtensions.o: mcp4802.h mcp3422.h max31855.h max5322.h ads1115.h sn3218.h
 wpiExtensions.o: drcSerial.h pseudoPins.h bmp180.h htu21d.h ds18b20.h
 wpiExtensions.o: wpiExtensions.h
+
+#################################################################################

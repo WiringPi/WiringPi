@@ -104,26 +104,24 @@ static int authenticate (int fd, const char *pass)
 {
   char *challenge ;
   char *encrypted ;
-  char salted [1024] ;
+  char salted [1024+4] ; // Need to hold 4 more chars - see sprintf below
 
   if ((challenge = getChallenge (fd)) == NULL)
     return -1 ;
 
   sprintf (salted, "$6$%s$", challenge) ;
   encrypted = crypt (pass, salted) ;
-  
-// This is an assertion, or sanity check on my part...
-//	The '20' comes from the $6$ then the 16 characters of the salt,
-//	then the terminating $.
 
+  // Assertion:
+  // The '20' comes from the $6$ then the 16 characters of the salt,
+  // then the terminating $.
   if (strncmp (encrypted, salted, 20) != 0)
   {
     errno = EBADE ;
     return -1 ;
   }
 
-// 86 characters is the length of the SHA-256 hash
-
+  // 86 characters is the length of the SHA-256 hash
   if (write (fd, encrypted + 20, 86) == 86)
     return 0 ;
   else
