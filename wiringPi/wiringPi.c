@@ -2069,19 +2069,28 @@ int wiringPiSetup (void)
   int   fd;
   int   model, proc, rev, mem, maker, overVolted;
 
+  // Exit with OK status if this has already been called.
   if (wiringPiSetuped)
+  {
     return 0;
+  }
 
   wiringPiSetuped = TRUE;
 
   if (getenv (ENV_DEBUG) != NULL)
+  {
     wiringPiDebug = TRUE;
+  }
 
   if (getenv (ENV_CODES) != NULL)
+  {
     wiringPiReturnCodes = TRUE;
+  }
 
   if (wiringPiDebug)
+  {
     printf ("wiringPi: wiringPiSetup called\n");
+  }
 
   // Get the board ID information. We're not really using the information here,
   // but it will give us information like the GPIO layout scheme (2 variants
@@ -2090,14 +2099,15 @@ int wiringPiSetup (void)
   // don't really many anything, so force native BCM mode anyway.
   piBoardId (&model, &proc, &rev, &mem, &maker, &overVolted);
 
+  // Set default GPIO/pin mode.
   if ((model == PI_MODEL_CM1) ||
       (model == PI_MODEL_CM3) ||
       (model == PI_MODEL_CM3P))
-    wiringPiMode = WPI_MODE_GPIO;
+    wiringPiMode = WPI_MODE_GPIO; // Virtual pin numbers 0 through 16
   else
-    wiringPiMode = WPI_MODE_PINS;
+    wiringPiMode = WPI_MODE_PINS; // Broadcom GPIO pin numbers
 
-  if (piGpioLayout() == 1) // A, B, Rev 1, 1.1
+  if (piGpioLayout() == 1) // A, B, Rev 1, 1.1 (Oldest boards)
   {
     pinToGpio =  pinToGpioR1;
     physToGpio = physToGpioR1;
@@ -2145,46 +2155,46 @@ int wiringPiSetup (void)
       usingGpioMem = TRUE;
     }
     else
-      return wiringPiFailure (WPI_ALMOST,
+      return wiringPiFailure (WPI_NON_FATAL,
         "wiringPiSetup: Unable to open /dev/mem or /dev/gpiomem: %s.\n"
-        "  Aborting your program because if it can not access the GPIO\n"
-        "  hardware then it most certianly won't work\n"
-        "  Try running with sudo?\n", strerror (errno));
+        "  Aborting your program because it must be able to access the GPIO hardware.\n"
+        "  NOTE: You may need to run with sudo.\n",
+        strerror (errno));
   }
 
   // Set the offsets into the memory interface.
-  GPIO_PADS 	  = piGpioBase + 0x00100000;
+  GPIO_PADS       = piGpioBase + 0x00100000;
   GPIO_CLOCK_BASE = piGpioBase + 0x00101000;
-  GPIO_BASE	  = piGpioBase + 0x00200000;
-  GPIO_TIMER	  = piGpioBase + 0x0000B000;
-  GPIO_PWM	  = piGpioBase + 0x0020C000;
+  GPIO_BASE       = piGpioBase + 0x00200000;
+  GPIO_TIMER      = piGpioBase + 0x0000B000;
+  GPIO_PWM        = piGpioBase + 0x0020C000;
 
   // Map the individual hardware components
 
   // GPIO:
   gpio = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_BASE);
   if (gpio == MAP_FAILED)
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno));
+    return wiringPiFailure (WPI_NON_FATAL, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno));
 
   // PWM
   pwm = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PWM);
   if (pwm == MAP_FAILED)
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PWM) failed: %s\n", strerror (errno));
+    return wiringPiFailure (WPI_NON_FATAL, "wiringPiSetup: mmap (PWM) failed: %s\n", strerror (errno));
 
   // Clock control (needed for PWM)
   clk = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_CLOCK_BASE);
   if (clk == MAP_FAILED)
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (CLOCK) failed: %s\n", strerror (errno));
+    return wiringPiFailure (WPI_NON_FATAL, "wiringPiSetup: mmap (CLOCK) failed: %s\n", strerror (errno));
 
   // The drive pads
   pads = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PADS);
   if (pads == MAP_FAILED)
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PADS) failed: %s\n", strerror (errno));
+    return wiringPiFailure (WPI_NON_FATAL, "wiringPiSetup: mmap (PADS) failed: %s\n", strerror (errno));
 
   // The system timer
   timer = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_TIMER);
   if (timer == MAP_FAILED)
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (TIMER) failed: %s\n", strerror (errno));
+    return wiringPiFailure (WPI_NON_FATAL, "wiringPiSetup: mmap (TIMER) failed: %s\n", strerror (errno));
 
   // Set the timer to free-running, 1MHz.
   // 0xF9 is 249, the timer divide is base clock / (divide+1)

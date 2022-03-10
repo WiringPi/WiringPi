@@ -31,7 +31,6 @@
 #endif
 
 // GCC warning suppressor - don't warn about unused parameters (-Wunused-parameter)
-// @TODO Remove this and fix instances where parameters are unused.
 #define UNU __attribute__((unused))
 
 // Mask for the bottom 64 pins which belong to the Raspberry Pi
@@ -44,7 +43,7 @@
 #define WPI_MODE_PINS     0   // Virtual pin numbers 0 through 16
 #define WPI_MODE_GPIO     1   // Broadcom GPIO pin numbers
 #define WPI_MODE_GPIO_SYS 2   // Broadcom GPIO pin numbers, but uses /sys/class/gpio (slower)
-#define WPI_MODE_PHYS     3   // Raspberry Pi pysical pins
+#define WPI_MODE_PHYS     3   // Raspberry Pi physical pins
 #define WPI_MODE_PIFACE   4   // UNUSED
 #define WPI_MODE_UNINITIALISED    -1
 
@@ -153,8 +152,8 @@ extern const int   piMemorySize    [ 8];
 #define PI_THREAD(X) void *X (UNU void *dummy)
 
 // Failure modes
-#define WPI_FATAL  true
-#define WPI_ALMOST false
+#define WPI_FATAL     true
+#define WPI_NON_FATAL false
 
 
 // wiringPiNodeStruct:
@@ -220,8 +219,6 @@ extern void pinMode             (int pin, int mode);
 extern void pullUpDnControl     (int pin, int pud);
 extern int  digitalRead         (int pin);
 extern void digitalWrite        (int pin, int value);
-extern unsigned int digitalRead8 (int pin);
-extern void digitalWrite8       (int pin, int value);
 extern void pwmWrite            (int pin, int value);
 extern int  analogRead          (int pin);
 extern void analogWrite         (int pin, int value);
