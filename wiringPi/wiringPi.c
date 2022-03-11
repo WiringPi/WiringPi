@@ -1395,7 +1395,7 @@ void pullUpDnControl (int pin, int pud)
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
-    /**/ if (wiringPiMode == WPI_MODE_PINS)
+    if      (wiringPiMode == WPI_MODE_PINS)
       pin = pinToGpio[pin];
     else if (wiringPiMode == WPI_MODE_PHYS)
       pin = physToGpio[pin];
@@ -1412,8 +1412,8 @@ void pullUpDnControl (int pin, int pud)
 
       switch (pud)
       {
-        case PUD_OFF: pull = 0; break;
-        case PUD_UP: pull = 1; break;
+        case PUD_OFF:  pull = 0; break;
+        case PUD_UP:   pull = 1; break;
         case PUD_DOWN: pull = 2; break;
         default: return; /* An illegal value */
       }
@@ -1426,11 +1426,11 @@ void pullUpDnControl (int pin, int pud)
     else
     {
       // legacy pull up/down method
-      *(gpio + GPPUD)              = pud & 3;		delayMicroseconds (5);
-      *(gpio + gpioToPUDCLK[pin]) = 1 << (pin & 31);	delayMicroseconds (5);
+      *(gpio + GPPUD)              = pud & 3;         delayMicroseconds (5);
+      *(gpio + gpioToPUDCLK[pin])  = 1 << (pin & 31); delayMicroseconds (5);
 
-      *(gpio + GPPUD)              = 0;			delayMicroseconds (5);
-      *(gpio + gpioToPUDCLK[pin]) = 0;			delayMicroseconds (5);
+      *(gpio + GPPUD)              = 0;  delayMicroseconds (5);
+      *(gpio + gpioToPUDCLK[pin])  = 0;  delayMicroseconds (5);
     }
   }
   else  // Extension module
