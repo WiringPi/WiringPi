@@ -1,10 +1,10 @@
-#!/bin/sh -e
+#!/bin/env bash
 
 # build
 #	Simple wiringPi build and install script
 #
 #	Copyright (c) 2012-2015 Gordon Henderson
-#################################################################################
+###############################################################################
 # This file is part of wiringPi:
 #	A "wiring" library for the Raspberry Pi
 #
@@ -20,7 +20,7 @@
 #
 #    You should have received a copy of the GNU Lesser General Public License
 #    along with wiringPi.  If not, see <http://www.gnu.org/licenses/>.
-#################################################################################
+###############################################################################
 #
 # wiringPi is designed to run on a Raspberry Pi only.
 #	However if you're clever enough to actually look at this script to
@@ -29,24 +29,21 @@
 #	To everyone else: Stop using cheap alternatives. Support the
 #	Raspberry Pi Foundation	as they're the only ones putting money
 #	back into education!
-#################################################################################
+###############################################################################
 
-check_make_ok() {
-  if [ $? != 0 ]; then
-    echo ""
+function check_make_ok() {
+  if [[ $? -ne 0 ]]; then
+    echo
     echo "Make Failed..."
-    echo "Please check the messages and fix any problems. If you're still stuck,"
-    echo "then raise a GitHub issue with the output and as many details as you can"
-    echo "  https://github.com/WiringPi/WiringPi/issues"
-    echo ""
+    echo "Please check the messages and fix any problems."
+    echo
     exit 1
   fi
 }
 
-sudo=${WIRINGPI_SUDO-sudo}
-
-if [ x$1 = "xclean" ]; then
-  echo Cleaning
+function doClean() {
+  echo
+  echo "Cleaning"
   echo
   cd wiringPi
   echo -n "wiringPi:   "	; make clean
@@ -57,108 +54,87 @@ if [ x$1 = "xclean" ]; then
   cd ../examples
   echo -n "Examples:   "	; make clean
   cd Gertboard
-  echo -n "Gertboard:  "	; make clean
+  #echo -n "Gertboard:  "	; make clean
   cd ../PiFace
-  echo -n "PiFace:     "	; make clean
-  cd ../q2w
-  echo -n "Quick2Wire: "	; make clean
+  #echo -n "PiFace:     "	; make clean
   cd ../PiGlow
-  echo -n "PiGlow:     "	; make clean
+  #echo -n "PiGlow:     "	; make clean
+  cd ../q2w
+  #echo -n "Quick2Wire: "	; make clean
   cd ../scrollPhat
-  echo -n "scrollPhat: "	; make clean
+  #echo -n "scrollPhat: "	; make clean
   cd ../..
-  echo -n "Deb: " ; rm  -f debian-template/wiringpi*.deb
   echo
-  exit
-fi
+}
 
-if [ x$1 = "xuninstall" ]; then
-  echo Uninstalling
+function doUninstall() {
+  echo
+  echo "Uninstalling"
   echo
   echo "WiringPi library"
   cd wiringPi
-  echo -n "wiringPi: " ; $sudo make uninstall
+  echo -n "wiringPi: " ; sudo make uninstall
   cd ../devLib
-  echo -n "DevLib:   " ; $sudo make uninstall
+  echo -n "DevLib:   " ; sudo make uninstall
   cd ../gpio
-  echo -n "gpio:     " ; $sudo make uninstall
-  exit
-fi
+  echo -n "gpio:     " ; sudo make uninstall
+}
 
-# Only if you know what you're doing!
+###############################################################################
+# Main build script
 
-if [ x$1 = "xdebian" ]; then
-  here=`pwd`
-  deb_destdir=${here}/debian-template/wiringPi
-  cd debian-template/wiringPi
-  rm -rf usr
-  cd $here/wiringPi
-  make install-deb DEB_DESTDIR=${deb_destdir}
-  cd $here/devLib
-  make install-deb INCLUDE='-I. -I../wiringPi' DEB_DESTDIR=${deb_destdir}
-  cd $here/gpio
-  make install-deb INCLUDE='-I../wiringPi -I../devLib' LDFLAGS=-L../debian-template/wiringPi/usr/lib DEB_DESTDIR=${deb_destdir}
-  cd $here/debian-template
-  fakeroot dpkg-deb --build wiringPi
-  mv wiringPi.deb  wiringpi-`cat $here/VERSION`-1.deb
-  exit
-fi
+echo "WiringPi Build script"
+echo "========================================"
 
-if [ x$1 != "x" ]; then
-  echo "Usage: $0 [clean | uninstall]"
-  exit 1
-fi
-
-  echo "wiringPi Build script"
-  echo "====================="
-  echo
-
-  hardware=`fgrep Hardware /proc/cpuinfo | head -1 | awk '{ print $3 }'`
-
-  echo
-  echo "WiringPi Library"
-  cd wiringPi
-  $sudo make uninstall
-  if [ x$1 = "xstatic" ]; then
-    make -j5 static
-    check_make_ok
-    $sudo make install-static
-  else
-    make -j5
-    check_make_ok
-    $sudo make install
+nargs=$#
+while [[ $# -gt 0 ]]; do
+  if [[ "$1" == "clean" ]]; then
+    doClean
   fi
-  check_make_ok
-
-  echo
-  echo "WiringPi Devices Library"
-  cd ../devLib
-  $sudo make uninstall
-  if [ x$1 = "xstatic" ]; then
-    make -j5 static
-    check_make_ok
-    $sudo make install-static
-  else
-    make -j5
-    check_make_ok
-    $sudo make install
+  if [[ "$1" == "uninstall" ]]; then
+    doUninstall
   fi
-  check_make_ok
 
-  echo
-  echo "GPIO Utility"
-  cd ../gpio
-  make -j5
-  check_make_ok
-  $sudo make install
-  check_make_ok
+  shift # next arg!
+done
+
+# Targets specified on the command line were processed => Done.
+if [[ nargs -ne 0 ]]; then exit; fi
+
+# Default if nothing specified on command line:
+
+echo
+echo "WiringPi Library"
+cd wiringPi
+sudo make uninstall
+make -j5
+check_make_ok
+sudo make install
+check_make_ok
+
+echo
+echo "WiringPi Devices Library"
+cd ../devLib
+sudo make uninstall
+make -j5
+check_make_ok
+sudo make install
+check_make_ok
+
+echo
+echo "GPIO Utility"
+cd ../gpio
+make -j5
+check_make_ok
+sudo make install
+check_make_ok
 
 # echo
 # echo "wiringPi Daemon"
 # cd ../wiringPiD
 # make -j5
 # check_make_ok
-# $sudo make install
+# sudo make install
 # check_make_ok
 
 # echo

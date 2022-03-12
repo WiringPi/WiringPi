@@ -31,12 +31,10 @@ ifneq ($V,1)
 Q ?= @
 endif
 
-STATIC=libwiringPiDev.a
 DYNAMIC=libwiringPiDev.so.$(VERSION)
 
-#DEBUG	= -g -O0
 DEBUG	= -O2
-CC	?= gcc
+CC		?= gcc
 INCLUDE	= -I.
 DEFS	= -D_GNU_SOURCE
 CFLAGS	= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Winline $(INCLUDE) -pipe -fPIC $(EXTRA_CFLAGS)
@@ -53,18 +51,12 @@ SRC	=	ds1302.c maxdetect.c  piNes.c		\
 
 OBJ	=	$(SRC:.c=.o)
 
-HEADERS	=	ds1302.h gertboard.h  lcd128x64.h  lcd.h  maxdetect.h piFace.h  piGlow.h  piNes.h\
+HEADERS	= ds1302.h gertboard.h  lcd128x64.h  lcd.h  maxdetect.h piFace.h  piGlow.h  piNes.h\
 		scrollPhat.h
 
+#################################################################################
+
 all:		$(DYNAMIC)
-
-static:		$(STATIC)
-
-$(STATIC):	$(OBJ)
-	$Q echo "[Link (Static)]"
-	$Q ar rcs $(STATIC) $(OBJ)
-	$Q ranlib $(STATIC)
-#	@size   $(STATIC)
 
 $(DYNAMIC):	$(OBJ)
 	$Q echo "[Link (Dynamic)]"
@@ -73,6 +65,8 @@ $(DYNAMIC):	$(OBJ)
 .c.o:
 	$Q echo [Compile] $<
 	$Q $(CC) -c $(CFLAGS) $< -o $@
+
+#################################################################################
 
 .PHONY:	clean
 clean:
@@ -84,42 +78,18 @@ tags:	$(SRC)
 	$Q echo [ctags]
 	$Q ctags $(SRC)
 
+#################################################################################
 
 .PHONY:	install
 install:	$(DYNAMIC)
 	$Q echo "[Install Headers]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/include
+	$Q install -m 0755 -d							$(DESTDIR)$(PREFIX)/include
 	$Q install -m 0644 $(HEADERS)					$(DESTDIR)$(PREFIX)/include
 	$Q echo "[Install Dynamic Lib]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/lib
-	$Q install -m 0755 libwiringPiDev.so.$(VERSION)			$(DESTDIR)$(PREFIX)/lib/libwiringPiDev.so.$(VERSION)
+	$Q install -m 0755 -d							$(DESTDIR)$(PREFIX)/lib
+	$Q install -m 0755 libwiringPiDev.so.$(VERSION)	$(DESTDIR)$(PREFIX)/lib/libwiringPiDev.so.$(VERSION)
 	$Q ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPiDev.so.$(VERSION)	$(DESTDIR)/lib/libwiringPiDev.so
 	$Q $(LDCONFIG)
-
-.PHONY:	install-static
-install-static:	$(STATIC)
-	$Q echo "[Install Headers]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/include
-	$Q install -m 0644 $(HEADERS)					$(DESTDIR)$(PREFIX)/include
-	$Q echo "[Install Static Lib]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/lib
-	$Q install -m 0755 libwiringPiDev.a				$(DESTDIR)$(PREFIX)/lib
-
-.PHONY: check-deb-destdir
-check-deb-destdir:
-ifndef DEB_DESTDIR
-	$(error DEB_DESTDIR is undefined)
-endif
-
-.PHONY:	install-deb
-install-deb:	$(DYNAMIC) check-deb-destdir
-	$Q echo "[Install Headers: deb]"
-	$Q install -m 0755 -d							$(DEB_DESTDIR)/usr/include
-	$Q install -m 0644 $(HEADERS)						$(DEB_DESTDIR)/usr/include
-	$Q echo "[Install Dynamic Lib: deb]"
-	install -m 0755 -d							$(DEB_DESTDIR)/usr/lib
-	install -m 0755 libwiringPiDev.so.$(VERSION)				$(DEB_DESTDIR)/usr/lib/libwiringPiDev.so.$(VERSION)
-	ln -sf $(DEB_DESTDIR)/usr/lib/libwiringPiDev.so.$(VERSION)		$(DEB_DESTDIR)/usr/lib/libwiringPiDev.so
 
 .PHONY:	uninstall
 uninstall:
@@ -128,11 +98,13 @@ uninstall:
 	$Q cd $(DESTDIR)$(PREFIX)/lib/     && rm -f libwiringPiDev.*
 	$Q $(LDCONFIG)
 
+#################################################################################
 
 .PHONY:	depend
 depend:
 	makedepend -Y $(SRC)
 
+#################################################################################
 # DO NOT DELETE
 
 ds1302.o: ds1302.h

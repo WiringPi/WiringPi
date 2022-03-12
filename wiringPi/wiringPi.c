@@ -1180,7 +1180,7 @@ void gpioClockSet (int pin, int freq)
 
   pin &= 63;
 
-  /**/ if (wiringPiMode == WPI_MODE_PINS)
+  if      (wiringPiMode == WPI_MODE_PINS)
     pin = pinToGpio[pin];
   else if (wiringPiMode == WPI_MODE_PHYS)
     pin = physToGpio[pin];
@@ -1249,12 +1249,15 @@ struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
     if (wiringPiFindNode (pin) != NULL)
       (void)wiringPiFailure (WPI_FATAL, "wiringPiNewNode: Pin %d overlaps with existing definition\n", pin);
 
+  // Allocate memory. NOTE: calloc clears the memory before giving it to you. Bonus!
   node = (struct wiringPiNodeStruct *)calloc (sizeof (struct wiringPiNodeStruct), 1);	// calloc zeros
   if (node == NULL)
     (void)wiringPiFailure (WPI_FATAL, "wiringPiNewNode: Unable to allocate memory: %s\n", strerror (errno));
 
   node->pinBase          = pinBase;
   node->pinMax           = pinBase + numPins - 1;
+
+  // Use dummy routines so as not to have NULL pointers.
   node->pinMode          = pinModeDummy;
   node->pullUpDnControl  = pullUpDnControlDummy;
   node->digitalRead      = digitalReadDummy;
@@ -1262,6 +1265,7 @@ struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
   node->pwmWrite         = pwmWriteDummy;
   node->analogRead       = analogReadDummy;
   node->analogWrite      = analogWriteDummy;
+
   node->next             = wiringPiNodes;
   wiringPiNodes          = node;
 
@@ -1280,7 +1284,6 @@ struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
  *	This is an un-documented special to let you set any pin to any mode
  *********************************************************************************
  */
-
 void pinModeAlt (int pin, int mode)
 {
   int fSel, shift;

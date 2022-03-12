@@ -47,7 +47,7 @@ int piThreadCreate (void *(*fn)(void *))
  * piLock: piUnlock:
  *	Activate/Deactivate a mutex.
  *	We're keeping things simple here and only tracking 4 mutexes which
- *	is more than enough for out entry-level pthread programming
+ *	is more than enough for our entry-level pthread programming
  *********************************************************************************
  */
 

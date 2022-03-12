@@ -1,3 +1,0 @@
-debian/tmp/usr/include
-debian/tmp/usr/lib/*.so
-examples		usr/share/doc/libwiringpi-dev

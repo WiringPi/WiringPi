@@ -71,10 +71,6 @@ OBJ	=	$(SRC:.c=.o)
 
 all:	$(DYNAMIC)
 
-.PHONY:	static
-static:	
-		$Q cat noMoreStatic
-
 $(DYNAMIC):	$(OBJ)
 	$Q echo "[Link (Dynamic)]"
 	$Q $(CC) -shared -Wl,-soname,libwiringPi.so$(WIRINGPI_SONAME_SUFFIX) -o libwiringPi.so.$(VERSION) $(OBJ) $(LIBS)
@@ -108,22 +104,6 @@ install:	$(DYNAMIC)
 	$Q ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION) $(DESTDIR)/lib/libwiringPi.so
 	$Q $(LDCONFIG)
 
-.PHONY: check-deb-destdir
-check-deb-destdir:
-ifndef DEB_DESTDIR
-	$(error DEB_DESTDIR is undefined)
-endif
-
-.PHONY:	install-deb
-install-deb:	$(DYNAMIC) check-deb-destdir
-	$Q echo "[Install Headers: deb]"
-	$Q install -m 0755 -d $(DEB_DESTDIR)/usr/include
-	$Q install -m 0644 $(HEADERS) $(DEB_DESTDIR)/usr/include
-	$Q echo "[Install Dynamic Lib: deb]"
-	install -m 0755 -d $(DEB_DESTDIR)/usr/lib
-	install -m 0755 libwiringPi.so.$(VERSION) $(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION)
-	ln -sf $(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION) $(DEB_DESTDIR)/usr/lib/libwiringPi.so
-
 .PHONY:	uninstall
 uninstall:
 	$Q echo "[UnInstall]"
@@ -131,6 +111,7 @@ uninstall:
 	$Q cd $(DESTDIR)$(PREFIX)/lib/     && rm -vf libwiringPi.*
 	$Q $(LDCONFIG)
 
+#################################################################################
 
 .PHONY:	depend
 depend:

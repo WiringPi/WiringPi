@@ -214,7 +214,7 @@ extern int  wiringPiSetupSys    (void);
 extern int  wiringPiSetupGpio   (void);
 extern int  wiringPiSetupPhys   (void);
 
-extern void pinModeAlt          (int pin, int mode);
+extern void pinModeAlt          (int pin, int mode); // opposite of getAlt
 extern void pinMode             (int pin, int mode);
 extern void pullUpDnControl     (int pin, int pud);
 extern int  digitalRead         (int pin);
@@ -235,19 +235,23 @@ extern int  wpiPinToGpio        (int wpiPin);
 extern int  physPinToGpio       (int physPin);
 extern void setPadDrive         (int group, int value);
 extern int  getAlt              (int pin);
+#define setAlt(pin, mode) pinModeAlt(pin, mode)  // for symmetry
+
+// PWM funcs
 extern void pwmToneWrite        (int pin, int freq);
-extern void pwmSetMode          (int mode);
+extern void pwmSetMode          (int mode); // sets PWM mode
 extern void pwmSetRange         (unsigned int range);
 extern void pwmSetClock         (int divisor);
+
 extern void gpioClockSet        (int pin, int freq);
-extern unsigned int digitalReadByte     (void);
-extern unsigned int digitalReadByte2    (void);
+extern unsigned int digitalReadByte(void);
+extern unsigned int digitalReadByte2(void);
 extern void digitalWriteByte    (int value);
 extern void digitalWriteByte2   (int value);
 
 // Interrupts
 //    (Also Pi hardware specific)
-extern int  waitForInterrupt    (int pin, int mS);
+extern int  waitForInterrupt    (int pin, int mS); // Deprecated
 extern int  wiringPiISR         (int pin, int mode, void (*function)(void));
 
 // Threads

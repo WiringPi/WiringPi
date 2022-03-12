@@ -181,14 +181,12 @@ static void readallPhys (int physPin)
     printf (" | %d", digitalRead (pin)) ;
   }
 
-// Pin numbers:
-
+  // Pin numbers:
   printf (" | %2d", physPin) ;
   ++physPin ;
   printf (" || %-2d", physPin) ;
 
-// Same, reversed
-
+  // Same, reversed
   if (physToWpi[physPin] == -1)
     printf (" |   |     ") ;
   else

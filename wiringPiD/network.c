@@ -34,10 +34,13 @@
 #include <fcntl.h>
 #include <crypt.h>
 
-#include "network.h"
+#include <stdbool.h>
+#ifndef TRUE
+#  define TRUE  true
+#  define FALSE false
+#endif
 
-#define	TRUE	(1==1)
-#define	FALSE	(!TRUE)
+#include "network.h"
 
 // Local data
 
@@ -75,24 +78,24 @@ char *getClientIP (void)
   char buf [INET6_ADDRSTRLEN] ;
   static char ipAddress [1024] ;
 
-  if (clientSockAddr.sin.sin_family == AF_INET)	// IPv4
+  if (clientSockAddr.sin.sin_family == AF_INET) // IPv4
   {
     if (snprintf (ipAddress, 1024, "IPv4: %s", 
-	inet_ntop (clientSockAddr.sin.sin_family, (void *)&clientSockAddr.sin.sin_addr, buf, sizeof (buf))) == 1024)
+      inet_ntop (clientSockAddr.sin.sin_family, (void *)&clientSockAddr.sin.sin_addr, buf, sizeof (buf))) == 1024)
       strcpy (ipAddress, "Too long") ;
   }
-  else						// IPv6
+  else // IPv6
   {
     if (clientSockAddr.sin.sin_family == AF_INET6 && IN6_IS_ADDR_V4MAPPED (&clientSockAddr.sin6.sin6_addr))
     {
       if (snprintf (ipAddress, 1024, "IPv4in6: %s", 
-	inet_ntop (clientSockAddr.sin.sin_family, (char *)&clientSockAddr.sin6.sin6_addr, buf, sizeof(buf))) == 1024)
+                    inet_ntop (clientSockAddr.sin.sin_family, (char *)&clientSockAddr.sin6.sin6_addr, buf, sizeof(buf))) == 1024)
       strcpy (ipAddress, "Too long") ;
     }
     else
     {
       if (snprintf (ipAddress, 1024, "IPv6: %s", 
-	inet_ntop (clientSockAddr.sin.sin_family, (char *)&clientSockAddr.sin6.sin6_addr, buf, sizeof(buf))) == 1024)
+                    inet_ntop (clientSockAddr.sin.sin_family, (char *)&clientSockAddr.sin6.sin6_addr, buf, sizeof(buf))) == 1024)
       strcpy (ipAddress, "Too long") ;
     }
   }
@@ -150,9 +153,10 @@ int sendGreeting (int clientFd)
 
 static int getSalt (char drySalt [])
 {
-  static const char *seaDog =	"abcdefghijklmnopqrstuvwxyz"
-				"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-				"0123456789/." ;
+  static const char *seaDog =
+    "abcdefghijklmnopqrstuvwxyz"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "0123456789/." ;
 
   unsigned char wetSalt [SALT_LEN] ;
   int i, fd ;
@@ -201,9 +205,8 @@ int getResponse (int clientFd)
   char reply [1024] ;
   int len ;
 
-// Being sort of lazy about this. I'm expecting an SHA-512 hash back and these
-//	are exactly 86 characters long, so no reason not to, I guess...
-
+  // Being sort of lazy about this. I'm expecting an SHA-512 hash back and these
+  // are exactly 86 characters long, so no reason not to, I guess...
   len = 86 ;
 
   if (setsockopt (clientFd, SOL_SOCKET, SO_RCVLOWAT, (void *)&len, sizeof (len)) < 0)
@@ -239,9 +242,8 @@ int passwordMatch (const char *password)
 
   encrypted = crypt (password, salted) ;
 
-// 20: $6$ then 16 characters of salt, then $
-// 86 is the length of an SHA-512 hash
-
+  // 20: $6$ then 16 characters of salt, then $
+  // 86 is the length of an SHA-512 hash
   return strncmp (encrypted + 20, returnedHash, 86) == 0 ;
 }
 
@@ -262,12 +264,10 @@ int setupServer (int serverPort)
   socklen_t serverSockAddrSize ;
   int clientFd ;
 
-// Try to create an IPv6 socket
-
+  // Try to create an IPv6 socket
   serverFd = socket (PF_INET6, SOCK_STREAM, 0) ;
 
-// If it didn't work, then fall-back to IPv4.
-
+  // If it didn't work, then fall-back to IPv4.
   if (serverFd < 0)
   {
     if ((serverFd = socket (PF_INET, SOCK_STREAM, 0)) < 0)
@@ -285,8 +285,7 @@ int setupServer (int serverPort)
   if (setsockopt (serverFd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof (on)) < 0)
     return -1 ;
 
-// Setup the servers socket address - cope with IPv4 and v6.
-
+  // Setup the servers socket address - cope with IPv4 and v6.
   memset (&serverSockAddr, 0, sizeof (serverSockAddr)) ;
   switch (family)
   {
@@ -302,8 +301,7 @@ int setupServer (int serverPort)
       serverSockAddr.sin6.sin6_port   = htons (serverPort) ;
   }
 
-// Bind, listen and accept
-
+  // Bind, listen and accept
   if (bind (serverFd, (struct sockaddr *)&serverSockAddr, serverSockAddrSize) < 0)
     return -1 ;
 

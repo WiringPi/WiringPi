@@ -49,20 +49,20 @@
 
 static int remoteReadline (int fd, char *buf, int max)
 {
-  int  len = 0 ;
-  char c ;
+  int  len = 0;
+  char c;
 
   for (;;)
   {
     if (read (fd, &c, 1) < 1)
-      return -1 ;
+      return -1;
 
     if (c == '\n')
-      return len ;
+      return len;
 
-    *buf++ = c ;
+    *buf++ = c;
     if (++len == max)
-      return len ;
+      return len;
   }
 }
 
@@ -76,17 +76,17 @@ static int remoteReadline (int fd, char *buf, int max)
 
 static char *getChallenge (int fd)
 {
-  static char buf [1024] ;
-  int num ;
+  static char buf [1024];
+  int num;
 
   for (;;)
   {
     if ((num = remoteReadline (fd, buf, 1023)) < 0)
-      return NULL ;
-    buf [num] = 0 ;
+      return NULL;
+    buf [num] = 0;
 
     if (strncmp (buf, "Challenge ", 10) == 0)
-      return &buf [10] ;
+      return &buf [10];
   }
 }
 
@@ -102,30 +102,30 @@ static char *getChallenge (int fd)
 
 static int authenticate (int fd, const char *pass)
 {
-  char *challenge ;
-  char *encrypted ;
-  char salted [1024+4] ; // Need to hold 4 more chars - see sprintf below
+  char *challenge;
+  char *encrypted;
+  char salted [1024+4]; // Need to hold 4 more chars - see sprintf below
 
   if ((challenge = getChallenge (fd)) == NULL)
-    return -1 ;
+    return -1;
 
-  sprintf (salted, "$6$%s$", challenge) ;
-  encrypted = crypt (pass, salted) ;
+  sprintf (salted, "$6$%s$", challenge);
+  encrypted = crypt (pass, salted);
 
   // Assertion:
   // The '20' comes from the $6$ then the 16 characters of the salt,
   // then the terminating $.
   if (strncmp (encrypted, salted, 20) != 0)
   {
-    errno = EBADE ;
-    return -1 ;
+    errno = EBADE;
+    return -1;
   }
 
   // 86 characters is the length of the SHA-256 hash
   if (write (fd, encrypted + 20, 86) == 86)
-    return 0 ;
+    return 0;
   else
-    return -1 ;
+    return -1;
 }
 
 
@@ -139,60 +139,57 @@ static int authenticate (int fd, const char *pass)
 int _drcSetupNet (const char *ipAddress, const char *port, const char *password)
 {
   struct addrinfo hints;
-  struct addrinfo *result, *rp ;
-  struct in6_addr serveraddr ;
-  int remoteFd ;
+  struct addrinfo *result, *rp;
+  struct in6_addr serveraddr;
+  int remoteFd;
 
-// Start by seeing if we've been given a (textual) numeric IP address
-//	which will save lookups in getaddrinfo()
-
-  memset (&hints, 0, sizeof (hints)) ;
-  hints.ai_flags    = AI_NUMERICSERV ;
-  hints.ai_family   = AF_UNSPEC ;
-  hints.ai_socktype = SOCK_STREAM ;
-  hints.ai_protocol = 0 ;
+  // Start by seeing if we've been given a (textual) numeric IP address
+  // which will save lookups in getaddrinfo()
+  memset (&hints, 0, sizeof (hints));
+  hints.ai_flags    = AI_NUMERICSERV;
+  hints.ai_family   = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_protocol = 0;
 
   if (inet_pton (AF_INET, ipAddress, &serveraddr) == 1)		// Valid IPv4
   {
-    hints.ai_family = AF_INET ;
-    hints.ai_flags |= AI_NUMERICHOST ;
+    hints.ai_family = AF_INET;
+    hints.ai_flags |= AI_NUMERICHOST;
   }
   else
   {
     if (inet_pton (AF_INET6, ipAddress, &serveraddr) == 1)	// Valid IPv6
     {
-      hints.ai_family = AF_INET6 ;
-      hints.ai_flags |= AI_NUMERICHOST ;
+      hints.ai_family = AF_INET6;
+      hints.ai_flags |= AI_NUMERICHOST;
     }
   }
 
-// Now use getaddrinfo() with the newly supplied hints
-
+  // Now use getaddrinfo() with the newly supplied hints
   if (getaddrinfo (ipAddress, port, &hints, &result) != 0)
-    return -1 ;
+    return -1;
 
-// Now try each address in-turn until we get one that connects...
-
+  // Now try each address in-turn until we get one that connects...
   for (rp = result; rp != NULL; rp = rp->ai_next)
   {
     if ((remoteFd = socket (rp->ai_family, rp->ai_socktype, rp->ai_protocol)) < 0)
-      continue ;
+      continue;
 
     if (connect (remoteFd, rp->ai_addr, rp->ai_addrlen) < 0)
-      continue ;
+      continue;
 
     if (authenticate (remoteFd, password) < 0)
     {
-      close (remoteFd) ;
-      errno = EACCES ;		// Permission denied
-      return -1 ;
+      close (remoteFd);
+      errno = EACCES;		// Permission denied
+      return -1;
     }
     else
-      return remoteFd ;
+      return remoteFd;
   }
 
-  errno = EHOSTUNREACH ;	// Host unreachable - may not be right, but good enough
-  return -1 ; // Nothing connected
+  errno = EHOSTUNREACH;	// Host unreachable - may not be right, but good enough
+  return -1; // Nothing connected
 }
 
 
@@ -204,14 +201,14 @@ int _drcSetupNet (const char *ipAddress, const char *port, const char *password)
 
 static void myPinMode (struct wiringPiNodeStruct *node, int pin, int mode)
 {
-  struct drcNetComStruct cmd ;
+  struct drcNetComStruct cmd;
 
-  cmd.pin  = pin - node->pinBase ;
-  cmd.cmd  = DRCN_PIN_MODE ;
-  cmd.data = mode ;
+  cmd.pin  = pin - node->pinBase;
+  cmd.cmd  = DRCN_PIN_MODE;
+  cmd.data = mode;
 
-  (void)send (node->fd, &cmd, sizeof (cmd), 0) ;
-  (void)recv (node->fd, &cmd, sizeof (cmd), 0) ;
+  (void)send (node->fd, &cmd, sizeof (cmd), 0);
+  (void)recv (node->fd, &cmd, sizeof (cmd), 0);
 }
 
 
@@ -222,14 +219,14 @@ static void myPinMode (struct wiringPiNodeStruct *node, int pin, int mode)
 
 static void myPullUpDnControl (struct wiringPiNodeStruct *node, int pin, int mode)
 {
-  struct drcNetComStruct cmd ;
+  struct drcNetComStruct cmd;
 
-  cmd.pin  = pin - node->pinBase ;
-  cmd.cmd  = DRCN_PULL_UP_DN ;
-  cmd.data = mode ;
+  cmd.pin  = pin - node->pinBase;
+  cmd.cmd  = DRCN_PULL_UP_DN;
+  cmd.data = mode;
 
-  (void)send (node->fd, &cmd, sizeof (cmd), 0) ;
-  (void)recv (node->fd, &cmd, sizeof (cmd), 0) ;
+  (void)send (node->fd, &cmd, sizeof (cmd), 0);
+  (void)recv (node->fd, &cmd, sizeof (cmd), 0);
 }
 
 
@@ -240,34 +237,15 @@ static void myPullUpDnControl (struct wiringPiNodeStruct *node, int pin, int mod
 
 static void myDigitalWrite (struct wiringPiNodeStruct *node, int pin, int value)
 {
-  struct drcNetComStruct cmd ;
+  struct drcNetComStruct cmd;
 
-  cmd.pin  = pin - node->pinBase ;
-  cmd.cmd  = DRCN_DIGITAL_WRITE ;
-  cmd.data = value ;
+  cmd.pin  = pin - node->pinBase;
+  cmd.cmd  = DRCN_DIGITAL_WRITE;
+  cmd.data = value;
 
-  (void)send (node->fd, &cmd, sizeof (cmd), 0) ;
-  (void)recv (node->fd, &cmd, sizeof (cmd), 0) ;
+  (void)send (node->fd, &cmd, sizeof (cmd), 0);
+  (void)recv (node->fd, &cmd, sizeof (cmd), 0);
 }
-
-
-/*
- * myDigitalWrite8:
- *********************************************************************************
-
-static void myDigitalWrite8 (struct wiringPiNodeStruct *node, int pin, int value)
-{
-  struct drcNetComStruct cmd ;
-
-  cmd.pin  = pin - node->pinBase ;
-  cmd.cmd  = DRCN_DIGITAL_WRITE8 ;
-  cmd.data = value ;
-
-  (void)send (node->fd, &cmd, sizeof (cmd), 0) ;
-  (void)recv (node->fd, &cmd, sizeof (cmd), 0) ;
-}
- */
-
 
 /*
  * myAnalogWrite:
@@ -276,14 +254,14 @@ static void myDigitalWrite8 (struct wiringPiNodeStruct *node, int pin, int value
 
 static void myAnalogWrite (struct wiringPiNodeStruct *node, int pin, int value)
 {
-  struct drcNetComStruct cmd ;
+  struct drcNetComStruct cmd;
 
-  cmd.pin  = pin - node->pinBase ;
-  cmd.cmd  = DRCN_ANALOG_WRITE ;
-  cmd.data = value ;
+  cmd.pin  = pin - node->pinBase;
+  cmd.cmd  = DRCN_ANALOG_WRITE;
+  cmd.data = value;
 
-  (void)send (node->fd, &cmd, sizeof (cmd), 0) ;
-  (void)recv (node->fd, &cmd, sizeof (cmd), 0) ;
+  (void)send (node->fd, &cmd, sizeof (cmd), 0);
+  (void)recv (node->fd, &cmd, sizeof (cmd), 0);
 }
 
 
@@ -294,14 +272,14 @@ static void myAnalogWrite (struct wiringPiNodeStruct *node, int pin, int value)
 
 static void myPwmWrite (struct wiringPiNodeStruct *node, int pin, int value)
 {
-  struct drcNetComStruct cmd ;
+  struct drcNetComStruct cmd;
 
-  cmd.pin  = pin - node->pinBase ;
-  cmd.cmd  = DRCN_PWM_WRITE ;
-  cmd.data = value ;
+  cmd.pin  = pin - node->pinBase;
+  cmd.cmd  = DRCN_PWM_WRITE;
+  cmd.data = value;
 
-  (void)send (node->fd, &cmd, sizeof (cmd), 0) ;
-  (void)recv (node->fd, &cmd, sizeof (cmd), 0) ;
+  (void)send (node->fd, &cmd, sizeof (cmd), 0);
+  (void)recv (node->fd, &cmd, sizeof (cmd), 0);
 }
 
 
@@ -312,16 +290,16 @@ static void myPwmWrite (struct wiringPiNodeStruct *node, int pin, int value)
 
 static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
 {
-  struct drcNetComStruct cmd ;
+  struct drcNetComStruct cmd;
 
-  cmd.pin  = pin - node->pinBase ;
-  cmd.cmd  = DRCN_ANALOG_READ ;
-  cmd.data = 0 ;
+  cmd.pin  = pin - node->pinBase;
+  cmd.cmd  = DRCN_ANALOG_READ;
+  cmd.data = 0;
 
-  (void)send (node->fd, &cmd, sizeof (cmd), 0) ;
-  (void)recv (node->fd, &cmd, sizeof (cmd), 0) ;
+  (void)send (node->fd, &cmd, sizeof (cmd), 0);
+  (void)recv (node->fd, &cmd, sizeof (cmd), 0);
 
-  return cmd.data ;
+  return cmd.data;
 }
 
 
@@ -332,38 +310,17 @@ static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
 
 static int myDigitalRead (struct wiringPiNodeStruct *node, int pin)
 {
-  struct drcNetComStruct cmd ;
+  struct drcNetComStruct cmd;
 
-  cmd.pin  = pin - node->pinBase ;
-  cmd.cmd  = DRCN_DIGITAL_READ ;
-  cmd.data = 0 ;
+  cmd.pin  = pin - node->pinBase;
+  cmd.cmd  = DRCN_DIGITAL_READ;
+  cmd.data = 0;
 
-  (void)send (node->fd, &cmd, sizeof (cmd), 0) ;
-  (void)recv (node->fd, &cmd, sizeof (cmd), 0) ;
+  (void)send (node->fd, &cmd, sizeof (cmd), 0);
+  (void)recv (node->fd, &cmd, sizeof (cmd), 0);
 
-  return cmd.data ;
+  return cmd.data;
 }
-
-
-/*
- * myDigitalRead8:
- *********************************************************************************
-
-static unsigned int myDigitalRead8 (struct wiringPiNodeStruct *node, int pin)
-{
-  struct drcNetComStruct cmd ;
-
-  cmd.pin  = pin - node->pinBase ;
-  cmd.cmd  = DRCN_DIGITAL_READ8 ;
-  cmd.data = 0 ;
-
-  (void)send (node->fd, &cmd, sizeof (cmd), 0) ;
-  (void)recv (node->fd, &cmd, sizeof (cmd), 0) ;
-
-  return cmd.data ;
-}
- */
-
 
 /*
  * drcNet:
@@ -374,30 +331,27 @@ static unsigned int myDigitalRead8 (struct wiringPiNodeStruct *node, int pin)
 
 int drcSetupNet (const int pinBase, const int numPins, const char *ipAddress, const char *port, const char *password)
 {
-  int fd, len ;
-  struct wiringPiNodeStruct *node ;
+  int fd, len;
+  struct wiringPiNodeStruct *node;
 
   if ((fd = _drcSetupNet (ipAddress, port, password)) < 0)
-    return FALSE ;
+    return FALSE;
 
-  len = sizeof (struct drcNetComStruct) ;
+  len = sizeof (struct drcNetComStruct);
 
   if (setsockopt (fd, SOL_SOCKET, SO_RCVLOWAT, (void *)&len, sizeof (len)) < 0)
-    return FALSE ;
+    return FALSE;
 
-  node = wiringPiNewNode (pinBase, numPins) ;
+  node = wiringPiNewNode (pinBase, numPins);
 
-  node->fd               = fd ;
-  node->pinMode          = myPinMode ;
-  node->pullUpDnControl  = myPullUpDnControl ;
-  node->analogRead       = myAnalogRead ;
-  node->analogRead       = myAnalogRead ;
-  node->analogWrite      = myAnalogWrite ;
-  node->digitalRead      = myDigitalRead ;
-  node->digitalWrite     = myDigitalWrite ;
-//node->digitalRead8     = myDigitalRead8 ;
-//node->digitalWrite8    = myDigitalWrite8 ;
-  node->pwmWrite         = myPwmWrite ;
+  node->fd               = fd;
+  node->pinMode          = myPinMode;
+  node->pullUpDnControl  = myPullUpDnControl;
+  node->analogRead       = myAnalogRead;
+  node->analogWrite      = myAnalogWrite;
+  node->digitalRead      = myDigitalRead;
+  node->digitalWrite     = myDigitalWrite;
+  node->pwmWrite         = myPwmWrite;
 
-  return TRUE ;
+  return TRUE;
 }

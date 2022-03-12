@@ -1,9 +1,0 @@
-*.debhelper.log
-*.substvars
-tmp
-wiringpi
-libwiringpi2
-libwiringpi-dev
-files
-*.postinst.debhelper
-*.postrm.debhelper
