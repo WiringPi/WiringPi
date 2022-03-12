@@ -38,9 +38,6 @@
 #include <wiringPi.h>
 #include <wpiExtensions.h>
 
-#include <gertboard.h>
-#include <piFace.h>
-
 #include "../version.h"
 
 extern int wiringPiDebug;
@@ -65,7 +62,7 @@ int wpMode;
 char *usage = "Usage: gpio -v                Show version info\n"
               "       gpio -h                Show Help\n"
 //              "       gpio -V                Show gpio layout version (1.x)\n"
-              "       gpio[-g|-1|-p] ...    Use bcm-gpio/physical/piFace pin numbering scheme...\n"
+              "       gpio[-g|-1] ...    Use bcm-gpio/physical pin numbering scheme...\n"
               "      [-x extension:params][[ -x ...]] ...\n"
               "       gpio <mode/read/write/aread/awritewb/pwm/pwmTone/clock> ...\n"
               "       gpio <toggle/blink> <pin>\n"
@@ -82,9 +79,7 @@ char *usage = "Usage: gpio -v                Show version info\n"
               "       gpio i2cd/i2cdetect\n"
               "       gpio rbx/rbd\n"
               "       gpio wb <value>\n"
-              "       gpio usbp high/low\n"
-              "       gpio gbr <channel>\n"
-              "       gpio gbw <channel> <value>";	// No trailing newline needed here.
+              "       gpio usbp high/low";	// No trailing newline needed here.
 
 #ifdef	NOT_FOR_NOW
 /*
@@ -830,83 +825,6 @@ static void doUsbP (int argc, char *argv[])
 
 
 /*
- * doGbw:
- *	gpio gbw channel value
- *	Gertboard Write - To the Analog output
- *********************************************************************************
- */
-
-static void doGbw (int argc, char *argv[])
-{
-  int channel, value;
-
-  if (argc != 4)
-  {
-    fprintf (stderr, "Usage: %s gbw <channel> <value>\n", argv[0]);
-    exit (1);
-  }
-
-  channel = atoi (argv[2]);
-  value   = atoi (argv[3]);
-
-  if ((channel < 0) || (channel > 1))
-  {
-    fprintf (stderr, "%s: gbw: Channel number must be 0 or 1\n", argv[0]);
-    exit (1);
-  }
-
-  if ((value < 0) || (value > 255))
-  {
-    fprintf (stderr, "%s: gbw: Value must be from 0 to 255\n", argv[0]);
-    exit (1);
-  }
-
-  if (gertboardAnalogSetup (64) < 0)
-  {
-    fprintf (stderr, "Unable to initialise the Gertboard SPI interface: %s\n", strerror (errno));
-    exit (1);
-  }
-
-  analogWrite (64 + channel, value);
-}
-
-
-/*
- * doGbr:
- *	gpio gbr channel
- *	From the analog input
- *********************************************************************************
- */
-
-static void doGbr (int argc, char *argv[])
-{
-  int channel;
-
-  if (argc != 3)
-  {
-    fprintf (stderr, "Usage: %s gbr <channel>\n", argv[0]);
-    exit (1);
-  }
-
-  channel = atoi (argv[2]);
-
-  if ((channel < 0) || (channel > 1))
-  {
-    fprintf (stderr, "%s: gbr: Channel number must be 0 or 1\n", argv[0]);
-    exit (1);
-  }
-
-  if (gertboardAnalogSetup (64) < 0)
-  {
-    fprintf (stderr, "Unable to initialise the Gertboard SPI interface: %s\n", strerror (errno));
-    exit (1);
-  }
-
-  printf ("%d\n", analogRead (64 + channel));
-}
-
-
-/*
  * doWrite:
  *	gpio write pin value
  *********************************************************************************
@@ -1325,13 +1243,6 @@ int main (int argc, char *argv[])
     exit (EXIT_SUCCESS);
   }
 
-//  // Version & Warranty
-//  if (strcmp (argv[1], "-V") == 0)
-//  {
-//    printf ("%d\n", piGpioLayout());
-//    exit (EXIT_SUCCESS);
-//  }
-
   // Version and information
   if (strcmp (argv[1], "-v") == 0)
   {
@@ -1380,10 +1291,6 @@ int main (int argc, char *argv[])
   // Check for usb power command
   if (strcasecmp (argv[1], "usbp"   ) == 0)	{ doUsbP   (argc, argv); return 0; }
 
-  // Gertboard commands
-  if (strcasecmp (argv[1], "gbr" ) == 0)	{ doGbr (argc, argv); return 0; }
-  if (strcasecmp (argv[1], "gbw" ) == 0)	{ doGbw (argc, argv); return 0; }
-
   // Check for allreadall command, force Gpio mode
   if (strcasecmp (argv[1], "allreadall") == 0)
   {
@@ -1412,17 +1319,6 @@ int main (int argc, char *argv[])
       argv[i - 1] = argv[i];
     --argc;
     wpMode = WPI_MODE_PHYS;
-  }
-
-  // Check for -p argument for PiFace
-  else if (strcasecmp (argv[1], "-p") == 0)
-  {
-    piFaceSetup (200);
-
-    for (i = 2; i < argc; ++i)
-      argv[i - 1] = argv[i];
-    --argc;
-    wpMode = WPI_MODE_PIFACE;
   }
 
   // Check for -z argument so we don't actually initialise wiringPi
