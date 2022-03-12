@@ -43,16 +43,15 @@ LIBS    =
 
 ###############################################################################
 
-SRC	=	ds1302.c maxdetect.c  piNes.c		\
-		gertboard.c piFace.c			\
-		lcd128x64.c lcd.c			\
-		scrollPhat.c				\
+SRC	=	ds1302.c maxdetect.c \
+		piNes.c piFace.c	\
+		lcd128x64.c lcd.c	\
+		scrollPhat.c		\
 		piGlow.c
 
 OBJ	=	$(SRC:.c=.o)
 
-HEADERS	= ds1302.h gertboard.h  lcd128x64.h  lcd.h  maxdetect.h piFace.h  piGlow.h  piNes.h\
-		scrollPhat.h
+HEADERS	= ds1302.h lcd128x64.h  lcd.h  maxdetect.h piFace.h  piGlow.h  piNes.h  scrollPhat.h
 
 #################################################################################
 
@@ -110,7 +109,6 @@ depend:
 ds1302.o: ds1302.h
 maxdetect.o: maxdetect.h
 piNes.o: piNes.h
-gertboard.o: gertboard.h
 piFace.o: piFace.h
 lcd128x64.o: font.h lcd128x64.h
 lcd.o: lcd.h
