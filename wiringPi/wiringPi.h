@@ -209,24 +209,30 @@ extern struct wiringPiNodeStruct *wiringPiFindNode (int pin);
 extern struct wiringPiNodeStruct *wiringPiNewNode  (int pinBase, int numPins);
 
 extern void wiringPiVersion     (int *major, int *minor);
-extern int  wiringPiSetup       (void);
-extern int  wiringPiSetupSys    (void);
-extern int  wiringPiSetupGpio   (void);
-extern int  wiringPiSetupPhys   (void);
+extern int  wiringPiSetup       (void); // using WiringPi pin numbering
+extern int  wiringPiSetupSys    (void); // using /sys/class/gpio
+extern int  wiringPiSetupGpio   (void); // using BCM pin numbering
+extern int  wiringPiSetupPhys   (void); // using physical pin numbering
 
-extern void pinModeAlt          (int pin, int mode); // opposite of getAlt
+// See "Pin modes" above (In, Out, SoftPWMOut, SoftToneOut, PWMToneOut, PWMOut, Clock)
 extern void pinMode             (int pin, int mode);
+
+// Set Function Select on pin - GPIO, ALT0-ALT5
+extern void pinModeAlt          (int pin, int mode);
+extern int  getAlt              (int pin);           // Returns Function Select: 0-5)
+#define setAlt(pin, mode) pinModeAlt(pin, mode)      // for symmetry
+
+// Set input pin as pull-up or pull-down
 extern void pullUpDnControl     (int pin, int pud);
+
+// Read/Write pin (HIGH or LOW)
 extern int  digitalRead         (int pin);
 extern void digitalWrite        (int pin, int value);
-extern void pwmWrite            (int pin, int value);
+
+// Analog read/write is only for an external hardware module,
+// therefore pin must be >= 64
 extern int  analogRead          (int pin);
 extern void analogWrite         (int pin, int value);
-
-// PiFace specifics
-//    (Deprecated)
-extern int  wiringPiSetupPiFace (void);
-extern int  wiringPiSetupPiFaceForGpioProg (void);    // Don't use this - for gpio program only
 
 // On-Board Raspberry Pi hardware specific stuff
 extern int  piGpioLayout        (void);
@@ -234,37 +240,41 @@ extern void piBoardId           (int *model, int *proc, int *rev, int *mem, int 
 extern int  wpiPinToGpio        (int wpiPin);
 extern int  physPinToGpio       (int physPin);
 extern void setPadDrive         (int group, int value);
-extern int  getAlt              (int pin);
-#define setAlt(pin, mode) pinModeAlt(pin, mode)  // for symmetry
 
 // PWM funcs
+extern void pwmWrite            (int pin, int value);
 extern void pwmToneWrite        (int pin, int freq);
-extern void pwmSetMode          (int mode); // sets PWM mode
+extern void pwmSetMode          (int mode); // balanced or mark/space mode
 extern void pwmSetRange         (unsigned int range);
 extern void pwmSetClock         (int divisor);
 
+// Set a GPIO as an output clock.
+// Only works on certain pins.
 extern void gpioClockSet        (int pin, int freq);
+
+// Read/Write 8-bit data on 8 consecutive WiringPi pins:
+// WPi:  0,  1,  2,  3,  4,  5,  6, 7
+// BCM: 17, 18, 27, 22, 23, 24, 25, 4 on a Pi v1 rev 3 onwards or B+, 2, 3, zero
 extern unsigned int digitalReadByte(void);
 extern unsigned int digitalReadByte2(void);
 extern void digitalWriteByte    (int value);
 extern void digitalWriteByte2   (int value);
 
-// Interrupts
-//    (Also Pi hardware specific)
-extern int  waitForInterrupt    (int pin, int mS); // Deprecated
-extern int  wiringPiISR         (int pin, int mode, void (*function)(void));
+// Interrupts (Also Pi hardware specific)
+extern int  waitForInterrupt    (int pin, int mS); // Must be in SYS mode (wiringPiSetupSys was called for setup)
+extern int  wiringPiISR         (int pin, int mode, void (*function)(void)); // Uses SYS mode, and also waitForInterrupt
 
 // Threads
 extern int  piThreadCreate      (void *(*fn)(void *));
 extern void piLock              (int key);
 extern void piUnlock            (int key);
 
-// Schedulling priority
+// Scheduling priority
 extern int piHiPri (const int pri);
 
-// Extras from arduino land
 extern void         delay             (unsigned int howLong); // milliseconds
 extern void         delayMicroseconds (unsigned int howLong);
+// These report the amount of time passed since wiringPiSetup* was called.
 extern unsigned int millis            (void);
 extern unsigned int micros            (void);
 

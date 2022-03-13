@@ -1,12 +1,12 @@
 /*
  * wiringPi:
- *	Arduino look-a-like Wiring library for the Raspberry Pi
- *	Copyright (c) 2012-2017 Gordon Henderson
- *	Additional code for pwmSetClock by Chris Hall <chris@kchall.plus.com>
+ *  Arduino look-a-like Wiring library for the Raspberry Pi
+ *  Copyright (c) 2012-2017 Gordon Henderson
+ *  Additional code for pwmSetClock by Chris Hall <chris@kchall.plus.com>
  *
- *	Thanks to code samples from Gert Jan van Loo and the
- *	BCM2835 ARM Peripherals manual, however it's missing
- *	the clock section /grr/mutter/
+ *  Thanks to code samples from Gert Jan van Loo and the
+ *  BCM2835 ARM Peripherals manual, however it's missing
+ *  the clock section /grr/mutter/
  ***********************************************************************
  * This file is part of wiringPi:
  *    https://github.com/WiringPi/WiringPi
@@ -562,7 +562,7 @@ static uint8_t gpioToGpClkALT0[] =
 
 // gpioToClk:
 // (word) Offsets to the clock Control and Divisor register
-static uint8_t gpioToClkCon[] =
+static int gpioToClkCon[] =
 {
          -1,        -1,        -1,        -1,        28,        30,        32,        -1, //  0 ->  7
          -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1, //  8 -> 15
@@ -574,7 +574,7 @@ static uint8_t gpioToClkCon[] =
          -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1, // 56 -> 63
 };
 
-static uint8_t gpioToClkDiv[] =
+static int gpioToClkDiv[] =
 {
          -1,        -1,        -1,        -1,        29,        31,        33,        -1, //  0 ->  7
          -1,        -1,        -1,        -1,        -1,        -1,        -1,        -1, //  8 -> 15
@@ -595,7 +595,7 @@ static uint8_t gpioToClkDiv[] =
 
 /*
  * wiringPiFailure:
- *	Fail. Or not.
+ *  Fail. Or not.
  *********************************************************************************
  */
 
@@ -621,8 +621,8 @@ int wiringPiFailure (int fatal, const char *message, ...)
 
 /*
  * setupCheck
- *	Another sanity check because some users forget to call the setup
- *	function. Mosty because they need feeding C drip by drip )-:
+ *  Another sanity check because some users forget to call the setup
+ *  function. Mosty because they need feeding C drip by drip )-:
  *********************************************************************************
  */
 
@@ -637,8 +637,8 @@ static void setupCheck (const char *fName)
 
 /*
  * gpioMemCheck:
- *	See if we're using the /dev/gpiomem interface, if-so then some operations
- *	can't be done and will crash the Pi.
+ *  See if we're using the /dev/gpiomem interface, if-so then some operations
+ *  can't be done and will crash the Pi.
  *********************************************************************************
  */
 
@@ -655,25 +655,25 @@ static void usingGpioMemCheck (const char *what)
 
 /*
  * piGpioLayout:
- *	Return a number representing the hardware revision of the board.
- *	This is not strictly the board revision but is used to check the
- *	layout of the GPIO connector - and there are 2 types that we are
- *	really interested in here. The very earliest Pi's and the
- *	ones that came after that which switched some pins ....
+ *  Return a number representing the hardware revision of the board.
+ *  This is not strictly the board revision but is used to check the
+ *  layout of the GPIO connector - and there are 2 types that we are
+ *  really interested in here. The very earliest Pi's and the
+ *  ones that came after that which switched some pins ....
  *
- *	Revision 1 really means the early Model A and B's.
- *	Revision 2 is everything else - it covers the B, B+ and CM.
- *		... and the Pi 2 - which is a B+ ++  ...
- *		... and the Pi 0 - which is an A+ ...
+ *  Revision 1 really means the early Model A and B's.
+ *  Revision 2 is everything else - it covers the B, B+ and CM.
+ *  	... and the Pi 2 - which is a B+ ++  ...
+ *  	... and the Pi 0 - which is an A+ ...
  *
- *	The main difference between the revision 1 and 2 system that I use here
- *	is the mapping of the GPIO pins. From revision 2, the Pi Foundation changed
- *	3 GPIO pins on the (original) 26-way header - BCM_GPIO 22 was dropped and
- *	replaced with 27, and 0 + 1 - I2C bus 0 was changed to 2 + 3; I2C bus 1.
+ *  The main difference between the revision 1 and 2 system that I use here
+ *  is the mapping of the GPIO pins. From revision 2, the Pi Foundation changed
+ *  3 GPIO pins on the (original) 26-way header - BCM_GPIO 22 was dropped and
+ *  replaced with 27, and 0 + 1 - I2C bus 0 was changed to 2 + 3; I2C bus 1.
  *
- *	Additionally, here we set the piModel2 flag too. This is again, nothing to
- *	do with the actual model, but the major version numbers - the GPIO base
- *	hardware address changed at model 2 and above (not the Zero though)
+ *  Additionally, here we set the piModel2 flag too. This is again, nothing to
+ *  do with the actual model, but the major version numbers - the GPIO base
+ *  hardware address changed at model 2 and above (not the Zero though)
  *
  *********************************************************************************
  */
@@ -1012,8 +1012,8 @@ void piBoardId (int *model, int *proc, int *rev, int *mem, int *maker, int *warr
 
 /*
  * wpiPinToGpio:
- *	Translate a wiringPi Pin number to native GPIO pin number.
- *	Provided for external support.
+ *  Translate a wiringPi Pin number to native GPIO pin number.
+ *  Provided for external support.
  *********************************************************************************
  */
 int wpiPinToGpio (int wpiPin)
@@ -1024,8 +1024,8 @@ int wpiPinToGpio (int wpiPin)
 
 /*
  * physPinToGpio:
- *	Translate a physical Pin number to native GPIO pin number.
- *	Provided for external support.
+ *  Translate a physical Pin number to native GPIO pin number.
+ *  Provided for external support.
  *********************************************************************************
  */
 int physPinToGpio (int physPin)
@@ -1036,7 +1036,7 @@ int physPinToGpio (int physPin)
 
 /*
  * setPadDrive:
- *	Set the PAD driver value
+ *  Set the PAD driver value
  *********************************************************************************
  */
 void setPadDrive (int group, int value)
@@ -1062,8 +1062,8 @@ void setPadDrive (int group, int value)
 
 /*
  * getAlt:
- *	Returns the ALT bits for a given port. Only really of-use
- *	for the gpio readall command (I think)
+ *  Returns the ALT bits for a given port. Only really of-use
+ *  for the gpio readall command (I think)
  *********************************************************************************
  */
 int getAlt (int pin)
@@ -1090,7 +1090,7 @@ int getAlt (int pin)
 
 /*
  * pwmSetMode:
- *	Select the native "balanced" mode, or standard mark:space mode
+ *  Select the native "balanced" mode, or standard mark:space mode
  *********************************************************************************
  */
 void pwmSetMode (int mode)
@@ -1107,8 +1107,8 @@ void pwmSetMode (int mode)
 
 /*
  * pwmSetRange:
- *	Set the PWM range register. We set both range registers to the same
- *	value. If you want different in your own code, then write your own.
+ *  Set the PWM range register. We set both range registers to the same
+ *  value. If you want different in your own code, then write your own.
  *********************************************************************************
  */
 void pwmSetRange (unsigned int range)
@@ -1123,7 +1123,7 @@ void pwmSetRange (unsigned int range)
 
 /*
  * pwmSetClock:
- *	Set/Change the PWM clock.
+ *  Set/Change the PWM clock.
  *********************************************************************************
  */
 void pwmSetClock (int divisor)
@@ -1134,7 +1134,7 @@ void pwmSetClock (int divisor)
   {
     divisor = 540*divisor/192;
   }
-  divisor &= 4095;
+  divisor &= 4095; // @XXX @TODO Probably constrain to 0xFFF instead of masking?
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
@@ -1171,14 +1171,24 @@ void pwmSetClock (int divisor)
 
 /*
  * gpioClockSet:
- *	Set the frequency on a GPIO clock pin
+ *  Set the frequency on a GPIO clock pin
  *********************************************************************************
  */
 void gpioClockSet (int pin, int freq)
 {
   int divi, divr, divf;
+  int save = pin;
 
-  pin &= 63;
+  // Only works on on-board pins
+  if (pin > 63)
+  {
+      if (wiringPiDebug)
+      {
+        printf ("%s(%d)%s ERROR: Specified pin (%d) is not an on-board pin!\n",
+            __FILE__, __LINE__, __FUNCTION__, pin);
+      }
+      return;
+  }
 
   if      (wiringPiMode == WPI_MODE_PINS)
     pin = pinToGpio[pin];
@@ -1193,6 +1203,17 @@ void gpioClockSet (int pin, int freq)
 
   if (divi > 4095)
     divi = 4095;
+
+  // Fail if the pin isn't a GPIO clock pin
+  if ((gpioToClkCon[pin] == -1) || (gpioToClkDiv[pin] == -1))
+  {
+      if (wiringPiDebug)
+      {
+        printf ("%s(%d)%s ERROR: Specified pin (%d) is not a clock pin!\n",
+            __FILE__, __LINE__, __FUNCTION__, save);
+      }
+      return;
+  }
 
   *(clk + gpioToClkCon[pin]) = BCM_PASSWORD | GPIO_CLOCK_SOURCE;		// Stop GPIO Clock
   while ((*(clk + gpioToClkCon[pin]) & 0x80) != 0)				// ... and wait
@@ -1224,7 +1245,7 @@ struct wiringPiNodeStruct *wiringPiFindNode (int pin)
 
 /*
  * wiringPiNewNode:
- *	Create a new GPIO node into the wiringPi handling system
+ *  Create a new GPIO node into the wiringPi handling system
  *********************************************************************************
  */
 static         void pinModeDummy             (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int mode)  { return; }
@@ -1281,7 +1302,7 @@ struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
 
 /*
  * pinModeAlt:
- *	This is an un-documented special to let you set any pin to any mode
+ *  This is an un-documented special to let you set any pin to any mode
  *********************************************************************************
  */
 void pinModeAlt (int pin, int mode)
@@ -1309,7 +1330,7 @@ void pinModeAlt (int pin, int mode)
 
 /*
  * pinMode:
- *	Sets the mode of a pin to be input, output or PWM output
+ *  Sets the mode of a pin to be input, output or PWM output
  *********************************************************************************
  */
 void pinMode (int pin, int mode)
@@ -1387,7 +1408,7 @@ void pinMode (int pin, int mode)
 
 /*
  * pullUpDownCtrl:
- *	Control the internal pull-up/down resistors on a GPIO pin.
+ *  Control the internal pull-up/down resistors on a GPIO pin.
  *********************************************************************************
  */
 void pullUpDnControl (int pin, int pud)
@@ -1447,7 +1468,7 @@ void pullUpDnControl (int pin, int pud)
 
 /*
  * digitalRead:
- *	Read the value of a given Pin, returning HIGH or LOW
+ *  Read the value of a given Pin, returning HIGH or LOW
  *********************************************************************************
  */
 int digitalRead (int pin)
@@ -1488,7 +1509,7 @@ int digitalRead (int pin)
 
 /*
  * digitalWrite:
- *	Set an output bit
+ *  Set an output bit
  *********************************************************************************
  */
 void digitalWrite (int pin, int value)
@@ -1530,7 +1551,7 @@ void digitalWrite (int pin, int value)
 
 /*
  * pwmWrite:
- *	Set an output PWM value
+ *  Set an output PWM value
  *********************************************************************************
  */
 void pwmWrite (int pin, int value)
@@ -1561,9 +1582,9 @@ void pwmWrite (int pin, int value)
 
 /*
  * analogRead:
- *	Read the analog value of a given Pin.
- *	There is no on-board Pi analog hardware,
- *	so this needs to go to a new node.
+ *  Read the analog value of a given Pin.
+ *  There is no on-board Pi analog hardware,
+ *  so this needs to go to a new node.
  *********************************************************************************
  */
 int analogRead (int pin)
@@ -1579,9 +1600,9 @@ int analogRead (int pin)
 
 /*
  * analogWrite:
- *	Write the analog value to the given Pin.
- *	There is no on-board Pi analog hardware,
- *	so this needs to go to a new node.
+ *  Write the analog value to the given Pin.
+ *  There is no on-board Pi analog hardware,
+ *  so this needs to go to a new node.
  *********************************************************************************
  */
 void analogWrite (int pin, int value)
@@ -1597,7 +1618,7 @@ void analogWrite (int pin, int value)
 
 /*
  * pwmToneWrite:
- *	Pi Specific.
+ *  Pi Specific.
  *      Output the given frequency on the Pi's PWM pin
  *********************************************************************************
  */
@@ -1621,16 +1642,16 @@ void pwmToneWrite (int pin, int freq)
 /*
  * digitalWriteByte:
  * digitalReadByte:
- *	Pi Specific
- *	Write an 8-bit byte to the first 8 GPIO pins - try to do it as
- *	fast as possible.
- *	However it still needs 2 operations to set the bits, so any external
- *	hardware must not rely on seeing a change as there will be a change
- *	to set the outputs bits to zero, then another change to set the 1's
- *	Reading is just bit fiddling.
- *	These are wiringPi pin numbers 0..7, or BCM_GPIO pin numbers
- *	17, 18, 22, 23, 24, 24, 4 on a Pi v1 rev 0-3
- *	17, 18, 27, 23, 24, 24, 4 on a Pi v1 rev 3 onwards or B+, 2, 3, zero
+ *  Pi Specific
+ *  Write an 8-bit byte to the first 8 GPIO pins - try to do it as
+ *  fast as possible.
+ *  However it still needs 2 operations to set the bits, so any external
+ *  hardware must not rely on seeing a change as there will be a change
+ *  to set the outputs bits to zero, then another change to set the 1's
+ *  Reading is just bit fiddling.
+ *  These are wiringPi pin numbers 0..7,
+ *  or BCM_GPIO pin numbers:
+ *  17, 18, 27, 22, 23, 24, 25, 4 on a Pi v1 rev 3 onwards or B+, 2, 3, zero
  *********************************************************************************
  */
 
@@ -1697,10 +1718,10 @@ unsigned int digitalReadByte (void)
 /*
  * digitalWriteByte2:
  * digitalReadByte2:
- *	Pi Specific
- *	Write an 8-bit byte to the second set of 8 GPIO pins. This is marginally
- *	faster than the first lot as these are consecutive BCM_GPIO pin numbers.
- *	However they overlap with the original read/write bytes.
+ *  Pi Specific
+ *  Write an 8-bit byte to the second set of 8 GPIO pins. This is marginally
+ *  faster than the first lot as these are consecutive BCM_GPIO pin numbers.
+ *  However they overlap with the original read/write bytes.
  *********************************************************************************
  */
 void digitalWriteByte2 (const int value)
@@ -1746,11 +1767,12 @@ unsigned int digitalReadByte2 (void)
 
 /*
  * waitForInterrupt:
- *	Pi Specific.
- *	Wait for Interrupt on a GPIO pin.
- *	This is actually done via the /sys/class/gpio interface regardless of
- *	the wiringPi access mode in-use. Maybe sometime it might get a better
- *	way for a bit more efficiency.
+ *  Pi Specific.
+ *  Wait for Interrupt on a GPIO pin.
+ *  This is actually done via the /sys/class/gpio interface regardless of
+ *  the wiringPi access mode in-use. Maybe sometime it might get a better
+ *  way for a bit more efficiency.
+ *  Returns output of poll(): 1 on success, 0 on timeout, -1 on error.
  *********************************************************************************
  */
 int waitForInterrupt (int pin, int mS)
@@ -1778,8 +1800,8 @@ int waitForInterrupt (int pin, int mS)
   // A one character read appars to be enough.
   if (x > 0)
   {
-    lseek (fd, 0, SEEK_SET);	// Rewind
-    (void)read (fd, &c, 1);	// Read & clear
+    lseek (fd, 0, SEEK_SET); // Rewind
+    (void)read (fd, &c, 1);  // Read & clear
   }
 
   return x;
@@ -1788,9 +1810,9 @@ int waitForInterrupt (int pin, int mS)
 
 /*
  * interruptHandler:
- *	This is a thread and gets started to wait for the interrupt we're
- *	hoping to catch. It will call the user-function when the interrupt
- *	fires.
+ *  This is a thread that gets started to wait for the interrupt we're
+ *  hoping to catch. It will call the user-function when the interrupt
+ *  fires.
  *********************************************************************************
  */
 static void *interruptHandler (UNU void *arg)
@@ -1812,16 +1834,17 @@ static void *interruptHandler (UNU void *arg)
 
 /*
  * wiringPiISR:
- *	Pi Specific.
- *	Take the details and create an interrupt handler that will do a call-
- *	back to the user supplied function.
+ *  Pi Specific.
+ *  Take the details and create an interrupt handler that will do a call-
+ *  back to the user supplied function.
+ *  Returns 0 on success, -1 on failure (or program exits if !wiringPiReturnCodes)
  *********************************************************************************
  */
 int wiringPiISR (int pin, int mode, void (*function)(void))
 {
   pthread_t threadId;
   const char *modeS;
-  char fName  [64];
+  char  fName[64];
   char  pinS[8];
   pid_t pid;
   int   count, i;
@@ -1859,7 +1882,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
     if ((pid = fork ()) < 0)	// Fail
       return wiringPiFailure (WPI_FATAL, "wiringPiISR: fork failed: %s\n", strerror (errno));
 
-    if (pid == 0)	// Child, exec
+    if (pid == 0)	// Child, execl (doesn't return if successful)
     {
       if (access ("/usr/local/bin/gpio", X_OK) == 0)
       {
@@ -1874,9 +1897,10 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
       else
         return wiringPiFailure (WPI_FATAL, "wiringPiISR: Can't find gpio program\n");
     }
-    else		// Parent, wait
+    else		// Parent, wait for child's execl call to finish
       waitpid (pid, NULL, 0);
   }
+  // Parent continues...
 
   // Now pre-open the /sys/class node - but it may already be open if
   // we are in Sys mode...
@@ -1892,6 +1916,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
   for (i = 0; i < count; ++i)
     read (sysFds[bcmGpioPin], &c, 1);
 
+  // Save caller's callback function
   isrFunctions[pin] = function;
 
   pthread_mutex_lock (&pinMutex);
@@ -1907,31 +1932,23 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
 /*
  * initialiseEpoch:
- *	Initialise our start-of-time variable to be the current unix
- *	time in milliseconds and microseconds.
+ *  Initialise our start-of-time variable to be the current unix
+ *  time in milliseconds and microseconds.
  *********************************************************************************
  */
 static void initialiseEpoch (void)
 {
-#ifdef	OLD_WAY
-  struct timeval tv;
-
-  gettimeofday (&tv, NULL);
-  epochMilli = (uint64_t)tv.tv_sec * (uint64_t)1000    + (uint64_t)(tv.tv_usec / 1000);
-  epochMicro = (uint64_t)tv.tv_sec * (uint64_t)1000000 + (uint64_t)(tv.tv_usec);
-#else
   struct timespec ts;
 
   clock_gettime (CLOCK_MONOTONIC_RAW, &ts);
   epochMilli = (uint64_t)ts.tv_sec * (uint64_t)1000    + (uint64_t)(ts.tv_nsec / 1000000L);
   epochMicro = (uint64_t)ts.tv_sec * (uint64_t)1000000 + (uint64_t)(ts.tv_nsec /    1000L);
-#endif
 }
 
 
 /*
  * delay:
- *	Wait for some number of milliseconds
+ *  Wait for some number of milliseconds
  *********************************************************************************
  */
 void delay (unsigned int howLong)
@@ -1947,16 +1964,16 @@ void delay (unsigned int howLong)
 
 /*
  * delayMicroseconds:
- *	This is somewhat intersting. It seems that on the Pi, a single call
- *	to nanosleep takes some 80 to 130 microseconds anyway, so while
- *	obeying the standards (may take longer), it's not always what we
- *	want!
+ *  This is somewhat intersting. It seems that on the Pi, a single call
+ *  to nanosleep takes some 80 to 130 microseconds anyway, so while
+ *  obeying the standards (may take longer), it's not always what we
+ *  want!
  *
- *	So what I'll do now is if the delay is less than 100uS we'll do it
- *	in a hard loop, watching a built-in counter on the ARM chip. This is
- *	somewhat sub-optimal in that it uses 100% CPU, something not an issue
- *	in a microcontroller, but under a multi-tasking, multi-user OS, it's
- *	wastefull, however we've no real choice )-:
+ *  So what I'll do now is if the delay is less than 100uS we'll do it
+ *  in a hard loop, watching a built-in counter on the ARM chip. This is
+ *  somewhat sub-optimal in that it uses 100% CPU, something not an issue
+ *  in a microcontroller, but under a multi-tasking, multi-user OS, it's
+ *  wastefull, however we've no real choice )-:
  *
  *      Plan B: It seems all might not be well with that plan, so changing it
  *      to use gettimeofday () and poll on that instead...
@@ -1996,26 +2013,17 @@ void delayMicroseconds (unsigned int howLong)
 
 /*
  * millis:
- *	Return a number of milliseconds as an unsigned int.
- *	Wraps at 49 days.
+ *  Return a number of milliseconds as an unsigned int.
+ *  Wraps at 49 days.
  *********************************************************************************
  */
 unsigned int millis (void)
 {
   uint64_t now;
-
-#ifdef	OLD_WAY
-  struct timeval tv;
-
-  gettimeofday (&tv, NULL);
-  now  = (uint64_t)tv.tv_sec * (uint64_t)1000 + (uint64_t)(tv.tv_usec / 1000);
-
-#else
   struct  timespec ts;
 
   clock_gettime (CLOCK_MONOTONIC_RAW, &ts);
   now  = (uint64_t)ts.tv_sec * (uint64_t)1000 + (uint64_t)(ts.tv_nsec / 1000000L);
-#endif
 
   return (uint32_t)(now - epochMilli);
 }
@@ -2023,31 +2031,24 @@ unsigned int millis (void)
 
 /*
  * micros:
- *	Return a number of microseconds as an unsigned int.
- *	Wraps after 71 minutes.
+ *  Return a number of microseconds as an unsigned int.
+ *  Wraps after 71 minutes.
  *********************************************************************************
  */
 unsigned int micros (void)
 {
   uint64_t now;
-#ifdef	OLD_WAY
-  struct timeval tv;
-
-  gettimeofday (&tv, NULL);
-  now  = (uint64_t)tv.tv_sec * (uint64_t)1000000 + (uint64_t)tv.tv_usec;
-#else
   struct  timespec ts;
 
   clock_gettime (CLOCK_MONOTONIC_RAW, &ts);
   now  = (uint64_t)ts.tv_sec * (uint64_t)1000000 + (uint64_t)(ts.tv_nsec / 1000);
-#endif
 
   return (uint32_t)(now - epochMicro);
 }
 
 /*
  * wiringPiVersion:
- *	Return our current version number
+ *  Return our current version number
  *********************************************************************************
  */
 void wiringPiVersion (int *major, int *minor)
@@ -2059,10 +2060,10 @@ void wiringPiVersion (int *major, int *minor)
 
 /*
  * wiringPiSetup:
- *	Must be called once at the start of your program execution.
+ *  Must be called once at the start of your program execution.
  *
  * Default setup: Initialises the system into wiringPi Pin mode and uses the
- *	memory mapped hardware directly.
+ *  memory mapped hardware directly.
  *
  * Changed now to revert to "gpio" mode if we're running on a Compute Module.
  *********************************************************************************
@@ -2221,10 +2222,10 @@ int wiringPiSetup (void)
 
 /*
  * wiringPiSetupGpio:
- *	Must be called once at the start of your program execution.
+ *  Must be called once at the start of your program execution.
  *
  * GPIO setup: Initialises the system into GPIO Pin mode and uses the
- *	memory mapped hardware directly.
+ *  memory mapped hardware directly.
  *********************************************************************************
  */
 
@@ -2243,10 +2244,10 @@ int wiringPiSetupGpio (void)
 
 /*
  * wiringPiSetupPhys:
- *	Must be called once at the start of your program execution.
+ *  Must be called once at the start of your program execution.
  *
  * Phys setup: Initialises the system into Physical Pin mode and uses the
- *	memory mapped hardware directly.
+ *  memory mapped hardware directly.
  *********************************************************************************
  */
 int wiringPiSetupPhys (void)
@@ -2264,11 +2265,11 @@ int wiringPiSetupPhys (void)
 
 /*
  * wiringPiSetupSys:
- *	Must be called once at the start of your program execution.
+ *  Must be called once at the start of your program execution.
  *
  * Initialisation (again), however this time we are using the /sys/class/gpio
- *	interface to the GPIO systems - slightly slower, but always usable as
- *	a non-root user, assuming the devices are already exported and setup correctly.
+ *  interface to the GPIO systems - slightly slower, but always usable as
+ *  a non-root user, assuming the devices are already exported and setup correctly.
  */
 int wiringPiSetupSys (void)
 {

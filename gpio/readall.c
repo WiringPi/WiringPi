@@ -120,14 +120,14 @@ static char *physNames[64] =
   "   3.3v", "5v     ",
   "  SDA.1", "5v     ",
   "  SCL.1", "GND    ",
-  "GPIO. 7", "TxD    ",
+  "GPIO.07", "TxD    ",
   "    GND", "RxD    ",
-  "GPIO. 0", "GPIO. 1",
-  "GPIO. 2", "GND    ",
-  "GPIO. 3", "GPIO. 4",
-  "   3.3v", "GPIO. 5",
+  "GPIO.00", "GPIO.01",
+  "GPIO.02", "GND    ",
+  "GPIO.03", "GPIO.04",
+  "   3.3v", "GPIO.05",
   "   MOSI", "GND    ",
-  "   MISO", "GPIO. 6",
+  "   MISO", "GPIO.06",
   "   SCLK", "CE0    ",
   "    GND", "CE1    ",
   "  SDA.0", "SCL.0  ",
@@ -225,6 +225,7 @@ static void allReadall (void)
   int pin ;
 
   printf ("+-----+------+-------+      +-----+------+-------+\n") ;
+  printf ("| BCM |      |       |      | BCM |      |       |\n") ;
   printf ("| Pin | Mode | Value |      | Pin | Mode | Value |\n") ;
   printf ("+-----+------+-------+      +-----+------+-------+\n") ;
 
