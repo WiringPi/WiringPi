@@ -142,7 +142,7 @@ extern const char *piModelNames    [21];
 extern const char *piRevisionNames [ 5];
 extern const char *piMakerNames    [16];
 extern const char *piProcessorNames[ 5];
-extern const int   piMemorySize    [ 8];
+extern const char *piMemorySize    [ 8];
 
 
 // Intended for the GPIO program

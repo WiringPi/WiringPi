@@ -1172,7 +1172,7 @@ static void doVersion (char *argv[])
           "  Type     : %s\n"
           "  Processor: %s\n"
           "  Revision : %s\n"
-          "  Memory   : %dMB\n"
+          "  Memory   : %s\n"
           "  Maker    : %s\n"
           "  %s\n",
       piModelNames[model],

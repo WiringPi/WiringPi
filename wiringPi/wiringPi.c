@@ -275,16 +275,16 @@ const char *piProcessorNames[5] =
 };
 
 // Memory sizes in MB
-const int piMemorySize[8] =
+const char *piMemorySize[8] =
 {
-   256, //  0
-   512, //  1
-  1024, //  2
-  2048, //  3
-  4096, //  4
-  8192, //  5
-     0, //  6
-     0, //  7
+   "256MB", //  0
+   "512MB", //  1
+     "1GB", //  2
+     "2GB", //  3
+     "4GB", //  4
+     "8GB", //  5
+    "16GB", //  6
+    "32GB", //  7
 };
 
 // Time for easy calculations
