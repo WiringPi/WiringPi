@@ -73,7 +73,7 @@ Raspberry Pi Details
   * This Raspberry Pi supports user-level GPIO access.
 ```
 
-1. Overall pin reporting
+3. Overall pin reporting
 
 I wanted the readall command to report the current state of pins, their alternate functions, and the names to go with them.
 i.e. The pin names aren't static anymore.  
