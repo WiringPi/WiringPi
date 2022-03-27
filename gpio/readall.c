@@ -120,30 +120,30 @@ static char *physNames[64] =
   "   3.3v", "5v     ",
   "  SDA.1", "5v     ",
   "  SCL.1", "GND    ",
-  "GPIO.07", "TxD    ",
-  "    GND", "RxD    ",
-  "GPIO.00", "GPIO.01",
-  "GPIO.02", "GND    ",
-  "GPIO.03", "GPIO.04",
-  "   3.3v", "GPIO.05",
+  " GPCLK0", "TXD1   ",
+  "    GND", "RXD1   ",
+  "GPIO.17", "GPIO.18",
+  "GPIO.27", "GND    ",
+  "GPIO.22", "GPIO.23",
+  "   3.3v", "GPIO.24",
   "   MOSI", "GND    ",
-  "   MISO", "GPIO.06",
+  "   MISO", "GPIO.25",
   "   SCLK", "CE0    ",
   "    GND", "CE1    ",
   "  SDA.0", "SCL.0  ",
-  "GPIO.21", "GND    ",
-  "GPIO.22", "GPIO.26",
-  "GPIO.23", "GND    ",
-  "GPIO.24", "GPIO.27",
-  "GPIO.25", "GPIO.28",
-  "    GND", "GPIO.29",
+  "GPIO.05", "GND    ",
+  "GPIO.06", "GPIO.12",
+  "GPIO.13", "GND    ",
+  "GPIO.19", "GPIO.16",
+  "GPIO.26", "GPIO.20",
+  "    GND", "GPIO.21",
        NULL, NULL,
        NULL, NULL,
        NULL, NULL,
        NULL, NULL,
        NULL, NULL,
-  "GPIO.17", "GPIO.18",
-  "GPIO.19", "GPIO.20",
+  "GPIO.28", "GPIO.29",
+  "GPIO.30", "GPIO.31",
    NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
 } ;
 
@@ -164,6 +164,7 @@ static void readallPhys (int physPin)
   else
     printf (" | %3d | %3d", physPinToGpio (physPin), physToWpi[physPin]) ;
 
+  // @TODO This should read the mode to determine the GPIO or ALT name
   printf (" | %s", physNames[physPin]) ;
 
   if (physToWpi[physPin] == -1)
@@ -202,6 +203,7 @@ static void readallPhys (int physPin)
     printf (" | %-4s", alts[getAlt (pin)]) ;
   }
 
+  // @TODO This should read the mode to determine the GPIO or ALT name
   printf (" | %-5s", physNames[physPin]) ;
 
   if (physToWpi    [physPin] == -1)
@@ -224,24 +226,24 @@ static void allReadall (void)
 {
   int pin ;
 
-  printf ("+-----+------+-------+      +-----+------+-------+\n") ;
-  printf ("| BCM |      |       |      | BCM |      |       |\n") ;
-  printf ("| Pin | Mode | Value |      | Pin | Mode | Value |\n") ;
-  printf ("+-----+------+-------+      +-----+------+-------+\n") ;
+  printf ("+------+------+-------+      +------+------+-------+\n") ;
+  printf ("| BCM  |      |       |      | BCM  |      |       |\n") ;
+  printf ("| GPIO | Mode | Value |      | GPIO | Mode | Value |\n") ;
+  printf ("+------+------+-------+      +------+------+-------+\n") ;
 
   for (pin = 0 ; pin < 27 ; ++pin)
   {
-    printf ("| %3d ", pin) ;
+    printf ("| %3d  ", pin) ;
     printf ("| %-4s ", alts[getAlt (pin)]) ;
     printf ("| %s  ", digitalRead (pin) == HIGH ? "High" : "Low ") ;
     printf ("|      ") ;
-    printf ("| %3d ", pin + 27) ;
+    printf ("| %3d  ", pin + 27) ;
     printf ("| %-4s ", alts[getAlt (pin + 27)]) ;
     printf ("| %s  ", digitalRead (pin + 27) == HIGH ? "High" : "Low ") ;
     printf ("|\n") ;
   }
 
-  printf ("+-----+------+-------+      +-----+------+-------+\n") ;
+  printf ("+------+------+-------+      +------+------+-------+\n") ;
 
 }
 
@@ -354,6 +356,7 @@ void doReadall (void)
   }
 
   piBoardId (&model, &proc, &rev, &mem, &maker, &overVolted) ;
+  printf ("model: %d\n", model) ;
 
   if ((model == PI_MODEL_A) || (model == PI_MODEL_B))
     abReadall (model, rev) ;

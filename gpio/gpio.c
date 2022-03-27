@@ -62,7 +62,8 @@ int wpMode;
 char *usage = "Usage: gpio -v                Show version info\n"
               "       gpio -h                Show Help\n"
 //              "       gpio -V                Show gpio layout version (1.x)\n"
-              "       gpio[-g|-1] ...    Use bcm-gpio/physical pin numbering scheme...\n"
+              "       gpio[-b|-p|-w] ...    Use bcm-gpio/physical/WiringPi pin numbering scheme.\n"
+              "                             If none specified, BCM GPIO numbering is used by default.\n"
               "      [-x extension:params][[ -x ...]] ...\n"
               "       gpio <mode/read/write/aread/awritewb/pwm/pwmTone/clock> ...\n"
               "       gpio <toggle/blink> <pin>\n"
@@ -1289,7 +1290,10 @@ int main (int argc, char *argv[])
   if (strcasecmp (argv[1], "unload" ) == 0)	{ doUnLoad (argc, argv); return 0; }
 
   // Check for usb power command
-  if (strcasecmp (argv[1], "usbp"   ) == 0)	{ doUsbP   (argc, argv); return 0; }
+  if (strcasecmp (argv[1], "usbp"   ) == 0)
+  {
+      doUsbP   (argc, argv); return 0;
+  }
 
   // Check for allreadall command, force Gpio mode
   if (strcasecmp (argv[1], "allreadall") == 0)
@@ -1299,8 +1303,8 @@ int main (int argc, char *argv[])
     return 0;
   }
 
-  // Check for -g argument
-  if (strcasecmp (argv[1], "-g") == 0)
+  // BCM GPIO numbering specified
+  if (strcasecmp (argv[1], "-b") == 0)
   {
     wiringPiSetupGpio ();
 
@@ -1310,8 +1314,8 @@ int main (int argc, char *argv[])
     wpMode = WPI_MODE_GPIO;
   }
 
-  // Check for -1 argument
-  else if (strcasecmp (argv[1], "-1") == 0)
+  // Physical pin numbering specified
+  else if (strcasecmp (argv[1], "-p") == 0)
   {
     wiringPiSetupPhys ();
 
@@ -1319,6 +1323,17 @@ int main (int argc, char *argv[])
       argv[i - 1] = argv[i];
     --argc;
     wpMode = WPI_MODE_PHYS;
+  }
+
+  // WiringPi pin numbering specified
+  if (strcasecmp (argv[1], "-w") == 0)
+  {
+    wiringPiSetup ();
+
+    for (i = 2; i < argc; ++i)
+      argv[i - 1] = argv[i];
+    --argc;
+    wpMode = WPI_MODE_PINS;
   }
 
   // Check for -z argument so we don't actually initialise wiringPi
@@ -1330,11 +1345,11 @@ int main (int argc, char *argv[])
     wpMode = WPI_MODE_UNINITIALISED;
   }
 
-  // Default to wiringPi mode
+  // Default to BCM mode
   else
   {
-    wiringPiSetup ();
-    wpMode = WPI_MODE_PINS;
+    wiringPiSetupGpio();
+    wpMode = WPI_MODE_GPIO;
   }
 
   // Check for -x argument to load in a new extension
