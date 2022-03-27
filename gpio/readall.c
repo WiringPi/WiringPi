@@ -116,6 +116,7 @@ static int physToWpi[64] =
   -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
 
+// This is ony used for power and ground pins & old abReadall().
 static char *physNames[64] =
 {
   NULL,
@@ -150,62 +151,62 @@ static char *physNames[64] =
 };
 
 static const char *gpio_alt_names_2835[54*8] = {
-// FSEL_INPT, FSEL_OUTP, FSEL_ALT5   , FSEL_ALT4    , FSEL_ALT0   , FSEL_ALT1    , FSEL_ALT2   , FSEL_ALT3
-//       000,       001,       010   ,       011    ,       100   ,       101    ,       110   ,       111
-    "In"    , "Out"    , 0           , "AVEIN_VCLK" , "SDA0"      , "SA5"        , "PCLK"      , "AVEOUT_VCLK"   ,
-    "In"    , "Out"    , 0           , "AVEIN_DSYNC", "SCL0"      , "SA4"        , "DE"        , "AVEOUT_DSYNC"  ,
-    "In"    , "Out"    , 0           , "AVEIN_VSYNC", "SDA1"      , "SA3"        , "LCD_VSYNC" , "AVEOUT_VSYNC"  ,
-    "In"    , "Out"    , 0           , "AVEIN_HSYNC", "SCL1"      , "SA2"        , "LCD_HSYNC" , "AVEOUT_HSYNC"  ,
-    "In"    , "Out"    , "ARM_TDI"   , "AVEIN_VID0" , "GPCLK0"    , "SA1"        , "DPI_D0"    , "AVEOUT_VID0"   ,
-    "In"    , "Out"    , "ARM_TDO"   , "AVEIN_VID1" , "GPCLK1"    , "SA0"        , "DPI_D1"    , "AVEOUT_VID1"   ,
-    "In"    , "Out"    , "ARM_RTCK"  , "AVEIN_VID2" , "GPCLK2"    , "SOE_N_SE"   , "DPI_D2"    , "AVEOUT_VID2"   ,
-    "In"    , "Out"    , 0           , "AVEIN_VID3" , "SPI0_CE1_N", "SWE_N_SRW_N", "DPI_D3"    , "AVEOUT_VID3"   ,
-    "In"    , "Out"    , 0           , "AVEIN_VID4" , "SPI0_CE0_N", "SD0"        , "DPI_D4"    , "AVEOUT_VID4"   ,
-    "In"    , "Out"    , 0           , "AVEIN_VID5" , "SPI0_MISO" , "SD1"        , "DPI_D5"    , "AVEOUT_VID5"   ,
-    "In"    , "Out"    , 0           , "AVEIN_VID6" , "SPI0_MOSI" , "SD2"        , "DPI_D6"    , "AVEOUT_VID6"   ,
-    "In"    , "Out"    , 0           , "AVEIN_VID7" , "SPI0_SCLK" , "SD3"        , "DPI_D7"    , "AVEOUT_VID7"   ,
-    "In"    , "Out"    , "ARM_TMS"   , "AVEIN_VID8" , "PWM0"      , "SD4"        , "DPI_D8"    , "AVEOUT_VID8"   ,
-    "In"    , "Out"    , "ARM_TCK"   , "AVEIN_VID9" , "PWM1"      , "SD5"        , "DPI_D9"    , "AVEOUT_VID9"   ,
-    "In"    , "Out"    , "TXD1"      , "AVEIN_VID10", "TXD0"      , "SD6"        , "DPI_D10"   , "AVEOUT_VID10"  ,
-    "In"    , "Out"    , "RXD1"      , "AVEIN_VID11", "RXD0"      , "SD7"        , "DPI_D11"   , "AVEOUT_VID11"  ,
-    "In"    , "Out"    , "CTS1"      , "SPI1_CE2_N" , "FL0"       , "SD8"        , "DPI_D12"   , "CTS0"          ,
-    "In"    , "Out"    , "RTS1"      , "SPI1_CE1_N" , "FL1"       , "SD9"        , "DPI_D13"   , "RTS0"          ,
-    "In"    , "Out"    , "PWM0"      , "SPI1_CE0_N" , "PCM_CLK"   , "SD10"       , "DPI_D14"   , "I2CSL_SDA_MOSI",
-    "In"    , "Out"    , "PWM1"      , "SPI1_MISO"  , "PCM_FS"    , "SD11"       , "DPI_D15"   , "I2CSL_SCL_SCLK",
-    "In"    , "Out"    , "GPCLK0"    , "SPI1_MOSI"  , "PCM_DIN"   , "SD12"       , "DPI_D16"   , "I2CSL_MISO"    ,
-    "In"    , "Out"    , "GPCLK1"    , "SPI1_SCLK"  , "PCM_DOUT"  , "SD13"       , "DPI_D17"   , "I2CSL_CE_N"    ,
-    "In"    , "Out"    , 0           , "ARM_TRST"   , "SD0_CLK"   , "SD14"       , "DPI_D18"   , "SD1_CLK"       ,
-    "In"    , "Out"    , 0           , "ARM_RTCK"   , "SD0_CMD"   , "SD15"       , "DPI_D19"   , "SD1_CMD"       ,
-    "In"    , "Out"    , 0           , "ARM_TDO"    , "SD0_DAT0"  , "SD16"       , "DPI_D20"   , "SD1_DAT0"      ,
-    "In"    , "Out"    , 0           , "ARM_TCK"    , "SD0_DAT1"  , "SD17"       , "DPI_D21"   , "SD1_DAT1"      ,
-    "In"    , "Out"    , 0           , "ARM_TDI"    , "SD0_DAT2"  , "TE0"        , "DPI_D22"   , "SD1_DAT2"      ,
-    "In"    , "Out"    , 0           , "ARM_TMS"    , "SD0_DAT3"  , "TE1"        , "DPI_D23"   , "SD1_DAT3"      ,
-    "In"    , "Out"    , 0           , 0            , "SDA0"      , "SA5"        , "PCM_CLK"   , "FL0"           ,
-    "In"    , "Out"    , 0           , 0            , "SCL0"      , "SA4"        , "PCM_FS"    , "FL1"           ,
-    "In"    , "Out"    , "CTS1"      , 0            , "TE0"       , "SA3"        , "PCM_DIN"   , "CTS0"          ,
-    "In"    , "Out"    , "RTS1"      , 0            , "FL0"       , "SA2"        , "PCM_DOUT"  , "RTS0"          ,
-    "In"    , "Out"    , "TXD1"      , 0            , "GPCLK0"    , "SA1"        , "RING_OCLK" , "TXD0"          ,
-    "In"    , "Out"    , "RXD1"      , 0            , "FL1"       , "SA0"        , "TE1"       , "RXD0"          ,
-    "In"    , "Out"    , 0           , 0            , "GPCLK0"    , "SOE_N_SE"   , "TE2"       , "SD1_CLK"       ,
-    "In"    , "Out"    , 0           , 0            , "SPI0_CE1_N", "SWE_N_SRW_N", 0           , "SD1_CMD"       ,
-    "In"    , "Out"    , 0           , 0            , "SPI0_CE0_N", "SD0"        , "TXD0"      , "SD1_DAT0"      ,
-    "In"    , "Out"    , 0           , 0            , "SPI0_MISO" , "SD1"        , "RXD0"      , "SD1_DAT1"      ,
-    "In"    , "Out"    , 0           , 0            , "SPI0_MOSI" , "SD2"        , "RTS0"      , "SD1_DAT2"      ,
-    "In"    , "Out"    , 0           , 0            , "SPI0_SCLK" , "SD3"        , "CTS0"      , "SD1_DAT3"      ,
-    "In"    , "Out"    , "TXD1"      , "SPI2_MISO"  , "PWM0"      , "SD4"        , 0           , "SD1_DAT4"      ,
-    "In"    , "Out"    , "RXD1"      , "SPI2_MOSI"  , "PWM1"      , "SD5"        , "TE0"       , "SD1_DAT5"      ,
-    "In"    , "Out"    , "RTS1"      , "SPI2_SCLK"  , "GPCLK1"    , "SD6"        , "TE1"       , "SD1_DAT6"      ,
-    "In"    , "Out"    , "CTS1"      , "SPI2_CE0_N" , "GPCLK2"    , "SD7"        , "TE2"       , "SD1_DAT7"      ,
-    "In"    , "Out"    , 0           , "SPI2_CE1_N" , "GPCLK1"    , "SDA0"       , "SDA1"      , "TE0"           ,
-    "In"    , "Out"    , 0           , "SPI2_CE2_N" , "PWM1"      , "SCL0"       , "SCL1"      , "TE1"           ,
-    "In"    , "Out"    , "SPI2_CE1_N", 0            , "SDA0"      , "SDA1"       , "SPI0_CE0_N", 0               ,
-    "In"    , "Out"    , "SPI2_CE0_N", 0            , "SCL0"      , "SCL1"       , "SPI0_MISO" , 0               ,
-    "In"    , "Out"    , "SPI2_SCLK" , "ARM_TRST"   , "SD0_CLK"   , "FL0"        , "SPI0_MOSI" , "SD1_CLK"       ,
-    "In"    , "Out"    , "SPI2_MOSI" , "ARM_RTCK"   , "SD0_CMD"   , "GPCLK0"     , "SPI0_SCLK" , "SD1_CMD"       ,
-    "In"    , "Out"    , 0           , "ARM_TDO"    , "SD0_DAT0"  , "GPCLK1"     , "PCM_CLK"   , "SD1_DAT0"      ,
-    "In"    , "Out"    , 0           , "ARM_TCK"    , "SD0_DAT1"  , "GPCLK2"     , "PCM_FS"    , "SD1_DAT1"      ,
-    "In"    , "Out"    , 0           , "ARM_TDI"    , "SD0_DAT2"  , "PWM0"       , "PCM_DIN"   , "SD1_DAT2"      ,
-    "In"    , "Out"    , 0           , "ARM_TMS"    , "SD0_DAT3"  , "PWM1"       , "PCM_DOUT"  , "SD1_DAT3" 
+//   FSEL_INPT, FSEL_OUTP, FSEL_ALT5   , FSEL_ALT4    , FSEL_ALT0   , FSEL_ALT1    , FSEL_ALT2   , FSEL_ALT3
+//         000,       001,       010   ,       011    ,       100   ,       101    ,       110   ,       111
+    "GPIO.00" , "GPIO.00", 0           , "AVEIN_VCLK" , "SDA0"      , "SA5"        , "PCLK"      , "AVEOUT_VCLK"   ,
+    "GPIO.01" , "GPIO.01", 0           , "AVEIN_DSYNC", "SCL0"      , "SA4"        , "DE"        , "AVEOUT_DSYNC"  ,
+    "GPIO.02" , "GPIO.02", 0           , "AVEIN_VSYNC", "SDA1"      , "SA3"        , "LCD_VSYNC" , "AVEOUT_VSYNC"  ,
+    "GPIO.03" , "GPIO.03", 0           , "AVEIN_HSYNC", "SCL1"      , "SA2"        , "LCD_HSYNC" , "AVEOUT_HSYNC"  ,
+    "GPIO.04" , "GPIO.04", "ARM_TDI"   , "AVEIN_VID0" , "GPCLK0"    , "SA1"        , "DPI_D0"    , "AVEOUT_VID0"   ,
+    "GPIO.05" , "GPIO.05", "ARM_TDO"   , "AVEIN_VID1" , "GPCLK1"    , "SA0"        , "DPI_D1"    , "AVEOUT_VID1"   ,
+    "GPIO.06" , "GPIO.06", "ARM_RTCK"  , "AVEIN_VID2" , "GPCLK2"    , "SOE_N_SE"   , "DPI_D2"    , "AVEOUT_VID2"   ,
+    "GPIO.07" , "GPIO.07", 0           , "AVEIN_VID3" , "SPI0_CE1_N", "SWE_N_SRW_N", "DPI_D3"    , "AVEOUT_VID3"   ,
+    "GPIO.08" , "GPIO.08", 0           , "AVEIN_VID4" , "SPI0_CE0_N", "SD0"        , "DPI_D4"    , "AVEOUT_VID4"   ,
+    "GPIO.09" , "GPIO.09", 0           , "AVEIN_VID5" , "SPI0_MISO" , "SD1"        , "DPI_D5"    , "AVEOUT_VID5"   ,
+    "GPIO.10" , "GPIO.10", 0           , "AVEIN_VID6" , "SPI0_MOSI" , "SD2"        , "DPI_D6"    , "AVEOUT_VID6"   ,
+    "GPIO.11" , "GPIO.11", 0           , "AVEIN_VID7" , "SPI0_SCLK" , "SD3"        , "DPI_D7"    , "AVEOUT_VID7"   ,
+    "GPIO.12" , "GPIO.12", "ARM_TMS"   , "AVEIN_VID8" , "PWM0"      , "SD4"        , "DPI_D8"    , "AVEOUT_VID8"   ,
+    "GPIO.13" , "GPIO.13", "ARM_TCK"   , "AVEIN_VID9" , "PWM1"      , "SD5"        , "DPI_D9"    , "AVEOUT_VID9"   ,
+    "GPIO.14" , "GPIO.14", "TXD1"      , "AVEIN_VID10", "TXD0"      , "SD6"        , "DPI_D10"   , "AVEOUT_VID10"  ,
+    "GPIO.15" , "GPIO.15", "RXD1"      , "AVEIN_VID11", "RXD0"      , "SD7"        , "DPI_D11"   , "AVEOUT_VID11"  ,
+    "GPIO.16" , "GPIO.16", "CTS1"      , "SPI1_CE2_N" , "FL0"       , "SD8"        , "DPI_D12"   , "CTS0"          ,
+    "GPIO.17" , "GPIO.17", "RTS1"      , "SPI1_CE1_N" , "FL1"       , "SD9"        , "DPI_D13"   , "RTS0"          ,
+    "GPIO.18" , "GPIO.18", "PWM0"      , "SPI1_CE0_N" , "PCM_CLK"   , "SD10"       , "DPI_D14"   , "I2CSL_SDA_MOSI",
+    "GPIO.19" , "GPIO.19", "PWM1"      , "SPI1_MISO"  , "PCM_FS"    , "SD11"       , "DPI_D15"   , "I2CSL_SCL_SCLK",
+    "GPIO.20" , "GPIO.20", "GPCLK0"    , "SPI1_MOSI"  , "PCM_DIN"   , "SD12"       , "DPI_D16"   , "I2CSL_MISO"    ,
+    "GPIO.21" , "GPIO.21", "GPCLK1"    , "SPI1_SCLK"  , "PCM_DOUT"  , "SD13"       , "DPI_D17"   , "I2CSL_CE_N"    ,
+    "GPIO.22" , "GPIO.22", 0           , "ARM_TRST"   , "SD0_CLK"   , "SD14"       , "DPI_D18"   , "SD1_CLK"       ,
+    "GPIO.23" , "GPIO.23", 0           , "ARM_RTCK"   , "SD0_CMD"   , "SD15"       , "DPI_D19"   , "SD1_CMD"       ,
+    "GPIO.24" , "GPIO.24", 0           , "ARM_TDO"    , "SD0_DAT0"  , "SD16"       , "DPI_D20"   , "SD1_DAT0"      ,
+    "GPIO.25" , "GPIO.25", 0           , "ARM_TCK"    , "SD0_DAT1"  , "SD17"       , "DPI_D21"   , "SD1_DAT1"      ,
+    "GPIO.26" , "GPIO.26", 0           , "ARM_TDI"    , "SD0_DAT2"  , "TE0"        , "DPI_D22"   , "SD1_DAT2"      ,
+    "GPIO.27" , "GPIO.27", 0           , "ARM_TMS"    , "SD0_DAT3"  , "TE1"        , "DPI_D23"   , "SD1_DAT3"      ,
+    "GPIO.28" , "GPIO.28", 0           , 0            , "SDA0"      , "SA5"        , "PCM_CLK"   , "FL0"           ,
+    "GPIO.29" , "GPIO.29", 0           , 0            , "SCL0"      , "SA4"        , "PCM_FS"    , "FL1"           ,
+    "GPIO.30" , "GPIO.30", "CTS1"      , 0            , "TE0"       , "SA3"        , "PCM_DIN"   , "CTS0"          ,
+    "GPIO.31" , "GPIO.31", "RTS1"      , 0            , "FL0"       , "SA2"        , "PCM_DOUT"  , "RTS0"          ,
+    "GPIO.32" , "GPIO.32", "TXD1"      , 0            , "GPCLK0"    , "SA1"        , "RING_OCLK" , "TXD0"          ,
+    "GPIO.33" , "GPIO.33", "RXD1"      , 0            , "FL1"       , "SA0"        , "TE1"       , "RXD0"          ,
+    "GPIO.34" , "GPIO.34", 0           , 0            , "GPCLK0"    , "SOE_N_SE"   , "TE2"       , "SD1_CLK"       ,
+    "GPIO.35" , "GPIO.35", 0           , 0            , "SPI0_CE1_N", "SWE_N_SRW_N", 0           , "SD1_CMD"       ,
+    "GPIO.36" , "GPIO.36", 0           , 0            , "SPI0_CE0_N", "SD0"        , "TXD0"      , "SD1_DAT0"      ,
+    "GPIO.37" , "GPIO.37", 0           , 0            , "SPI0_MISO" , "SD1"        , "RXD0"      , "SD1_DAT1"      ,
+    "GPIO.38" , "GPIO.38", 0           , 0            , "SPI0_MOSI" , "SD2"        , "RTS0"      , "SD1_DAT2"      ,
+    "GPIO.39" , "GPIO.39", 0           , 0            , "SPI0_SCLK" , "SD3"        , "CTS0"      , "SD1_DAT3"      ,
+    "GPIO.40" , "GPIO.40", "TXD1"      , "SPI2_MISO"  , "PWM0"      , "SD4"        , 0           , "SD1_DAT4"      ,
+    "GPIO.41" , "GPIO.41", "RXD1"      , "SPI2_MOSI"  , "PWM1"      , "SD5"        , "TE0"       , "SD1_DAT5"      ,
+    "GPIO.42" , "GPIO.42", "RTS1"      , "SPI2_SCLK"  , "GPCLK1"    , "SD6"        , "TE1"       , "SD1_DAT6"      ,
+    "GPIO.43" , "GPIO.43", "CTS1"      , "SPI2_CE0_N" , "GPCLK2"    , "SD7"        , "TE2"       , "SD1_DAT7"      ,
+    "GPIO.44" , "GPIO.44", 0           , "SPI2_CE1_N" , "GPCLK1"    , "SDA0"       , "SDA1"      , "TE0"           ,
+    "GPIO.45" , "GPIO.45", 0           , "SPI2_CE2_N" , "PWM1"      , "SCL0"       , "SCL1"      , "TE1"           ,
+    "GPIO.46" , "GPIO.46", "SPI2_CE1_N", 0            , "SDA0"      , "SDA1"       , "SPI0_CE0_N", 0               ,
+    "GPIO.47" , "GPIO.47", "SPI2_CE0_N", 0            , "SCL0"      , "SCL1"       , "SPI0_MISO" , 0               ,
+    "GPIO.48" , "GPIO.48", "SPI2_SCLK" , "ARM_TRST"   , "SD0_CLK"   , "FL0"        , "SPI0_MOSI" , "SD1_CLK"       ,
+    "GPIO.49" , "GPIO.49", "SPI2_MOSI" , "ARM_RTCK"   , "SD0_CMD"   , "GPCLK0"     , "SPI0_SCLK" , "SD1_CMD"       ,
+    "GPIO.50" , "GPIO.50", 0           , "ARM_TDO"    , "SD0_DAT0"  , "GPCLK1"     , "PCM_CLK"   , "SD1_DAT0"      ,
+    "GPIO.51" , "GPIO.51", 0           , "ARM_TCK"    , "SD0_DAT1"  , "GPCLK2"     , "PCM_FS"    , "SD1_DAT1"      ,
+    "GPIO.52" , "GPIO.52", 0           , "ARM_TDI"    , "SD0_DAT2"  , "PWM0"       , "PCM_DIN"   , "SD1_DAT2"      ,
+    "GPIO.53" , "GPIO.53", 0           , "ARM_TMS"    , "SD0_DAT3"  , "PWM1"       , "PCM_DOUT"  , "SD1_DAT3" 
 };
 
 static const char *gpio_alt_names_2711[54*8] = {
@@ -286,7 +287,7 @@ static void readallPhys (int physPin)
   else
     printf (" | %3d | %3d", physPinToGpio (physPin), physToWpi[physPin]);
 
-  // | Name | Mode
+  // | Name | Mode | Value
   if (physToWpi[physPin] == -1)
   {
     printf (" | %10s", physNames[physPin]);
