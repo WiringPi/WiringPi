@@ -4,7 +4,7 @@
  *  Copyright (c) 2012-2017 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
- * https://github.com/WiringPi/WiringPi/
+ * https://github.com/nuncio-bitis/WiringPi/
  *
  * wiringPi is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by

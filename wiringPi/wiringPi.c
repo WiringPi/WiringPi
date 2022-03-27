@@ -9,7 +9,7 @@
  *  the clock section /grr/mutter/
  ***********************************************************************
  * This file is part of wiringPi:
- *    https://github.com/WiringPi/WiringPi
+ *    https://github.com/nuncio-bitis/WiringPi
  *
  *    wiringPi is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Lesser General Public License as
@@ -296,6 +296,7 @@ static volatile int    pinPass = -1;
 static pthread_mutex_t pinMutex;
 
 // Debugging & Return codes
+// Intentionally global; also used in gpio.c
 int wiringPiDebug       = FALSE;
 int wiringPiReturnCodes = TRUE;
 

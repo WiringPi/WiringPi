@@ -5,7 +5,7 @@
  *	Copyright (c) 2012-2018 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
- *	https://github.com/WiringPi/WiringPi/
+ *	https://github.com/nuncio-bitis/WiringPi/
  *
  *    wiringPi is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Lesser General Public License as published by
@@ -52,19 +52,19 @@ extern void doQmode      (int argc, char *argv[]);
 #  define	FALSE	(1==2)
 #endif
 
-#define	PI_USB_POWER_CONTROL	38
-#define	I2CDETECT		"i2cdetect"
-#define	MODPROBE		"modprobe"
-#define	RMMOD			"rmmod"
+#define	PI_USB_POWER_CONTROL 38
+#define	I2CDETECT  "i2cdetect"
+#define	MODPROBE   "modprobe"
+#define	RMMOD      "rmmod"
 
+// Intentionally global; also used in readall.c
 int wpMode;
 
-char *usage = "Usage: gpio -v                Show version info\n"
-              "       gpio -h                Show Help\n"
-//              "       gpio -V                Show gpio layout version (1.x)\n"
-              "       gpio[-b|-p|-w] ...    Use bcm-gpio/physical/WiringPi pin numbering scheme.\n"
-              "                             If none specified, BCM GPIO numbering is used by default.\n"
-              "      [-x extension:params][[ -x ...]] ...\n"
+char *usage = "Usage: gpio -v             Show version info\n"
+              "       gpio -h             Show Help\n"
+              "       gpio[-b|-p|-w] ...  Use bcm-gpio/physical/WiringPi pin numbering scheme.\n"
+              "                           If none specified, BCM GPIO numbering is used by default.\n"
+              "       [-x extension:params][[ -x ...]] ...\n"
               "       gpio <mode/read/write/aread/awritewb/pwm/pwmTone/clock> ...\n"
               "       gpio <toggle/blink> <pin>\n"
               "       gpio readall/allreadall\n"
