@@ -24,6 +24,8 @@
 #ifndef __WIRING_PI_H__
 #define __WIRING_PI_H__
 
+#include <stdint.h>
+
 #include <stdbool.h>
 #ifndef TRUE
 #  define TRUE  true
@@ -236,7 +238,7 @@ extern void analogWrite         (int pin, int value);
 
 // On-Board Raspberry Pi hardware specific stuff
 extern int  piGpioLayout        (void);
-extern void piBoardId           (int *model, int *proc, int *rev, int *mem, int *maker, int *overVolted);
+extern uint32_t piBoardId       (int *model, int *proc, int *rev, int *mem, int *maker, int *overVolted);
 extern int  wpiPinToGpio        (int wpiPin);
 extern int  physPinToGpio       (int physPin);
 extern void setPadDrive         (int group, int value);

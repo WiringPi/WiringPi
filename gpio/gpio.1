@@ -319,9 +319,7 @@ the GPIO from a non-root program, then you need to make sure that the
 module \fIbcm2835_gpiomem\fR is loaded at boot time. This should happen
 automatically when you enable the device tree in raspi-config. You may
 also need some additional information in /etc/udev/rules.d/ to change the
-mode and ownership of the /dev/gpiomem file. Finally, you need to set
-the environment variable \fIWIRINGPI_GPIOMEM\fR. This will go-away
-in future releases once the /dev/gpiomem interface is fully operational.
+mode and ownership of the /dev/gpiomem file.
 
 .SH "SEE ALSO"
 

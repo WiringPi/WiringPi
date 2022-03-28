@@ -61,8 +61,8 @@ extern void doQmode      (int argc, char *argv[]);
 int wpMode;
 
 char *usage = "Usage: gpio -v             Show version info\n"
-              "       gpio -h             Show Help\n"
-              "       gpio[-b|-p|-w] ...  Use bcm-gpio/physical/WiringPi pin numbering scheme.\n"
+              "       gpio -h|-help|--help|help|h  Show Help\n"
+              "       gpio [-b|-p|-w] ... Use bcm-gpio/physical/WiringPi pin numbering scheme.\n"
               "                           If none specified, BCM GPIO numbering is used by default.\n"
               "       [-x extension:params][[ -x ...]] ...\n"
               "       gpio <mode/read/write/aread/awritewb/pwm/pwmTone/clock> ...\n"
@@ -82,33 +82,12 @@ char *usage = "Usage: gpio -v             Show version info\n"
               "       gpio wb <value>\n"
               "       gpio usbp high/low";	// No trailing newline needed here.
 
-#ifdef	NOT_FOR_NOW
-/*
- * decodePin:
- *	Decode a pin "number" which can actually be a pin name to represent
- *	one of the Pi's on-board pins.
- *********************************************************************************
- */
-
-static int decodePin (const char *str)
-{
-
-// The first case - see if it's a number:
-
-  if (isdigit (str[0]))
-    return atoi (str);
-
-  return 0;
-}
-#endif
-
-
 /*
  * findExecutable:
  *	Code to locate the path to the given executable. We have a fixed list
  *	of locations to try which completely overrides any $PATH environment.
  *	This may be detrimental, however it avoids the reliance on $PATH
- *	which may be a security issue when this program is run a set-uid-root.
+ *	which may be a security issue when this program is run as set-uid-root.
  *********************************************************************************
  */
 static const char *searchPath[] =
@@ -1146,7 +1125,7 @@ static void doPwmClock (int argc, char *argv[])
 /*
  * doVersion:
  *	Handle the ever more complicated version command and print out
- *	some usefull information.
+ *	some useful information.
  *********************************************************************************
  */
 
@@ -1167,15 +1146,17 @@ static void doVersion (char *argv[])
   printf ("For details type: \"%s -warranty\"\n", basename(argv[0]));
   printf ("\n");
 
-  piBoardId (&model, &proc, &rev, &mem, &maker, &warranty);
+  uint32_t fullRev = piBoardId (&model, &proc, &rev, &mem, &maker, &warranty);
 
   printf ("Raspberry Pi Details\n"
+          "  Revision string: 0x%08X\n"
           "  Type     : %s\n"
           "  Processor: %s\n"
           "  Revision : %s\n"
           "  Memory   : %s\n"
           "  Maker    : %s\n"
           "  %s\n",
+      fullRev,
       piModelNames[model],
       piProcessorNames[proc],
       piRevisionNames[rev],
@@ -1238,7 +1219,13 @@ int main (int argc, char *argv[])
   }
 
   // Help
-  if (strcasecmp (argv[1], "-h") == 0)
+  if (
+       (strcasecmp (argv[1], "h") == 0) ||
+       (strcasecmp (argv[1], "-h") == 0) ||
+       (strcasecmp (argv[1], "-help") == 0) ||
+       (strcasecmp (argv[1], "--help") == 0) ||
+       (strcasecmp (argv[1], "help") == 0)
+     )
   {
     printf ("%s\n", usage);
     exit (EXIT_SUCCESS);

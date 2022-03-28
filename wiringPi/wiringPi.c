@@ -83,7 +83,6 @@
 // Environment Variables
 #define ENV_DEBUG    "WIRINGPI_DEBUG"
 #define ENV_CODES    "WIRINGPI_CODES"
-#define ENV_GPIOMEM  "WIRINGPI_GPIOMEM"
 
 
 // Extend wiringPi with other pin-based devices and keep track of
@@ -93,6 +92,8 @@ struct wiringPiNodeStruct *wiringPiNodes = NULL;
 // BCM Magic
 #define BCM_PASSWORD 0x5A000000
 
+// Full revision string
+static uint32_t fullRevision = 0;
 
 // The BCM2835 has 54 GPIO pins.
 // BCM2835 data sheet, Page 90 onwards.
@@ -879,7 +880,7 @@ int piGpioLayout (void)
  *********************************************************************************
  */
 
-void piBoardId (int *model, int *proc, int *rev, int *mem, int *maker, int *warranty)
+uint32_t piBoardId (int *model, int *proc, int *rev, int *mem, int *maker, int *warranty)
 {
   FILE *cpuFd;
   char line[120];
@@ -928,12 +929,14 @@ void piBoardId (int *model, int *proc, int *rev, int *mem, int *maker, int *warr
     piGpioLayoutOops ("Bogus \"Revision\" line (no hex digit at start of revision)");
 
   revision = (unsigned int)strtol (c, NULL, 16); // Hex number with no leading 0x
+  // Save full revision number
+  fullRevision = revision;
 
   // Check for new way: Bit 23 of the revision number
   if ((revision &  (1 << 23)) != 0)	// New way
   {
     if (wiringPiDebug)
-      printf ("piBoardId: New Way: revision is: %08X\n", revision);
+      printf ("piBoardId: New Way: revision is: 0x%08X\n", revision);
 
     bRev      = (revision & (0x0F <<  0)) >>  0;
     bType     = (revision & (0xFF <<  4)) >>  4;
@@ -1007,6 +1010,8 @@ void piBoardId (int *model, int *proc, int *rev, int *mem, int *maker, int *warr
 
     else                              { *model = 0          ; *rev = 0             ; *mem =   0; *maker = 0;               }
   }
+
+  return fullRevision;
 }
 
 
@@ -1135,7 +1140,11 @@ void pwmSetClock (int divisor)
   {
     divisor = 540*divisor/192;
   }
-  divisor &= 4095; // @XXX @TODO Probably constrain to 0xFFF instead of masking?
+  // Keep divisor in range.
+  if (divisor > 4095)
+  {
+    divisor = 4095;
+  }
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
