@@ -30,7 +30,7 @@
 //**********************************************************************************************************************
 
 // GPIOs (BCM) that buttons are attached to:
-static const int buttons[] = { 16, 26, 20, 21 };
+static const int buttons[] = { 26, 16, 20, 21 };
 static const int nButtons = (sizeof (buttons) / sizeof (int));
 
 static int terminate_process = 0;
