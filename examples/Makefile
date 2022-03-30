@@ -52,7 +52,9 @@ SRC	=	blink.c blink8.c blink12.c					\
 		servo.c \
 		isr1.c \
 		test1.c \
-		test2.c
+		test2.c \
+		buttons.c buttons2.c \
+		getBanks.c
 
 OBJ	=	$(SRC:.c=.o)
 

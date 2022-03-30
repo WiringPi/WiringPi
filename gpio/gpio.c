@@ -66,6 +66,7 @@ char *usage = "Usage: gpio -v             Show version info\n"
               "                           If none specified, BCM GPIO numbering is used by default.\n"
               "       [-x extension:params][[ -x ...]] ...\n"
               "       gpio <mode/read/write/aread/awritewb/pwm/pwmTone/clock> ...\n"
+              "       gpio bank <bank>\n"
               "       gpio <toggle/blink> <pin>\n"
               "       gpio readall/allreadall\n"
               "       gpio unexportall/exports\n"
@@ -911,7 +912,6 @@ static void doReadByte (int argc, char *argv[], int printHex)
  *	Read a pin and return the value
  *********************************************************************************
  */
-
 void doRead (int argc, char *argv[]) 
 {
   int pin, val;
@@ -926,6 +926,35 @@ void doRead (int argc, char *argv[])
   val = digitalRead (pin);
 
   printf ("%s\n", val == 0 ? "0" : "1");
+}
+
+/*
+ * doBank:
+ *	Read a bank and return the 32-bit unsigned value
+ *********************************************************************************
+ */
+void doBank (int argc, char *argv[]) 
+{
+  int bank;
+  uint32_t bankVal;
+
+  if (argc != 3)
+  {
+    fprintf (stderr, "Usage: %s bank <bank#>\n", argv[0]);
+    exit (1);
+  }
+
+  bank = atoi (argv[2]);
+  if (bank > 1)
+  {
+    fprintf (stderr, "Bad bank number. Must be 0 or 1.\n");
+    fprintf (stderr, "Usage: %s bank <bank#>\n", argv[0]);
+    exit (1);
+  }
+
+  bankVal = digitalReadBank (bank);
+
+  printf ("0x%08X\n", bankVal);
 }
 
 
@@ -1371,6 +1400,7 @@ int main (int argc, char *argv[])
   // Core wiringPi functions
   if      (strcasecmp (argv[1], "mode"   ) == 0) doMode      (argc, argv);
   else if (strcasecmp (argv[1], "read"   ) == 0) doRead      (argc, argv);
+  else if (strcasecmp (argv[1], "bank"   ) == 0) doBank      (argc, argv);
   else if (strcasecmp (argv[1], "write"  ) == 0) doWrite     (argc, argv);
   else if (strcasecmp (argv[1], "pwm"    ) == 0) doPwm       (argc, argv);
   else if (strcasecmp (argv[1], "awrite" ) == 0) doAwrite    (argc, argv);

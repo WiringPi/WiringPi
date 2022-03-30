@@ -254,6 +254,11 @@ extern void pwmSetClock         (int divisor);
 // Only works on certain pins.
 extern void gpioClockSet        (int pin, int freq);
 
+// Read all 32 bits in a bank
+// BCM GPIOs  0..31 (Bank 0)
+// BCM GPIOs 32..63 (Bank 1)
+extern uint32_t digitalReadBank(int bank);
+
 // Read/Write 8-bit data on 8 consecutive WiringPi pins:
 // WPi:  0,  1,  2,  3,  4,  5,  6, 7
 // BCM: 17, 18, 27, 22, 23, 24, 25, 4 on a Pi v1 rev 3 onwards or B+, 2, 3, zero
@@ -274,8 +279,8 @@ extern void piUnlock            (int key);
 // Scheduling priority
 extern int piHiPri (const int pri);
 
-extern void         delay             (unsigned int howLong); // milliseconds
-extern void         delayMicroseconds (unsigned int howLong);
+extern void         delay             (unsigned int milliseconds);
+extern void         delayMicroseconds (unsigned int microseconds);
 // These report the amount of time passed since wiringPiSetup* was called.
 extern unsigned int millis            (void);
 extern unsigned int micros            (void);

@@ -483,10 +483,11 @@ static uint8_t gpioToGPCLR[] =
 
 // gpioToGPLEV:
 // (Word) offset to the GPIO Input level registers for each GPIO pin
+// This will handle banks 0 and 1 of GPIOs
 static uint8_t gpioToGPLEV[] =
 {
-  13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
-  14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,
+  13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13, // bank 0
+  14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14, // bank 1
 };
 
 
@@ -1503,7 +1504,7 @@ int digitalRead (int pin)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return LOW;
 
-    if ((*(gpio + gpioToGPLEV[pin]) & (1 << (pin & 31))) != 0)
+    if ((*(gpio + gpioToGPLEV[pin]) & (1 << (pin & 0x1F))) != 0)
       return HIGH;
     else
       return LOW;
@@ -1514,6 +1515,21 @@ int digitalRead (int pin)
       return LOW;
     return node->digitalRead (node, pin);
   }
+}
+
+/*
+ * digitalReadBank:
+ *  Read all 32 bits in a bank, returning a 32-bit unsigned int.
+ *  This only works in BCM GPIO pin numbering mode.
+ *********************************************************************************
+ */
+uint32_t digitalReadBank(int bank)
+{
+    if (bank > 1)
+    {
+        return 0;
+    }
+    return (uint32_t)*(gpio + gpioToGPLEV[bank * 32]);
 }
 
 
@@ -1930,10 +1946,12 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
   isrFunctions[pin] = function;
 
   pthread_mutex_lock (&pinMutex);
-    pinPass = pin;
-    pthread_create (&threadId, NULL, interruptHandler, NULL);
-    while (pinPass != -1)
-      delay (1);
+  pinPass = pin;
+  pthread_create (&threadId, NULL, interruptHandler, NULL);
+  while (pinPass != -1)
+  {
+    delay (1);
+  }
   pthread_mutex_unlock (&pinMutex);
 
   return 0;
@@ -1961,23 +1979,26 @@ static void initialiseEpoch (void)
  *  Wait for some number of milliseconds
  *********************************************************************************
  */
-void delay (unsigned int howLong)
+void delay (unsigned int milliseconds)
 {
+#if 0
   struct timespec sleeper, dummy;
 
   sleeper.tv_sec  = (time_t)(howLong / 1000);
   sleeper.tv_nsec = (long)(howLong % 1000) * 1000000;
 
   nanosleep (&sleeper, &dummy);
+#else
+  usleep(milliseconds * 1000);
+#endif
 }
 
 
 /*
  * delayMicroseconds:
- *  This is somewhat intersting. It seems that on the Pi, a single call
- *  to nanosleep takes some 80 to 130 microseconds anyway, so while
- *  obeying the standards (may take longer), it's not always what we
- *  want!
+ *  It seems that a single call to nanosleep takes 80 to 130
+ *  microseconds anyway, so while obeying the standards (may take longer),
+ *  it's not optimal.
  *
  *  So what I'll do now is if the delay is less than 100uS we'll do it
  *  in a hard loop, watching a built-in counter on the ARM chip. This is
@@ -1989,35 +2010,46 @@ void delay (unsigned int howLong)
  *      to use gettimeofday () and poll on that instead...
  *********************************************************************************
  */
-void delayMicrosecondsHard (unsigned int howLong)
+void delayMicrosecondsHard (unsigned int microseconds)
 {
   struct timeval tNow, tLong, tEnd;
 
   gettimeofday (&tNow, NULL);
-  tLong.tv_sec  = howLong / 1000000;
-  tLong.tv_usec = howLong % 1000000;
+  tLong.tv_sec  = microseconds / 1000000;
+  tLong.tv_usec = microseconds % 1000000;
   timeradd (&tNow, &tLong, &tEnd);
 
   while (timercmp (&tNow, &tEnd, <))
     gettimeofday (&tNow, NULL);
 }
 
-void delayMicroseconds (unsigned int howLong)
+void delayMicroseconds (unsigned int microseconds)
 {
+#if 0
   struct timespec sleeper;
-  unsigned int uSecs = howLong % 1000000;
-  unsigned int wSecs = howLong / 1000000;
+  unsigned int uSecs = microseconds % 1000000;
+  unsigned int wSecs = microseconds / 1000000;
 
-  if (howLong ==   0)
+  if (microseconds ==   0)
     return;
-  else if (howLong  < 100)
-    delayMicrosecondsHard (howLong);
+  else if (microseconds  < 100)
+    delayMicrosecondsHard (microseconds);
   else
   {
     sleeper.tv_sec  = wSecs;
     sleeper.tv_nsec = (long)(uSecs * 1000L);
     nanosleep (&sleeper, NULL);
   }
+#else
+  if (microseconds ==   0)
+    return;
+  else if (microseconds  < 100)
+    delayMicrosecondsHard (microseconds);
+  else
+  {
+    usleep(microseconds);
+  }
+#endif
 }
 
 
