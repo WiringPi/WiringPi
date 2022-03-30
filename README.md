@@ -31,6 +31,7 @@ Usage: gpio -v                Show version info
                              If none specified, BCM GPIO numbering is used by default.
       [-x extension:params][[ -x ...]] ...
        gpio <mode/read/write/aread/awritewb/pwm/pwmTone/clock> ...
+       gpio bank <bank>
        gpio <toggle/blink> <pin>
        gpio readall/allreadall
        gpio unexportall/exports
