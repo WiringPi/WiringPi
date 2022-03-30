@@ -499,7 +499,7 @@ void doExport (int argc, char *argv[])
  *	to exit the program. Crude but effective.
  *********************************************************************************
  */
-static void wfi (int pin)
+static void wfi (UNUSED int pin)
 {
   exit (EXIT_SUCCESS);
 }

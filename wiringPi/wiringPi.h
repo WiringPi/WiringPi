@@ -34,6 +34,7 @@
 
 // GCC warning suppressor - don't warn about unused parameters (-Wunused-parameter)
 #define UNU __attribute__((unused))
+#define UNUSED __attribute__((unused))
 
 // Mask for the bottom 64 pins which belong to the Raspberry Pi
 //    The others are available for the other devices
