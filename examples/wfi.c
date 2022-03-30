@@ -96,7 +96,7 @@ PI_THREAD (waitForIt)
 // Wait for key to be released
 
       while (digitalRead (BUTTON_PIN) == LOW)
-	delay (1) ;
+        delayMs (1) ;
 
       debounceTime = millis () + DEBOUNCE_TIME ;
     }
@@ -151,9 +151,9 @@ int main (void)
     while (myCounter == lastCounter)
     {
       piLock (COUNT_KEY) ;
-	myCounter = globalCounter ;
+      myCounter = globalCounter ;
       piUnlock (COUNT_KEY) ;
-      delay (500) ;
+      delayMs(500) ;
     }
 
     printf (" Done. myCounter: %5d\n", myCounter) ;

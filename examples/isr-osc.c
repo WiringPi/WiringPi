@@ -125,13 +125,13 @@ int main (void)
 
     while (!terminate_process && (myCounter == globalCounter))
     {
-      delay (250);
+      delayMs(250);
     }
 
     printf ("Done. counter: %2d: %2d\n", globalCounter, globalCounter - myCounter);
 
     digitalWrite (OUT_PIN, 1);
-    delay (500);
+    delayMs(500);
     digitalWrite (OUT_PIN, 0);
 
     myCounter   = globalCounter;

@@ -281,9 +281,13 @@ extern int piHiPri (const int pri);
 
 extern void         delay             (unsigned int milliseconds);
 extern void         delayMicroseconds (unsigned int microseconds);
+// Please use these for code that's easier to comprehend:
+#define delayMs(ms) delay(ms)
+#define delayUs(us) delayMicroseconds(us)
+
 // These report the amount of time passed since wiringPiSetup* was called.
-extern unsigned int millis            (void);
-extern unsigned int micros            (void);
+extern unsigned int millis(void);
+extern unsigned int micros(void);
 
 #ifdef __cplusplus
 }

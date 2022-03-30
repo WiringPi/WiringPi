@@ -1950,7 +1950,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
   pthread_create (&threadId, NULL, interruptHandler, NULL);
   while (pinPass != -1)
   {
-    delay (1);
+    delayMs(1);
   }
   pthread_mutex_unlock (&pinMutex);
 

@@ -193,7 +193,7 @@ int main (int argc, char *argv [])
 
     now = time (NULL) ;
     while (time (NULL) == now)
-      delay (10) ;
+      delayMs(10) ;
   }
   
 

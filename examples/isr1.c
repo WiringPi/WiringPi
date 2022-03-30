@@ -42,8 +42,8 @@
 //**********************************************************************************************************************
 
 // What GPIO input are we using?
-//	This is a wiringPi pin number
-#define	BUTTON_PIN	3
+// This is a wiringPi pin number
+#define	BUTTON_PIN 3
 
 // LED Pin - wiringPi pin 0 is BCM_GPIO 17.
 #define LED 2
@@ -117,7 +117,7 @@ int main(void) {
     fflush(stdout);
 
     pthread_mutex_lock( &smb_mutex );
-    delay(50);
+    delayMs(50);
     isr_state = 0;
 
     button_state = digitalRead(BUTTON_PIN);

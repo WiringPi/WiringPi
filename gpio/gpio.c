@@ -532,7 +532,7 @@ void doWfi (int argc, char *argv[])
   }
 
   for (;;)
-    delay (9999);
+    delayMs(9999);
 }
 
 
@@ -1020,7 +1020,7 @@ void doBlink (int argc, char *argv[])
   for (;;)
   {
     digitalWrite (pin, !digitalRead (pin));
-    delay (500);
+    delayMs(500);
   }
 
 }

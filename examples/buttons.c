@@ -54,7 +54,7 @@ void scanButton (int button)
     // Wait for release
     while (digitalRead (button) == LOW)
     {
-        delay (1);
+        delayMs(1);
     }
     int dur = micros() - start;
 
@@ -95,7 +95,7 @@ int main (void)
         {
             scanButton (buttons[i]);
         }
-        delay (1);
+        delayMs(1);
     }
 
     return EXIT_SUCCESS;

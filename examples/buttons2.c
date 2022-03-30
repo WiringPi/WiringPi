@@ -89,7 +89,7 @@ int main (void)
                 }
             }
 
-            delay (1);
+            delayMs(1);
 
             // If pushed, look for release
             if (buttonVal[i] == 1)

@@ -52,11 +52,11 @@ int main (void)
       digitalWrite (LED1, LOW) ;
       digitalWrite (LED2, HIGH) ;
       while (digitalRead (BUTTON) == HIGH)
-	delay (1) ;
+      delayMs(1) ;
       digitalWrite (LED1, HIGH) ;
       digitalWrite (LED2, LOW) ;
     }
-    delay (1) ;
+    delayMs(1) ;
   }
 
   return 0 ;
