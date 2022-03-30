@@ -73,7 +73,7 @@ static void Signal_handler(int sig);
  *********************************************************************************
  */
 
-void myInterrupt (void)
+void myInterrupt (int pin)
 {
   digitalWrite (OUT_PIN, 1) ;
   ++globalCounter;

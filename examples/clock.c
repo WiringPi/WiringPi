@@ -78,8 +78,7 @@ void drawClockHands (void)
   if (h > 12)
     h -= 12 ;
 
-// Hour hand
-
+  // Hour hand
   angle = h * 30 + m * 0.5 ;
   x0 = sin (rads (angle)) * (clockRadius * 0.75) ;
   y0 = cos (rads (angle)) * (clockRadius * 0.75) ;
@@ -91,8 +90,7 @@ void drawClockHands (void)
     lcd128x64lineTo (x0, y0, 1) ;
   }
 
-// Minute hand
-
+  // Minute hand
   angle = m * 6 ;
   x0 = sin (rads (angle)) * (clockRadius * 0.9) ;
   y0 = cos (rads (angle)) * (clockRadius * 0.9) ;
@@ -104,8 +102,7 @@ void drawClockHands (void)
     lcd128x64lineTo (x0, y0, 1) ;
   }
 
-// Second hand
-
+  // Second hand
   angle = s * 6 ;
   x0 = sin (rads (angle)) * (clockRadius * 0.2) ;
   y0 = cos (rads (angle)) * (clockRadius * 0.2) ;
@@ -115,12 +112,11 @@ void drawClockHands (void)
   lcd128x64circle (0, 0, clockRadius * 0.1,  0, 1) ;
   lcd128x64circle (0, 0, clockRadius * 0.05, 1, 1) ;
 
-// Text:
-
+  // Text:
   sprintf (text, "%02d:%02d:%02d", h24, m, s) ;
   lcd128x64puts (32, 24, text, 0, 1) ;
 
-  sprintf (text, "%2d/%2d/%2d", now->tm_mday, now->tm_mon + 1, now->tm_year - 100) ;
+  sprintf (text, "%2d/%2d/%2d", (uint8_t)now->tm_mday, (uint8_t)now->tm_mon + 1, (uint8_t)(now->tm_year - 100)) ;
   lcd128x64puts (32, -23, text, 0, 1) ;
 }
 
@@ -133,16 +129,14 @@ void drawClockFace (void)
   lcd128x64circle (0,0, clockRadius, 1, TRUE) ;
   lcd128x64circle (0,0, clockRadius - thickness, 0, TRUE) ;
 
-// The four big indicators for 12,15,30 and 45
-
+  // The four big indicators for 12,15,30 and 45
   lcd128x64rectangle (- 3,  clockRadius - barLen, 3,  clockRadius,     1, TRUE) ;	// 12
   lcd128x64rectangle (clockRadius - barLen, 3,  clockRadius, -3, 1, TRUE) ;	// 3
   lcd128x64rectangle (- 3, -clockRadius + barLen, 3, -clockRadius, 1, TRUE) ;	// 6
   lcd128x64rectangle (-clockRadius + barLen, 3, -clockRadius, -3, 1, TRUE) ;	// 9
 
 
-// Smaller 5 and 1 minute ticks
-
+  // Smaller 5 and 1 minute ticks
   for (m = 0 ; m < 60 ; ++m)
   {
     px1 = sin (rads (m * 6)) * clockRadius ;
@@ -167,15 +161,11 @@ void setup (void)
   lcd128x64setOrigin (32, 32) ;
 }
 
-
-
-
 /*
  ***********************************************************************
  * The main program
  ***********************************************************************
  */
-
 int main (int argc, char *argv [])
 {
   time_t now ;
@@ -195,7 +185,6 @@ int main (int argc, char *argv [])
     while (time (NULL) == now)
       delayMs(10) ;
   }
-  
 
   return 0 ;
 }

@@ -68,7 +68,7 @@ static void Signal_handler(int sig);
  *********************************************************************************
  */
 
-void myInterrupt(void) {
+void myInterrupt(int pin) {
   // Only report button release on actual button release.
   // This interrupt sometimes fires for the wrong edge!
 

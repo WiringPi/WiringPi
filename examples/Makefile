@@ -38,23 +38,55 @@ LDLIBS    = -lwiringPi -lwiringPiDev -lpthread -lm -lcrypt -lrt
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	blink.c blink8.c blink12.c					\
-		blink12drcs.c							\
-		pwm.c								\
-		speed.c wfi.c isr.c isr-osc.c					\
-		lcd.c lcd-adafruit.c clock.c					\
-		nes.c								\
-		softPwm.c softTone.c 						\
-		delayTest.c serialRead.c serialTest.c okLed.c ds1302.c		\
-		lowPower.c							\
-		max31855.c							\
-		rht03.c \
-		servo.c \
-		isr1.c \
-		test1.c \
-		test2.c \
-		buttons.c buttons2.c \
-		getBanks.c
+#SRC	=	blink.c blink8.c blink12.c					\
+#		blink12drcs.c							\
+#		pwm.c								\
+#		speed.c wfi.c isr.c isr-osc.c					\
+#		lcd.c lcd-adafruit.c clock.c					\
+#		nes.c								\
+#		softPwm.c softTone.c 						\
+#		delayTest.c serialRead.c serialTest.c okLed.c ds1302.c		\
+#		lowPower.c							\
+#		max31855.c							\
+#		rht03.c \
+#		servo.c \
+#		isr1.c \
+#		buttons.c buttons2.c \
+#		getBanks.c
+
+SRC	= \
+  blink12.c \
+  blink12drcs.c \
+  blink6drcs.c \
+  blink8.c \
+  blink8-drcn.c \
+  blink.c \
+  blink-thread.c \
+  buttons2.c \
+  buttons.c \
+  clock.c \
+  delayTest.c \
+  ds1302.c \
+  getBanks.c \
+  isr1.c \
+  isr.c \
+  isr-osc.c \
+  lcd-adafruit.c \
+  lcd.c \
+  lowPower.c \
+  max31855.c \
+  nes.c \
+  okLed.c \
+  pwm.c \
+  rht03.c \
+  serialRead.c \
+  serialTest.c \
+  servo.c \
+  softPwm.c \
+  softTone.c \
+  speed.c \
+  spiSpeed.c \
+  wfi.c \
 
 OBJ	=	$(SRC:.c=.o)
 

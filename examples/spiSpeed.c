@@ -36,8 +36,10 @@
 #include <wiringPi.h>
 #include <wiringPiSPI.h>
 
+#ifndef TRUE
 #define	TRUE	(1==1)
 #define	FALSE	(!TRUE)
+#endif
 
 #define	SPI_CHAN		0
 #define	NUM_TIMES		100

@@ -58,14 +58,14 @@ static void Signal_handler(int sig);
  *********************************************************************************
  */
 
-void myInterrupt0 (void) { ++globalCounter [0] ; }
-void myInterrupt1 (void) { ++globalCounter [1] ; }
-void myInterrupt2 (void) { ++globalCounter [2] ; }
-void myInterrupt3 (void) { ++globalCounter [3] ; }
-void myInterrupt4 (void) { ++globalCounter [4] ; }
-void myInterrupt5 (void) { ++globalCounter [5] ; }
-void myInterrupt6 (void) { ++globalCounter [6] ; }
-void myInterrupt7 (void) { ++globalCounter [7] ; }
+void myInterrupt0 (int pin) { ++globalCounter [0] ; }
+void myInterrupt1 (int pin) { ++globalCounter [1] ; }
+void myInterrupt2 (int pin) { ++globalCounter [2] ; }
+void myInterrupt3 (int pin) { ++globalCounter [3] ; }
+void myInterrupt4 (int pin) { ++globalCounter [4] ; }
+void myInterrupt5 (int pin) { ++globalCounter [5] ; }
+void myInterrupt6 (int pin) { ++globalCounter [6] ; }
+void myInterrupt7 (int pin) { ++globalCounter [7] ; }
 
 
 /*

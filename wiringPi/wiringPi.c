@@ -315,7 +315,7 @@ static int sysFds[64] =
 };
 
 // ISR Data
-static void (*isrFunctions[64])(void);
+static void (*isrFunctions[64])(int pin);
 
 
 // Doing it the Arduino way with lookup tables...
@@ -1851,8 +1851,12 @@ static void *interruptHandler (UNU void *arg)
   pinPass = -1;
 
   for (;;)
+  {
     if (waitForInterrupt (myPin, -1) > 0)
-      isrFunctions[myPin] ();
+    {
+      isrFunctions[myPin](myPin);
+    }
+  }
 
   return NULL;
 }
@@ -1866,7 +1870,7 @@ static void *interruptHandler (UNU void *arg)
  *  Returns 0 on success, -1 on failure (or program exits if !wiringPiReturnCodes)
  *********************************************************************************
  */
-int wiringPiISR (int pin, int mode, void (*function)(void))
+int wiringPiISR (int pin, int mode, void (*function)(int))
 {
   pthread_t threadId;
   const char *modeS;

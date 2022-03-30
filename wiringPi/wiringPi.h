@@ -269,7 +269,7 @@ extern void digitalWriteByte2   (int value);
 
 // Interrupts (Also Pi hardware specific)
 extern int  waitForInterrupt    (int pin, int mS); // Must be in SYS mode (wiringPiSetupSys was called for setup)
-extern int  wiringPiISR         (int pin, int mode, void (*function)(void)); // Uses SYS mode, and also waitForInterrupt
+extern int  wiringPiISR         (int pin, int mode, void (*function)(int)); // Uses SYS mode, and also waitForInterrupt
 
 // Threads
 extern int  piThreadCreate      (void *(*fn)(void *));

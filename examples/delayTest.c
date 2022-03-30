@@ -37,7 +37,7 @@ int main()
   int t ;
   int max, min ;
   int del ;
-  int underRuns, overRuns, exactRuns, bogusRuns, total ;
+  int underRuns, overRuns, exactRuns, total;
   int descheds ;
 
 
