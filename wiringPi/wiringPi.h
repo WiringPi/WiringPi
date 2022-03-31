@@ -37,9 +37,10 @@
 #define UNUSED __attribute__((unused))
 
 // Mask for the bottom 64 pins which belong to the Raspberry Pi
-//    The others are available for the other devices
+// The others are available for the other devices
 // @TODO Replace these checks with a check for (pin < 64)
 #define PI_GPIO_MASK (0xFFFFFFC0)
+#define MAX_ONBOARD_PINS 64
 
 
 // wiringPi modes
@@ -194,6 +195,7 @@ extern volatile unsigned int *_wiringPiPads;
 extern volatile unsigned int *_wiringPiTimer;
 extern volatile unsigned int *_wiringPiTimerIrqRaw;
 
+// ----------------------------------------------------------------------------
 
 // Function prototypes
 //    c++ wrappers thanks to a comment by Nick Lott
@@ -202,10 +204,12 @@ extern volatile unsigned int *_wiringPiTimerIrqRaw;
 extern "C" {
 #endif
 
-// Data
+// ----------------------------------------------------------------------------
 
 // Internal
 extern int wiringPiFailure (int fatal, const char *message, ...);
+
+// ----------------------------------------------------------------------------
 
 // Core wiringPi functions
 extern struct wiringPiNodeStruct *wiringPiFindNode (int pin);
@@ -233,7 +237,7 @@ extern int  digitalRead         (int pin);
 extern void digitalWrite        (int pin, int value);
 
 // Analog read/write is only for an external hardware module,
-// therefore pin must be >= 64
+// therefore pin must be >= MAX_ONBOARD_PINS
 extern int  analogRead          (int pin);
 extern void analogWrite         (int pin, int value);
 
@@ -268,10 +272,24 @@ extern unsigned int digitalReadByte2(void);
 extern void digitalWriteByte    (int value);
 extern void digitalWriteByte2   (int value);
 
+// ----------------------------------------------------------------------------
 // Interrupts (Also Pi hardware specific)
-extern int  waitForInterrupt    (int pin, int mS); // Must be in SYS mode (wiringPiSetupSys was called for setup)
-extern int  wiringPiISR         (int pin, int mode, void (*function)(int)); // Uses SYS mode, and also waitForInterrupt
 
+// Set up for a callback to be called when the specified pin changes according to mode.
+// mode = INT_EDGE_SETUP, INT_EDGE_FALLING, INT_EDGE_RISING, INT_EDGE_BOTH
+// Uses SYS mode, and also waitForInterrupt
+extern int  wiringPiISR         (int pin, int mode, void (*function)(int));
+
+// Same as wiringPiISR above, but takes a list of pins to wait for.
+// Note that the mode applies to all the specified pins.
+extern int  wiringPiISRmulti    (int pins[], int n_pins, int mode, void (*function)(int));
+
+// Internal-only (unless you know how to set up /sys/class/gpio)
+// Wait for "interrupt" on a GPIO pin.
+// Must be in SYS mode (wiringPiSetupSys was called for setup)
+extern int  waitForInterrupt    (int pin, int mS);
+
+// ----------------------------------------------------------------------------
 // Threads
 extern int  piThreadCreate      (void *(*fn)(void *));
 extern void piLock              (int key);
@@ -279,6 +297,8 @@ extern void piUnlock            (int key);
 
 // Scheduling priority
 extern int piHiPri (const int pri);
+
+// ----------------------------------------------------------------------------
 
 extern void         delay             (unsigned int milliseconds);
 extern void         delayMicroseconds (unsigned int microseconds);

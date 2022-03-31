@@ -293,7 +293,6 @@ static uint64_t epochMilli, epochMicro;
 
 // Misc
 static int wiringPiMode = WPI_MODE_UNINITIALISED;
-static volatile int    pinPass = -1;
 static pthread_mutex_t pinMutex;
 
 // Debugging & Return codes
@@ -306,7 +305,7 @@ int wiringPiTryGpioMem  = FALSE;
 
 // sysFds:
 // Map a file descriptor from the /sys/class/gpio/gpioX/value
-static int sysFds[64] =
+static int sysFds[MAX_ONBOARD_PINS] =
 {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -315,7 +314,7 @@ static int sysFds[64] =
 };
 
 // ISR Data
-static void (*isrFunctions[64])(int pin);
+static void (*isrFunctions[MAX_ONBOARD_PINS])(int pin);
 
 
 // Doing it the Arduino way with lookup tables...
@@ -330,7 +329,7 @@ static int *pinToGpio;
 // Index: WiringPi pin #
 // Value @ index: BCM GPIO #
 // Revision 1, 1.1:
-static int pinToGpioR1[64] =
+static int pinToGpioR1[MAX_ONBOARD_PINS] =
 {
   // From the Original Wiki
   17, 18, 21, 22, 23, 24, 25, 4, // GPIO 0 through 7 : wpi  0 -  7
@@ -347,7 +346,7 @@ static int pinToGpioR1[64] =
 // Index: WiringPi pin #
 // Value @ index: BCM GPIO #
 // Revisions 2...:
-static int pinToGpioR2[64] =
+static int pinToGpioR2[MAX_ONBOARD_PINS] =
 {
   // From the Original Wiki
   17, 18, 27, 22, 23, 24, 25, 4, // GPIO 0 through 7 : wpi  0 -  7
@@ -372,7 +371,7 @@ static int pinToGpioR2[64] =
 static int *physToGpio;
 // Index: Physical pin #
 // Value @ index: BCM GPIO #
-static int physToGpioR1[64] =
+static int physToGpioR1[MAX_ONBOARD_PINS] =
 {
   -1,     // 0
   -1, -1, // 1, 2
@@ -396,7 +395,7 @@ static int physToGpioR1[64] =
 
 // Index: Physical pin #
 // Value @ index: BCM GPIO #
-static int physToGpioR2[64] =
+static int physToGpioR2[MAX_ONBOARD_PINS] =
 {
   -1,     // 0
   -1, -1, // 1, 2
@@ -1272,9 +1271,11 @@ struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
   int    pin;
   struct wiringPiNodeStruct *node;
 
-  // Minimum pin base is 64
-  if (pinBase < 64)
-    (void)wiringPiFailure (WPI_FATAL, "wiringPiNewNode: pinBase of %d is < 64\n", pinBase);
+  // Minimum pin base is MAX_ONBOARD_PINS
+  if (pinBase < MAX_ONBOARD_PINS)
+  {
+    (void)wiringPiFailure (WPI_FATAL, "wiringPiNewNode: pinBase of %d is not < %d\n", pinBase, MAX_ONBOARD_PINS);
+  }
 
   // Check all pins in-case there is overlap:
   for (pin = pinBase; pin < (pinBase + numPins); ++pin)
@@ -1322,7 +1323,7 @@ void pinModeAlt (int pin, int mode)
 
   setupCheck ("pinModeAlt");
 
-  if ((pin & PI_GPIO_MASK) == 0)		// On-board pin
+  if ((pin & PI_GPIO_MASK) == 0) // On-board pin
   {
     if      (wiringPiMode == WPI_MODE_PINS)
       pin = pinToGpio[pin];
@@ -1352,7 +1353,7 @@ void pinMode (int pin, int mode)
 
   setupCheck ("pinMode");
 
-  if ((pin & PI_GPIO_MASK) == 0)		// On-board pin
+  if ((pin & PI_GPIO_MASK) == 0) // On-board pin
   {
     if      (wiringPiMode == WPI_MODE_PINS)
       pin = pinToGpio[pin];
@@ -1428,7 +1429,7 @@ void pullUpDnControl (int pin, int pud)
 
   setupCheck ("pullUpDnControl");
 
-  if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
+  if ((pin & PI_GPIO_MASK) == 0) // On-Board Pin
   {
     if      (wiringPiMode == WPI_MODE_PINS)
       pin = pinToGpio[pin];
@@ -1486,9 +1487,9 @@ int digitalRead (int pin)
 {
   char c;
   struct wiringPiNodeStruct *node = wiringPiNodes;
-  if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
+  if ((pin & PI_GPIO_MASK) == 0) // On-Board Pin
   {
-    if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
+    if (wiringPiMode == WPI_MODE_GPIO_SYS) // Sys mode
     {
       if (sysFds[pin] == -1)
         return LOW;
@@ -1542,9 +1543,9 @@ void digitalWrite (int pin, int value)
 {
   struct wiringPiNodeStruct *node = wiringPiNodes;
 
-  if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
+  if ((pin & PI_GPIO_MASK) == 0) // On-Board Pin
   {
-    if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
+    if (wiringPiMode == WPI_MODE_GPIO_SYS) // Sys mode
     {
       if (sysFds[pin] != -1)
       {
@@ -1586,7 +1587,7 @@ void pwmWrite (int pin, int value)
 
   setupCheck ("pwmWrite");
 
-  if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
+  if ((pin & PI_GPIO_MASK) == 0) // On-Board Pin
   {
     if      (wiringPiMode == WPI_MODE_PINS)
       pin = pinToGpio[pin];
@@ -1841,14 +1842,11 @@ int waitForInterrupt (int pin, int mS)
  *  fires.
  *********************************************************************************
  */
-static void *interruptHandler (UNUSED void *arg)
+static void *interruptHandler (void *arg)
 {
-  int myPin;
+  int myPin = (int)arg;
 
   (void)piHiPri (55);	// Only effective if we run as root
-
-  myPin   = pinPass;
-  pinPass = -1;
 
   for (;;)
   {
@@ -1865,8 +1863,8 @@ static void *interruptHandler (UNUSED void *arg)
 /*
  * wiringPiISR:
  *  Pi Specific.
- *  Take the details and create an interrupt handler that will do a call-
- *  back to the user supplied function.
+ *  Take the details and create an interrupt handler that will do a callback
+ *  to the user-supplied function.
  *  Returns 0 on success, -1 on failure (or program exits if !wiringPiReturnCodes)
  *********************************************************************************
  */
@@ -1877,21 +1875,31 @@ int wiringPiISR (int pin, int mode, void (*function)(int))
   char  fName[64];
   char  pinS[8];
   pid_t pid;
-  int   count, i;
+  int   count;
   char  c;
   int   bcmGpioPin;
 
   if ((pin < 0) || (pin > 63))
+  {
     return wiringPiFailure (WPI_FATAL, "wiringPiISR: pin must be 0-63 (%d)\n", pin);
+  }
 
   if      (wiringPiMode == WPI_MODE_UNINITIALISED)
+  {
     return wiringPiFailure (WPI_FATAL, "wiringPiISR: wiringPi has not been initialised. Unable to continue.\n");
+  }
   else if (wiringPiMode == WPI_MODE_PINS)
+  {
     bcmGpioPin = pinToGpio[pin];
+  }
   else if (wiringPiMode == WPI_MODE_PHYS)
+  {
     bcmGpioPin = physToGpio[pin];
+  }
   else
+  {
     bcmGpioPin = pin;
+  }
 
   // Now export the pin and set the right edge
   // We're going to use the gpio program to do this, so it assumes
@@ -1901,16 +1909,24 @@ int wiringPiISR (int pin, int mode, void (*function)(int))
   if (mode != INT_EDGE_SETUP)
   {
     if      (mode == INT_EDGE_FALLING)
+    {
       modeS = "falling";
+    }
     else if (mode == INT_EDGE_RISING)
+    {
       modeS = "rising";
+    }
     else
+    {
       modeS = "both";
+    }
 
     sprintf (pinS, "%d", bcmGpioPin);
 
-    if ((pid = fork ()) < 0)	// Fail
+    if ((pid = fork ()) < 0) // Fail
+    {
       return wiringPiFailure (WPI_FATAL, "wiringPiISR: fork failed: %s\n", strerror (errno));
+    }
 
     if (pid == 0)	// Child, execl (doesn't return if successful)
     {
@@ -1928,7 +1944,9 @@ int wiringPiISR (int pin, int mode, void (*function)(int))
         return wiringPiFailure (WPI_FATAL, "wiringPiISR: Can't find gpio program\n");
     }
     else		// Parent, wait for child's execl call to finish
+    {
       waitpid (pid, NULL, 0);
+    }
   }
   // Parent continues...
 
@@ -1943,24 +1961,158 @@ int wiringPiISR (int pin, int mode, void (*function)(int))
 
   // Clear any initial pending interrupt
   ioctl (sysFds[bcmGpioPin], FIONREAD, &count);
-  for (i = 0; i < count; ++i)
+  for (int i = 0; i < count; ++i)
+  {
     read (sysFds[bcmGpioPin], &c, 1);
+  }
 
   // Save caller's callback function
-  isrFunctions[pin] = function;
+  isrFunctions[bcmGpioPin] = function;
 
   pthread_mutex_lock (&pinMutex);
-  pinPass = pin;
-  pthread_create (&threadId, NULL, interruptHandler, NULL);
-  while (pinPass != -1)
-  {
-    delayMs(1);
-  }
+  pthread_create (&threadId, NULL, interruptHandler, (void *)bcmGpioPin);
   pthread_mutex_unlock (&pinMutex);
 
   return 0;
 }
 
+/*
+ * wiringPiISRmulti:
+ *  Pi Specific.
+ *  Create an interrupt handler that will do a callback to the user-supplied function
+ *  when any of the specified pins changes according to mode.
+ *  Returns 0 on success, -1 on failure (or program exits if !wiringPiReturnCodes)
+ *********************************************************************************
+ */
+int wiringPiISRmulti (int pins[], int n_pins, int mode, void (*function)(int))
+{
+  pthread_t threadId;
+  const char *modeS;
+  char  fName[64];
+  char  pinS[8];
+  pid_t pid;
+  int   count;
+  char  c;
+  int   bcmGpioPins[MAX_ONBOARD_PINS];
+
+  if (n_pins < 1)
+  {
+    return wiringPiFailure (WPI_FATAL, "wiringPiISRmulti: Must specify at least one pin.\n");
+  }
+
+  // Translate pin list to list of BCM GPIO pins
+  for (int i=0; i < n_pins; ++i)
+  {
+    int pin = pins[i];
+
+    if ((pin < 0) || (pin > 63))
+    {
+        return wiringPiFailure (WPI_FATAL, "wiringPiISRmulti: pin must be 0-63 (%d)\n", pin);
+    }
+
+    if      (wiringPiMode == WPI_MODE_UNINITIALISED)
+    {
+        return wiringPiFailure (WPI_FATAL, "wiringPiISRmulti: wiringPi has not been initialised. Unable to continue.\n");
+    }
+    else if (wiringPiMode == WPI_MODE_PINS)
+    {
+        bcmGpioPins[i] = pinToGpio[pin];
+    }
+    else if (wiringPiMode == WPI_MODE_PHYS)
+    {
+        bcmGpioPins[i] = physToGpio[pin];
+    }
+    else
+    {
+        bcmGpioPins[i] = pin;
+    }
+  }
+
+  // Now export the pins and set the appropriate edge.
+  // We're going to use the gpio program to do this, so it assumes
+  // a full installation of wiringPi. It's a bit 'clunky', but it
+  // is a way that will work when we're running in "Sys" mode, as
+  // a non-root user. (without sudo)
+  if (mode != INT_EDGE_SETUP)
+  {
+    if      (mode == INT_EDGE_FALLING)
+    {
+      modeS = "falling";
+    }
+    else if (mode == INT_EDGE_RISING)
+    {
+      modeS = "rising";
+    }
+    else
+    {
+      modeS = "both";
+    }
+
+    // Export each pin in the list
+    for (int i=0; i < n_pins; ++i)
+    {
+      sprintf (pinS, "%d", bcmGpioPins[i]);
+
+      if ((pid = fork ()) < 0) // Fail
+      {
+        return wiringPiFailure (WPI_FATAL, "wiringPiISRmulti: fork failed: %s\n", strerror (errno));
+      }
+  
+      if (pid == 0)	// Child, execl (doesn't return if successful)
+      {
+        if (access ("/usr/local/bin/gpio", X_OK) == 0)
+        {
+          execl ("/usr/local/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL);
+          return wiringPiFailure (WPI_FATAL, "wiringPiISRmulti: execl failed: %s\n", strerror (errno));
+        }
+        else if (access ("/usr/bin/gpio", X_OK) == 0)
+        {
+          execl ("/usr/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL);
+          return wiringPiFailure (WPI_FATAL, "wiringPiISRmulti: execl failed: %s\n", strerror (errno));
+        }
+        else
+          return wiringPiFailure (WPI_FATAL, "wiringPiISRmulti: Can't find gpio program\n");
+      }
+      else // Parent, wait for child's execl call to finish
+      {
+        waitpid (pid, NULL, 0);
+      }
+    } // end for(pin#)
+  } // end if (mode != INT_EDGE_SETUP)
+
+  // Parent continues...
+
+  for (int i=0; i < n_pins; ++i)
+  {
+    int bcmGpioPin = bcmGpioPins[i];
+
+    // Now pre-open the /sys/class node - but it may already be open if
+    // we are in Sys mode...
+    if (sysFds[bcmGpioPin] == -1)
+    {
+      sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin);
+      if ((sysFds[bcmGpioPin] = open (fName, O_RDWR)) < 0)
+        return wiringPiFailure (WPI_FATAL, "wiringPiISRmulti: unable to open %s: %s\n", fName, strerror (errno));
+    }
+
+    // Clear any initial pending interrupt
+    ioctl (sysFds[bcmGpioPin], FIONREAD, &count);
+    for (int i = 0; i < count; ++i)
+    {
+      read (sysFds[bcmGpioPin], &c, 1);
+    }
+
+    // Save caller's callback function
+    isrFunctions[bcmGpioPin] = function;
+
+    // Create a separate 
+    pthread_mutex_lock (&pinMutex);
+    pthread_create (&threadId, NULL, interruptHandler, (void *)bcmGpioPin);
+    pthread_mutex_unlock (&pinMutex);
+  } // end for(pin#)
+
+  return 0;
+}
 
 /*
  * initialiseEpoch:
@@ -2127,6 +2279,8 @@ int wiringPiSetup (void)
 
   wiringPiSetuped = TRUE;
 
+  // ------------------------------------------------------
+
   if (getenv (ENV_DEBUG) != NULL)
   {
     wiringPiDebug = TRUE;
@@ -2142,6 +2296,7 @@ int wiringPiSetup (void)
     printf ("wiringPi: wiringPiSetup called\n");
   }
 
+  // ------------------------------------------------------
   // Get the board ID information. We're not really using the information here,
   // but it will give us information like the GPIO layout scheme (2 variants
   // on the older 26-pin Pi's) and the GPIO peripheral base address.
@@ -2153,9 +2308,15 @@ int wiringPiSetup (void)
   if ((model == PI_MODEL_CM1) ||
       (model == PI_MODEL_CM3) ||
       (model == PI_MODEL_CM3P))
-    wiringPiMode = WPI_MODE_GPIO; // Virtual pin numbers 0 through 16
+  {
+    // Compute modules don't use WiringPi pin mode (virtual pins)
+    wiringPiMode = WPI_MODE_GPIO; // Broadcom GPIO pin numbers
+  }
   else
-    wiringPiMode = WPI_MODE_PINS; // Broadcom GPIO pin numbers
+  {
+    // WiringPi pin mode
+    wiringPiMode = WPI_MODE_PINS; // Virtual pin numbers 0 through 16
+  }
 
   if (piGpioLayout() == 1) // A, B, Rev 1, 1.1 (Oldest boards)
   {
@@ -2168,14 +2329,19 @@ int wiringPiSetup (void)
     physToGpio = physToGpioR2;
   }
 
-  // ...
-
+  // BCM2835: Raspberry Pi 1 Models A, A+, B, B+, the Raspberry Pi Zero, the Raspberry Pi Zero W, and the Raspberry Pi Compute Module 1
+  // BCM2836: Raspberry Pi 2 Model B (essentially identical to BCM2835)
+  // BCM2837: Raspberry Pi 3 Model B, later models of the Raspberry Pi 2 Model B, and the Raspberry Pi Compute Module 3
+  //          (essentially identical to BCM2836)
+  // BCM2837B0: Raspberry Pi 3 Models A+, B+, and the Raspberry Pi Compute Module 3+ (essentially identical to BCM2837)
+  // RP3A0 (BCM2710A1): Raspberry Pi Zero 2 W
+  //        BCM2710A1 = silicon die packaged inside the Broadcom BCM2837 chip which is used on the Raspberry Pi 3
   switch (model)
   {
-    case PI_MODEL_A:    case PI_MODEL_B:
-    case PI_MODEL_AP:   case PI_MODEL_BP:
-    case PI_ALPHA:      case PI_MODEL_CM1:
+    case PI_MODEL_A:    case PI_MODEL_AP:
+    case PI_MODEL_B:    case PI_MODEL_BP:
     case PI_MODEL_ZERO: case PI_MODEL_ZERO_W:
+    case PI_MODEL_CM1:  case PI_ALPHA:
       piGpioBase = GPIO_PERI_BASE_OLD;
       piGpioPupOffset = GPPUD;
       break;
@@ -2183,16 +2349,19 @@ int wiringPiSetup (void)
     case PI_MODEL_4B:
     case PI_MODEL_400:
     case PI_MODEL_CM4:
+      // BCM2711: Raspberry Pi 4 Model B, the Raspberry Pi 400, and the Raspberry Pi Compute Module 4
       piGpioBase = GPIO_PERI_BASE_2711;
       piGpioPupOffset = GPPUPPDN0;
       break;
 
     default:
+      // PI_MODEL_2B PI_MODEL_3AP PI_MODEL_3B PI_MODEL_3BP PI_MODEL_CM3P PI_MODEL_CM3
       piGpioBase = GPIO_PERI_BASE_2835;
       piGpioPupOffset = GPPUD;
       break;
   }
 
+  // ------------------------------------------------------
   // Open the master /dev/ memory control device
   // Device strategy: December 2016:
   // Try /dev/mem. If that fails, then
@@ -2246,6 +2415,7 @@ int wiringPiSetup (void)
   if (timer == MAP_FAILED)
     return wiringPiFailure (WPI_NON_FATAL, "wiringPiSetup: mmap (TIMER) failed: %s\n", strerror (errno));
 
+  // ------------------------------------------------------
   // Set the timer to free-running, 1MHz.
   // 0xF9 is 249, the timer divide is base clock / (divide+1)
   // so base clock is 250MHz / 250 = 1MHz.
@@ -2253,12 +2423,15 @@ int wiringPiSetup (void)
   *(timer + TIMER_PRE_DIV) = 0x00000F9;
   timerIrqRaw = timer + TIMER_IRQ_RAW;
 
+  // ------------------------------------------------------
   // Export the base addresses for any external software that might need them
   _wiringPiGpio  = gpio;
   _wiringPiPwm   = pwm;
   _wiringPiClk   = clk;
   _wiringPiPads  = pads;
   _wiringPiTimer = timer;
+
+  // ------------------------------------------------------
 
   initialiseEpoch ();
 
@@ -2349,7 +2522,7 @@ int wiringPiSetupSys (void)
 
   // Open and scan the directory, looking for exported GPIOs, and pre-open
   // the 'value' interface to speed things up for later
-  for (pin = 0; pin < 64; ++pin)
+  for (pin = 0; pin < MAX_ONBOARD_PINS; ++pin)
   {
     sprintf (fName, "/sys/class/gpio/gpio%d/value", pin);
     sysFds[pin] = open (fName, O_RDWR);

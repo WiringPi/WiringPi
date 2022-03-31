@@ -72,6 +72,7 @@ char *usage = "Usage: gpio -v             Show version info\n"
               "       gpio unexportall/exports\n"
               "       gpio export/edge/unexport ...\n"
               "       gpio wfi <pin> <mode>\n"
+              "       gpio mwfi <pin>[,<pin>...] <mode>\n"
               "       gpio drive <group> <value>\n"
               "       gpio pwm-bal/pwm-ms \n"
               "       gpio pwmr <range> \n"
@@ -499,9 +500,12 @@ void doExport (int argc, char *argv[])
  *	to exit the program. Crude but effective.
  *********************************************************************************
  */
-static void wfi (UNUSED int pin)
+static int nInts = 0;
+static void wfi (int pin)
 {
-  exit (EXIT_SUCCESS);
+  nInts++;
+  printf ("wfi: Interrupt on pin %d; nInts=%d\n", pin, nInts);
+  //exit (EXIT_SUCCESS);
 }
 
 void doWfi (int argc, char *argv[])
@@ -531,8 +535,56 @@ void doWfi (int argc, char *argv[])
     exit (1);
   }
 
-  for (;;)
-    delayMs(9999);
+  nInts = 0;
+  printf("%s: Wait for one interrupt...\n", __FUNCTION__);
+  while (nInts < 1)
+  {
+    delayMs(100);
+  }
+}
+
+void doMWfi (int argc, char *argv[])
+{
+  int pinList[MAX_ONBOARD_PINS];
+  int n_pins = 0;
+  int mode;
+
+  if (argc != 4)
+  {
+    fprintf (stderr, "Usage: %s mwfi pin[,pin...] mode\n", argv[0]);
+    exit (1);
+  }
+
+  // Get list of pins from comma-separated list in argv[2]
+  char *pt;
+  pt = strtok (argv[2],",");
+  while (pt != NULL)
+  {
+      pinList[n_pins++] = atoi(pt);
+      pt = strtok (NULL, ",");
+  }
+
+  if      (strcasecmp (argv[3], "rising")  == 0) mode = INT_EDGE_RISING;
+  else if (strcasecmp (argv[3], "falling") == 0) mode = INT_EDGE_FALLING;
+  else if (strcasecmp (argv[3], "both")    == 0) mode = INT_EDGE_BOTH;
+  else
+  {
+    fprintf (stderr, "%s: wfi: Invalid mode: %s. Should be rising, falling or both\n", argv[1], argv[3]);
+    exit (1);
+  }
+
+  if (wiringPiISRmulti (pinList, n_pins, mode, &wfi) < 0)
+  {
+    fprintf (stderr, "%s: wfi: Unable to setup ISR: %s\n", argv[1], strerror (errno));
+    exit (1);
+  }
+
+  nInts = 0;
+  printf("%s: Wait for %d interrupts...\n", __FUNCTION__, n_pins);
+  while (nInts < n_pins)
+  {
+    delayMs(100);
+  }
 }
 
 
@@ -1429,6 +1481,7 @@ int main (int argc, char *argv[])
   else if (strcasecmp (argv[1], "rbd"      ) == 0) doReadByte   (argc, argv, FALSE);
   else if (strcasecmp (argv[1], "clock"    ) == 0) doClock      (argc, argv);
   else if (strcasecmp (argv[1], "wfi"      ) == 0) doWfi        (argc, argv);
+  else if (strcasecmp (argv[1], "mwfi"     ) == 0) doMWfi       (argc, argv);
   else
   {
     fprintf (stderr, "[FATAL] %s: Unknown command: %s.\n", basename(argv[0]), argv[1]);
