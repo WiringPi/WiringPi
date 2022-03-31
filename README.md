@@ -104,3 +104,9 @@ $ gpio readall
  | BCM | wPi |     Name   | Mode | V | Physical | V | Mode |    Name    | wPi | BCM |
  +-----+-----+------------+------+---+---Pi 4B--+---+------+------------+-----+-----+
 ```
+
+4. Added wiringPiISRmulti
+
+This is like the existing wiringPiISR, but it takes a list of pins to wait for.  
+Note that (for simplicity) the mode applies to all the specified pins.
+
