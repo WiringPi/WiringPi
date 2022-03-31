@@ -1,4 +1,4 @@
-# WiringPi (Unofficial Mirror/Fork)
+# WiringPi (Unofficial Fork)
 
 This is an unofficial mirror/fork of wiringPi.  This repository
 has become a mirror of the last "official" source release, plus a fork
