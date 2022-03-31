@@ -21,20 +21,13 @@ LDLIBS    = -lwiringPi -lwiringPiDev -lpthread -lm
 # Should not alter anything below this line
 ###############################################################################
 
-SRC	=	gertboard.c				\
-		buttons.c 7segments.c			\
-		voltmeter.c temperature.c vumeter.c	\
-		record.c
+SRC	=	buttons.c 7segments.c
 
 OBJ	=	$(SRC:.c=.o)
 
 BINS	=	$(SRC:.c=)
 
 all:	$(BINS)
-
-gertboard:	gertboard.o
-	$Q echo [link]
-	$Q $(CC) -o $@ gertboard.o $(LDFLAGS) $(LDLIBS)
 
 buttons:	buttons.o
 	$Q echo [link]
@@ -43,22 +36,6 @@ buttons:	buttons.o
 7segments:	7segments.o
 	$Q echo [link]
 	$Q $(CC) -o $@ 7segments.o $(LDFLAGS) $(LDLIBS)
-
-voltmeter:	voltmeter.o
-	$Q echo [link]
-	$Q $(CC) -o $@ voltmeter.o $(LDFLAGS) $(LDLIBS)
-
-temperature:	temperature.o
-	$Q echo [link]
-	$Q $(CC) -o $@ temperature.o $(LDFLAGS) $(LDLIBS)
-
-vumeter:	vumeter.o
-	$Q echo [link]
-	$Q $(CC) -o $@ vumeter.o $(LDFLAGS) $(LDLIBS)
-
-record:	record.o
-	$Q echo [link]
-	$Q $(CC) -o $@ record.o $(LDFLAGS) $(LDLIBS)
 
 .c.o:
 	$Q echo [CC] $<

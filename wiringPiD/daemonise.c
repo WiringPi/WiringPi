@@ -17,66 +17,66 @@
 
 void daemonise (const char *pidFile)
 {
-  pid_t pid ;
-  int i ;
-  FILE *fd ;
+  pid_t pid;
+  int i;
+  FILE *fd;
 
-  syslog (LOG_DAEMON | LOG_INFO, "Becoming daemon") ;
+  syslog (LOG_DAEMON | LOG_INFO, "Becoming daemon");
 
-// Fork from the parent
-
-  if ((pid = fork ()) < 0)
+  // Fork from the parent
+  if ((pid = fork()) < 0)
   {
-    syslog (LOG_DAEMON | LOG_ALERT, "Fork no. 1 failed: %m") ;
-    exit (EXIT_FAILURE) ;
+    syslog (LOG_DAEMON | LOG_ALERT, "Fork no. 1 failed: %m");
+    exit (EXIT_FAILURE);
   }
 
-  if (pid > 0)			// Parent - terminate
-    exit (EXIT_SUCCESS) ;
+  if (pid > 0) // Parent - terminate
+  {
+    exit (EXIT_SUCCESS);
+  }
 
-// Now running on the child - become session leader
-
+  // Now running on the child - become session leader
   if (setsid() < 0)
   {
-    syslog (LOG_DAEMON | LOG_ALERT, "setsid failed: %m") ;
-    exit (EXIT_FAILURE) ;
+    syslog (LOG_DAEMON | LOG_ALERT, "setsid failed: %m");
+    exit (EXIT_FAILURE);
   }
 
-// Ignore a few signals
+  // Ignore a few signals
+  signal (SIGCHLD, SIG_IGN);
+  signal (SIGHUP,  SIG_IGN);
 
-  signal (SIGCHLD, SIG_IGN) ;
-  signal (SIGHUP,  SIG_IGN) ;
-
-// Fork again
-
-  if ((pid = fork ()) < 0)
+  // Fork again
+  if ((pid = fork()) < 0)
   {
-    syslog (LOG_DAEMON | LOG_ALERT, "Fork no. 2 failed: %m") ;
-    exit (EXIT_FAILURE) ;
+    syslog (LOG_DAEMON | LOG_ALERT, "Fork no. 2 failed: %m");
+    exit (EXIT_FAILURE);
   }
 
-  if (pid > 0)			// parent - terminate
-    exit (EXIT_SUCCESS) ;
+  if (pid > 0) // parent - terminate
+  {
+    exit (EXIT_SUCCESS);
+  }
 
-// Tidying up - reset umask, change to / and close all files
+  // Tidying up - reset umask, change to / and close all files
+  umask (0);
+  chdir ("/");
 
-  umask (0) ;
-  chdir ("/") ;
+  for (i = 0; i < sysconf (_SC_OPEN_MAX); ++i)
+  {
+    close (i);
+  }
 
-  for (i = 0 ; i < sysconf (_SC_OPEN_MAX) ; ++i)
-    close (i) ;
-
-// Write PID into /var/run
-
+  // Write PID into /var/run
   if (pidFile != NULL)
   {
     if ((fd = fopen (pidFile, "w")) == NULL)
     {
-      syslog (LOG_DAEMON | LOG_ALERT, "Unable to write PID file: %m") ;
-      exit (EXIT_FAILURE) ;
+      syslog (LOG_DAEMON | LOG_ALERT, "Unable to write PID file: %m");
+      exit (EXIT_FAILURE);
     }
 
-    fprintf (fd, "%d\n", getpid ()) ;
-    fclose (fd) ;
+    fprintf (fd, "%d\n", getpid());
+    fclose (fd);
   }
 }

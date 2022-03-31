@@ -152,7 +152,7 @@ extern const char *piMemorySize    [ 8];
 // Use at your own risk.
 
 // Threads
-#define PI_THREAD(X) void *X (UNU void *dummy)
+#define PI_THREAD(X) void *X (UNUSED void *dummy)
 
 // Failure modes
 #define WPI_FATAL     true

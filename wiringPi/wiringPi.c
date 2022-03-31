@@ -1259,13 +1259,13 @@ struct wiringPiNodeStruct *wiringPiFindNode (int pin)
  *  Create a new GPIO node into the wiringPi handling system
  *********************************************************************************
  */
-static         void pinModeDummy             (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int mode)  { return; }
-static         void pullUpDnControlDummy     (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int pud)   { return; }
-static          int digitalReadDummy         (UNU struct wiringPiNodeStruct *node, UNU int UNU pin)            { return LOW; }
-static         void digitalWriteDummy        (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value) { return; }
-static         void pwmWriteDummy            (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value) { return; }
-static          int analogReadDummy          (UNU struct wiringPiNodeStruct *node, UNU int pin)            { return 0; }
-static         void analogWriteDummy         (UNU struct wiringPiNodeStruct *node, UNU int pin, UNU int value) { return; }
+static         void pinModeDummy             (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin, UNUSED int mode)  { return; }
+static         void pullUpDnControlDummy     (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin, UNUSED int pud)   { return; }
+static          int digitalReadDummy         (UNUSED struct wiringPiNodeStruct *node, UNUSED int UNUSED pin)            { return LOW; }
+static         void digitalWriteDummy        (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin, UNUSED int value) { return; }
+static         void pwmWriteDummy            (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin, UNUSED int value) { return; }
+static          int analogReadDummy          (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin)            { return 0; }
+static         void analogWriteDummy         (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin, UNUSED int value) { return; }
 
 struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
 {
@@ -1841,7 +1841,7 @@ int waitForInterrupt (int pin, int mS)
  *  fires.
  *********************************************************************************
  */
-static void *interruptHandler (UNU void *arg)
+static void *interruptHandler (UNUSED void *arg)
 {
   int myPin;
 
