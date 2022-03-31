@@ -4,7 +4,6 @@
 #	Utility to create the version.h include file for the gpio command.
 #	and the Debian package
 #
-#	Copyright (c) 2012-2015 Gordon Henderson
 #################################################################################
 # This file is part of wiringPi:
 #	A "wiring" library for the Raspberry Pi
@@ -32,19 +31,3 @@ echo "#define VERSION \"`cat VERSION`\"" > version.h
 echo "#define VERSION_MAJOR $vMaj"		>> version.h
 echo "#define VERSION_MINOR $vMin"		>> version.h
 
-# rm -f debian-template/wiringPi/DEBIAN/control
-# cat > debian-template/wiringPi/DEBIAN/control <<EOF
-# Package: wiringpi
-# Version: `cat VERSION`
-# Section: libraries
-# Priority: optional
-# Architecture: armhf
-# Depends: libc6
-# Maintainer: Phil Howard <wiringpi@gadgetoid.com>
-# Uploaders: Phil Howard <wiringpi@gadgetoid.com>
-# Description: The wiringPi libraries, headers and gpio command
-#   Libraries to allow GPIO access on a Raspberry Pi from C and C++
-#   and BASIC programs as well as from the command-line
-# Homepage: https://github.com/WiringPi/WiringPi/
-# Bugs: https://github.com/WiringPi/WiringPi/
-# EOF
