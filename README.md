@@ -30,6 +30,7 @@ Usage: gpio -v                Show version info
        gpio unexportall/exports
        gpio export/edge/unexport ...
        gpio wfi <pin> <mode>
+       gpio mwfi <pin>[,<pin>...] <mode>
        gpio drive <group> <value>
        gpio pwm-bal/pwm-ms 
        gpio pwmr <range> 
