@@ -8,22 +8,18 @@ gpio \- Command-line access to Raspberry Pi's GPIO
 .B \-v
 .PP
 .B gpio
-.B [ \-g | \-1 ]
-.B mode/read/write/aread/awrite/wb/pwm/pwnTone/clock/toggle/blink ...
+.B \-h, \-help, \--help, \--h, h, help
+.PP
+.B gpio
+.B [ \-b | \-p | \-w ]
+.B mode/read/write/aread/awrite/wb/pwm/pwmTone/clock/toggle/blink ...
 .PP
 .B gpio
 .B [ \-x extension:params ]
 .B mode/read/write/aread/awrite/pwm/toggle/blink ...
 .PP
 .B gpio
-.B [ \-p ]
-.B read/write/toggle/blink
-.B ...
-.PP
-.B gpio
-.B [ \-p ]
-.B pwnTone pin frequency
-.B ...
+.B bank <bank>
 .PP
 .B gpio
 .B readall
@@ -37,6 +33,10 @@ gpio \- Command-line access to Raspberry Pi's GPIO
 .PP
 .B gpio
 .B wfi
+.B ...
+.PP
+.B gpio
+.B mwfi
 .B ...
 .PP
 .B gpio
@@ -55,27 +55,18 @@ high | low
 range
 .PP
 .B gpio
-.B load \ i2c/spi ...
-.PP
-.B gpio
-.B gbr
-channel
-.PP
-.B gpio
-.B gbw
-channel value
+.B load i2c/spi ...
 
 .SH DESCRIPTION
 
 .B GPIO
 is a swiss army knife of a command line tool to allow the user easy
-access to the GPIO pins on the Raspberry Pi and the SPI A/D and D/A
-converters on the Gertboard. It's designed for simple testing and
+access to the GPIO pins on the Raspberry Pi.
+It's designed for simple testing and
 diagnostic purposes, but can be used in shell scripts for general if
 somewhat slow control of the GPIO pins.
 
-It can also control the IO's on the PiFace IO board and load the SPI and I2C
-kernel modules if required.
+It can also load the SPI and I2C kernel modules if required.
 
 Additionally, it can be used to set the exports in the \fI/sys/class/gpio\fR
 system directory to allow subsequent programs to use the \fR/sys/class/gpio\fR
@@ -88,16 +79,20 @@ interface without needing to be run as root.
 Output the current version including the board revision of the Raspberry Pi.
 
 .TP
-.B \-g
-Use the BCM_GPIO pins numbers rather than wiringPi pin numbers.
+.B \-w
+Use the WiringPi pin numbers.
+
+.TP
+.B \-b
+Use the BCM_GPIO pins numbers. This is the default if not specified.
 \fINote:\fR The BCM_GPIO pin numbers are always used with the 
 export and edge commands.
 
 .TP
-.B \-1
-Use the physical pin numbers rather than wiringPi pin numbers.
+.B \-p
+Use the physical pin numbers.
 \fINote:\fR that this applies to the P1 connector only. It is not possible to
-use pins on the Revision 2 P5 connector this way, and as with \-g the
+use pins on the Revision 2 P5 connector this way, and as with \-b the
 BCM_GPIO pin numbers are always used with the export and edge commands.
 
 .TP
@@ -105,12 +100,6 @@ BCM_GPIO pin numbers are always used with the export and edge commands.
 This causes the named extension to be initialised. Extensions
 comprise of a name (e.g. mcp23017) followed by a colon, then the
 pin-base, then more optional parameters depending on the extension type.
-
-.TP
-.B \-p
-Use the PiFace interface board and its corresponding pin numbers. The PiFace
-will always appear at pin number 200 in the gpio command. You can assign any
-pin numbers you like in your own programs though.
 
 .TP
 .B read <pin>
@@ -158,13 +147,13 @@ the Pi's SPI bus 0.
 
 .TP
 .B wb <value>
-Write the given byte to the 8 main GPIO pins. You can prefix it with 0x
+Write the given byte to the 8 main WiringPi pins. You can prefix it with 0x
 to specify a hexadecimal number. You need to set pins to output mode
 first.
 
 .TP
 .B readall
-Output a table of all GPIO pins values. The values represent the actual values read
+Output a table of all GPIO pin values. The values represent the actual values read
 if the pin is in input mode, or the last value written if the pin is in output
 mode.
 
@@ -238,6 +227,11 @@ or both then waits for the interrupt to happen. It's a non-busy wait,
 so does not consume and CPU while it's waiting.
 
 .TP
+.B mwfi <pin>[,<pin>...] <mode>
+This is identical to 'wfi', except it takes a comma-separated list of pins to wait for.
+If any one of the pins' interrupt occurs, the wait ends.
+
+.TP
 .B drive
 group value
 
@@ -260,21 +254,6 @@ Change the PWM mode to balanced (the default) or mark:space ratio (traditional)
 .B pwmr
 Change the PWM range register. The default is 1024.
 
-.TP
-.B gbr
-channel
-
-This reads the analog to digital converter on the Gertboard on the given
-channel. The board jumpers need to be in-place to do this operation.
-
-.TP
-.B gbw
-channel value
-
-This writes the supplied value to the output channel on the Gertboards
-SPI digital to analogue converter.
-The board jumpers need to be in-place to do this operation.
-
 
 .SH "WiringPi vs. BCM_GPIO Pin numbering vs. Physical pin numbering"
 
@@ -293,17 +272,17 @@ executable
 .TP 2.2i
 gpio mode 4 output # Set pin 4 to output
 .PP
-gpio -g mode 23 output # Set GPIO pin 23 to output (same as WiringPi pin 4)
+gpio -b mode 23 output # Set GPIO pin 23 to output (same as WiringPi pin 4)
 .PP
-gpio mode 1 pwm # Set pin 1 to PWM mode
+gpio mode 1 pwm # Set GPIO pin 1 to PWM mode
 .PP
-gpio pwm 1 512 # Set pin 1 to PWM value 512 - half brightness
+gpio pwm 1 512 # Set GPIO pin 1 to PWM value 512 - half brightness
 .PP
 gpio export 17 out # Set GPIO Pin 17 to output
 .PP
-gpio export 0 in # Set GPIO Pin 0 (SDA0) to input.
+gpio -w export 0 in # Set WiringPi Pin 0 to input.
 .PP
-gpio -g read 0 # Read GPIO Pin 0 (SDA0)
+gpio -w read 0 # Read WiringPi Pin 0 (SDA0)
 
 .SH "NOTES"
 
@@ -330,7 +309,7 @@ https://github.com/WiringPi/WiringPi/
 
 .SH AUTHOR
 
-Gordon Henderson
+Gordon Henderson (2012-2018)
 
 .SH "REPORTING BUGS"
 
@@ -339,6 +318,7 @@ Please report bugs to https://github.com/WiringPi/WiringPi/issues
 .SH COPYRIGHT
 
 Copyright (c) 2012-2018 Gordon Henderson
+
 This is free software; see the source for copying conditions. There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 

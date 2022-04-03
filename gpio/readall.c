@@ -334,7 +334,7 @@ static void readallPhys (int physPin)
     printf (" | %-10s", gpio_alt_names[pin*8 + getAlt(pin)]);
   }
 
-  if (physToWpi    [physPin] == -1)
+  if (physToWpi[physPin] == -1)
     printf (" |     |    ");
   else
     printf (" | %-3d | %-3d", physToWpi[physPin], physPinToGpio (physPin));

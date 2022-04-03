@@ -885,7 +885,7 @@ uint32_t piBoardId (int *model, int *proc, int *rev, int *mem, int *maker, int *
   FILE *cpuFd;
   char line[120];
   char *c;
-  unsigned int revision;
+  uint32_t revision;
   int bRev, bType, bProc, bMfg, bMem, bWarranty;
 
   (void)piGpioLayout();	// Call this first to make sure all's OK. Don't care about the result.
@@ -928,7 +928,7 @@ uint32_t piBoardId (int *model, int *proc, int *rev, int *mem, int *maker, int *
   if (!isxdigit (*c))
     piGpioLayoutOops ("Bogus \"Revision\" line (no hex digit at start of revision)");
 
-  revision = (unsigned int)strtol (c, NULL, 16); // Hex number with no leading 0x
+  revision = (uint32_t)strtol (c, NULL, 16); // Hex number with no leading 0x
   // Save full revision number
   fullRevision = revision;
 
