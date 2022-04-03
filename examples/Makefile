@@ -40,7 +40,7 @@ LDLIBS    = -lwiringPi -lwiringPiDev -lpthread -lm -lcrypt -lrt
 
 SRC	= \
   blink12.c blink12drcs.c blink6drcs.c blink8.c blink8-drcn.c blink.c blink-thread.c \
-  buttons.c buttons2.c buttons3.c \
+  buttons.c buttons2.c buttons3.c buttons4.c \
   clock.c \
   delayTest.c \
   ds1302.c \

@@ -278,6 +278,7 @@ extern void digitalWriteByte2   (int value);
 // Set up for a callback to be called when the specified pin changes according to mode.
 // mode = INT_EDGE_SETUP, INT_EDGE_FALLING, INT_EDGE_RISING, INT_EDGE_BOTH
 // Uses SYS mode, and also waitForInterrupt
+// @NOTE: This leaves gpios exported in /sys/class/gpio when the program ends.
 extern int  wiringPiISR         (int pin, int mode, void (*function)(int));
 
 // Same as wiringPiISR above, but takes a list of pins to wait for.
@@ -287,6 +288,7 @@ extern int  wiringPiISRmulti    (int pins[], int n_pins, int mode, void (*functi
 // Internal-only (unless you know how to set up /sys/class/gpio)
 // Wait for "interrupt" on a GPIO pin.
 // Must be in SYS mode (wiringPiSetupSys was called for setup)
+// @NOTE: This leaves gpios exported in /sys/class/gpio when the program ends.
 extern int  waitForInterrupt    (int pin, int mS);
 
 // ----------------------------------------------------------------------------
