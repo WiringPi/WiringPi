@@ -130,11 +130,11 @@ struct wiringPiNodeStruct *wiringPiNodes = NULL ;
 // Updates in September 2015 - all now static variables (and apologies for the caps)
 //	due to the Pi v2, v3, etc. and the new /dev/gpiomem interface
 
-static volatile unsigned int GPIO_PADS ;
-static volatile unsigned int GPIO_CLOCK_BASE ;
-static volatile unsigned int GPIO_BASE ;
-static volatile unsigned int GPIO_TIMER ;
-static volatile unsigned int GPIO_PWM ;
+static volatile unsigned long GPIO_PADS ;
+static volatile unsigned long GPIO_CLOCK_BASE ;
+static volatile unsigned long GPIO_BASE ;
+static volatile unsigned long GPIO_TIMER ;
+static volatile unsigned long GPIO_PWM ;
 
 #define	PAGE_SIZE		(4*1024)
 #define	BLOCK_SIZE		(4*1024)
@@ -213,11 +213,12 @@ volatile unsigned int *_wiringPiTimerIrqRaw ;
 // piGpioBase:
 //	The base address of the GPIO memory mapped hardware IO
 
-#define	GPIO_PERI_BASE_OLD  0x20000000
-#define	GPIO_PERI_BASE_2835 0x3F000000
-#define	GPIO_PERI_BASE_2711 0xFE000000
+#define	GPIO_PERI_BASE_OLD       0x0020000000
+#define	GPIO_PERI_BASE_2835      0x003F000000
+#define	GPIO_LOW_PERI_BASE_2711  0x00FE000000
+#define	GPIO_HIGH_PERI_BASE_2711 0x047E000000
 
-static volatile unsigned int piGpioBase = 0 ;
+static volatile unsigned long piGpioBase = 0 ;
 
 const char *piModelNames [21] =
 {
@@ -1220,7 +1221,7 @@ void pwmSetClock (int divisor)
 {
   uint32_t pwm_control ;
 
-  if (piGpioBase == GPIO_PERI_BASE_2711)
+  if ((piGpioBase == GPIO_LOW_PERI_BASE_2711) || (piGpioBase == GPIO_HIGH_PERI_BASE_2711))
   {
     divisor = 540*divisor/192;
   }
@@ -2311,8 +2312,22 @@ int wiringPiSetup (void)
     case PI_MODEL_4B:
     case PI_MODEL_400:
     case PI_MODEL_CM4:
-      piGpioBase = GPIO_PERI_BASE_2711 ;
+      piGpioBase = GPIO_LOW_PERI_BASE_2711 ;
       piGpioPupOffset = GPPUPPDN0 ;
+      FILE *iomemFd ;
+	  char line [120] ;
+      if ((iomemFd = fopen ("/proc/iomem", "r")) != NULL)
+      {
+	    while (fgets (line, 120, iomemFd) != NULL)
+	      if (strncmp (line, "47e200000", 9) == 0)
+	      {
+	        piGpioBase = GPIO_HIGH_PERI_BASE_2711 ;
+		    if (wiringPiDebug)
+	  	      printf ("wiringPi: BCM2711 high peripheral mode detected\n") ;
+	        break ;
+	      }
+	    fclose (iomemFd) ;
+      }
       break ;
 
     default:
@@ -2342,11 +2357,11 @@ int wiringPiSetup (void)
 
 // Set the offsets into the memory interface.
 
-  GPIO_PADS 	  = piGpioBase + 0x00100000 ;
-  GPIO_CLOCK_BASE = piGpioBase + 0x00101000 ;
-  GPIO_BASE	  = piGpioBase + 0x00200000 ;
-  GPIO_TIMER	  = piGpioBase + 0x0000B000 ;
-  GPIO_PWM	  = piGpioBase + 0x0020C000 ;
+  GPIO_PADS 	  = piGpioBase + 0x100000 ;
+  GPIO_CLOCK_BASE = piGpioBase + 0x101000 ;
+  GPIO_BASE	  	  = piGpioBase + 0x200000 ;
+  GPIO_TIMER	  = piGpioBase + 0x00B000 ;
+  GPIO_PWM	  	  = piGpioBase + 0x20C000 ;
 
 // Map the individual hardware components
 
