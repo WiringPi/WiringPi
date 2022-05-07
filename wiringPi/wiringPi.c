@@ -213,10 +213,10 @@ volatile unsigned int *_wiringPiTimerIrqRaw ;
 // piGpioBase:
 //	The base address of the GPIO memory mapped hardware IO
 
-#define	GPIO_PERI_BASE_OLD       0x0020000000
-#define	GPIO_PERI_BASE_2835      0x003F000000
-#define	GPIO_LOW_PERI_BASE_2711  0x00FE000000
-#define	GPIO_HIGH_PERI_BASE_2711 0x047E000000
+#define	GPIO_PERI_BASE_OLD       0x020000000
+#define	GPIO_PERI_BASE_2835      0x03F000000
+#define	GPIO_LOW_PERI_BASE_2711  0x0FE000000
+#define	GPIO_HIGH_PERI_BASE_2711 0x47E000000
 
 static volatile unsigned long piGpioBase = 0 ;
 
@@ -2359,9 +2359,9 @@ int wiringPiSetup (void)
 
   GPIO_PADS 	  = piGpioBase + 0x100000 ;
   GPIO_CLOCK_BASE = piGpioBase + 0x101000 ;
-  GPIO_BASE	  	  = piGpioBase + 0x200000 ;
+  GPIO_BASE	  = piGpioBase + 0x200000 ;
   GPIO_TIMER	  = piGpioBase + 0x00B000 ;
-  GPIO_PWM	  	  = piGpioBase + 0x20C000 ;
+  GPIO_PWM	  = piGpioBase + 0x20C000 ;
 
 // Map the individual hardware components
 
