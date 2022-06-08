@@ -28,76 +28,138 @@
 #include <errno.h>
 #include <string.h>
 #include <time.h>
+#include <signal.h>
+#include <libgen.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <wiringPi.h>
 #include <softServo.h>
 
-// GPIO 1 (physical pin 12)
-static const int cPin = 1;
+// *****************************************************************************
 
-int main()
+// GPIO 12 (physical pin 32)
+static const int cGpioPin = 12;
+
+static const int cPwmFreq = 50; // Hz
+static const int cPwmc=60;
+static const int cPwmr=10000;
+
+static const int cMin = 167;
+static const int cMid = 416;
+static const int cMax = 733;
+static const int cStep = 10;
+
+static void SignalHandler(int sig);
+
+// *****************************************************************************
+
+void init()
 {
-    if (wiringPiSetup() == -1)
+    printf("Init\n");
+    pinMode(cGpioPin, PWM_OUTPUT);
+    pwmToneWrite(cGpioPin, cPwmFreq);
+    pwmSetMode(PWM_MODE_MS);
+
+    pwmSetClock(cPwmc);
+    pwmSetRange(cPwmr);
+    pwmWrite(cGpioPin, cMid);
+    delayMs(1000);
+}
+
+void reset()
+{
+    printf("Reset\n");
+    pinMode(cGpioPin, PWM_OUTPUT);
+    pwmSetMode(PWM_MODE_MS);
+
+    pwmSetClock(cPwmc);
+    pwmSetRange(cPwmr);
+    pwmWrite(cGpioPin, cMid);
+    delayMs(500);
+
+    pinMode(cGpioPin, OUTPUT);
+    delayMs(1000);
+}
+
+void rangeUp()
+{
+    int pos = 0;
+    for (int i=cMin; i <= cMax; i +=cStep )
+    {
+        printf("  %d: ", i);
+        pwmWrite(cGpioPin, i);
+        delayMs(100);
+        pos = pwmRead(cGpioPin);
+        printf("%d\n", pos);
+    }
+}
+
+void rangeDn()
+{
+    int pos = 0;
+    for (int i=cMax; i >= cMin; i -=cStep )
+    {
+        printf("  %d: ", i);
+        pwmWrite(cGpioPin, i);
+        delayMs(100);
+        pos = pwmRead(cGpioPin);
+        printf("%d\n", pos);
+    }
+}
+
+// *****************************************************************************
+
+int main(int argc, char *argv[])
+{
+    printf("\n%s: [%s] %s @ %d\n\n", basename(argv[0]), __FILE__, __FUNCTION__, __LINE__);
+
+    signal(SIGABRT, SignalHandler);
+    signal(SIGTERM, SignalHandler);
+    signal(SIGINT,  SignalHandler);
+
+    if (wiringPiSetupGpio() == -1)
     {
         fprintf(stdout, "oops: %s\n", strerror(errno));
         return 1;
     }
 
-    softServoSetup(cPin, -1, -1, -1, -1, -1, -1, -1);
+    init();
 
-/*
-    softServoWrite(1, -250);
-    delay(1000);
-    softServoWrite(1, 0);
-    delay(1000);
-    softServoWrite(1, 50);
-    delay(1000);
-    softServoWrite(1, 150);
-    delay(1000);
-    softServoWrite(1, 200);
-    delay(1000);
-    softServoWrite(1, 250);
-    delay(1000);
-    softServoWrite(1, 1250);
-    delay(1000);
-*/
+    printf("Setting to middle position.\n");
+    pwmWrite(cGpioPin, cMid);
+    delayMs(1000);
 
-    /*
-     softServoWrite (1, 1000) ;  delay(1000);
-     softServoWrite (2, 1100) ;  delay(1000);
-     softServoWrite (3, 1200) ;  delay(1000);
-     softServoWrite (4, 1300) ;  delay(1000);
-     softServoWrite (5, 1400) ;  delay(1000);
-     softServoWrite (6, 1500) ;  delay(1000);
-     softServoWrite (7, 2200) ;  delay(1000);
-     */
+    printf("Moving up\n");
+    rangeUp();
+    delayMs(1000);
 
-    int i = 1;
-    int step = 0;
-    const int cMin = -250;
-    const int cMax = 1250;
-    const int cStep = 100;
+    printf("Moving down\n");
+    rangeDn();
+    delayMs(1000);
 
-    printf("\n");
-    printf("Home, Max, Home...\n");
-    softServoWrite(cPin, cMax);
-    softServoWrite(cPin, cMin);
-    softServoWrite(cPin, cMax);
-    delay(1000);
 
-    printf("Stepping %d steps...\n", (cMax - cMin)/cStep);
-    for (step = cMin; step < cMax; step += cStep, ++i)
-    {
-        printf("%d...", i); fflush(stdout);
-        softServoWrite(cPin, step);
-        delay(300);
-    }
-    printf("\n");
-    printf("Returning to home position.\n");
-    softServoWrite(cPin, cMin);
-    delay(1000);
+    printf("Max\n");
+    pwmWrite(cGpioPin, cMax);
+    delayMs(1000);
+    printf("Min\n");
+    pwmWrite(cGpioPin, cMin);
+    delayMs(1000);
+    printf("Max\n");
+    pwmWrite(cGpioPin, cMax);
+    delayMs(1000);
+    printf("Min\n");
+    pwmWrite(cGpioPin, cMin);
+    delayMs(1000);
 
-    const int cStep1 = 50;
+    printf("Returning to middle position.\n");
+    pwmWrite(cGpioPin, cMid);
+    delayMs(1000);
+
+#if 0
+    delayMs(1000);
+
+    const int cStep1 = 5;
     const int cRange = (cMax - cMin) / cStep1;
     time_t t;
     /* Intializes random number generator */
@@ -106,22 +168,33 @@ int main()
     int pos = cMin;
     int lastPos = pos;
     printf("Setting %d random positions...\n", cPositions);
-    for (i = 1; i <= cPositions; ++i)
+    for (int i = 1; i <= cPositions; ++i)
     {
         while (pos == lastPos)
         {
             pos = ((rand() % cRange) * cStep1) + cMin;
         }
         printf("%d...", i); fflush(stdout);
-        softServoWrite(cPin, pos);
+        pwmWrite(cGpioPin, pos);
         lastPos = pos;
-        delay(200);
+        delayMs(300);
     }
 
-    printf("\n");
-    printf("Returning to home position.\n");
-    softServoWrite(cPin, cMin);
-    delay(1000);
+    printf("Returning to middle position.\n");
+    pwmWrite(cGpioPin, cMid);
+    delayMs(1000);
+#endif
 
     return 0;
 }
+
+// *****************************************************************************
+
+void SignalHandler(int sig)
+{
+    fprintf(stderr, "\nSignal %d caught by %d\n", sig, getpid());
+    reset();
+    exit(2);
+}
+
+// *****************************************************************************

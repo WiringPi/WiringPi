@@ -1263,7 +1263,8 @@ static         void pullUpDnControlDummy     (UNUSED struct wiringPiNodeStruct *
 static          int digitalReadDummy         (UNUSED struct wiringPiNodeStruct *node, UNUSED int UNUSED pin)            { return LOW; }
 static         void digitalWriteDummy        (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin, UNUSED int value) { return; }
 static         void pwmWriteDummy            (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin, UNUSED int value) { return; }
-static          int analogReadDummy          (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin)            { return 0; }
+static          int pwmReadDummy             (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin)                   { return 0; }
+static          int analogReadDummy          (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin)                   { return 0; }
 static         void analogWriteDummy         (UNUSED struct wiringPiNodeStruct *node, UNUSED int pin, UNUSED int value) { return; }
 
 struct wiringPiNodeStruct *wiringPiNewNode (int pinBase, int numPins)
@@ -1604,6 +1605,34 @@ void pwmWrite (int pin, int value)
     if ((node = wiringPiFindNode (pin)) != NULL)
       node->pwmWrite (node, pin, value);
   }
+}
+
+int pwmRead (int pin)
+{
+  int ret = 0;
+
+  struct wiringPiNodeStruct *node = wiringPiNodes;
+
+  setupCheck ("pwmRead");
+
+  if ((pin & PI_GPIO_MASK) == 0) // On-Board Pin
+  {
+    if      (wiringPiMode == WPI_MODE_PINS)
+      pin = pinToGpio[pin];
+    else if (wiringPiMode == WPI_MODE_PHYS)
+      pin = physToGpio[pin];
+    else if (wiringPiMode != WPI_MODE_GPIO)
+      return 0;
+
+    usingGpioMemCheck ("pwmRead");
+    ret = *(pwm + gpioToPwmPort[pin]);
+  }
+  else
+  {
+    if ((node = wiringPiFindNode (pin)) != NULL)
+      ret = node->pwmRead (node, pin);
+  }
+  return ret;
 }
 
 

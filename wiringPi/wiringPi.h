@@ -179,6 +179,7 @@ struct wiringPiNodeStruct
   int    (*digitalRead)      (struct wiringPiNodeStruct *node, int pin);
   void   (*digitalWrite)     (struct wiringPiNodeStruct *node, int pin, int value);
   void   (*pwmWrite)         (struct wiringPiNodeStruct *node, int pin, int value);
+  int    (*pwmRead)          (struct wiringPiNodeStruct *node, int pin);
   int    (*analogRead)       (struct wiringPiNodeStruct *node, int pin);
   void   (*analogWrite)      (struct wiringPiNodeStruct *node, int pin, int value);
 
@@ -250,6 +251,7 @@ extern void setPadDrive         (int group, int value);
 
 // PWM funcs
 extern void pwmWrite            (int pin, int value);
+extern int  pwmRead             (int pin);
 extern void pwmToneWrite        (int pin, int freq);
 extern void pwmSetMode          (int mode); // balanced or mark/space mode
 extern void pwmSetRange         (unsigned int range);
