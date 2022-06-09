@@ -176,7 +176,7 @@ max31855:	max31855.o
 
 clean:
 	$Q echo "[Clean]"
-	$Q rm -f $(OBJ) *~ core tags $(BINS)
+	$Q rm -f $(OBJ) *.o *~ core tags $(BINS)
 
 echo:
 	$Q echo "[BINS] $(BINS)"
