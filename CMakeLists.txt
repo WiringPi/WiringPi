@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(wiringPi_Main VERSION 0.1)
+include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/get-version.cmake")
+
+project(wiringPi_Main VERSION ${VERSION})
 
 add_subdirectory(wiringPi)
 add_subdirectory(devLib)

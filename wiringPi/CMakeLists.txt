@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(wiringPi VERSION 0.1)
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/get-version.cmake")
+
+project(wiringPi VERSION ${VERSION})
 set(TARGET wiringPi)
 
 # Have CMake find pthreads library within our toolchain
@@ -35,6 +37,11 @@ set(wiringPi_h
 
 # Add library target
 add_library (${TARGET} SHARED ${wiringPi_src})
+
+# Version
+set_target_properties(${TARGET} PROPERTIES
+                        VERSION ${PROJECT_VERSION}
+                        SOVERSION ${PROJECT_VERSION_MAJOR})
 
 # Add include directory for wiringPi
 target_include_directories (${TARGET} PUBLIC 

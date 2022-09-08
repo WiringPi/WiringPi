@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(gpio VERSION 0.1)
+include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/get-version.cmake")
+
+project(gpio VERSION ${VERSION})
 set(TARGET gpio)
 
 # Have CMake find pthreads library within our toolchain
