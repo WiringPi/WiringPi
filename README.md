@@ -15,13 +15,10 @@ Build
 -----
 
 ```shell
-mdkir dist
-cd dist
+mdkir dist && cd dist
 cmake ..
 cmake --build .
 ```
-
-*Note: You can also cross-compile using the `toolchain-rpi.cmake` file available in the `cmake/` directory. Run cmake with -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain-rpi.cmake*
 
 Debian package:
 ```shell
@@ -31,6 +28,17 @@ cpack -config CPackConfig.cmake
 Build Archive:
 ```shell
 cpack -config CPackSourceConfig.cmake
+```
+
+**Cross-Compiling:**
+
+Make sure to install the [`arm toolchain`](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads) for the raspberry pi. 
+
+Then set the environment variable `TOOLCHAIN_PATH` to the `bin/` directory in your toolchain and run:
+```shell
+mkdir dist && cd dist
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain-rpi.cmake
+cmake --build .
 ```
 
 Install
