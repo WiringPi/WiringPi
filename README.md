@@ -11,6 +11,36 @@ to support newer hardware (primarily for use by the ports) and fix bugs.
   * The default `master` branch contains code that has been written since that final source
     release to provide support for newer hardware.
 
+Build
+-----
+
+```shell
+mdkir dist
+cd dist
+cmake ..
+cmake --build .
+```
+
+*Note: You can also cross-compile using the `toolchain-rpi.cmake` file available in the `cmake/` directory. Run cmake with -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchain-rpi.cmake*
+
+Debian package:
+```shell
+cpack -config CPackConfig.cmake
+```
+
+Build Archive:
+```shell
+cpack -config CPackSourceConfig.cmake
+```
+
+Install
+-------
+
+To install the wiringPi library, simply download the `.deb` package available in the [`latest release`](https://github.com/WiringPi/WiringPi/releases/latest) or build it from source and install it using `dpkg`:
+```shell
+sudo dpkg -i wiringpi-2.61-1-armhf.deb
+```
+
 Ports
 -----
 
