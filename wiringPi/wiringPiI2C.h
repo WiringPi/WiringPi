@@ -36,6 +36,7 @@ extern int wiringPiI2CWriteReg16     (int fd, int reg, int data) ;
 
 extern int wiringPiI2CSetupInterface (const char *device, int devId) ;
 extern int wiringPiI2CSetup          (const int devId) ;
+extern int wiringPiI2CSetupDevice    (const int devId, int dev) ;
 
 #ifdef __cplusplus
 }

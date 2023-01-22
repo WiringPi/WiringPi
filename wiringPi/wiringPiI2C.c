@@ -69,7 +69,7 @@
 
 #define I2C_SMBUS_QUICK		    0
 #define I2C_SMBUS_BYTE		    1
-#define I2C_SMBUS_BYTE_DATA	    2 
+#define I2C_SMBUS_BYTE_DATA	    2
 #define I2C_SMBUS_WORD_DATA	    3
 #define I2C_SMBUS_PROC_CALL	    4
 #define I2C_SMBUS_BLOCK_DATA	    5
@@ -79,7 +79,7 @@
 
 // SMBus messages
 
-#define I2C_SMBUS_BLOCK_MAX	32	/* As specified in SMBus standard */	
+#define I2C_SMBUS_BLOCK_MAX	32	/* As specified in SMBus standard */
 #define I2C_SMBUS_I2C_BLOCK_MAX	32	/* Not specified but we use same structure */
 
 // Structures used in the ioctl() calls
@@ -102,12 +102,21 @@ struct i2c_smbus_ioctl_data
 static inline int i2c_smbus_access (int fd, char rw, uint8_t command, int size, union i2c_smbus_data *data)
 {
   struct i2c_smbus_ioctl_data args ;
+  int result ;
 
   args.read_write = rw ;
   args.command    = command ;
   args.size       = size ;
   args.data       = data ;
-  return ioctl (fd, I2C_SMBUS, &args) ;
+
+  result = ioctl (fd, I2C_SMBUS, &args) ;
+
+  if (result < 0) {
+    return wiringPiFailure (WPI_FATAL, "i2c_smbus_access() -> I2C SMBUS access failed: [%s]\n", strerror (errno)) ;
+  }
+  else {
+    return ioctl (fd, I2C_SMBUS, &args) ;
+  }
 }
 
 
@@ -202,10 +211,10 @@ int wiringPiI2CSetupInterface (const char *device, int devId)
   int fd ;
 
   if ((fd = open (device, O_RDWR)) < 0)
-    return wiringPiFailure (WPI_ALMOST, "Unable to open I2C device: %s\n", strerror (errno)) ;
+    return wiringPiFailure (WPI_ALMOST, "wiringPiI2CSetupInterface() -> Unable to open I2C device [%s]: %s\n", device, strerror (errno)) ;
 
   if (ioctl (fd, I2C_SLAVE, devId) < 0)
-    return wiringPiFailure (WPI_ALMOST, "Unable to select I2C device: %s\n", strerror (errno)) ;
+    return wiringPiFailure (WPI_ALMOST, "wiringPiI2CSetupInterface() -> Unable to select I2C devId [%d]: [%s]\n", devId, strerror (errno)) ;
 
   return fd ;
 }
@@ -213,21 +222,49 @@ int wiringPiI2CSetupInterface (const char *device, int devId)
 
 /*
  * wiringPiI2CSetup:
- *	Open the I2C device, and regsiter the target device
+ *	Open the I2C device, and regsiter the target device.
+ *  Based on the Raspberry Pi revision number /dev/i2c-0 or /dev/i2c-1 will be used
  *********************************************************************************
  */
 
 int wiringPiI2CSetup (const int devId)
 {
+    return wiringPiI2CSetupDevice (devId, -1);
+}
+
+
+/*
+ * wiringPiI2CSetupDevice:
+ *	Open the I2C device, and regsiter the target device.
+ *  This function allows one to use another I2C bus than the default i2c-0 or i2c-1
+ *  bus.  More I2C busses can be available when using an I2C mux like the PCA9548.
+ *  Backwards compatibility is guaranteed: existing code is using wiringPiI2CSetup()
+ *  and that function will call wiringPiI2CSetupDevice() with dev == -1 resulting
+ *  in executing code as it used to be (if rev == 1 use /dev/i2c-0 else use
+ *  /dev/i2c-1).
+ *********************************************************************************
+ */
+
+int wiringPiI2CSetupDevice (const int devId, const int dev)
+{
   int rev ;
-  const char *device ;
+  char device[12]; // could be "/dev/i2c-xx" + the NULL terminator '\0'
 
   rev = piGpioLayout () ;
 
-  if (rev == 1)
-    device = "/dev/i2c-0" ;
-  else
-    device = "/dev/i2c-1" ;
+  if (rev == 1) {
+    sprintf(device, "/dev/i2c-0");
+  }
+  else {
+    if (dev == -1) {
+        sprintf(device, "/dev/i2c-1");
+        // printf("Original device = %s\n", device);
+    }
+    else {
+        snprintf(device, 12, "/dev/i2c-%d", dev);
+        // printf("wiringPiI2CSetupDevice() -> Device = [%s]\n", device);
+    }
+  }
 
   return wiringPiI2CSetupInterface (device, devId) ;
 }

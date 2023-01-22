@@ -158,7 +158,7 @@ static int myDigitalRead (struct wiringPiNodeStruct *node, int pin)
 
   if ((value & mask) == 0)
     return LOW ;
-  else 
+  else
     return HIGH ;
 }
 
@@ -170,13 +170,30 @@ static int myDigitalRead (struct wiringPiNodeStruct *node, int pin)
  *	user-defined pin base.
  *********************************************************************************
  */
-
 int mcp23017Setup (const int pinBase, const int i2cAddress)
+{
+    return mcp23017SetupDevice(pinBase, i2cAddress, -1);
+}
+
+
+/*
+ * mcp23017SetupDevice:
+ *	Create a new instance of an MCP23017 I2C GPIO interface. We know it
+ *	has 16 pins, so all we need to know here is the I2C address and the
+ *	user-defined pin base.
+ *  This function allows you to use extra I2C busses, if present.  This makes it
+ *  possible to have more than 8 MCP23017 devices in your HW if an I2C mux is used.
+ *  Backwards compatibility is guaranteed: existing code calls mcp23017Setup() which
+ *  will call mcp23017SetupDevice() with dev == -1, resulting in exactly the same
+ *  behaviour as before.
+ *********************************************************************************
+ */
+int mcp23017SetupDevice (const int pinBase, const int i2cAddress, const int dev)
 {
   int fd ;
   struct wiringPiNodeStruct *node ;
 
-  if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
+  if ((fd = wiringPiI2CSetupDevice (i2cAddress, dev)) < 0)
     return FALSE ;
 
   wiringPiI2CWriteReg8 (fd, MCP23x17_IOCON, IOCON_INIT) ;
