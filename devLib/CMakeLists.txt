@@ -23,7 +23,7 @@ set(wiringPiDev_h
 )
 
 # Add library target
-add_library (${TARGET} SHARED ${wiringPiDev_src})
+add_library (${TARGET} STATIC ${wiringPiDev_src})
 
 # Version
 set_target_properties(${TARGET} PROPERTIES

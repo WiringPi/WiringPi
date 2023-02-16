@@ -36,7 +36,7 @@ set(wiringPi_h
 )
 
 # Add library target
-add_library (${TARGET} SHARED ${wiringPi_src})
+add_library (${TARGET} STATIC ${wiringPi_src})
 
 # Version
 set_target_properties(${TARGET} PROPERTIES
