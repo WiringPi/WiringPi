@@ -2,7 +2,7 @@ WiringPi (Unofficial Mirror/Fork)
 =================================
 
 This is an unofficial mirror/fork of wiringPi to support ports (Python/Ruby/etc).  With the
-[end of official development](http://wiringpi.com/wiringpi-deprecated/), this repository
+[end of official development](https://web.archive.org/web/20220405225008/http://wiringpi.com/wiringpi-deprecated/), this repository
 has become a mirror of the last "official" source release, plus a fork facilitating updates
 to support newer hardware (primarily for use by the ports) and fix bugs.
 
