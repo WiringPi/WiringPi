@@ -102,6 +102,12 @@ static char *getChallenge (int fd)
 
 static int authenticate (int fd, const char *pass)
 {
+#ifdef NO_CRYPT
+  (void)fd;
+  (void)pass;
+  return -1;
+#endif
+
   char *challenge ;
   char *encrypted ;
   char salted [1024] ;
