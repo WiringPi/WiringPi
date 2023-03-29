@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
+OPTION( NO_CRYPT "Disable encryption usage" OFF )
 
 include("${CMAKE_CURRENT_SOURCE_DIR}/../cmake/get-version.cmake")
 
@@ -50,7 +51,8 @@ target_include_directories (${TARGET} PUBLIC
 
 
 # Add the following required libraries: Threads, Math, Crypt, and RealTime
-target_link_libraries(${TARGET} ${CMAKE_THREAD_LIBS_INIT} crypt m rt)
+target_link_libraries(${TARGET} ${CMAKE_THREAD_LIBS_INIT} $<$<NOT:$<BOOL:${NO_CRYPT}>>:crypt> m rt)
+target_compile_definitions(${TARGET} PRIVATE $<$<BOOL:${NO_CRYPT}>:NO_CRYPT>)
 
 # Expose wiringPi public to other subprojects
 set(${TARGET}_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}
