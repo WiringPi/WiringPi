@@ -87,11 +87,11 @@ static void *softPwmThread (void *arg)
 
     if (mark != 0)
       digitalWrite (pin, HIGH) ;
-    delayMicroseconds (mark * 100) ;
+    delayMicroseconds (mark * PULSE_TIME) ;
 
     if (space != 0)
       digitalWrite (pin, LOW) ;
-    delayMicroseconds (space * 100) ;
+    delayMicroseconds (space * PULSE_TIME) ;
   }
 
   return NULL ;
