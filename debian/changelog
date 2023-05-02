@@ -1,0 +1,34 @@
+wiringpi (2.71-1) unstable; urgency=low
+
+  * Sync to upstream
+
+ -- Rafael Diniz <rafael@rhizomatica.org> Tue, 02 May 2023 18:33:12 +0300
+
+wiringpi (2.50-0ubuntu2) hirsute; urgency=medium
+
+  * d/p/0001-Fix-for-multiple-definition-of-comDat-76.patch: Cherrypick patch
+    from upstream fork to fix FTBFS with GCC 10.
+
+ -- Logan Rosen <logan@ubuntu.com>  Thu, 07 Jan 2021 22:18:31 -0500
+
+wiringpi (2.50-0ubuntu1) eoan; urgency=medium
+
+  * New upstream release 2.50 (LP: #1824370).
+
+ -- Dave Jones <dave@waveform.org.uk>  Thu, 11 Apr 2019 14:41:08 +0000
+
+wiringpi (2.46-0ubuntu4) bionic; urgency=medium
+
+  * Use v3 quilt format
+  * Add patch to fix build system to work with -as-needed, and to remove
+    redundant library dependencies
+  * Add patch to build and run on arm64
+
+ -- Dave Jones <dave.jones@canonical.com>  Wed, 20 Feb 2019 10:28:07 +0000
+
+wiringpi (2.26~iwj) rpi-unstable; urgency=low
+
+  * Initial version with real Debian source package build.
+
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Sep 2015 18:31:35 +0100
+

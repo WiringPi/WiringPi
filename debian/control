@@ -1,0 +1,39 @@
+Source: wiringpi
+Priority: optional
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+XSBC-Original-Maintainer: Dave Jones <dave.jones@canonical.com>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.2
+Section: libs
+Homepage: https://wiringpi.com/
+Vcs-Browser: https://git.drogon.net/?p=wiringPi;a=summary
+
+Package: libwiringpi-dev
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: libwiringpi2 (= ${binary:Version}), ${misc:Depends}
+Description: Raspberry Pi library for controlling GPIO devices
+ A Raspberry Pi specific library for querying and controlling the GPIO pins,
+ and a variety of devices that connect to them from C, C++, or BASIC.
+ .
+ This package contains the development files (headers, etc.) for compiling
+ applications against libwiringPi.
+
+Package: libwiringpi2
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Raspberry Pi library for controlling GPIO devices
+ A Raspberry Pi specific library for querying and controlling the GPIO pins,
+ and a variety of devices that connect to them from C, C++, or BASIC.
+ .
+ This package contains the shared libraries libwiringPi and libwiringPiDev.
+
+Package: wiringpi
+Architecture: any
+Multi-Arch: foreign
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Raspberry Pi tool for controlling GPIO devices
+ A command line utility for querying and controlling the GPIO pins from the
+ shell.

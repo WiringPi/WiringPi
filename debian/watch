@@ -1,0 +1,4 @@
+version=4
+
+# Direct Git
+opts="mode=git" git://git.drogon.net/wiringPi refs/tags/v([\d\.]+) debian uupdate
