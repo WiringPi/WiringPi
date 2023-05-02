@@ -1,8 +1,8 @@
-wiringpi (2.71-1) unstable; urgency=low
+wiringpi (2.70-2) unstable; urgency=low
 
   * Sync to upstream
 
- -- Rafael Diniz <rafael@rhizomatica.org> Tue, 02 May 2023 18:33:12 +0300
+ -- Rafael Diniz <rafael@rhizomatica.org>  Tue, 02 May 2023 18:33:12 +0300
 
 wiringpi (2.50-0ubuntu2) hirsute; urgency=medium
 
