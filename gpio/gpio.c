@@ -1371,12 +1371,6 @@ int main (int argc, char *argv [])
     exit (EXIT_SUCCESS) ;
   }
 
-  if (geteuid () != 0)
-  {
-    fprintf (stderr, "%s: Must be root to run. Program should be suid root. This is an error.\n", argv [0]) ;
-    exit (EXIT_FAILURE) ;
-  }
-
 // Initial test for /sys/class/gpio operations:
 
   /**/ if (strcasecmp (argv [1], "exports"    ) == 0)	{ doExports     (argc, argv) ;	return 0 ; }

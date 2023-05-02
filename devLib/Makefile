@@ -37,11 +37,11 @@ DYNAMIC=libwiringPiDev.so.$(VERSION)
 #DEBUG	= -g -O0
 DEBUG	= -O2
 CC	?= gcc
-INCLUDE	= -I.
+INCLUDE	= -I. -I../wiringPi
 DEFS	= -D_GNU_SOURCE
 CFLAGS	= $(DEBUG) $(DEFS) -Wformat=2 -Wall -Winline $(INCLUDE) -pipe -fPIC $(EXTRA_CFLAGS)
 
-LIBS    =
+LIBS    = -lpthread -lwiringPi
 
 ###############################################################################
 
@@ -68,7 +68,7 @@ $(STATIC):	$(OBJ)
 
 $(DYNAMIC):	$(OBJ)
 	$Q echo "[Link (Dynamic)]"
-	$Q $(CC) -shared -Wl,-soname,libwiringPiDev.so$(WIRINGPI_SONAME_SUFFIX) -o libwiringPiDev.so.$(VERSION) -lpthread $(OBJ)
+	$Q $(CC) -shared -Wl,-soname,libwiringPiDev.so$(WIRINGPI_SONAME_SUFFIX) -o libwiringPiDev.so.$(VERSION) -L ../wiringPi $(OBJ) $(LIBS)
 
 .c.o:
 	$Q echo [Compile] $<

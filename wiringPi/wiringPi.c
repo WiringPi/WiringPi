@@ -70,6 +70,7 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <asm/ioctl.h>
+#include <arpa/inet.h>
 
 #include "softPwm.h"
 #include "softTone.h"
@@ -737,7 +738,8 @@ static void usingGpioMemCheck (const char *what)
 
 static void piGpioLayoutOops (const char *why)
 {
-  fprintf (stderr, "Oops: Unable to determine board revision from /proc/cpuinfo\n") ;
+  fprintf (stderr, "Oops: Unable to determine board revision from /proc/device-tree/system/linux,revision\n");
+  fprintf (stderr, "or from /proc/cpuinfo\n") ;
   fprintf (stderr, " -> %s\n", why) ;
   fprintf (stderr, " ->  You'd best google the error to find out why.\n") ;
 //fprintf (stderr, " ->  http://www.raspberrypi.org/phpBB3/viewtopic.php?p=184410#p184410\n") ;
@@ -754,8 +756,30 @@ int piGpioLayout (void)
   if (gpioLayout != -1)	// No point checking twice
     return gpioLayout ;
 
+// The "/proc/device-tree/compatible" file consists of a sequence of
+// NUL-terminated strings. We expect to find brcm,bcm283[765] on pi platforms
+
+  if ((cpuFd = fopen ("/proc/device-tree/compatible", "r")) != NULL) {
+    size_t linelen;
+    linelen = fread(line, 1, sizeof(line), cpuFd);
+    fclose(cpuFd);
+    cpuFd = NULL;
+    line[linelen] = '\0';
+    c = line;
+    while ((size_t)(c - line) < linelen) {
+      if ((strncmp(c, "brcm,bcm2837", strlen(c)) == 0) ||
+          (strncmp(c, "brcm,bcm2836", strlen(c)) == 0)) {
+        gpioLayout = 2;
+        if (wiringPiDebug)
+          printf ("piGpioLayoutOops: Returning revision: %d\n", gpioLayout) ;
+        return gpioLayout;
+      }
+      c += strlen(c) + 1;
+    }
+  }
+
   if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
-    piGpioLayoutOops ("Unable to open /proc/cpuinfo") ;
+    piGpioLayoutOops ("Unable to open /proc/device-tree/compatible or /proc/cpuinfo") ;
 
 // Start by looking for the Architecture to make sure we're really running
 //	on a Pi. I'm getting fed-up with people whinging at me because
@@ -966,47 +990,63 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
 
   (void)piGpioLayout () ;	// Call this first to make sure all's OK. Don't care about the result.
 
-  if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
-    piGpioLayoutOops ("Unable to open /proc/cpuinfo") ;
+// The /proc/device-tree/system/linux,revision (on modern versions of Raspbian
+// and a few other distros) stores the revision code as a big-endian 32-bit
+// integer
 
-  while (fgets (line, 120, cpuFd) != NULL)
-    if (strncmp (line, "Revision", 8) == 0)
-      break ;
+  if ((cpuFd = fopen ("/proc/device-tree/system/linux,revision", "r")) != NULL) {
+    revision = 0;
+    fread(&revision, sizeof(revision), 1, cpuFd);
+    fclose(cpuFd);
+    if (revision)
+      revision = ntohl(revision);
+    else
+      piGpioLayoutOops ("No revision in /proc/device-tree/system/linux,revision");
+  }
 
-  fclose (cpuFd) ;
+  else if ((cpuFd = fopen ("/proc/cpuinfo", "r")) != NULL) {
 
-  if (strncmp (line, "Revision", 8) != 0)
-    piGpioLayoutOops ("No \"Revision\" line") ;
+      while (fgets (line, 120, cpuFd) != NULL)
+        if (strncmp (line, "Revision", 8) == 0)
+          break ;
+
+      fclose (cpuFd) ;
+
+      if (strncmp (line, "Revision", 8) != 0)
+        piGpioLayoutOops ("No \"Revision\" line") ;
 
 // Chomp trailing CR/NL
 
-  for (c = &line [strlen (line) - 1] ; (*c == '\n') || (*c == '\r') ; --c)
-    *c = 0 ;
+      for (c = &line [strlen (line) - 1] ; (*c == '\n') || (*c == '\r') ; --c)
+        *c = 0 ;
 
-  if (wiringPiDebug)
-    printf ("piBoardId: Revision string: %s\n", line) ;
+      if (wiringPiDebug)
+        printf ("piBoardId: Revision string: %s\n", line) ;
 
 // Need to work out if it's using the new or old encoding scheme:
 
 // Scan to the first character of the revision number
 
-  for (c = line ; *c ; ++c)
-    if (*c == ':')
-      break ;
+      for (c = line ; *c ; ++c)
+        if (*c == ':')
+          break ;
 
-  if (*c != ':')
-    piGpioLayoutOops ("Bogus \"Revision\" line (no colon)") ;
+      if (*c != ':')
+        piGpioLayoutOops ("Bogus \"Revision\" line (no colon)") ;
 
 // Chomp spaces
 
-  ++c ;
-  while (isspace (*c))
-    ++c ;
+      ++c ;
+      while (isspace (*c))
+        ++c ;
 
-  if (!isxdigit (*c))
-    piGpioLayoutOops ("Bogus \"Revision\" line (no hex digit at start of revision)") ;
+      if (!isxdigit (*c))
+        piGpioLayoutOops ("Bogus \"Revision\" line (no hex digit at start of revision)") ;
 
-  revision = (unsigned int)strtol (c, NULL, 16) ; // Hex number with no leading 0x
+      revision = (unsigned int)strtol (c, NULL, 16) ; // Hex number with no leading 0x
+  }
+  else
+    piGpioLayoutOops ("Unable to open /proc/device-tree/system/linux,revision or /proc/cpuinfo") ;
 
 // Check for new way:
 
