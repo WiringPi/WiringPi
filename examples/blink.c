@@ -25,14 +25,28 @@
 
 #include <stdio.h>
 #include <wiringPi.h>
+#include <stdlib.h>
+#include <signal.h>
 
 // LED Pin - wiringPi pin 0 is BCM_GPIO 17.
 
 #define	LED	0
 
+// Signal handler function
+// Handle interrupt, set LED to LOW
+void handle_interrupt(int signal) {
+    printf("Interrupt signal caught. Exiting...\n");
+
+    digitalWrite(LED, LOW);
+    
+    exit(0);
+}
+
 int main (void)
 {
   printf ("Raspberry Pi blink\n") ;
+
+  signal(SIGINT, handle_interrupt);
 
   wiringPiSetup () ;
   pinMode (LED, OUTPUT) ;
