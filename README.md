@@ -1,3 +1,5 @@
+:warning: This library was deprecated by its author in August 2019. As of 31st October 2023 nobody has shown an interest in properly maintaining it. Between this, and changes to GPIO in Rasberry Pi OS Bookworm and on the Raspberry Pi 5, this project is going nowhere. It has been archived to more clearly indicate this status.
+
 WiringPi (Unofficial Mirror/Fork)
 =================================
 
@@ -26,8 +28,3 @@ Support
 -------
 
 Please do not email Gordon if you have issues, he will not be able to help.
-
-Pull-requests may be accepted to add or fix support for newer hardware, but new features or
-other changes may not be accepted.
-
-For support, comments, questions, etc please join the WiringPi Discord channel: https://discord.gg/SM4WUVG
