@@ -1,3 +1,9 @@
+wiringpi (2.70-3) unstable; urgency=low
+
+  * Make it work with recent kernels
+
+ -- Rafael Diniz <rafael@rhizomatica.org>  Fri, 24 Nov 2023 16:01:05 +0000
+
 wiringpi (2.70-2) unstable; urgency=low
 
   * Sync to upstream
