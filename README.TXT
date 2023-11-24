@@ -11,7 +11,5 @@ has become our fork of a working WiringPi version for all versions of Debian Lin
 Support
 -------
 
-Please do not email Gordon if you have issues, he will not be able to help.
-
-Fell free to send PRs.
+No support is provided, but fell free to send PRs.
 
