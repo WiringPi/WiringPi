@@ -1,5 +1,5 @@
 Package: wiringpi
-Version: 2.70
+Version: 2.71
 Section: libraries
 Priority: optional
 Architecture: armhf
