@@ -35,12 +35,12 @@ wiringPi has been wrapped for multiple languages:
 Support
 -------
 
-Please do not email Gordon if you have issues, he will not be able to help.
-Dont' email @Gadgetoid . 
-Don't email GC2, use issue system of github to report errors.  
+Please do not email Gordon if you have issues, he will not be able to help.  
+Dont' email @Gadgetoid.  
+Don't email GC2, use issue system of github to report errors.
 
 Debug
 -------
 
-WIRINGPI_DEBUG=1 ./my_wiringpi_program
+WIRINGPI_DEBUG=1 ./my_wiringpi_program  
 WIRINGPI_DEBUG=1 ./gpio readall
