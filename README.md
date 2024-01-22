@@ -1,4 +1,6 @@
-:warning: This library was deprecated by its author in August 2019. As of 31st October 2023 nobody has shown an interest in properly maintaining it. Between this, and changes to GPIO in Rasberry Pi OS Bookworm and on the Raspberry Pi 5, this project is going nowhere. It has been archived to more clearly indicate this status.
+
+:warning: This library was deprecated by its author in August 2019. Until 31st October 2023 it was maintaining at https://github.com/WiringPi/WiringPi/ but later set to read only because there was no interest in properly maintaining it.
+In 2024 GC2 fork the project to maintaining it and to keep the best GPIO Library for Raspberry Pi running. We do our best, but we have limited resources and can not give support. 
 
 WiringPi (Unofficial Mirror/Fork)
 =================================
@@ -12,6 +14,12 @@ to support newer hardware (primarily for use by the ports) and fix bugs.
     [`final_source_2.50`](https://github.com/WiringPi/WiringPi/tree/final_official_2.50) tag.
   * The default `master` branch contains code that has been written since that final source
     release to provide support for newer hardware.
+
+BananaPi M2 Zero 
+-----
+
+See brunch BananPi, there is no further development.
+
 
 Ports
 -----
@@ -28,3 +36,11 @@ Support
 -------
 
 Please do not email Gordon if you have issues, he will not be able to help.
+Dont' email @Gadgetoid . 
+Don't email GC2, use issue system of github to report errors.  
+
+Debug
+-------
+
+WIRINGPI_DEBUG=1 ./my_wiringpi_program
+WIRINGPI_DEBUG=1 ./gpio readall
