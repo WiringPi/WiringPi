@@ -2121,7 +2121,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
   if (sysFds [bcmGpioPin] == -1)
   {
-    pinFS = GPIOToSysFS(bcmGpioPin);
+    int pinFS = GPIOToSysFS(bcmGpioPin);
     sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
     if (pinFS>=0 && (sysFds [bcmGpioPin] = open (fName, O_RDWR)) < 0)
       return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
@@ -2577,7 +2577,7 @@ int wiringPiSetupSys (void)
 
   for (pin = 0 ; pin < 64 ; ++pin)
   {
-    pinFS = GPIOToSysFS(pin);
+    int pinFS = GPIOToSysFS(pin);
     if (pinFS>=0) {
       sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
       sysFds [pin] = open (fName, O_RDWR) ;
