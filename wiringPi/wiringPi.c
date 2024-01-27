@@ -219,7 +219,7 @@ volatile unsigned int *_wiringPiTimerIrqRaw ;
 
 static volatile unsigned int piGpioBase = 0 ;
 
-const char *piModelNames [21] =
+const char *piModelNames [24] =
 {
   "Model A",	//  0
   "Model B",	//  1
@@ -242,6 +242,18 @@ const char *piModelNames [21] =
   "Pi Zero2-W",	// 18
   "Pi 400",	// 19
   "CM4",	// 20
+  "CM4S",	// 21
+  "Unknown22",	// 22
+  "Pi 5",	// 23
+} ;
+
+const char *piProcessor [5] =
+{
+  "BCM2835",
+  "BCM2836",
+  "BCM2837",
+  "BCM2711",
+  "BCM2712",
 } ;
 
 const char *piRevisionNames [16] =
@@ -269,9 +281,9 @@ const char *piMakerNames [16] =
   "Sony",	//	 0
   "Egoman",	//	 1
   "Embest",	//	 2
-  "Unknown",	//	 3
+  "Unknown",//	 3
   "Embest",	//	 4
-  "Unknown05",	//	 5
+  "Stadium",//	 5
   "Unknown06",	//	 6
   "Unknown07",	//	 7
   "Unknown08",	//	 8
@@ -305,6 +317,8 @@ static uint64_t epochMilli, epochMicro ;
 static int wiringPiMode = WPI_MODE_UNINITIALISED ;
 static volatile int    pinPass = -1 ;
 static pthread_mutex_t pinMutex ;
+
+static int RaspberryPiModel = -1;
 
 // Debugging & Return codes
 
@@ -449,6 +463,8 @@ static int physToGpioR2 [64] =
   -1, -1,
   -1, -1,
 } ;
+
+
 
 // gpioToGPFSEL:
 //	Map a BCM_GPIO pin to it's Function Selection
@@ -1021,6 +1037,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     bMem      = (revision & (0x07 << 20)) >> 20 ;
     bWarranty = (revision & (0x03 << 24)) != 0 ;
 
+    // Ref: https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#raspberry-pi-revision-codes
     *model    = bType ;
     *rev      = bRev ;
     *mem      = bMem ;
@@ -1086,6 +1103,8 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
 
     else                              { *model = 0           ; *rev = 0              ; *mem =   0 ; *maker = 0 ;               }
   }
+
+  RaspberryPiModel = model;
 }
 
 
@@ -2299,10 +2318,14 @@ int wiringPiSetup (void)
 
   switch (model)
   {
-    case PI_MODEL_A:	case PI_MODEL_B:
-    case PI_MODEL_AP:	case PI_MODEL_BP:
-    case PI_ALPHA:	case PI_MODEL_CM:
-    case PI_MODEL_ZERO:	case PI_MODEL_ZERO_W:
+    case PI_MODEL_A:
+    case PI_MODEL_B:
+    case PI_MODEL_AP:
+    case PI_MODEL_BP:
+    case PI_ALPHA:
+    case PI_MODEL_CM:
+    case PI_MODEL_ZERO:
+    case PI_MODEL_ZERO_W:
       piGpioBase = GPIO_PERI_BASE_OLD ;
       piGpioPupOffset = GPPUD ;
       break ;
@@ -2338,8 +2361,14 @@ int wiringPiSetup (void)
 	"  hardware then it most certianly won't work\n"
 	"  Try running with sudo?\n", strerror (errno)) ;
   }
+ }
 
-// Set the offsets into the memory interface.
+  if (PI_MODEL_5 == model) {
+    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Raspberry Pi 5 not supported.\n"
+  "  Unable to continue. Keep an eye of new version at https://github.com/GrazerComputerClub/WiringPi\n") ;
+  }
+
+ //Set the offsets into the memory interface.
 
   GPIO_PADS 	  = piGpioBase + 0x00100000 ;
   GPIO_CLOCK_BASE = piGpioBase + 0x00101000 ;
@@ -2350,50 +2379,60 @@ int wiringPiSetup (void)
 // Map the individual hardware components
 
 //	GPIO:
+ if (PI_MODEL_5 != model) {
+    gpio = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_BASE) ;
+    if (gpio == MAP_FAILED)
+      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno)) ;
 
-  gpio = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_BASE) ;
-  if (gpio == MAP_FAILED)
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno)) ;
+  //	PWM
 
-//	PWM
+    pwm = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PWM) ;
+    if (pwm == MAP_FAILED)
+      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PWM) failed: %s\n", strerror (errno)) ;
 
-  pwm = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PWM) ;
-  if (pwm == MAP_FAILED)
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PWM) failed: %s\n", strerror (errno)) ;
+  //	Clock control (needed for PWM)
 
-//	Clock control (needed for PWM)
+    clk = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_CLOCK_BASE) ;
+    if (clk == MAP_FAILED)
+      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (CLOCK) failed: %s\n", strerror (errno)) ;
 
-  clk = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_CLOCK_BASE) ;
-  if (clk == MAP_FAILED)
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (CLOCK) failed: %s\n", strerror (errno)) ;
+  //	The drive pads
 
-//	The drive pads
+    pads = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PADS) ;
+    if (pads == MAP_FAILED)
+      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PADS) failed: %s\n", strerror (errno)) ;
 
-  pads = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PADS) ;
-  if (pads == MAP_FAILED)
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PADS) failed: %s\n", strerror (errno)) ;
+  //	The system timer
 
-//	The system timer
+    timer = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_TIMER) ;
+    if (timer == MAP_FAILED)
+      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (TIMER) failed: %s\n", strerror (errno)) ;
 
-  timer = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_TIMER) ;
-  if (timer == MAP_FAILED)
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (TIMER) failed: %s\n", strerror (errno)) ;
+  // Set the timer to free-running, 1MHz.
+  //	0xF9 is 249, the timer divide is base clock / (divide+1)
+  //	so base clock is 250MHz / 250 = 1MHz.
 
-// Set the timer to free-running, 1MHz.
-//	0xF9 is 249, the timer divide is base clock / (divide+1)
-//	so base clock is 250MHz / 250 = 1MHz.
+    *(timer + TIMER_CONTROL) = 0x0000280 ;
+    *(timer + TIMER_PRE_DIV) = 0x00000F9 ;
+    timerIrqRaw = timer + TIMER_IRQ_RAW ;
 
-  *(timer + TIMER_CONTROL) = 0x0000280 ;
-  *(timer + TIMER_PRE_DIV) = 0x00000F9 ;
-  timerIrqRaw = timer + TIMER_IRQ_RAW ;
+    _wiringPiGpio  = gpio ;
+    _wiringPiPwm   = pwm ;
+    _wiringPiClk   = clk ;
+    _wiringPiPads  = pads ;
+    _wiringPiTimer = timer ;
+ } else {
+    _wiringPiGpio  = NULL ;
+    _wiringPiPwm   = NULL ;
+    _wiringPiClk   = NULL ;
+    _wiringPiPads  = NULL ;
+    _wiringPiTimer = NULL ;
+ }
+ 
 
 // Export the base addresses for any external software that might need them
 
-  _wiringPiGpio  = gpio ;
-  _wiringPiPwm   = pwm ;
-  _wiringPiClk   = clk ;
-  _wiringPiPads  = pads ;
-  _wiringPiTimer = timer ;
+
 
   initialiseEpoch () ;
 
@@ -2473,6 +2512,9 @@ int wiringPiSetupSys (void)
   if (wiringPiDebug)
     printf ("wiringPi: wiringPiSetupSys called\n") ;
 
+  int   model, rev, mem, maker, overVolted ;
+  piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+
   if (piGpioLayout () == 1)
   {
      pinToGpio =  pinToGpioR1 ;
@@ -2482,6 +2524,11 @@ int wiringPiSetupSys (void)
   {
      pinToGpio =  pinToGpioR2 ;
     physToGpio = physToGpioR2 ;
+  }
+
+  if (PI_MODEL_5 == model) {
+    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Raspberry Pi 5 not supported.\n"
+    "  Unable to continue. Keep an eye of new version at https://github.com/GrazerComputerClub/WiringPi\n") ;
   }
 
 // Open and scan the directory, looking for exported GPIOs, and pre-open
