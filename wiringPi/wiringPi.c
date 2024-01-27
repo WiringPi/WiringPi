@@ -502,7 +502,7 @@ int GPIOToSysFS(const int pin) {
   }
   if (PI_MODEL_5 == RaspberryPiModel) {
     sysfspin = pin + 399;
-    if (pin>426) {  // only 399-426 supported
+    if (sysfspin<399 || sysfspin>426) {  // only 399-426 supported, 40-pin GPIO header
       sysfspin = -1;
     }
   }
