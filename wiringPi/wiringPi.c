@@ -464,7 +464,53 @@ static int physToGpioR2 [64] =
   -1, -1,
 } ;
 
+const int _5v=-1;
+const int _0v=-1;
+const int _3v=-1;
 
+
+static int physToSysGPIOPi5 [41] =
+{
+   -1,		// 0
+  _3v, _5v,	// 1, 2
+  401, _5v,
+  402, _0v,
+  403, 413,
+  _0v, 414,
+  416, 417,
+  426, _0v,
+  421, 422,
+  _3v, 423,
+  409, _0v,
+  408, 424,
+  410, 407,
+  _0v, 406,
+  399, 400,
+  404, _0v,
+  405, 411,
+  412, _0v,
+  418, 415,
+  425, 419,
+  _0v, 420, //39, 40
+} ;
+
+static int GPIOToSysFS(const int pin) {
+  int sysfspin =  pin;
+  if (RaspberryPiModel<0) { //need to detect pi model
+    int   model, rev, mem, maker, overVolted ;
+    piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+  }
+  if (PI_MODEL_5 == RaspberryPiModel) {
+    sysfspin = pin + 399;
+    if (pin>426) {  // only 399-426 supported
+      sysfspin = -1;
+    }
+  }
+  if (wiringPiDebug)
+    printf ("GPIOToSysFS: translate bcm gpio %d to sysfs gpio %d\n", pin,  sysfspin) ;
+
+  return sysfspin;
+}
 
 // gpioToGPFSEL:
 //	Map a BCM_GPIO pin to it's Function Selection
@@ -2075,8 +2121,9 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
   if (sysFds [bcmGpioPin] == -1)
   {
-    sprintf (fName, "/sys/class/gpio/gpio%d/value", bcmGpioPin) ;
-    if ((sysFds [bcmGpioPin] = open (fName, O_RDWR)) < 0)
+    pinFS = GPIOToSysFS(bcmGpioPin);
+    sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
+    if (pinFS>=0 && (sysFds [bcmGpioPin] = open (fName, O_RDWR)) < 0)
       return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
   }
 
@@ -2525,18 +2572,16 @@ int wiringPiSetupSys (void)
     physToGpio = physToGpioR2 ;
   }
 
-  if (PI_MODEL_5 == model) {
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Raspberry Pi 5 not supported.\n"
-    "  Unable to continue. Keep an eye of new version at https://github.com/GrazerComputerClub/WiringPi\n") ;
-  }
-
 // Open and scan the directory, looking for exported GPIOs, and pre-open
 //	the 'value' interface to speed things up for later
 
   for (pin = 0 ; pin < 64 ; ++pin)
   {
-    sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
-    sysFds [pin] = open (fName, O_RDWR) ;
+    pinFS = GPIOToSysFS(pin);
+    if (pinFS>=0) {
+      sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
+      sysFds [pin] = open (fName, O_RDWR) ;
+    }
   }
 
   initialiseEpoch () ;
