@@ -494,7 +494,7 @@ static int physToSysGPIOPi5 [41] =
   _0v, 420, //39, 40
 } ;
 
-static int GPIOToSysFS(const int pin) {
+int GPIOToSysFS(const int pin) {
   int sysfspin =  pin;
   if (RaspberryPiModel<0) { //need to detect pi model
     int   model, rev, mem, maker, overVolted ;
