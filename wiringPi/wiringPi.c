@@ -1104,7 +1104,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     else                              { *model = 0           ; *rev = 0              ; *mem =   0 ; *maker = 0 ;               }
   }
 
-  RaspberryPiModel = model;
+  RaspberryPiModel = *model;
 }
 
 
@@ -2361,7 +2361,6 @@ int wiringPiSetup (void)
 	"  hardware then it most certianly won't work\n"
 	"  Try running with sudo?\n", strerror (errno)) ;
   }
- }
 
   if (PI_MODEL_5 == model) {
     return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Raspberry Pi 5 not supported.\n"
