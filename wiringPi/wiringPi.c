@@ -2348,6 +2348,11 @@ int wiringPiSetup (void)
 //	Try /dev/mem. If that fails, then
 //	try /dev/gpiomem. If that fails then game over.
 
+  if (PI_MODEL_5 == model) {
+    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Raspberry Pi 5 not supported.\n"
+  "  Unable to continue. Keep an eye of new versions at https://github.com/GrazerComputerClub/WiringPi\n") ;
+  }
+
   if ((fd = open ("/dev/mem", O_RDWR | O_SYNC | O_CLOEXEC)) < 0)
   {
     if ((fd = open ("/dev/gpiomem", O_RDWR | O_SYNC | O_CLOEXEC) ) >= 0)	// We're using gpiomem
@@ -2360,11 +2365,6 @@ int wiringPiSetup (void)
 	"  Aborting your program because if it can not access the GPIO\n"
 	"  hardware then it most certianly won't work\n"
 	"  Try running with sudo?\n", strerror (errno)) ;
-  }
-
-  if (PI_MODEL_5 == model) {
-    return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Raspberry Pi 5 not supported.\n"
-  "  Unable to continue. Keep an eye of new version at https://github.com/GrazerComputerClub/WiringPi\n") ;
   }
 
  //Set the offsets into the memory interface.
