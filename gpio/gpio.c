@@ -88,10 +88,10 @@ char *usage = "Usage: gpio -v\n"
 	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
 
 
-int GPIOToSysFS_ExitonFail (const int pin) {
+int GPIOToSysFS_ExitonFail (const int pin, const char* name) {
   int pinFS = GPIOToSysFS(pin);
   if (pinFS<0) {
-    fprintf (stderr, "%s: invalid sysfs pin of bcm pin %d\n", argv [0], pin) ;
+    fprintf (stderr, "%s: invalid sysfs pin of bcm pin %d\n", name, pin) ;
     exit (1) ;
   }
   return pinFS;
@@ -501,7 +501,7 @@ void doExport (int argc, char *argv [])
   }
 
   pin = atoi (argv [2]) ;
-  int pinFS = GPIOToSysFS_ExitonFail(pin);
+  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
   mode = argv [3] ;
 
   if ((fd = fopen ("/sys/class/gpio/export", "w")) == NULL)
@@ -614,7 +614,7 @@ void doEdge (int argc, char *argv [])
   }
 
   pin  = atoi (argv [2]) ;
-  int pinFS = GPIOToSysFS_ExitonFail(pin);
+  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
   mode = argv [3] ;
 
 // Export the pin and set direction to input
@@ -686,7 +686,7 @@ void doUnexport (int argc, char *argv [])
   }
 
   pin = atoi (argv [2]) ;
-  int pinFS = GPIOToSysFS_ExitonFail(pin);
+  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
 
   if ((fd = fopen ("/sys/class/gpio/unexport", "w")) == NULL)
   {
