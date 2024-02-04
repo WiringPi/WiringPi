@@ -88,6 +88,15 @@ char *usage = "Usage: gpio -v\n"
 	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
 
 
+int GPIOToSysFS_ExitonFail (const int pin, const char* name) {
+  int pinFS = GPIOToSysFS(pin);
+  if (pinFS<0) {
+    fprintf (stderr, "%s: invalid sysfs pin of bcm pin %d\n", name, pin) ;
+    exit (1) ;
+  }
+  return pinFS;
+}
+
 #ifdef	NOT_FOR_NOW
 /*
  * decodePin:
@@ -391,16 +400,19 @@ static void doI2Cdetect (UNU int argc, char *argv [])
 static void doExports (UNU int argc, UNU char *argv [])
 {
   int fd ;
-  int i, l, first ;
+  int pin, l, first ;
   char fName [128] ;
   char buf [16] ;
 
-  for (first = 0, i = 0 ; i < 64 ; ++i)	// Crude, but effective
+  for (first = 0, pin = 0 ; pin < 64 ; ++pin)	// Crude, but effective
   {
 
 // Try to read the direction
-
-    sprintf (fName, "/sys/class/gpio/gpio%d/direction", i) ;
+    int pinFS = GPIOToSysFS(pin);
+    if (pinFS<0) {
+      continue;
+    }
+    sprintf (fName, "/sys/class/gpio/gpio%d/direction", pinFS) ;
     if ((fd = open (fName, O_RDONLY)) == -1)
       continue ;
 
@@ -410,7 +422,11 @@ static void doExports (UNU int argc, UNU char *argv [])
       printf ("GPIO Pins exported:\n") ;
     }
 
-    printf ("%4d: ", i) ;
+    if(pinFS==pin) {
+      printf ("%4d: ", pin) ;
+    } else {
+      printf ("%4d (%4d): ", pin, pinFS) ;
+    }
 
     if ((l = read (fd, buf, 16)) == 0)
       sprintf (buf, "%s", "?") ;
@@ -425,7 +441,7 @@ static void doExports (UNU int argc, UNU char *argv [])
 
 // Try to Read the value
 
-    sprintf (fName, "/sys/class/gpio/gpio%d/value", i) ;
+    sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
     if ((fd = open (fName, O_RDONLY)) == -1)
     {
       printf ("No Value file (huh?)\n") ;
@@ -443,7 +459,7 @@ static void doExports (UNU int argc, UNU char *argv [])
 
 // Read any edge trigger file
 
-    sprintf (fName, "/sys/class/gpio/gpio%d/edge", i) ;
+    sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
     if ((fd = open (fName, O_RDONLY)) == -1)
     {
       printf ("\n") ;
@@ -485,7 +501,7 @@ void doExport (int argc, char *argv [])
   }
 
   pin = atoi (argv [2]) ;
-
+  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
   mode = argv [3] ;
 
   if ((fd = fopen ("/sys/class/gpio/export", "w")) == NULL)
@@ -494,10 +510,9 @@ void doExport (int argc, char *argv [])
     exit (1) ;
   }
 
-  fprintf (fd, "%d\n", pin) ;
+  fprintf (fd, "%d\n", pinFS) ;
   fclose (fd) ;
-
-  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pinFS) ;
   if ((fd = fopen (fName, "w")) == NULL)
   {
     fprintf (stderr, "%s: Unable to open GPIO direction interface for pin %d: %s\n", argv [0], pin, strerror (errno)) ;
@@ -522,10 +537,10 @@ void doExport (int argc, char *argv [])
 
 // Change ownership so the current user can actually use it
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
   changeOwner (argv [0], fName) ;
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
   changeOwner (argv [0], fName) ;
 
 }
@@ -599,6 +614,7 @@ void doEdge (int argc, char *argv [])
   }
 
   pin  = atoi (argv [2]) ;
+  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
   mode = argv [3] ;
 
 // Export the pin and set direction to input
@@ -609,10 +625,10 @@ void doEdge (int argc, char *argv [])
     exit (1) ;
   }
 
-  fprintf (fd, "%d\n", pin) ;
+  fprintf (fd, "%d\n", pinFS) ;
   fclose (fd) ;
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pinFS) ;
   if ((fd = fopen (fName, "w")) == NULL)
   {
     fprintf (stderr, "%s: Unable to open GPIO direction interface for pin %d: %s\n", argv [0], pin, strerror (errno)) ;
@@ -622,7 +638,7 @@ void doEdge (int argc, char *argv [])
   fprintf (fd, "in\n") ;
   fclose (fd) ;
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
   if ((fd = fopen (fName, "w")) == NULL)
   {
     fprintf (stderr, "%s: Unable to open GPIO edge interface for pin %d: %s\n", argv [0], pin, strerror (errno)) ;
@@ -641,10 +657,10 @@ void doEdge (int argc, char *argv [])
 
 // Change ownership of the value and edge files, so the current user can actually use it!
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
   changeOwner (argv [0], fName) ;
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
   changeOwner (argv [0], fName) ;
 
   fclose (fd) ;
@@ -670,6 +686,7 @@ void doUnexport (int argc, char *argv [])
   }
 
   pin = atoi (argv [2]) ;
+  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
 
   if ((fd = fopen ("/sys/class/gpio/unexport", "w")) == NULL)
   {
@@ -677,7 +694,7 @@ void doUnexport (int argc, char *argv [])
     exit (1) ;
   }
 
-  fprintf (fd, "%d\n", pin) ;
+  fprintf (fd, "%d\n", pinFS) ;
   fclose (fd) ;
 }
 
@@ -697,13 +714,16 @@ void doUnexportall (char *progName)
 
   for (pin = 0 ; pin < 63 ; ++pin)
   {
-    if ((fd = fopen ("/sys/class/gpio/unexport", "w")) == NULL)
-    {
-      fprintf (stderr, "%s: Unable to open GPIO export interface\n", progName) ;
-      exit (1) ;
+    int pinFS = GPIOToSysFS(pin);
+    if (pinFS>=0) {
+      if ((fd = fopen ("/sys/class/gpio/unexport", "w")) == NULL)
+      {
+        fprintf (stderr, "%s: Unable to open GPIO export interface\n", progName) ;
+        exit (1) ;
+      }
+      fprintf (fd, "%d\n", pinFS) ;
+      fclose (fd) ;
     }
-    fprintf (fd, "%d\n", pin) ;
-    fclose (fd) ;
   }
 }
 
