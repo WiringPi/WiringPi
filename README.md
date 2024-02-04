@@ -15,6 +15,13 @@ to support newer hardware (primarily for use by the ports) and fix bugs.
   * The default `master` branch contains code that has been written since that final source
     release to provide support for newer hardware.
 
+Raspberry Pi 5 Roadmap
+-----
+
+* 2.71 Raspberry Pi 4 (Bookworm)
+* 2.72 Raspberry Pi 5 sysfs support
+* 2.73 Raspberry Pi 5 gpiomem support
+
 BananaPi M2 Zero 
 -----
 
