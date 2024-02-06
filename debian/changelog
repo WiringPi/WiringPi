@@ -1,3 +1,9 @@
+wiringpi (2.70-4) unstable; urgency=low
+
+  * Working also on bookworm.
+
+ -- Rafael Diniz <rafael@rhizomatica.org>  Tue, 06 Feb 2024 11:55:31 +0000
+
 wiringpi (2.70-3) unstable; urgency=low
 
   * Make it work with recent kernels
