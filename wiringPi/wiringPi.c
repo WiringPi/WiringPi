@@ -135,7 +135,7 @@ const unsigned int RP1_RIO_OE  = (0x0004/4);
 const unsigned int RP1_RIO_IN  = (0x0008/4);
 
 //RP1 chip (@Pi5) RIO offset for set/clear value
-const unsigned int RP1_SET_OFFSET = (0x2000/4):
+const unsigned int RP1_SET_OFFSET = (0x2000/4);
 const unsigned int RP1_CLR_OFFSET = (0x3000/4);
 
 //RP1 chip (@Pi5) PDE/PDU pull-up/-down enable
@@ -167,7 +167,7 @@ const unsigned int RP1_PADS0_Addr    = 0x400f0000;
 //	due to the Pi v2, v3, etc. and the new /dev/gpiomem interface
 
 const char* gpiomem_global    = "/dev/mem";
-const char* gpiomem_BCM       = "/dev/gpiomem"
+const char* gpiomem_BCM       = "/dev/gpiomem";
 const char* gpiomem_RP1       = "/dev/gpiomem0";
 const int   gpiomem_RP1_Size  = 0x00030000;
 
@@ -562,11 +562,12 @@ int GetMaxPin() {
 
 #define RETURN_ON_MODEL5 if (PI_MODEL_5 == RaspberryPiModel) { if (wiringPiDebug) printf("Function not supported on Pi5\n");  return; } 
  
-void FailOnModel5() {
+int FailOnModel5() {
   if (PI_MODEL_5 == RaspberryPiModel) {
     return wiringPiFailure (WPI_ALMOST, "Function not supported on Raspberry Pi 5.\n"
   "  Unable to continue. Keep an eye of new versions at https://github.com/GrazerComputerClub/WiringPi\n") ;
   }
+  return 0;
 }
 
 // gpioToGPFSEL:
@@ -1287,7 +1288,35 @@ int getAlt (int pin)
     return 0 ;
 
   if (PI_MODEL_5 == RaspberryPiModel) {
-    alt = (gpio[2*pin+1] & RP1_FSEL_NONE_HW); //0-4  function, 5-11 debounce time
+    alt = (gpio[2*pin+1] & RP1_FSEL_NONE_HW); //0-4  function
+
+  /* BCM definiton
+  000 = GPIO Pin 9 is an input
+  001 = GPIO Pin 9 is an output
+  100 = GPIO Pin 9 takes alternate function 0
+  101 = GPIO Pin 9 takes alternate function 1
+  110 = GPIO Pin 9 takes alternate function 2
+  111 = GPIO Pin 9 takes alternate function 3
+  011 = GPIO Pin 9 takes alternate function 4
+  010 = GPIO Pin 9 takes alternate function 5
+  */
+    switch(alt) {
+      case 0: return 4;
+      case 1: return 5;
+      case 2: return 6;
+      case 3: return 7;
+      case 4: return 3;
+      case RP1_FSEL_GPIO: {
+          unsigned int outputmask = gpio[2*pin] & 0x3000;   //Bit13-OETOPAD + Bit12-OEFROMPERI
+          return (outputmask==0x3000) ? 1 : 0; //1=OUT 0=IN
+        }
+      case 6: return 8;
+      case 7: return 9;
+      case 8: return 10;
+      case 9: return 11;
+      default:return alt;
+    }
+
   } else {
     fSel    = gpioToGPFSEL [pin] ;
     shift   = gpioToShift  [pin] ;
@@ -1678,7 +1707,6 @@ void pullUpDnControl (int pin, int pud)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
-    unsigned int pull;
     if (PI_MODEL_5 == RaspberryPiModel) {
       unsigned int pullbits = pads[1+pin] & RP1_INV_PUD_MASK; // remove bits
       switch (pud){
@@ -1830,7 +1858,7 @@ void digitalWrite (int pin, int value)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
     if (PI_MODEL_5 == RaspberryPiModel) {
-      if (value == LOW)
+      if (value == LOW) {
         //printf("Set pin %d >>0x%08x<< to low\n", pin, 1<<pin);
         rio[RP1_RIO_OUT + RP1_CLR_OFFSET] = 1<<pin;
       } else {
