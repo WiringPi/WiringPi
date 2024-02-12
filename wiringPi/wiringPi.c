@@ -151,6 +151,7 @@ const unsigned int RP1_STATUS_LEVEL_MASK = 0x00C00000;
 const unsigned int RP1_DEBOUNCE_DEFAULT_VALUE = 4;
 const unsigned int RP1_DEBOUNCE_MASK    = 0x7f;
 const unsigned int RP1_DEBOUNCE_DEFAULT = (RP1_DEBOUNCE_DEFAULT_VALUE << 5);
+const unsigned int RP1_PAD_DEFAULT      = 0x5a;
 
 //RP1 chip (@Pi5) address
 const unsigned long long RP1_BASE_Addr = 0x1f000d0000;
@@ -826,6 +827,7 @@ static void usingGpioMemCheck (const char *what)
     fprintf (stderr, "%s: Unable to do this when using /dev/gpiomem. Try sudo?\n", what) ;
     exit (EXIT_FAILURE) ;
   }
+
 }
 
 
@@ -1600,11 +1602,20 @@ void pinModeAlt (int pin, int mode)
  *********************************************************************************
  */
 
+//Default: rp1_set_pad(pin, 0, 1, 0, 1, 1, 1, 0);
+void rp1_set_pad(int pin, int slewfast, int schmitt, int pulldown, int pullup, int drive, int inputenable, int outputdisable) {
+
+  pads[1+pin] = (slewfast != 0) | ((schmitt != 0) << 1) | ((pulldown != 0) << 2) | ((pullup != 0) << 3) | ((drive & 0x3) << 4) | ((inputenable != 0) << 6) | ((outputdisable != 0) << 7);
+}
+
 void pinMode (int pin, int mode)
 {
   int    fSel, shift, alt ;
   struct wiringPiNodeStruct *node = wiringPiNodes ;
   int origPin = pin ;
+
+  if (wiringPiDebug)
+      printf ("pinMode: pin:%d mode:%d\n", pin, mode) ;
 
   setupCheck ("pinMode") ;
 
@@ -1617,6 +1628,9 @@ void pinMode (int pin, int mode)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
+    if (wiringPiDebug)
+      printf ("pinMode: bcm pin:%d mode:%d\n", pin, mode) ;
+
     softPwmStop  (origPin) ;
     softToneStop (origPin) ;
 
@@ -1625,13 +1639,17 @@ void pinMode (int pin, int mode)
 
     if (mode == INPUT) {
       if (PI_MODEL_5 == RaspberryPiModel) {
-        rio[RP1_RIO_OE + RP1_CLR_OFFSET] = 1<<pin;
+        pads[1+pin] = RP1_PAD_DEFAULT;
+        gpio[2*pin+1] = RP1_FSEL_GPIO | RP1_DEBOUNCE_DEFAULT; // GPIO
+        rio[RP1_RIO_OE + RP1_CLR_OFFSET] = 1<<pin;            // Input
       } else {
         *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) ; // Sets bits to zero = input
       }
     } else if (mode == OUTPUT) {
       if (PI_MODEL_5 == RaspberryPiModel) {
-        rio[RP1_RIO_OE + RP1_SET_OFFSET] = 1<<pin; 
+        pads[1+pin] = RP1_PAD_DEFAULT;
+        gpio[2*pin+1] = RP1_FSEL_GPIO | RP1_DEBOUNCE_DEFAULT; // GPIO
+        rio[RP1_RIO_OE + RP1_SET_OFFSET] = 1<<pin;            // Output
       } else {
         *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (1 << shift) ;
       }
