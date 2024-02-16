@@ -152,6 +152,8 @@ const unsigned int RP1_DEBOUNCE_DEFAULT_VALUE = 4;
 const unsigned int RP1_DEBOUNCE_MASK    = 0x7f;
 const unsigned int RP1_DEBOUNCE_DEFAULT = (RP1_DEBOUNCE_DEFAULT_VALUE << 5);
 const unsigned int RP1_PAD_DEFAULT      = 0x5a;
+const unsigned int RP1_PAD_DRIVE_MASK   = 0x00000030;
+const unsigned int RP1_INV_PAD_DRIVE_MASK = ~(RP1_PAD_DRIVE_MASK);
 
 //RP1 chip (@Pi5) address
 const unsigned long long RP1_BASE_Addr = 0x1f000d0000;
@@ -1249,21 +1251,57 @@ int physPinToGpio (int physPin)
 
 void setPadDrive (int group, int value)
 {
-  uint32_t wrVal ;
+  uint32_t wrVal, rdVal;
 
-  RETURN_ON_MODEL5
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
-    if ((group < 0) || (group > 2))
-      return ;
+    value = value & 7; // 0-7 supported
+    if (PI_MODEL_5 == RaspberryPiModel) {
+      if (-1==group) {
+        printf ("Pad register:\n");
+        for (int pin=0, maxpin=GetMaxPin(); pin<=maxpin; ++pin) { 
+          unsigned int drive = (pads[1+pin] & RP1_PAD_DRIVE_MASK)>>4;
+          printf ("  Pin %2d: 0x%08X drive: 0x%d = %2dmA\n", pin, pads[1+pin], drive, 0==drive ? 2 : drive*4) ;
+        }        
+      }
+      if (group !=0) { // only GPIO range @RP1
+        return ;
+      } 
+      switch(value) {
+        default: 
+                /* bcm*/                 // RP1
+        case 0: /* 2mA*/ value=0; break; // 2mA
+        case 1: /* 4mA*/
+        case 2: /* 6mA*/ value=1; break; // 4mA
+        case 3: /* 8mA*/
+        case 4: /*10mA*/ value=2; break; // 8mA
+        case 5: /*12mA*/
+        case 6: /*14mA*/
+        case 7: /*16mA*/ value=3; break; //12mA
+      }
+      wrVal = (value << 4); //Drive strength 0-3   
+      //set for all pins even when it's avaiable for each pin separately
+      for (int pin=0, maxpin=GetMaxPin(); pin<=maxpin; ++pin) { 
+        pads[1+pin] = (pads[1+pin] & RP1_INV_PAD_DRIVE_MASK) | wrVal;
+      }
+      rdVal = pads[1+17]; // only pin 17 readback, for logging
+    } else {
+      if (-1==group) {
+        printf ("Pad register: Group 0: 0x%08X, Group 1: 0x%08X, Group 2: 0x%08X\n", *(pads + 0 + 11), *(pads + 1 + 11), *(pads + 2 + 11)) ;
+      }
 
-    wrVal = BCM_PASSWORD | 0x18 | (value & 7) ;
-    *(pads + group + 11) = wrVal ;
+      if ((group < 0) || (group > 2))
+        return ;
+
+      wrVal = BCM_PASSWORD | 0x18 | value; //Drive strength 0-7  
+      *(pads + group + 11) = wrVal ;
+      rdVal = *(pads + group + 11);
+    }
 
     if (wiringPiDebug)
     {
       printf ("setPadDrive: Group: %d, value: %d (%08X)\n", group, value, wrVal) ;
-      printf ("Read : %08X\n", *(pads + group + 11)) ;
+      printf ("Read : %08X\n", rdVal) ;
     }
   }
 }
@@ -1292,15 +1330,21 @@ int getAlt (int pin)
   if (PI_MODEL_5 == RaspberryPiModel) {
     alt = (gpio[2*pin+1] & RP1_FSEL_NONE_HW); //0-4  function
 
-  /* BCM definiton
-  000 = GPIO Pin 9 is an input
-  001 = GPIO Pin 9 is an output
-  100 = GPIO Pin 9 takes alternate function 0
-  101 = GPIO Pin 9 takes alternate function 1
-  110 = GPIO Pin 9 takes alternate function 2
-  111 = GPIO Pin 9 takes alternate function 3
-  011 = GPIO Pin 9 takes alternate function 4
-  010 = GPIO Pin 9 takes alternate function 5
+  /*
+  BCM:
+  000b = GPIO Pin 9 is an input
+  001b = GPIO Pin 9 is an output
+  100b = GPIO Pin 9 takes alternate function 0
+  101b = GPIO Pin 9 takes alternate function 1
+  110b = GPIO Pin 9 takes alternate function 2
+  111b = GPIO Pin 9 takes alternate function 3
+  011b = GPIO Pin 9 takes alternate function 4
+  010b = GPIO Pin 9 takes alternate function 5
+  RP1:
+   8 = alternate function 6
+   9 = alternate function 7
+  10 = alternate function 8
+  11 = alternate function 9
   */
     switch(alt) {
       case 0: return 4;
@@ -1728,8 +1772,8 @@ void pullUpDnControl (int pin, int pud)
     if (PI_MODEL_5 == RaspberryPiModel) {
       unsigned int pullbits = pads[1+pin] & RP1_INV_PUD_MASK; // remove bits
       switch (pud){
-        case PUD_OFF:  break;
-        case PUD_UP:   pads[1+pin] = pullbits | RP1_PUD_UP;   break; //set bit
+        case PUD_OFF:  pads[1+pin] = pullbits;                break;
+        case PUD_UP:   pads[1+pin] = pullbits | RP1_PUD_UP;   break;
         case PUD_DOWN: pads[1+pin] = pullbits | RP1_PUD_DOWN; break;
         default: return ; /* An illegal value */
       }

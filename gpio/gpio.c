@@ -807,13 +807,13 @@ static void doPadDrive (int argc, char *argv [])
   group = atoi (argv [2]) ;
   val   = atoi (argv [3]) ;
 
-  if ((group < 0) || (group > 2))
+  if ((group < -1) || (group > 2))  //-1 hidden feature for read value of all
   {
     fprintf (stderr, "%s: drive group not 0, 1 or 2: %d\n", argv [0], group) ;
     exit (1) ;
   }
 
-  if ((val < 0) || (val > 7))
+  if ((val < -1) || (val > 7))
   {
     fprintf (stderr, "%s: drive value not 0-7: %d\n", argv [0], val) ;
     exit (1) ;
