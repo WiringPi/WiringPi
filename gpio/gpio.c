@@ -794,6 +794,31 @@ void doMode (int argc, char *argv [])
  *********************************************************************************
  */
 
+static void doPadDrivePin (int argc, char *argv [])
+{
+
+  if (argc != 4) {
+    fprintf (stderr, "Usage: %s drivepin pin value\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  int pin = atoi (argv [2]) ;
+  int val = atoi (argv [3]) ;
+
+  if ((pin < 0) || (pin > 27)) {
+    fprintf (stderr, "%s: drive pin not 0-27: %d\n", argv [0], pin) ;
+    exit (1) ;
+  }
+
+  if ((val < 0) || (val > 3)) {
+    fprintf (stderr, "%s: drive value not 0-3: %d\n", argv [0], val) ;
+    exit (1) ;
+  }
+
+  setPadDrivePin (pin, val) ;
+}
+
+
 static void doPadDrive (int argc, char *argv [])
 {
   int group, val ;
@@ -807,13 +832,13 @@ static void doPadDrive (int argc, char *argv [])
   group = atoi (argv [2]) ;
   val   = atoi (argv [3]) ;
 
-  if ((group < -1) || (group > 2))  //-1 hidden feature for read value of all
+  if ((group < -1) || (group > 2))  //-1 hidden feature for read and print values
   {
     fprintf (stderr, "%s: drive group not 0, 1 or 2: %d\n", argv [0], group) ;
     exit (1) ;
   }
 
-  if ((val < -1) || (val > 7))
+  if ((val < 0) || (val > 7))
   {
     fprintf (stderr, "%s: drive value not 0-7: %d\n", argv [0], val) ;
     exit (1) ;
@@ -1536,6 +1561,7 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "pwmc"     ) == 0) doPwmClock   (argc, argv) ;
   else if (strcasecmp (argv [1], "pwmTone"  ) == 0) doPwmTone    (argc, argv) ;
   else if (strcasecmp (argv [1], "drive"    ) == 0) doPadDrive   (argc, argv) ;
+  else if (strcasecmp (argv [1], "drivepin" ) == 0) doPadDrivePin(argc, argv) ;
   else if (strcasecmp (argv [1], "readall"  ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "nreadall" ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "pins"     ) == 0) doReadall    () ;

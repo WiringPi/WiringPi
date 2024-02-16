@@ -151,7 +151,10 @@ const unsigned int RP1_STATUS_LEVEL_MASK = 0x00C00000;
 const unsigned int RP1_DEBOUNCE_DEFAULT_VALUE = 4;
 const unsigned int RP1_DEBOUNCE_MASK    = 0x7f;
 const unsigned int RP1_DEBOUNCE_DEFAULT = (RP1_DEBOUNCE_DEFAULT_VALUE << 5);
-const unsigned int RP1_PAD_DEFAULT      = 0x5a;
+
+const unsigned int RP1_PAD_DEFAULT_0TO8      = (0x0B | 0x70);  //Slewfast, Schmitt, PullUp,   | 12mA, Input enable
+const unsigned int RP1_PAD_DEFAULT_FROM9     = (0x07 | 0x70);  //Slewfast, Schmitt, PullDown, | 12mA, Input enable
+
 const unsigned int RP1_PAD_DRIVE_MASK   = 0x00000030;
 const unsigned int RP1_INV_PAD_DRIVE_MASK = ~(RP1_PAD_DRIVE_MASK);
 
@@ -1248,6 +1251,19 @@ int physPinToGpio (int physPin)
  *	Set the PAD driver value
  *********************************************************************************
  */
+void setPadDrivePin (int pin, int value) {
+  if (PI_MODEL_5 != RaspberryPiModel) return;
+  if (pin < 0 || pin > GetMaxPin()) return ;
+
+  uint32_t wrVal;
+  value = value & 3; // 0-3 supported
+  wrVal = (value << 4); //Drive strength 0-3
+  pads[1+pin] = (pads[1+pin] & RP1_INV_PAD_DRIVE_MASK) | wrVal;
+  if (wiringPiDebug) {
+    printf ("setPadDrivePin: pin: %d, value: %d (%08X)\n", pin, value, pads[1+pin]) ;
+  }
+}
+
 
 void setPadDrive (int group, int value)
 {
@@ -1682,8 +1698,8 @@ void pinMode (int pin, int mode)
     shift   = gpioToShift  [pin] ;
 
     if (mode == INPUT) {
-      if (PI_MODEL_5 == RaspberryPiModel) {
-        pads[1+pin] = RP1_PAD_DEFAULT;
+      if (PI_MODEL_5 == RaspberryPiModel) { 
+        pads[1+pin] = (pin<=8) ? RP1_PAD_DEFAULT_0TO8 : RP1_PAD_DEFAULT_FROM9;
         gpio[2*pin+1] = RP1_FSEL_GPIO | RP1_DEBOUNCE_DEFAULT; // GPIO
         rio[RP1_RIO_OE + RP1_CLR_OFFSET] = 1<<pin;            // Input
       } else {
@@ -1691,7 +1707,7 @@ void pinMode (int pin, int mode)
       }
     } else if (mode == OUTPUT) {
       if (PI_MODEL_5 == RaspberryPiModel) {
-        pads[1+pin] = RP1_PAD_DEFAULT;
+        pads[1+pin] = (pin<=8) ? RP1_PAD_DEFAULT_0TO8 : RP1_PAD_DEFAULT_FROM9;
         gpio[2*pin+1] = RP1_FSEL_GPIO | RP1_DEBOUNCE_DEFAULT; // GPIO
         rio[RP1_RIO_OE + RP1_SET_OFFSET] = 1<<pin;            // Output
       } else {
