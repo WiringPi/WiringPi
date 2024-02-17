@@ -1417,6 +1417,7 @@ void pwmSetMode (int mode)
 
 void pwmSetRange (unsigned int range)
 {
+  FailOnModel5();
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
     *(pwm + PWM0_RANGE) = range ; delayMicroseconds (10) ;
