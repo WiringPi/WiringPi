@@ -236,6 +236,7 @@ extern          void piBoardId           (int *model, int *rev, int *mem, int *m
 extern          int  wpiPinToGpio        (int wpiPin) ;
 extern          int  physPinToGpio       (int physPin) ;
 extern          void setPadDrive         (int group, int value) ;
+extern          void setPadDrivePin      (int pin, int value);     // Interface V2
 extern          int  getAlt              (int pin) ;
 extern          void pwmToneWrite        (int pin, int freq) ;
 extern          void pwmSetMode          (int mode) ;
