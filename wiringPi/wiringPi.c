@@ -159,7 +159,9 @@ const unsigned int RP1_PAD_DRIVE_MASK   = 0x00000030;
 const unsigned int RP1_INV_PAD_DRIVE_MASK = ~(RP1_PAD_DRIVE_MASK);
 
 //RP1 chip (@Pi5) address
-const unsigned long long RP1_BASE_Addr = 0x1f000d0000;
+const unsigned long long RP1_64_BASE_Addr = 0x1f000d0000;
+const unsigned int RP1_BASE_Addr     = 0x40000000;
+const unsigned int RP1_PWM0_Addr     = 0x40098000;  // Adress is not mapped to gpiomem device!
 const unsigned int RP1_IO0_Addr      = 0x400d0000;
 const unsigned int RP1_SYS_RIO0_Addr = 0x400e0000;
 const unsigned int RP1_PADS0_Addr    = 0x400f0000;
@@ -176,12 +178,20 @@ const char* gpiomem_global    = "/dev/mem";
 const char* gpiomem_BCM       = "/dev/gpiomem";
 const char* gpiomem_RP1       = "/dev/gpiomem0";
 const int   gpiomem_RP1_Size  = 0x00030000;
+// PCIe Memory access, static define - maybe needed to detect in future
+//dmesg: rp1 0000:01:00.0: bar1 len 0x400000, start 0x1f00000000, end 0x1f003fffff, flags, 0x40200
+const char* pciemem_RP1_path  = "/sys/bus/pci/devices/0000:01:00.0";
+const char* pciemem_RP1       = "/sys/bus/pci/devices/0000:01:00.0/resource1";
+const int   pciemem_RP1_Size  = 0x00400000;
+const unsigned short pciemem_RP1_Ventor= 0x1de4;
+const unsigned short pciemem_RP1_Device= 0x0001;
 
 static volatile unsigned int GPIO_PADS ;
 static volatile unsigned int GPIO_CLOCK_BASE ;
 static volatile unsigned int GPIO_BASE ;
 static volatile unsigned int GPIO_TIMER ;
 static volatile unsigned int GPIO_PWM ;
+static volatile unsigned int GPIO_RIO ;
 
 #define	PAGE_SIZE		(4*1024)
 #define	BLOCK_SIZE		(4*1024)
@@ -235,6 +245,7 @@ static          int wiringPiSetuped = FALSE ;
 
 // Locals to hold pointers to the hardware
 
+static volatile unsigned int *base ;
 static volatile unsigned int *gpio ;
 static volatile unsigned int *pwm ;
 static volatile unsigned int *clk ;
@@ -245,6 +256,7 @@ static volatile unsigned int *rio ;
 
 // Export variables for the hardware pointers
 
+volatile unsigned int *_wiringPiBase ;
 volatile unsigned int *_wiringPiGpio ;
 volatile unsigned int *_wiringPiPwm ;
 volatile unsigned int *_wiringPiClk ;
@@ -2640,7 +2652,7 @@ int wiringPiSetup (void)
   const char* gpiomemModule = gpiomem_BCM;
 
   if (PI_MODEL_5 == model) {
-    gpiomemGlobal = NULL;  // now supported as long as i don't know the RP1 32-bit mapped global address 
+    gpiomemGlobal = pciemem_RP1;
     gpiomemModule = gpiomem_RP1;
   }
 
@@ -2653,12 +2665,14 @@ int wiringPiSetup (void)
       usingGpioMem = TRUE ;
     }
     else
-      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Unable to open /dev/mem or %s: %s.\n"
+      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Unable to open %s or %s: %s.\n"
 	"  Aborting your program because if it can not access the GPIO\n"
 	"  hardware then it most certianly won't work\n"
-	"  Try running with sudo?\n", gpiomemModule, strerror (errno)) ;
+	"  Try running with sudo?\n", gpiomemGlobal, gpiomemModule, strerror (errno)) ;
   }
-
+  if (wiringPiDebug) {
+    printf ("wiringPi: access to %s succeded\n", usingGpioMem ? gpiomemModule : gpiomemGlobal) ;
+  }
 //	GPIO:
  if (PI_MODEL_5 != model) {
    //Set the offsets into the memory interface.
@@ -2668,11 +2682,12 @@ int wiringPiSetup (void)
     GPIO_BASE	  = piGpioBase + 0x00200000 ;
     GPIO_TIMER	  = piGpioBase + 0x0000B000 ;
     GPIO_PWM	  = piGpioBase + 0x0020C000 ;
+    GPIO_RIO    = 0x00 ;
 
 // Map the individual hardware components
 
   //	GPIO:
-
+    base = NULL;
     gpio = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_BASE) ;
     if (gpio == MAP_FAILED)
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno)) ;
@@ -2710,6 +2725,7 @@ int wiringPiSetup (void)
     timerIrqRaw = timer + TIMER_IRQ_RAW ;
 
     // Export the base addresses for any external software that might need them
+    _wiringPiBase  = base ;
     _wiringPiGpio  = gpio ;
     _wiringPiPwm   = pwm ;
     _wiringPiClk   = clk ;
@@ -2717,21 +2733,46 @@ int wiringPiSetup (void)
     _wiringPiTimer = timer ;
     _wiringPiRio   = NULL ;
  } else {
-    //map hole RP1 memory block from beginning, gobal mem not supported
-    gpio = (unsigned int *)mmap(0, gpiomem_RP1_Size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0x00000000) ;
-    if (gpio == MAP_FAILED)
+    unsigned int MMAP_size = (usingGpioMem) ? gpiomem_RP1_Size : pciemem_RP1_Size;
+
+    GPIO_PADS 	= (RP1_PADS0_Addr-RP1_IO0_Addr) ;
+    GPIO_CLOCK_BASE = 0x00;
+    GPIO_BASE	  = (RP1_IO0_Addr-RP1_BASE_Addr) ;
+    GPIO_TIMER	=  0x00;
+    GPIO_PWM	  = RP1_PWM0_Addr-RP1_BASE_Addr;
+    GPIO_RIO    = (RP1_SYS_RIO0_Addr-RP1_IO0_Addr) ;
+
+    //map hole RP1 memory block from beginning,
+    base = (unsigned int *)mmap(0, MMAP_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0x00000000) ;
+    if (base == MAP_FAILED)
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap failed: %s\n", strerror (errno)) ;
-    pads = &gpio[(RP1_PADS0_Addr-RP1_IO0_Addr)/4];    // Start adress of map memory for pads  
-    rio  = &gpio[(RP1_SYS_RIO0_Addr-RP1_IO0_Addr)/4]; // Start adress of map memory for rio 
+    if (usingGpioMem) {
+      gpio = base;              // RP1 start adress of map memory for gpio (same as module memory)
+    } else {
+      gpio = &base[GPIO_BASE/4];// RP1 start adress of map memory for gpio
+    }
+    pads = &gpio[GPIO_PADS/4];  // RP1 start adress of map memory for pads
+    rio  = &gpio[GPIO_RIO/4];   // RP1 start adress of map memory for rio
+    GPIO_PADS += GPIO_BASE;
+    GPIO_RIO += GPIO_BASE;
 
     // Export the base addresses for any external software that might need them
+    _wiringPiBase  = base ;
     _wiringPiGpio  = gpio ;
     _wiringPiPwm   = NULL ;
     _wiringPiClk   = NULL ;
     _wiringPiPads  = pads ;
     _wiringPiTimer = NULL ;
     _wiringPiRio   = rio ;
- }
+  }
+  if (wiringPiDebug) {
+    printf ("wiringPi: memory map gpio  0x%x %s\n", GPIO_BASE , _wiringPiGpio ? "valid" : "invalid");
+    printf ("wiringPi: memory map pads  0x%x %s\n", GPIO_PADS , _wiringPiPads ? "valid" : "invalid");
+    printf ("wiringPi: memory map rio   0x%x %s\n", GPIO_RIO  , _wiringPiRio  ? "valid" : "invalid");
+    printf ("wiringPi: memory map pwm   0x%x %s\n", GPIO_PWM  , _wiringPiPwm  ? "valid" : "invalid");
+    printf ("wiringPi: memory map clk   0x%x %s\n", GPIO_CLOCK_BASE, _wiringPiClk  ? "valid" : "invalid");
+    printf ("wiringPi: memory map timer 0x%x %s\n", GPIO_TIMER,_wiringPiTimer ? "valid" : "invalid");
+  }
 
   initialiseEpoch () ;
 
