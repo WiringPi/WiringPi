@@ -1,6 +1,4 @@
-
-:warning: This library was deprecated by its author in August 2019. Until 31st October 2023 it was maintaining at https://github.com/WiringPi/WiringPi/ but later set to read only because there was no interest in properly maintaining it.
-In 2024 GC2 fork the project to maintaining it and to keep the best GPIO Library for Raspberry Pi running. We do our best, but we have limited resources and can not give support. 
+ℹ️ Since 2024, [GC2](https://github.com/GrazerComputerClub) has taken over maintenance of the project, supporting new OS versions as well as current hardware generations. We are dedicated to keeping the arguably best-performing GPIO Library for Raspberry Pi running smoothly. We strive to do our best, but please note that this is a community effort, and we cannot provide any guarantees or take responsibility for implementing specific features you may need.
 
 WiringPi (Unofficial Mirror/Fork)
 =================================
@@ -35,9 +33,10 @@ wiringPi has been wrapped for multiple languages:
 Support
 -------
 
-Please do not email Gordon if you have issues, he will not be able to help.  
-Dont' email @Gadgetoid.  
-Don't email GC2, use issue system of github to report errors.
+Please use the [issue system](https://github.com/WiringPi/WiringPi/issues) of GitHub.
+Please do not email Gordon if you have issues.
+Dont' email @Gadgetoid.
+Please don't email GC2 for reporting issues, you might [contact us](wiringpi@gc2.at) for anything that's not for the public eye.
 
 Debug
 -------
