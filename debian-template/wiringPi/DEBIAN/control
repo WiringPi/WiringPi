@@ -1,11 +1,11 @@
 Package: wiringpi
-Version: 2.73
+Version: 3.0
 Section: libraries
 Priority: optional
 Architecture: armhf
 Depends: libc6
-Maintainer: Phil Howard <wiringpi@gadgetoid.com>
-Uploaders: Phil Howard <wiringpi@gadgetoid.com>
+Maintainer: Grazer Computer Club - GC2 <wiringpi@gc2.at>
+Uploaders: Grazer Computer Club - GC2 <wiringpi@gc2.at>
 Description: The wiringPi libraries, headers and gpio command
   Libraries to allow GPIO access on a Raspberry Pi from C and C++
   and BASIC programs as well as from the command-line
