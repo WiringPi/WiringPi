@@ -1,5 +1,7 @@
 ℹ️ Since 2024, [GC2](https://github.com/GrazerComputerClub) has taken over maintenance of the project, supporting new OS versions as well as current hardware generations. We are dedicated to keeping the arguably best-performing GPIO Library for Raspberry Pi running smoothly. We strive to do our best, but please note that this is a community effort, and we cannot provide any guarantees or take responsibility for implementing specific features you may need.
 
+⚠️ on Pi5, PWM support is currently under development and _will not work at this point_. If you're interested in the progress, please check the [corresponding issue](https://github.com/GrazerComputerClub/WiringPi/issues/21).
+ 
 WiringPi (Unofficial Mirror/Fork)
 =================================
 
@@ -12,19 +14,6 @@ to support newer hardware (primarily for use by the ports) and fix bugs.
     [`final_source_2.50`](https://github.com/WiringPi/WiringPi/tree/final_official_2.50) tag.
   * The default `master` branch contains code that has been written since that final source
     release to provide support for newer hardware.
-
-Raspberry Pi 5 Roadmap
------
-
-* 2.71 Raspberry Pi 4 (Bookworm)
-* 2.72 Raspberry Pi 5 sysfs support
-* 2.73 Raspberry Pi 5 gpiomem support
-
-BananaPi M2 Zero 
------
-
-See brunch BananPi, there is no further development.
-
 
 Ports
 -----
