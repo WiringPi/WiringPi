@@ -583,7 +583,7 @@ int GetMaxPin() {
 int FailOnModel5() {
   if (PI_MODEL_5 == RaspberryPiModel) {
     return wiringPiFailure (WPI_ALMOST, "Function not supported on Raspberry Pi 5.\n"
-  "  Unable to continue. Keep an eye of new versions at https://github.com/GrazerComputerClub/WiringPi\n") ;
+  "  Unable to continue. Keep an eye of new versions at https://github.com/wiringpi/wiringpi\n") ;
   }
   return 0;
 }
