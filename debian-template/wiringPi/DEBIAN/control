@@ -8,6 +8,6 @@ Maintainer: Grazer Computer Club - GC2 <wiringpi@gc2.at>
 Uploaders: Grazer Computer Club - GC2 <wiringpi@gc2.at>
 Description: The wiringPi libraries, headers and gpio command
   Libraries to allow GPIO access on a Raspberry Pi from C and C++
-  and BASIC programs as well as from the command-line
-Homepage: https://github.com/WiringPi/WiringPi/
-Bugs: https://github.com/WiringPi/WiringPi/
+  programs as well as from the command-line
+Homepage: https://github.com/WiringPi/WiringPi
+Bugs: https://github.com/WiringPi/WiringPi/issues
