@@ -1,7 +1,7 @@
 /*
  * wiringPi:
  *	Arduino look-a-like Wiring library for the Raspberry Pi
- *	Copyright (c) 2012-2017 Gordon Henderson
+ *	Copyright (c) 2012-2024 Gordon Henderson and contributors
  *	Additional code for pwmSetClock by Chris Hall <chris@kchall.plus.com>
  *
  *	Thanks to code samples from Gert Jan van Loo and the
