@@ -2553,6 +2553,19 @@ void wiringPiVersion (int *major, int *minor)
 }
 
 
+int wiringPiUserLevelAccess(void)
+{
+  struct stat statBuf ;
+  const char* gpiomemModule = gpiomem_BCM;
+
+  if (PI_MODEL_5 == RaspberryPiModel) {
+    gpiomemModule = gpiomem_RP1;
+  }
+
+  return stat(gpiomemModule, &statBuf) == 0 ? 1 : 0;
+}
+
+
 /*
  * wiringPiSetup:
  *	Must be called once at the start of your program execution.

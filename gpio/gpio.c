@@ -1338,7 +1338,7 @@ static void doVersion (char *argv [])
     }
   }
 
-  if (stat ("/dev/gpiomem", &statBuf) == 0)		// User level GPIO is GO
+  if (wiringPiUserLevelAccess())		// User level GPIO is GO
     printf ("  * This Raspberry Pi supports user-level GPIO access.\n") ;
   else
     printf ("  * Root or sudo required for GPIO access.\n") ;
