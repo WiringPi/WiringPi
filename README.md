@@ -29,8 +29,10 @@ Support
 -------
 
 Please use the [issue system](https://github.com/WiringPi/WiringPi/issues) of GitHub.
+
 Please do not email Gordon or @Gadgetoid.
-Please don't email GC2 for reporting issues, you might [contact us](wiringpi@gc2.at) for anything that's not meant for the public.
+
+Please don't email GC2 for reporting issues, you might [contact us](mailto:wiringpi@gc2.at) for anything that's not meant for the public.
 
 Debug
 -------
