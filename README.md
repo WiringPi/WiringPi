@@ -2,18 +2,17 @@
 
 ⚠️ on Pi5, PWM support is currently under development and _will not work at this point_. If you're interested in the progress, please check the [corresponding issue](https://github.com/GrazerComputerClub/WiringPi/issues/21).
  
-WiringPi (Unofficial Mirror/Fork)
+WiringPi
 =================================
 
-This is an unofficial mirror/fork of wiringPi to support ports (Python/Ruby/etc).  With the
-[end of official development](https://web.archive.org/web/20220405225008/http://wiringpi.com/wiringpi-deprecated/), this repository
-has become a mirror of the last "official" source release, plus a fork facilitating updates
-to support newer hardware (primarily for use by the ports) and fix bugs.
+WiringPi is a _performant_ GPIO access library written in C for Raspberry Pi boards.
 
-  * The final "official" source release can be found at the
+This repository is the continuation of 'Gordon's wiringPi' which has been [deprecated](https://web.archive.org/web/20220405225008/http://wiringpi.com/wiringpi-deprecated/), a while ago.
+
+  * The last "old wiringPi" source of Gordon's release can be found at the
     [`final_source_2.50`](https://github.com/WiringPi/WiringPi/tree/final_official_2.50) tag.
-  * The default `master` branch contains code that has been written since that final source
-    release to provide support for newer hardware.
+  * The default `master` branch contains code that has been written since version 2.5
+    to provide support for newer hardware as well as new features.
 
 Ports
 -----
