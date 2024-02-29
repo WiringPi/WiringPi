@@ -153,4 +153,5 @@ This repository is the continuation of 'Gordon's wiringPi' which has been [depre
 ## Debug
 
 WIRINGPI_DEBUG=1 ./my_wiringpi_program
-WIRINGPI_DEBUG=1 ./gpio readall
+
+WIRINGPI_DEBUG=1 gpio readall
