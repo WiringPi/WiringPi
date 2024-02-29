@@ -1,10 +1,9 @@
-:information_source:️ Since 2024, [GC2](https://github.com/GrazerComputerClub) has taken over maintenance of the project, supporting new OS versions as well as current hardware generations. We are dedicated to keeping the arguably best-performing GPIO Library for Raspberry Pi running smoothly. We strive to do our best, but please note that this is a community effort, and we cannot provide any guarantees or take responsibility for implementing specific features you may need.
-
-:warning:️ :construction: on Pi5, PWM support is currently under development and _will not work at this point_. If you're interested in the progress, please check the [corresponding issue](https://github.com/GrazerComputerClub/WiringPi/issues/21).
-
 # WiringPi
 
 WiringPi is a _performant_ GPIO access library written in C for Raspberry Pi boards.
+
+:warning:️ :construction: on Pi5, PWM support is currently under development and _will not work at this point_. If you're interested in the progress, please check the [corresponding issue](https://github.com/GrazerComputerClub/WiringPi/issues/21).
+
 
 To compile programs with wiringPi, you need to include `wiringPi.h` as well as link against `wiringPi`:
 
@@ -13,10 +12,27 @@ To compile programs with wiringPi, you need to include `wiringPi.h` as well as l
 
 int main(void)
 {
-    wiringPiSetupGpio();
-    ...
+  // uses BCM numbering of the GPIOs and directly accesses the GPIO registers.
+  wiringPiSetupGpio();
+
+  // pin mode ..(INPUT, OUTPUT, PWM_OUTPUT, GPIO_CLOCK)
+  // set pin 17 to input
+  pinMode(17, INPUT);
+
+  // pull up/down mode (PUD_OFF, PUD_UP, PUD_DOWN) => down
+  pullUpDnControl(17, PUD_DOWN);
+
+  // get state of pin 17
+  int value = digitalRead(17);
+
+  if (HIGH == value)
+  {
+    // your code
+  }
 }
 ```
+
+To compile this code, link against wiringPi:
 
 ```sh
 gcc -o myapp myapp.c -l wiringPi
@@ -66,6 +82,25 @@ pi@wiringdemo:~ $ gpio readall
 
 You can either build it yourself or use the prebuilt binaries:
 
+### From Source
+
+1. create debian-package
+
+```sh
+# fetch the source
+sudo apt install git
+git clone https://github.com/WiringPi/WiringPi.git
+cd WiringPi
+
+# build the package
+./build debian
+mv debian-template/wiringpi-3.0-1.deb .
+
+# install it
+sudo apt install ./wiringpi-3.0-1.deb
+```
+
+
 ### Prebuilt Binaries
 
 Grab the latest release from [here](https://github.com/WiringPi/WiringPi/releases).
@@ -75,24 +110,14 @@ Unzip/use the portable prebuilt verison:
 
 ```sh
 # unzip the archive
-tar -xfv wiringpi_<version>.tar.gz
+tar -xfv wiringpi_3.0.tar.gz
 ```
 
-Install the dpkg package:
+Install the debian package:
 
 ```sh
 # install a dpkg
-sudo dpkg -i <wiringpi_<version>.dpkg
-```
-
-### From Source
-
-```sh
-sudo apt-get install git git-core
-
-git clone https://github.com/wiringpi/wiringpi
-cd wiringPi
-./build
+sudo apt install ./wiringpi-3.0-1.deb
 ```
 
 
@@ -122,6 +147,8 @@ This repository is the continuation of 'Gordon's wiringPi' which has been [depre
   [`final_source_2.50`](https://github.com/WiringPi/WiringPi/tree/final_official_2.50) tag.
 * The default `master` branch contains code that has been written since version 2.5
   to provide support for newer hardware as well as new features.
+
+:information_source:️ Since 2024, [GC2](https://github.com/GrazerComputerClub) has taken over maintenance of the project, supporting new OS versions as well as current hardware generations. We are dedicated to keeping the arguably best-performing GPIO Library for Raspberry Pi running smoothly. We strive to do our best, but please note that this is a community effort, and we cannot provide any guarantees or take responsibility for implementing specific features you may need.
 
 ## Debug
 
