@@ -2,7 +2,7 @@
  * gpio.c:
  *	Swiss-Army-Knife, Set-UID command-line interface to the Raspberry
  *	Pi's GPIO.
- *	Copyright (c) 2012-2018 Gordon Henderson
+ *	Copyright (c) 2012-2024 Gordon Henderson and contributors
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/
@@ -87,6 +87,15 @@ char *usage = "Usage: gpio -v\n"
 	      "       gpio gbr <channel>\n"
 	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
 
+
+int GPIOToSysFS_ExitonFail (const int pin, const char* name) {
+  int pinFS = GPIOToSysFS(pin);
+  if (pinFS<0) {
+    fprintf (stderr, "%s: invalid sysfs pin of bcm pin %d\n", name, pin) ;
+    exit (1) ;
+  }
+  return pinFS;
+}
 
 #ifdef	NOT_FOR_NOW
 /*
@@ -391,16 +400,19 @@ static void doI2Cdetect (UNU int argc, char *argv [])
 static void doExports (UNU int argc, UNU char *argv [])
 {
   int fd ;
-  int i, l, first ;
+  int pin, l, first ;
   char fName [128] ;
   char buf [16] ;
 
-  for (first = 0, i = 0 ; i < 64 ; ++i)	// Crude, but effective
+  for (first = 0, pin = 0 ; pin < 64 ; ++pin)	// Crude, but effective
   {
 
 // Try to read the direction
-
-    sprintf (fName, "/sys/class/gpio/gpio%d/direction", i) ;
+    int pinFS = GPIOToSysFS(pin);
+    if (pinFS<0) {
+      continue;
+    }
+    sprintf (fName, "/sys/class/gpio/gpio%d/direction", pinFS) ;
     if ((fd = open (fName, O_RDONLY)) == -1)
       continue ;
 
@@ -410,7 +422,11 @@ static void doExports (UNU int argc, UNU char *argv [])
       printf ("GPIO Pins exported:\n") ;
     }
 
-    printf ("%4d: ", i) ;
+    if(pinFS==pin) {
+      printf ("%4d: ", pin) ;
+    } else {
+      printf ("%4d (%4d): ", pin, pinFS) ;
+    }
 
     if ((l = read (fd, buf, 16)) == 0)
       sprintf (buf, "%s", "?") ;
@@ -425,7 +441,7 @@ static void doExports (UNU int argc, UNU char *argv [])
 
 // Try to Read the value
 
-    sprintf (fName, "/sys/class/gpio/gpio%d/value", i) ;
+    sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
     if ((fd = open (fName, O_RDONLY)) == -1)
     {
       printf ("No Value file (huh?)\n") ;
@@ -443,7 +459,7 @@ static void doExports (UNU int argc, UNU char *argv [])
 
 // Read any edge trigger file
 
-    sprintf (fName, "/sys/class/gpio/gpio%d/edge", i) ;
+    sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
     if ((fd = open (fName, O_RDONLY)) == -1)
     {
       printf ("\n") ;
@@ -485,7 +501,7 @@ void doExport (int argc, char *argv [])
   }
 
   pin = atoi (argv [2]) ;
-
+  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
   mode = argv [3] ;
 
   if ((fd = fopen ("/sys/class/gpio/export", "w")) == NULL)
@@ -494,10 +510,9 @@ void doExport (int argc, char *argv [])
     exit (1) ;
   }
 
-  fprintf (fd, "%d\n", pin) ;
+  fprintf (fd, "%d\n", pinFS) ;
   fclose (fd) ;
-
-  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pinFS) ;
   if ((fd = fopen (fName, "w")) == NULL)
   {
     fprintf (stderr, "%s: Unable to open GPIO direction interface for pin %d: %s\n", argv [0], pin, strerror (errno)) ;
@@ -522,10 +537,10 @@ void doExport (int argc, char *argv [])
 
 // Change ownership so the current user can actually use it
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
   changeOwner (argv [0], fName) ;
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
   changeOwner (argv [0], fName) ;
 
 }
@@ -599,6 +614,7 @@ void doEdge (int argc, char *argv [])
   }
 
   pin  = atoi (argv [2]) ;
+  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
   mode = argv [3] ;
 
 // Export the pin and set direction to input
@@ -609,10 +625,10 @@ void doEdge (int argc, char *argv [])
     exit (1) ;
   }
 
-  fprintf (fd, "%d\n", pin) ;
+  fprintf (fd, "%d\n", pinFS) ;
   fclose (fd) ;
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pinFS) ;
   if ((fd = fopen (fName, "w")) == NULL)
   {
     fprintf (stderr, "%s: Unable to open GPIO direction interface for pin %d: %s\n", argv [0], pin, strerror (errno)) ;
@@ -622,7 +638,7 @@ void doEdge (int argc, char *argv [])
   fprintf (fd, "in\n") ;
   fclose (fd) ;
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
   if ((fd = fopen (fName, "w")) == NULL)
   {
     fprintf (stderr, "%s: Unable to open GPIO edge interface for pin %d: %s\n", argv [0], pin, strerror (errno)) ;
@@ -641,10 +657,10 @@ void doEdge (int argc, char *argv [])
 
 // Change ownership of the value and edge files, so the current user can actually use it!
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/value", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
   changeOwner (argv [0], fName) ;
 
-  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pin) ;
+  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
   changeOwner (argv [0], fName) ;
 
   fclose (fd) ;
@@ -670,6 +686,7 @@ void doUnexport (int argc, char *argv [])
   }
 
   pin = atoi (argv [2]) ;
+  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
 
   if ((fd = fopen ("/sys/class/gpio/unexport", "w")) == NULL)
   {
@@ -677,7 +694,7 @@ void doUnexport (int argc, char *argv [])
     exit (1) ;
   }
 
-  fprintf (fd, "%d\n", pin) ;
+  fprintf (fd, "%d\n", pinFS) ;
   fclose (fd) ;
 }
 
@@ -697,13 +714,16 @@ void doUnexportall (char *progName)
 
   for (pin = 0 ; pin < 63 ; ++pin)
   {
-    if ((fd = fopen ("/sys/class/gpio/unexport", "w")) == NULL)
-    {
-      fprintf (stderr, "%s: Unable to open GPIO export interface\n", progName) ;
-      exit (1) ;
+    int pinFS = GPIOToSysFS(pin);
+    if (pinFS>=0) {
+      if ((fd = fopen ("/sys/class/gpio/unexport", "w")) == NULL)
+      {
+        fprintf (stderr, "%s: Unable to open GPIO export interface\n", progName) ;
+        exit (1) ;
+      }
+      fprintf (fd, "%d\n", pinFS) ;
+      fclose (fd) ;
     }
-    fprintf (fd, "%d\n", pin) ;
-    fclose (fd) ;
   }
 }
 
@@ -774,6 +794,31 @@ void doMode (int argc, char *argv [])
  *********************************************************************************
  */
 
+static void doPadDrivePin (int argc, char *argv [])
+{
+
+  if (argc != 4) {
+    fprintf (stderr, "Usage: %s drivepin pin value\n", argv [0]) ;
+    exit (1) ;
+  }
+
+  int pin = atoi (argv [2]) ;
+  int val = atoi (argv [3]) ;
+
+  if ((pin < 0) || (pin > 27)) {
+    fprintf (stderr, "%s: drive pin not 0-27: %d\n", argv [0], pin) ;
+    exit (1) ;
+  }
+
+  if ((val < 0) || (val > 3)) {
+    fprintf (stderr, "%s: drive value not 0-3: %d\n", argv [0], val) ;
+    exit (1) ;
+  }
+
+  setPadDrivePin (pin, val) ;
+}
+
+
 static void doPadDrive (int argc, char *argv [])
 {
   int group, val ;
@@ -787,7 +832,7 @@ static void doPadDrive (int argc, char *argv [])
   group = atoi (argv [2]) ;
   val   = atoi (argv [3]) ;
 
-  if ((group < 0) || (group > 2))
+  if ((group < -1) || (group > 2))  //-1 hidden feature for read and print values
   {
     fprintf (stderr, "%s: drive group not 0, 1 or 2: %d\n", argv [0], group) ;
     exit (1) ;
@@ -1268,7 +1313,7 @@ static void doVersion (char *argv [])
 
   wiringPiVersion (&vMaj, &vMin) ;
   printf ("gpio version: %d.%d\n", vMaj, vMin) ;
-  printf ("Copyright (c) 2012-2018 Gordon Henderson\n") ;
+  printf ("Copyright (c) 2012-2024 Gordon Henderson and contributors\n") ;
   printf ("This is free software with ABSOLUTELY NO WARRANTY.\n") ;
   printf ("For details type: %s -warranty\n", argv [0]) ;
   printf ("\n") ;
@@ -1293,7 +1338,7 @@ static void doVersion (char *argv [])
     }
   }
 
-  if (stat ("/dev/gpiomem", &statBuf) == 0)		// User level GPIO is GO
+  if (wiringPiUserLevelAccess())		// User level GPIO is GO
     printf ("  * This Raspberry Pi supports user-level GPIO access.\n") ;
   else
     printf ("  * Root or sudo required for GPIO access.\n") ;
@@ -1353,7 +1398,7 @@ int main (int argc, char *argv [])
   if (strcasecmp (argv [1], "-warranty") == 0)
   {
     printf ("gpio version: %s\n", VERSION) ;
-    printf ("Copyright (c) 2012-2018 Gordon Henderson\n") ;
+    printf ("Copyright (c) 2012-2024 Gordon Henderson and contributors\n") ;
     printf ("\n") ;
     printf ("    This program is free software; you can redistribute it and/or modify\n") ;
     printf ("    it under the terms of the GNU Leser General Public License as published\n") ;
@@ -1516,6 +1561,7 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "pwmc"     ) == 0) doPwmClock   (argc, argv) ;
   else if (strcasecmp (argv [1], "pwmTone"  ) == 0) doPwmTone    (argc, argv) ;
   else if (strcasecmp (argv [1], "drive"    ) == 0) doPadDrive   (argc, argv) ;
+  else if (strcasecmp (argv [1], "drivepin" ) == 0) doPadDrivePin(argc, argv) ;
   else if (strcasecmp (argv [1], "readall"  ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "nreadall" ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "pins"     ) == 0) doReadall    () ;

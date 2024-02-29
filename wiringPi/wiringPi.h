@@ -107,6 +107,8 @@
 #define	PI_MODEL_ZERO_2W	18
 #define	PI_MODEL_400		19
 #define	PI_MODEL_CM4		20
+#define	PI_MODEL_CM4S		21
+#define	PI_MODEL_5		  23
 
 #define	PI_VERSION_1		0
 #define	PI_VERSION_1_1		1
@@ -118,7 +120,9 @@
 #define	PI_MAKER_EMBEST		2
 #define	PI_MAKER_UNKNOWN	3
 
-extern const char *piModelNames    [21] ;
+
+extern const char *piModelNames    [24] ;
+extern const char *piProcessor     [ 5] ;
 extern const char *piRevisionNames [16] ;
 extern const char *piMakerNames    [16] ;
 extern const int   piMemorySize    [ 8] ;
@@ -199,7 +203,10 @@ extern int wiringPiFailure (int fatal, const char *message, ...) ;
 extern struct wiringPiNodeStruct *wiringPiFindNode (int pin) ;
 extern struct wiringPiNodeStruct *wiringPiNewNode  (int pinBase, int numPins) ;
 
+extern int GPIOToSysFS(const int pin) ;
+
 extern void wiringPiVersion	(int *major, int *minor) ;
+extern int  wiringPiUserLevelAccess (void) ;
 extern int  wiringPiSetup       (void) ;
 extern int  wiringPiSetupSys    (void) ;
 extern int  wiringPiSetupGpio   (void) ;
@@ -230,6 +237,7 @@ extern          void piBoardId           (int *model, int *rev, int *mem, int *m
 extern          int  wpiPinToGpio        (int wpiPin) ;
 extern          int  physPinToGpio       (int physPin) ;
 extern          void setPadDrive         (int group, int value) ;
+extern          void setPadDrivePin      (int pin, int value);     // Interface V2
 extern          int  getAlt              (int pin) ;
 extern          void pwmToneWrite        (int pin, int freq) ;
 extern          void pwmSetMode          (int mode) ;
