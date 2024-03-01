@@ -86,6 +86,8 @@ if [ x$1 = "xdebian" ]; then
   here=`pwd`
   deb_destdir=${here}/debian-template/wiringPi
   cd debian-template/wiringPi
+  ARCH=$(dpkg-architecture -qDEB_HOST_ARCH)
+  envsubst < control_template > DEBIAN/control
   rm -rf usr
   cd $here/wiringPi
   make install-deb DEB_DESTDIR=${deb_destdir}
@@ -95,7 +97,7 @@ if [ x$1 = "xdebian" ]; then
   make install-deb INCLUDE='-I../wiringPi -I../devLib' LDFLAGS=-L../debian-template/wiringPi/usr/lib DEB_DESTDIR=${deb_destdir}
   cd $here/debian-template
   fakeroot dpkg-deb --build wiringPi
-  mv wiringPi.deb  wiringpi-`cat $here/VERSION`-1.deb
+  dpkg-name wiringPi.deb
   exit
 fi
 
