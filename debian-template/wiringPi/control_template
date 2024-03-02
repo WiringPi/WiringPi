@@ -2,7 +2,7 @@ Package: wiringpi
 Version: 3.0
 Section: libraries
 Priority: optional
-Architecture: armhf
+Architecture: $ARCH
 Depends: libc6
 Maintainer: Grazer Computer Club - GC2 <wiringpi@gc2.at>
 Uploaders: Grazer Computer Club - GC2 <wiringpi@gc2.at>
