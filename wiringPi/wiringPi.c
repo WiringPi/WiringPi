@@ -381,7 +381,8 @@ static int wiringPiMode = WPI_MODE_UNINITIALISED ;
 static volatile int    pinPass = -1 ;
 static pthread_mutex_t pinMutex ;
 
-static int RaspberryPiModel = -1;
+static int RaspberryPiModel  = -1;
+static int RaspberryPiLayout = -1;
 
 // Debugging & Return codes
 
@@ -880,137 +881,17 @@ void piGpioLayoutOops (const char *why)
 {
   fprintf (stderr, "Oops: Unable to determine board revision from /proc/cpuinfo\n") ;
   fprintf (stderr, " -> %s\n", why) ;
-  fprintf (stderr, " ->  You'd best google the error to find out why.\n") ;
-//fprintf (stderr, " ->  http://www.raspberrypi.org/phpBB3/viewtopic.php?p=184410#p184410\n") ;
+  fprintf (stderr, " ->  Check at https://github.com/wiringpi/wiringpi/issues.\n") ;
   exit (EXIT_FAILURE) ;
 }
 
 int piGpioLayout (void)
 {
-  FILE *cpuFd ;
-  char line [120] ;
-  char *c ;
-  static int  gpioLayout = -1 ;
-
-  if (gpioLayout != -1)	// No point checking twice
-    return gpioLayout ;
-
-  if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
-    piGpioLayoutOops ("Unable to open /proc/cpuinfo") ;
-	
-#ifdef	DONT_CARE_ANYMORE
-// Start by looking for the Architecture to make sure we're really running
-//	on a Pi. I'm getting fed-up with people whinging at me because
-//	they can't get it to work on weirdFruitPi boards...
-  while (fgets (line, 120, cpuFd) != NULL)
-    if (strncmp (line, "Hardware", 8) == 0)
-      break ;
-
-  if (strncmp (line, "Hardware", 8) != 0)
-    piGpioLayoutOops ("No \"Hardware\" line") ;
-
-  if (wiringPiDebug)
-    printf ("piGpioLayout: Hardware: %s\n", line) ;
-
-// See if it's BCM2708 or BCM2709 or the new BCM2835.
-
-// OK. As of Kernel 4.8,  we have BCM2835 only, regardless of model.
-//	However I still want to check because it will trap the cheapskates and rip-
-//	off merchants who want to use wiringPi on non-Raspberry Pi platforms - which
-//	I do not support so don't email me your bleating whinges about anything
-//	other than a genuine Raspberry Pi.
-
-  if (! (strstr (line, "BCM2708") || strstr (line, "BCM2709") || strstr (line, "BCM2835")))
-  {
-    fprintf (stderr, "Unable to determine hardware version. I see: %s,\n", line) ;
-    fprintf (stderr, " - expecting BCM2708, BCM2709 or BCM2835.\n") ;
-    fprintf (stderr, "If this is a genuine Raspberry Pi then please report this\n") ;
-    fprintf (stderr, "at GitHub.com/wiringPi/wiringPi. If this is not a Raspberry Pi then you\n") ;
-    fprintf (stderr, "are on your own as wiringPi is designed to support the\n") ;
-    fprintf (stderr, "Raspberry Pi ONLY.\n") ;
-    exit (EXIT_FAILURE) ;
+  if (-1==RaspberryPiLayout) {
+    int   model, rev, mem, maker, overVolted ;
+    piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
   }
-
-// Actually... That has caused me more than 10,000 emails so-far. Mosty by
-//	people who think they know better by creating a statically linked
-//	version that will not run with a new 4.9 kernel. I utterly hate and
-//	despise those people.
-//
-//	I also get bleats from people running other than Raspbian with another
-//	distros compiled kernel rather than a foundation compiled kernel, so
-//	this might actually help them. It might not - I only have the capacity
-//	to support Raspbian.
-//
-//	However, I've decided to leave this check out and rely purely on the
-//	Revision: line for now. It will not work on a non-pi hardware or weird
-//	kernels that don't give you a suitable revision line.
-
-// So - we're Probably on a Raspberry Pi. Check the revision field for the real
-//	hardware type
-//	In-future, I ought to use the device tree as there are now Pi entries in
-//	/proc/device-tree/ ...
-//	but I'll leave that for the next revision. Or the next.
-#endif
-	
-// Isolate the Revision line
-
-  rewind (cpuFd) ;
-  while (fgets (line, 120, cpuFd) != NULL)
-    if (strncmp (line, "Revision", 8) == 0)
-      break ;
-
-  fclose (cpuFd) ;
-
-  if (strncmp (line, "Revision", 8) != 0)
-    piGpioLayoutOops ("No \"Revision\" line") ;
-
-// Chomp trailing CR/NL
-
-  for (c = &line [strlen (line) - 1] ; (*c == '\n') || (*c == '\r') ; --c)
-    *c = 0 ;
-
-  if (wiringPiDebug)
-    printf ("piGpioLayout: Revision string: %s\n", line) ;
-
-// Scan to the first character of the revision number
-
-  for (c = line ; *c ; ++c)
-    if (*c == ':')
-      break ;
-
-  if (*c != ':')
-    piGpioLayoutOops ("Bogus \"Revision\" line (no colon)") ;
-
-// Chomp spaces
-
-  ++c ;
-  while (isspace (*c))
-    ++c ;
-
-  if (!isxdigit (*c))
-    piGpioLayoutOops ("Bogus \"Revision\" line (no hex digit at start of revision)") ;
-
-// Make sure its long enough
-
-  if (strlen (c) < 4)
-    piGpioLayoutOops ("Bogus revision line (too small)") ;
-
-// Isolate  last 4 characters: (in-case of overvolting or new encoding scheme)
-
-  c = c + strlen (c) - 4 ;
-
-  if (wiringPiDebug)
-    printf ("piGpioLayout: last4Chars are: \"%s\"\n", c) ;
-
-  if ( (strcmp (c, "0002") == 0) || (strcmp (c, "0003") == 0))
-    gpioLayout = 1 ;
-  else
-    gpioLayout = 2 ;	// Covers everything else from the B revision 2 to the B+, the Pi v2, v3, zero and CM's.
-
-  if (wiringPiDebug)
-    printf ("piGpioLayout: Returning revision: %d\n", gpioLayout) ;
-
-  return gpioLayout ;
+  return RaspberryPiLayout;
 }
 
 /*
@@ -1131,11 +1012,6 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
   unsigned int revision = 0x00 ;
   int bRev, bType, bProc, bMfg, bMem, bWarranty ;
 
-//	Will deal with the properly later on - for now, lets just get it going...
-//  unsigned int modelNum ;
-
-  (void)piGpioLayout () ;	// Call this first to make sure all's OK. Don't care about the result.
-
   c = GetPiRevision(line, maxlength,  &revision); // device tree
   if (NULL==c) {
     c = GetPiRevisionLegacy(line, maxlength, &revision); // proc/cpuinfo
@@ -1144,9 +1020,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     piGpioLayoutOops ("GetPiRevision failed!") ;
   }
 
-// Check for new way:
-
-  if ((revision &  (1 << 23)) != 0)	// New way
+  if ((revision &  (1 << 23)) != 0)	// New style, not available for Raspberry Pi 1B/A, CM
   {
     if (wiringPiDebug)
       printf ("piBoardId: New Way: revision is: %08X\n", revision) ;
@@ -1164,6 +1038,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     *mem      = bMem ;
     *maker    = bMfg  ;
     *warranty = bWarranty ;
+    RaspberryPiLayout = GPIO_LAYOUT_DEFAULT ; //default
 
     if (wiringPiDebug)
       printf ("piBoardId: rev: %d, type: %d, proc: %d, mfg: %d, mem: %d, warranty: %d\n",
@@ -1191,9 +1066,9 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     c = c + strlen (c) - 4 ;
 
 // Fill out the replys as appropriate
-
-    /**/ if (strcmp (c, "0002") == 0) { *model = PI_MODEL_B  ; *rev = PI_VERSION_1   ; *mem = 0 ; *maker = PI_MAKER_EGOMAN  ; }
-    else if (strcmp (c, "0003") == 0) { *model = PI_MODEL_B  ; *rev = PI_VERSION_1_1 ; *mem = 0 ; *maker = PI_MAKER_EGOMAN  ; }
+    RaspberryPiLayout = GPIO_LAYOUT_DEFAULT ; //default
+    /**/ if (strcmp (c, "0002") == 0) { *model = PI_MODEL_B  ; *rev = PI_VERSION_1   ; *mem = 0 ; *maker = PI_MAKER_EGOMAN  ; RaspberryPiLayout = GPIO_LAYOUT_PI1_REV1; }
+    else if (strcmp (c, "0003") == 0) { *model = PI_MODEL_B  ; *rev = PI_VERSION_1_1 ; *mem = 0 ; *maker = PI_MAKER_EGOMAN  ; RaspberryPiLayout = GPIO_LAYOUT_PI1_REV1; }
 
     else if (strcmp (c, "0004") == 0) { *model = PI_MODEL_B  ; *rev = PI_VERSION_1_2 ; *mem = 0 ; *maker = PI_MAKER_SONY    ; }
     else if (strcmp (c, "0005") == 0) { *model = PI_MODEL_B  ; *rev = PI_VERSION_1_2 ; *mem = 0 ; *maker = PI_MAKER_EGOMAN  ; }
@@ -2598,7 +2473,7 @@ int wiringPiSetup (void)
 //	but it will give us information like the GPIO layout scheme (2 variants
 //	on the older 26-pin Pi's) and the GPIO peripheral base address.
 //	and if we're running on a compute module, then wiringPi pin numbers
-//	don't really many anything, so force native BCM mode anyway.
+//	don't really mean anything, so force native BCM mode anyway.
 
   piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
 
@@ -2609,7 +2484,7 @@ int wiringPiSetup (void)
   else
     wiringPiMode = WPI_MODE_PINS ;
 
-  /**/ if (piGpioLayout () == 1)	// A, B, Rev 1, 1.1
+  /**/ if (piGpioLayout () == GPIO_LAYOUT_PI1_REV1)	// A, B, Rev 1, 1.1
   {
      pinToGpio =  pinToGpioR1 ;
     physToGpio = physToGpioR1 ;
@@ -2865,7 +2740,7 @@ int wiringPiSetupSys (void)
   int   model, rev, mem, maker, overVolted ;
   piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
 
-  if (piGpioLayout () == 1)
+  if (piGpioLayout () == GPIO_LAYOUT_PI1_REV1)
   {
      pinToGpio =  pinToGpioR1 ;
     physToGpio = physToGpioR1 ;
