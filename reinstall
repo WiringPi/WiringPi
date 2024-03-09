@@ -1,0 +1,11 @@
+#!/bin/sh
+vMaj=`cut -d. -f1 VERSION`
+vMin=`cut -d. -f2 VERSION`
+DEBVERSION=$vMaj.$vMin
+sudo apt -y remove wiringpi
+./build clean
+./build debian
+mv debian-template/wiringpi_${DEBVERSION}_armhf.deb .
+sudo apt install ./wiringpi_${DEBVERSION}_armhf.deb
+
+
