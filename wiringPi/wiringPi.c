@@ -929,7 +929,7 @@ const char* GetPiRevision(char* line, int linelength, unsigned int* revision) {
 		return NULL; // read error
 	}
 	Revision = bswap_32(Revision);
-	snprintf(line, linelength, "Revision\t: %x", Revision);
+	snprintf(line, linelength, "Revision\t: %04x", Revision);
   c =  &line[11];
   *revision = Revision;
   if (wiringPiDebug)
