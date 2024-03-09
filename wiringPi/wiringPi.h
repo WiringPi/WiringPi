@@ -195,7 +195,7 @@ extern "C" {
 // Data
 
 // Internal
-
+extern void piGpioLayoutOops (const char *why);
 extern int wiringPiFailure (int fatal, const char *message, ...) ;
 
 // Core wiringPi functions

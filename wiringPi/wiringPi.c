@@ -70,12 +70,14 @@
 #include <sys/wait.h>
 #include <sys/ioctl.h>
 #include <asm/ioctl.h>
+#include <byteswap.h>
 
 #include "softPwm.h"
 #include "softTone.h"
 
 #include "wiringPi.h"
 #include "../version.h"
+#include "wiringPiLegacy.h"
 
 // Environment Variables
 
@@ -874,7 +876,7 @@ static void usingGpioMemCheck (const char *what)
  *********************************************************************************
  */
 
-static void piGpioLayoutOops (const char *why)
+void piGpioLayoutOops (const char *why)
 {
   fprintf (stderr, "Oops: Unable to determine board revision from /proc/cpuinfo\n") ;
   fprintf (stderr, " -> %s\n", why) ;
@@ -1006,7 +1008,7 @@ int piGpioLayout (void)
     gpioLayout = 2 ;	// Covers everything else from the B revision 2 to the B+, the Pi v2, v3, zero and CM's.
 
   if (wiringPiDebug)
-    printf ("piGpioLayoutOops: Returning revision: %d\n", gpioLayout) ;
+    printf ("piGpioLayout: Returning revision: %d\n", gpioLayout) ;
 
   return gpioLayout ;
 }
@@ -1023,6 +1025,36 @@ int piBoardRev (void)
 }
 
 
+const char* revfile = "/proc/device-tree/system/linux,revision";
+
+
+const char* GetPiRevision(char* line, int linelength, unsigned int* revision) {
+
+  const char* c = NULL;
+  uint32_t Revision = 0;
+  _Static_assert(sizeof(Revision)==4, "should be unsigend integer with 4 byte size");
+
+	FILE* fp = fopen(revfile,"rb");
+	if (!fp) {
+    if (wiringPiDebug)
+		  perror(revfile);
+		return NULL; // revision file not found or no access
+	}
+	int result = fread(&Revision, sizeof(Revision), 1, fp);
+	fclose(fp);
+	if (result<1) {
+    if (wiringPiDebug)
+		  perror(revfile);
+		return NULL; // read error
+	}
+	Revision = bswap_32(Revision);
+	snprintf(line, linelength, "Revision\t: %x", Revision);
+  c =  &line[11];
+  *revision = Revision;
+  if (wiringPiDebug)
+	  printf("GetPiRevision: Revision string: \"%s\" (%s) - 0x%x\n", line, c, *revision);
+	return c;
+}
 
 /*
  * piBoardId:
@@ -1093,10 +1125,10 @@ int piBoardRev (void)
 
 void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
 {
-  FILE *cpuFd ;
-  char line [120] ;
-  char *c ;
-  unsigned int revision ;
+  const int maxlength = 120;
+  char line [maxlength+1] ;
+  const char *c ;
+  unsigned int revision = 0x00 ;
   int bRev, bType, bProc, bMfg, bMem, bWarranty ;
 
 //	Will deal with the properly later on - for now, lets just get it going...
@@ -1104,47 +1136,13 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
 
   (void)piGpioLayout () ;	// Call this first to make sure all's OK. Don't care about the result.
 
-  if ((cpuFd = fopen ("/proc/cpuinfo", "r")) == NULL)
-    piGpioLayoutOops ("Unable to open /proc/cpuinfo") ;
-
-  while (fgets (line, 120, cpuFd) != NULL)
-    if (strncmp (line, "Revision", 8) == 0)
-      break ;
-
-  fclose (cpuFd) ;
-
-  if (strncmp (line, "Revision", 8) != 0)
-    piGpioLayoutOops ("No \"Revision\" line") ;
-
-// Chomp trailing CR/NL
-
-  for (c = &line [strlen (line) - 1] ; (*c == '\n') || (*c == '\r') ; --c)
-    *c = 0 ;
-
-  if (wiringPiDebug)
-    printf ("piBoardId: Revision string: %s\n", line) ;
-
-// Need to work out if it's using the new or old encoding scheme:
-
-// Scan to the first character of the revision number
-
-  for (c = line ; *c ; ++c)
-    if (*c == ':')
-      break ;
-
-  if (*c != ':')
-    piGpioLayoutOops ("Bogus \"Revision\" line (no colon)") ;
-
-// Chomp spaces
-
-  ++c ;
-  while (isspace (*c))
-    ++c ;
-
-  if (!isxdigit (*c))
-    piGpioLayoutOops ("Bogus \"Revision\" line (no hex digit at start of revision)") ;
-
-  revision = (unsigned int)strtol (c, NULL, 16) ; // Hex number with no leading 0x
+  c = GetPiRevision(line, maxlength,  &revision); // device tree
+  if (NULL==c) {
+    c = GetPiRevisionLegacy(line, maxlength, &revision); // proc/cpuinfo
+  }
+  if (NULL==c) {
+    piGpioLayoutOops ("GetPiRevision failed!") ;
+  }
 
 // Check for new way:
 
