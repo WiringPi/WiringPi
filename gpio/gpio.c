@@ -368,7 +368,7 @@ static void doUnLoad (int argc, char *argv [])
 
 static void doI2Cdetect (UNU int argc, char *argv [])
 {
-  int port = piGpioLayout () == 1 ? 0 : 1 ;
+  int port = piGpioLayout () == GPIO_LAYOUT_PI1_REV1 ? 0 : 1 ;
   char *c, *command ;
 
   if ((c = findExecutable (I2CDETECT)) == NULL)

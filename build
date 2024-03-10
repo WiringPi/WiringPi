@@ -3,7 +3,7 @@
 # build
 #	Simple wiringPi build and install script
 #
-#	Copyright (c) 2012-2015 Gordon Henderson
+#	Copyright (c) 2012-2024 Gordon Henderson and contributors
 #################################################################################
 # This file is part of wiringPi:
 #	A "wiring" library for the Raspberry Pi
@@ -83,11 +83,14 @@ fi
 # Only if you know what you're doing!
 
 if [ x$1 = "xdebian" ]; then
+  vMaj=`cut -d. -f1 VERSION`
+  vMin=`cut -d. -f2 VERSION`
   here=`pwd`
   deb_destdir=${here}/debian-template/wiringPi
   cd debian-template/wiringPi
+  export VERSION=$vMaj.$vMin
   export ARCH=$(dpkg-architecture -qDEB_HOST_ARCH)
-  echo architecture $ARCH
+  echo version:$VERSION architecture:$ARCH
   envsubst < control_template > DEBIAN/control
   rm -rf usr
   cd $here/wiringPi

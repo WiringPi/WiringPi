@@ -61,7 +61,8 @@ SRC	=	wiringPi.c						\
 		bmp180.c htu21d.c ds18b20.c rht03.c			\
 		drcSerial.c drcNet.c					\
 		pseudoPins.c						\
-		wpiExtensions.c
+		wpiExtensions.c						\
+		wiringPiLegacy.c
 
 HEADERS =	$(shell ls *.h)
 

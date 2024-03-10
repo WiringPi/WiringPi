@@ -120,6 +120,8 @@
 #define	PI_MAKER_EMBEST		2
 #define	PI_MAKER_UNKNOWN	3
 
+#define GPIO_LAYOUT_PI1_REV1 1   //Pi 1 A/B Revision 1, 1.1, CM
+#define GPIO_LAYOUT_DEFAULT  2
 
 extern const char *piModelNames    [24] ;
 extern const char *piProcessor     [ 5] ;
@@ -195,7 +197,7 @@ extern "C" {
 // Data
 
 // Internal
-
+extern void piGpioLayoutOops (const char *why);
 extern int wiringPiFailure (int fatal, const char *message, ...) ;
 
 // Core wiringPi functions
@@ -232,7 +234,7 @@ extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio
 // On-Board Raspberry Pi hardware specific stuff
 
 extern          int  piGpioLayout        (void) ;
-extern          int  piBoardRev          (void) ;	// Deprecated
+extern          int  piBoardRev          (void) ;	// Deprecated, but does the same as piGpioLayout
 extern          void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
 extern          int  wpiPinToGpio        (int wpiPin) ;
 extern          int  physPinToGpio       (int physPin) ;

@@ -1,5 +1,5 @@
 Package: wiringpi
-Version: 3.0
+Version: $VERSION
 Section: libraries
 Priority: optional
 Architecture: $ARCH
@@ -11,3 +11,4 @@ Description: The wiringPi libraries, headers and gpio command
   programs as well as from the command-line
 Homepage: https://github.com/WiringPi/WiringPi
 Bugs: https://github.com/WiringPi/WiringPi/issues
+
