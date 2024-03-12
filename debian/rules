@@ -1,19 +1,22 @@
 #!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#export DH_VERBOSE = 1
 
-.PHONY: build
+# These won't do anything until the Makefiles are fixed
+#export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+#export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+#export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
 
 VERSION:=$(shell cat VERSION)
 export VERSION
-
-soname:=$(shell echo $${VERSION%%.*})
-WIRINGPI_SONAME_SUFFIX:=.$(soname)
-export soname
+MAJOR:=$(shell echo $${VERSION%%.*})
+WIRINGPI_SONAME_SUFFIX:=.$(MAJOR)
 export WIRINGPI_SONAME_SUFFIX
 
-build:
-	dh $@
 
-override_dh_auto_configure:
+%:
+	dh $@
 
 override_dh_prep:
 	dh_prep -Xdebian/tmp
@@ -21,29 +24,21 @@ override_dh_prep:
 dirs:
 	dh_installdirs -A
 	mkdir debian/tmp
-	set -e; for p in `dh_listpackages`; do \
-		(cd debian/$$p; find -type d) | \
+	set -e; for pkg in `dh_listpackages`; do \
+		(cd debian/$$pkg; find -type d) | \
 		(cd debian/tmp; xargs mkdir -p) \
 	done
+	mkdir -p debian/tmp/usr/lib/$(DEB_TARGET_GNU_TYPE)/
 
 override_dh_clean:
 	dh_clean
-	WIRINGPI_SUDO= bash -xe ./build clean
+	WIRINGPI_SUDO= sh -xe ./build clean
 
 override_dh_auto_build: dirs
 	V=1 LDCONFIG=: WIRINGPI_SUDO= WIRINGPI_SUID=0 \
-	    DESTDIR=`pwd`/debian/tmp/usr \
-	    PREFIX= WIRINGPI_SUDO= \
-	    bash -xe ./build
-
-override_dh_auto_install:
-	dh_install
-	set -ex; for l in libwiringPi libwiringPiDev; do \
-		ln -sf $$l.so.$${VERSION} \
-			debian/libwiringpi$$soname/usr/lib/$$l.so.$$soname; \
-		ln -sf $$l.so.$${VERSION} \
-			debian/libwiringpi-dev/usr/lib/$$l.so; \
+		DESTDIR=`pwd`/debian/tmp/usr PREFIX= sh -xe ./build
+	mv `find debian/tmp/usr/lib -type f` debian/tmp/usr/lib/$(DEB_TARGET_GNU_TYPE)/
+	set -ex; for lib in `find debian/tmp/usr/lib/$(DEB_TARGET_GNU_TYPE)/ -type f`; do \
+		ln -s $${lib##*/} $${lib%%.$(VERSION)}; \
+		ln -s $${lib##*/} $${lib%%.$(VERSION)}.$(MAJOR); \
 	done
-
-%:
-	dh $@

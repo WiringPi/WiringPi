@@ -1,15 +1,32 @@
-wiringPi is Copyright (C) 2012-2015 Gordon Henderson.
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: wiringpi
+Source: https://git.drogon.net/?p=wiringPi;a=summary
 
-wiringPi is free software; you can redistribute it and/or modify it
-under the terms of the GNU Lesser General Public License, as published
-by the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+Files: *
+Copyright: 2012-2018 Gordon Henderson <projects@drogon.net>
+License: LGPL-3.0+
 
-wiringPi is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU Lesser General Public License for more details.
+Files: wiringPi/wiringShift.h
+Copyright: 2009-2012 Gordon Henderson <projects@drogon.net>
+License: LGPL-3.0+
 
-On all Debian and Raspbian systems, a copy of the GNU Lesser General
-Public License version 3 can be found in
-`/usr/share/common-licenses/LGPL-3'.
+Files: debian/*
+Copyright: 2019 Dave Jones <dave.jones@canonical.com>
+License: LGPL-3.0+
+
+License: LGPL-3.0+
+ This package is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 3 of the License, or (at your option) any later version.
+ .
+ This package is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+ .
+ You should have received a copy of the GNU Lesser General Public License
+ along with this program. If not, see <https://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the complete text of the GNU Lesser General
+ Public License can be found in "/usr/share/common-licenses/LGPL-3".
