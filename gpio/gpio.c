@@ -43,6 +43,7 @@
 #include "../version.h"
 
 extern int wiringPiDebug ;
+int gpioDebug ;
 
 // External functions I can't be bothered creating a separate .h file for:
 
@@ -559,14 +560,27 @@ void doExport (int argc, char *argv [])
 static volatile int iterations ;
 static volatile int globalCounter ;
 
+void printgpioflush(const char* text) {
+  if (gpioDebug) {
+    printf(text);
+    fflush(stdout);
+  }
+}
+
+void printgpio(const char* text) {
+  if (gpioDebug) {
+    printf(text);
+    fflush(stdout);
+  }
+}
+
 static void wfi (void) { 
   globalCounter++;
-  //printf("irq count %d/%d\n", globalCounter , iterations);
   if(globalCounter>=iterations) {
-    printf("finished\n");
+    printgpio("finished\n");
     exit (0) ; 
   } else {
-    printf("I"); fflush(stdout);
+    printgpioflush("I");
   }
 }
 
@@ -606,12 +620,12 @@ void doWfi (int argc, char *argv [])
     exit (1) ;
   }
 
-  printf("wait for interrupt function call \n");
+  printgpio("wait for interrupt function call \n");
   for (int Sec=0; Sec<timeoutSec; ++Sec) {
-    printf("."); fflush(stdout);
+    printgpioflush(".");
     delay (999);
   }
-  printf("\nstopping wait for interrupt\n");
+  printgpio("\nstopping wait for interrupt\n");
   wiringPiISRStop (pin); 
 }
 
@@ -1384,6 +1398,11 @@ int main (int argc, char *argv [])
   {
     printf ("gpio: wiringPi debug mode enabled\n") ;
     wiringPiDebug = TRUE ;
+  }
+  if (getenv ("GPIO_DEBUG") != NULL)
+  {
+    printf ("gpio: gpio debug mode enabled\n") ;
+    gpioDebug = TRUE ;
   }
 
   if (argc == 1)
