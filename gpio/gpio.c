@@ -556,16 +556,30 @@ void doExport (int argc, char *argv [])
  *********************************************************************************
  */
 
-static void wfi (void)
-  { exit (0) ; }
+static volatile int iterations ;
+static volatile int globalCounter ;
+
+static void wfi (void) { 
+  globalCounter++;
+  //printf("irq count %d/%d\n", globalCounter , iterations);
+  if(globalCounter>=iterations) {
+    printf("finished\n");
+    exit (0) ; 
+  } else {
+    printf("I"); fflush(stdout);
+  }
+}
 
 void doWfi (int argc, char *argv [])
 {
-  int pin, mode ;
+  int pin, mode;
+  int timeoutSec = 2147483647;
 
-  if (argc != 4)
+  iterations = 1;
+  globalCounter = 0;
+  if (argc != 4 && argc != 5 && argc != 6)
   {
-    fprintf (stderr, "Usage: %s wfi pin mode\n", argv [0]) ;
+    fprintf (stderr, "Usage: %s wfi pin mode [interations] [timeout sec.]\n", argv [0]) ;
     exit (1) ;
   }
 
@@ -579,6 +593,12 @@ void doWfi (int argc, char *argv [])
     fprintf (stderr, "%s: wfi: Invalid mode: %s. Should be rising, falling or both\n", argv [1], argv [3]) ;
     exit (1) ;
   }
+  if (argc>=5) {
+    iterations = atoi(argv [4]);
+  }
+  if (argc>=6) {
+    timeoutSec = atoi(argv [5]);
+  }
 
   if (wiringPiISR (pin, mode, &wfi) < 0)
   {
@@ -586,8 +606,13 @@ void doWfi (int argc, char *argv [])
     exit (1) ;
   }
 
-  for (;;)
-    delay (9999) ;
+  printf("wait for interrupt function call \n");
+  for (int Sec=0; Sec<timeoutSec; ++Sec) {
+    printf("."); fflush(stdout);
+    delay (999);
+  }
+  printf("\nstopping wait for interrupt\n");
+  wiringPiISRStop (pin); 
 }
 
 

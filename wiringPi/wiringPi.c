@@ -72,6 +72,7 @@
 #include <asm/ioctl.h>
 #include <byteswap.h>
 #include <sys/utsname.h>
+#include <linux/gpio.h>
 
 #include "softPwm.h"
 #include "softTone.h"
@@ -406,9 +407,10 @@ static int sysFds [64] =
 } ;
 
 // ISR Data
-
+static int chipFd = -1;
 static void (*isrFunctions [64])(void) ;
-
+static pthread_t isrThreads[64];
+static int isrMode[64];
 
 // Doing it the Arduino way with lookup tables...
 //	Yes, it's probably more innefficient than all the bit-twidling, but it
@@ -2112,7 +2114,7 @@ unsigned int digitalReadByte2 (void)
  * waitForInterrupt:
  *	Pi Specific.
  *	Wait for Interrupt on a GPIO pin.
- *	This is actually done via the /sys/class/gpio interface regardless of
+ *	This is actually done via the /dev/gpiochip interface regardless of
  *	the wiringPi access mode in-use. Maybe sometime it might get a better
  *	way for a bit more efficiency.
  *********************************************************************************
@@ -2120,11 +2122,12 @@ unsigned int digitalReadByte2 (void)
 
 int waitForInterrupt (int pin, int mS)
 {
-  int fd, x ;
-  uint8_t c ;
+  int fd, ret; 
   struct pollfd polls ;
+  struct gpioevent_data evdata;
+  //struct gpio_v2_line_request req2;
 
-  /**/ if (wiringPiMode == WPI_MODE_PINS)
+  if (wiringPiMode == WPI_MODE_PINS)
     pin = pinToGpio [pin] ;
   else if (wiringPiMode == WPI_MODE_PHYS)
     pin = physToGpio [pin] ;
@@ -2132,27 +2135,145 @@ int waitForInterrupt (int pin, int mS)
   if ((fd = sysFds [pin]) == -1)
     return -2 ;
 
-// Setup poll structure
+  // Setup poll structure
+  polls.fd      = fd;
+  polls.events  = POLLIN | POLLERR ;
+  polls.revents = 0;
 
-  polls.fd     = fd ;
-  polls.events = POLLPRI | POLLERR ;
-
-// Wait for it ...
-
-  x = poll (&polls, 1, mS) ;
-
-// If no error, do a dummy read to clear the interrupt
-//	A one character read appars to be enough.
-
-  if (x > 0)
-  {
-    lseek (fd, 0, SEEK_SET) ;	// Rewind
-    (void)read (fd, &c, 1) ;	// Read & clear
+  // Wait for it ...
+  ret = poll(&polls, 1, mS);
+  if (ret <= 0) {
+    fprintf(stderr, "wiringPi: ERROR: poll returned=%d\n", ret);
+  } else {
+    //if (polls.revents & POLLIN) 
+    if (wiringPiDebug) {
+      printf ("wiringPi: IRQ line %d received %d, fd=%d\n", pin, ret, sysFds [pin]) ;
+    }
+    /* read event data */
+    int readret = read(sysFds [pin], &evdata, sizeof(evdata));
+    if (readret == sizeof(evdata)) {
+      if (wiringPiDebug) {
+        printf ("wiringPi: IRQ data id: %d, timestamp: %lld\n", evdata.id, evdata.timestamp) ;
+      }
+      ret = evdata.id;
+    } else {
+      ret = 0;
+    }
   }
-
-  return x ;
+  return ret;
 }
 
+const char DEV_GPIO_PI[] ="/dev/gpiochip0";
+const char DEV_GPIO_PI5[]="/dev/gpiochip4";
+
+int waitForInterruptInit (int pin, int mode)
+{
+  const char* strmode = "";
+
+  if (wiringPiMode == WPI_MODE_PINS) {
+    pin = pinToGpio [pin] ;
+  } else if (wiringPiMode == WPI_MODE_PHYS) {
+    pin = physToGpio [pin] ;
+  }
+
+  /* open gpio */
+  sleep(1);
+  const char* gpiochip = PI_MODEL_5 == RaspberryPiModel ? DEV_GPIO_PI5 : DEV_GPIO_PI;
+  if (chipFd < 0) {
+    chipFd = open(gpiochip, O_RDWR);
+    if (chipFd < 0) {
+      fprintf(stderr, "wiringPi: ERROR: %s open ret=%d\n", gpiochip, chipFd);
+      return -1;
+    }
+  }
+  if (wiringPiDebug) {
+    printf ("wiringPi: Open chip %s succeded, fd=%d\n", gpiochip, chipFd) ;
+  }
+
+  struct gpioevent_request req;
+  req.lineoffset = pin;
+  req.handleflags = GPIOHANDLE_REQUEST_INPUT;
+  switch(mode) {
+    default:
+    case INT_EDGE_SETUP:
+      if (wiringPiDebug) {
+        printf ("wiringPi: waitForInterruptMode mode INT_EDGE_SETUP - exiting\n") ;
+      }
+      return -1;
+    case INT_EDGE_FALLING:
+      req.eventflags  = GPIOEVENT_REQUEST_FALLING_EDGE;
+      strmode = "falling";
+      break;
+    case INT_EDGE_RISING:
+      req.eventflags  = GPIOEVENT_REQUEST_RISING_EDGE;
+      strmode = "rising";
+      break;
+    case INT_EDGE_BOTH:
+      req.eventflags  = GPIOEVENT_REQUEST_BOTH_EDGES;
+      strmode = "both";
+      break;
+  }
+  strncpy(req.consumer_label, "wiringpi_gpio_irq", sizeof(req.consumer_label) - 1);
+
+  //later implement GPIO_V2_GET_LINE_IOCTL req2
+  int ret = ioctl(chipFd, GPIO_GET_LINEEVENT_IOCTL, &req);
+  if (ret) {
+    fprintf(stderr, "wiringPi: ERROR: %s ioctl get line %d %s returned %d\n", gpiochip, pin, strmode, ret);
+    return -1;
+  }
+  if (wiringPiDebug) {
+    printf ("wiringPi: GPIO get line %d , mode %s succeded, fd=%d\n", pin, strmode, req.fd) ;
+  }
+
+  /* set event fd nonbloack read */
+  int fd_line = req.fd;
+  sysFds [pin] = fd_line;
+  int flags = fcntl(fd_line, F_GETFL);
+  flags |= O_NONBLOCK;
+  ret = fcntl(fd_line, F_SETFL, flags);
+  if (ret) {
+    fprintf(stderr, "wiringPi: ERROR: %s fcntl set nonblock read=%d\n", gpiochip, chipFd);
+    return -1;
+  }
+
+  return 0;
+}
+
+
+int waitForInterruptClose (int pin) {
+  if (sysFds[pin]>0) {
+    if (wiringPiDebug) {
+      printf ("wiringPi: waitForInterruptClose close thread 0x%lX\n", (unsigned long)isrThreads[pin]) ;
+    }    
+    if (pthread_cancel(isrThreads[pin]) == 0) {
+      if (wiringPiDebug) {
+        printf ("wiringPi: waitForInterruptClose thread canceled successfuly\n") ;
+      }
+    } else {
+     if (wiringPiDebug) {
+        fprintf (stderr, "wiringPi: waitForInterruptClose could not cancel thread\n");
+      }
+    }
+    close(sysFds [pin]);
+  }
+  sysFds [pin] = -1;
+
+  /* -not closing so far - other isr may be using it - only close if no other is using - will code later
+  if (chipFd>0) {
+    close(chipFd);
+  }
+  chipFd = -1;
+  */
+  if (wiringPiDebug) {
+    printf ("wiringPi: waitForInterruptClose finished\n") ;
+  }
+  return 0;
+}
+
+
+int wiringPiISRStop (int pin) {
+  return waitForInterruptClose (pin);
+}
 
 /*
  * interruptHandler:
@@ -2164,17 +2285,30 @@ int waitForInterrupt (int pin, int mS)
 
 static void *interruptHandler (UNU void *arg)
 {
-  int myPin ;
+  int pin ;
 
   (void)piHiPri (55) ;	// Only effective if we run as root
 
-  myPin   = pinPass ;
+  pin   = pinPass ;
   pinPass = -1 ;
 
-  for (;;)
-    if (waitForInterrupt (myPin, -1) > 0)
-      isrFunctions [myPin] () ;
+  for (;;) {
+    int ret = waitForInterrupt(pin, -1);
+    if ( ret> 0) {
+      if (wiringPiDebug) {
+        printf ("wiringPi: call function\n") ;
+      }
+      isrFunctions [pin] () ;
+      // wait again - in the past forever - now can be stopped by  waitForInterruptClose
+    } else if( ret< 0) {
+      break; // stop thread!
+    }
+  }
 
+  waitForInterruptClose (pin);
+  if (wiringPiDebug) {
+    printf ("wiringPi: interruptHandler finished\n") ;
+  }
   return NULL ;
 }
 
@@ -2189,93 +2323,55 @@ static void *interruptHandler (UNU void *arg)
 
 int wiringPiISR (int pin, int mode, void (*function)(void))
 {
-  pthread_t threadId ;
-  const char *modeS ;
-  char fName   [64] ;
-  char  pinS [8] ;
-  pid_t pid ;
-  int   count, i ;
-  char  c ;
-  int   bcmGpioPin ;
   const int maxpin = GetMaxPin();
 
   if (pin < 0 || pin > maxpin)
     return wiringPiFailure (WPI_FATAL, "wiringPiISR: pin must be 0-%d (%d)\n", maxpin, pin) ;
-
-  /**/ if (wiringPiMode == WPI_MODE_UNINITIALISED)
+  if (wiringPiMode == WPI_MODE_UNINITIALISED)
     return wiringPiFailure (WPI_FATAL, "wiringPiISR: wiringPi has not been initialised. Unable to continue.\n") ;
-  else if (wiringPiMode == WPI_MODE_PINS)
-    bcmGpioPin = pinToGpio [pin] ;
-  else if (wiringPiMode == WPI_MODE_PHYS)
-    bcmGpioPin = physToGpio [pin] ;
-  else
-    bcmGpioPin = pin ;
-
-// Now export the pin and set the right edge
-//	We're going to use the gpio program to do this, so it assumes
-//	a full installation of wiringPi. It's a bit 'clunky', but it
-//	is a way that will work when we're running in "Sys" mode, as
-//	a non-root user. (without sudo)
-
-  if (mode != INT_EDGE_SETUP)
-  {
-    /**/ if (mode == INT_EDGE_FALLING)
-      modeS = "falling" ;
-    else if (mode == INT_EDGE_RISING)
-      modeS = "rising" ;
-    else
-      modeS = "both" ;
-
-    sprintf (pinS, "%d", bcmGpioPin) ;
-
-    if ((pid = fork ()) < 0)	// Fail
-      return wiringPiFailure (WPI_FATAL, "wiringPiISR: fork failed: %s\n", strerror (errno)) ;
-
-    if (pid == 0)	// Child, exec
-    {
-      /**/ if (access ("/usr/local/bin/gpio", X_OK) == 0)
-      {
-	execl ("/usr/local/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL) ;
-	return wiringPiFailure (WPI_FATAL, "wiringPiISR: execl failed: %s\n", strerror (errno)) ;
-      }
-      else if (access ("/usr/bin/gpio", X_OK) == 0)
-      {
-	execl ("/usr/bin/gpio", "gpio", "edge", pinS, modeS, (char *)NULL) ;
-	return wiringPiFailure (WPI_FATAL, "wiringPiISR: execl failed: %s\n", strerror (errno)) ;
-      }
-      else
-	return wiringPiFailure (WPI_FATAL, "wiringPiISR: Can't find gpio program\n") ;
-    }
-    else		// Parent, wait
-      waitpid (pid, NULL, 0) ;
+  if (wiringPiDebug) {
+    printf ("wiringPi: wiringPiISR pin %d, mode %d\n", pin, mode) ;
   }
-
-// Now pre-open the /sys/class node - but it may already be open if
-//	we are in Sys mode...
-
-  if (sysFds [bcmGpioPin] == -1)
-  {
-    int pinFS = GPIOToSysFS(bcmGpioPin);
-    sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
-    if (pinFS>=0 && (sysFds [bcmGpioPin] = open (fName, O_RDWR)) < 0)
-      return wiringPiFailure (WPI_FATAL, "wiringPiISR: unable to open %s: %s\n", fName, strerror (errno)) ;
+  if (isrFunctions [pin]) {
+    printf ("wiringPi: ISR function alread active, ignoring \n") ;
   }
-
-// Clear any initial pending interrupt
-
-  ioctl (sysFds [bcmGpioPin], FIONREAD, &count) ;
-  for (i = 0 ; i < count ; ++i)
-    read (sysFds [bcmGpioPin], &c, 1) ;
 
   isrFunctions [pin] = function ;
+  isrMode[pin] = mode;
+  if(waitForInterruptInit (pin, mode)<0) {
+    if (wiringPiDebug) {
+      fprintf (stderr, "wiringPi: waitForInterruptInit failed\n") ;
+    }    
+  };
 
+  if (wiringPiDebug) {
+    printf ("wiringPi: mutex in\n") ;
+  }
   pthread_mutex_lock (&pinMutex) ;
     pinPass = pin ;
-    pthread_create (&threadId, NULL, interruptHandler, NULL) ;
-    while (pinPass != -1)
-      delay (1) ;
+    if (wiringPiDebug) {
+      printf("wiringPi: pthread_create before 0x%lX\n", (unsigned long)isrThreads[pin]);
+    }
+    if (pthread_create (&isrThreads[pin], NULL, interruptHandler, NULL)==0) {
+      if (wiringPiDebug) {
+        printf("wiringPi: pthread_create successed, 0x%lX\n", (unsigned long)isrThreads[pin]);
+      }
+      while (pinPass != -1)
+        delay (1) ;
+    } else {
+      if (wiringPiDebug) {
+        printf("wiringPi: pthread_create failed\n");
+      }
+    }
+
+    if (wiringPiDebug) {
+      printf ("wiringPi: mutex out\n") ;
+    }
   pthread_mutex_unlock (&pinMutex) ;
 
+  if (wiringPiDebug) {
+    printf ("wiringPi: wiringPiISR finished\n") ;
+  }
   return 0 ;
 }
 
