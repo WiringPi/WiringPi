@@ -2257,6 +2257,7 @@ int waitForInterruptClose (int pin) {
     close(sysFds [pin]);
   }
   sysFds [pin] = -1;
+  isrFunctions [pin] = NULL;
 
   /* -not closing so far - other isr may be using it - only close if no other is using - will code later
   if (chipFd>0) {
@@ -2298,7 +2299,9 @@ static void *interruptHandler (UNU void *arg)
       if (wiringPiDebug) {
         printf ("wiringPi: call function\n") ;
       }
-      isrFunctions [pin] () ;
+      if(isrFunctions [pin]) {
+        isrFunctions [pin] () ;
+      }
       // wait again - in the past forever - now can be stopped by  waitForInterruptClose
     } else if( ret< 0) {
       break; // stop thread!
