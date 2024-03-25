@@ -854,6 +854,36 @@ static void usingGpioMemCheck (const char *what)
 }
 
 
+void PrintSystemStdErr () {
+  struct utsname sys_info;
+  if (uname(&sys_info) == 0) {
+    fprintf (stderr, "      wiringpi    = %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
+    fprintf (stderr, "      system name = %s\n", sys_info.sysname);
+    //fprintf (stderr, "  node name   = %s\n", sys_info.nodename);
+    fprintf (stderr, "      release     = %s\n", sys_info.release);
+    fprintf (stderr, "      version     = %s\n", sys_info.version);
+    fprintf (stderr, "      machine     = %s\n", sys_info.machine);
+    if (strstr(sys_info.machine, "arm") == NULL && strstr(sys_info.machine, "aarch")==NULL) {
+      fprintf (stderr, " -> This is not an ARM architecture; it cannot be a Raspberry Pi.\n") ;
+    }
+  }
+}
+
+
+void piFunctionOops (const char *function, const char* suggestion, const char* url)
+{
+  fprintf (stderr, "Oops: Function %s is not supported\n", function) ;
+  PrintSystemStdErr();
+  if (suggestion) {
+    fprintf (stderr, " -> Please %s\n", suggestion) ;
+  }
+  if (url) {
+    fprintf (stderr, " -> See info at %s\n", url) ;
+  }
+  fprintf (stderr, " -> Check at https://github.com/wiringpi/wiringpi/issues.\n\n") ;
+  exit (EXIT_FAILURE) ;
+}
+
 
 /*
  * piGpioLayout:
@@ -884,21 +914,10 @@ static void usingGpioMemCheck (const char *what)
 void piGpioLayoutOops (const char *why)
 {
   fprintf (stderr, "Oops: Unable to determine Raspberry Pi board revision from %s and from /proc/cpuinfo\n", revfile) ;
-  struct utsname sys_info;
-  if (uname(&sys_info) == 0) {
-    fprintf (stderr, "      system name = %s\n", sys_info.sysname);
-    //fprintf (stderr, "  node name   = %s\n", sys_info.nodename);
-    fprintf (stderr, "      release     = %s\n", sys_info.release);
-    fprintf (stderr, "      version     = %s\n", sys_info.version);
-    fprintf (stderr, "      machine     = %s\n", sys_info.machine);
-  }
-  if (strstr(sys_info.machine, "arm") == NULL && strstr(sys_info.machine, "aarch")==NULL) {
-    fprintf (stderr, " -> This is not an ARM architecture; it cannot be a Raspberry Pi.\n") ;
-    fprintf (stderr, " -> WiringPi is designed for Raspberry Pi and can only be used with a Raspberry Pi.\n\n") ;
-  } else {
-    fprintf (stderr, " -> %s\n", why) ;
-    fprintf (stderr, " -> Check at https://github.com/wiringpi/wiringpi/issues.\n\n") ;
-  }
+  PrintSystemStdErr();
+  fprintf (stderr, " -> %s\n", why) ;
+  fprintf (stderr, " -> WiringPi is designed for Raspberry Pi and can only be used with a Raspberry Pi.\n\n") ;
+  fprintf (stderr, " -> Check at https://github.com/wiringpi/wiringpi/issues.\n\n") ;
   exit (EXIT_FAILURE) ;
 }
 
@@ -1744,19 +1763,12 @@ void pullUpDnControl (int pin, int pud)
 
 int digitalRead (int pin)
 {
-  char c ;
   struct wiringPiNodeStruct *node = wiringPiNodes ;
+
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
-    /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
-    {
-      if (sysFds [pin] == -1)
-	return LOW ;
-
-      lseek  (sysFds [pin], 0L, SEEK_SET) ;
-      read   (sysFds [pin], &c, 1) ;
-      return (c == '0') ? LOW : HIGH ;
-    }
+    if (wiringPiMode == WPI_MODE_GPIO_SYS)
+      return LOW ;
     else if (wiringPiMode == WPI_MODE_PINS)
       pin = pinToGpio [pin] ;
     else if (wiringPiMode == WPI_MODE_PHYS)
@@ -1819,17 +1831,8 @@ void digitalWrite (int pin, int value)
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
-    /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
-    {
-      if (sysFds [pin] != -1) 
-      {
-        if (value == LOW)
-          write (sysFds [pin], "0\n", 2) ;
-        else
-          write (sysFds [pin], "1\n", 2) ;
-      }
+    if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
       return ;
-    }
     else if (wiringPiMode == WPI_MODE_PINS)
       pin = pinToGpio [pin] ;
     else if (wiringPiMode == WPI_MODE_PHYS)
@@ -2000,13 +2003,8 @@ void digitalWriteByte (const int value)
 
   FailOnModel5();
 
-  /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)
+  if (wiringPiMode == WPI_MODE_GPIO_SYS)
   {
-    for (pin = 0 ; pin < 8 ; ++pin)
-    {
-      digitalWrite (pinToGpio [pin], value & mask) ;
-      mask <<= 1 ;
-    }
     return ;
   }
   else
@@ -2034,13 +2032,9 @@ unsigned int digitalReadByte (void)
 
   FailOnModel5();
 
-  /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)
+  if (wiringPiMode == WPI_MODE_GPIO_SYS)
   {
-    for (pin = 0 ; pin < 8 ; ++pin)
-    {
-      x = digitalRead (pinToGpio [pin]) ;
-      data = (data << 1) | x ;
-    }
+    return 0;
   }
   else
   {
@@ -2067,19 +2061,10 @@ unsigned int digitalReadByte (void)
 
 void digitalWriteByte2 (const int value)
 {
-  register int mask = 1 ;
-  register int pin ;
-
   FailOnModel5();
 
-  /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)
+  if (wiringPiMode == WPI_MODE_GPIO_SYS)
   {
-    for (pin = 20 ; pin < 28 ; ++pin)
-    {
-      digitalWrite (pin, value & mask) ;
-      mask <<= 1 ;
-    }
-    return ;
   }
   else
   {
@@ -2090,18 +2075,12 @@ void digitalWriteByte2 (const int value)
 
 unsigned int digitalReadByte2 (void)
 {
-  int pin, x ;
   uint32_t data = 0 ;
 
   FailOnModel5();
 
-  /**/ if (wiringPiMode == WPI_MODE_GPIO_SYS)
+  if (wiringPiMode == WPI_MODE_GPIO_SYS)
   {
-    for (pin = 20 ; pin < 28 ; ++pin)
-    {
-      x = digitalRead (pin) ;
-      data = (data << 1) | x ;
-    }
   }
   else
     data = ((*(gpio + gpioToGPLEV [0])) >> 20) & 0xFF ; // First bank for these pins
@@ -2824,60 +2803,18 @@ int wiringPiSetupPhys (void)
 
 /*
  * wiringPiSetupSys:
- *	Must be called once at the start of your program execution.
- *
- * Initialisation (again), however this time we are using the /sys/class/gpio
- *	interface to the GPIO systems - slightly slower, but always usable as
- *	a non-root user, assuming the devices are already exported and setup correctly.
+ * GPIO Sysfs Interface for Userspace is deprecated
+ *   https://www.kernel.org/doc/html/v5.5/admin-guide/gpio/sysfs.html
+ * The last Raspberry Pi Kernel with Sysfs was 6.1.
+ * If needed, please use WiringPi 3.1.
+ * 
  */
 
 int wiringPiSetupSys (void)
 {
-  char fName [128] ;
-
-  if (wiringPiSetuped)
-    return 0 ;
-
-  wiringPiSetuped = TRUE ;
-
-  if (getenv (ENV_DEBUG) != NULL)
-    wiringPiDebug = TRUE ;
-
-  if (getenv (ENV_CODES) != NULL)
-    wiringPiReturnCodes = TRUE ;
-
-  if (wiringPiDebug)
-    printf ("wiringPi: wiringPiSetupSys called\n") ;
-
-  int   model, rev, mem, maker, overVolted ;
-  piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
-
-  if (piGpioLayout () == GPIO_LAYOUT_PI1_REV1)
-  {
-     pinToGpio =  pinToGpioR1 ;
-    physToGpio = physToGpioR1 ;
-  }
-  else
-  {
-     pinToGpio =  pinToGpioR2 ;
-    physToGpio = physToGpioR2 ;
-  }
-
-// Open and scan the directory, looking for exported GPIOs, and pre-open
-//	the 'value' interface to speed things up for later
-
-  for (int pin = 0, maxpin=GetMaxPin() ; pin <= maxpin ; ++pin)
-  {
-    int pinFS = GPIOToSysFS(pin);
-    if (pinFS>=0) {
-      sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
-      sysFds [pin] = open (fName, O_RDWR) ;
-    }
-  }
-
-  initialiseEpoch () ;
-
-  wiringPiMode = WPI_MODE_GPIO_SYS ;
+  piFunctionOops("wiringPiSetupSys",
+   "use wringpi 3.1 (last version with GPIO Sysfs interface)",
+   "https://www.kernel.org/doc/html/v5.5/admin-guide/gpio/sysfs.html");
 
   return 0 ;
 }
