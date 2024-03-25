@@ -186,3 +186,66 @@ int piGpioLayoutLegacy (void)
 
   return gpioLayout ;
 }
+
+
+/*
+ * wiringPiSetupSys:
+ *	Must be called once at the start of your program execution.
+ *
+ * Initialisation (again), however this time we are using the /sys/class/gpio
+ *	interface to the GPIO systems - slightly slower, but always usable as
+ *	a non-root user, assuming the devices are already exported and setup correctly.
+ */
+
+/*
+int wiringPiSetupSys (void)
+{
+  char fName [128] ;
+
+  if (wiringPiSetuped)
+    return 0 ;
+
+  wiringPiSetuped = TRUE ;
+
+  if (getenv (ENV_DEBUG) != NULL)
+    wiringPiDebug = TRUE ;
+
+  if (getenv (ENV_CODES) != NULL)
+    wiringPiReturnCodes = TRUE ;
+
+  if (wiringPiDebug)
+    printf ("wiringPi: wiringPiSetupSys called\n") ;
+
+  int   model, rev, mem, maker, overVolted ;
+  piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+
+  if (piGpioLayout () == GPIO_LAYOUT_PI1_REV1)
+  {
+     pinToGpio =  pinToGpioR1 ;
+    physToGpio = physToGpioR1 ;
+  }
+  else
+  {
+     pinToGpio =  pinToGpioR2 ;
+    physToGpio = physToGpioR2 ;
+  }
+
+// Open and scan the directory, looking for exported GPIOs, and pre-open
+//	the 'value' interface to speed things up for later
+
+  for (int pin = 0, maxpin=GetMaxPin() ; pin <= maxpin ; ++pin)
+  {
+    int pinFS = GPIOToSysFS(pin);
+    if (pinFS>=0) {
+      sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
+      sysFds [pin] = open (fName, O_RDWR) ;
+    }
+  }
+
+  initialiseEpoch () ;
+
+  wiringPiMode = WPI_MODE_GPIO_SYS ;
+
+  return 0 ;
+}
+*/
