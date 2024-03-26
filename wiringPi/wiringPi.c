@@ -71,6 +71,7 @@
 #include <sys/ioctl.h>
 #include <asm/ioctl.h>
 #include <byteswap.h>
+#include <sys/utsname.h>
 
 #include "softPwm.h"
 #include "softTone.h"
@@ -876,12 +877,26 @@ static void usingGpioMemCheck (const char *what)
  *
  *********************************************************************************
  */
+ const char* revfile = "/proc/device-tree/system/linux,revision";
 
 void piGpioLayoutOops (const char *why)
 {
-  fprintf (stderr, "Oops: Unable to determine board revision from /proc/cpuinfo\n") ;
-  fprintf (stderr, " -> %s\n", why) ;
-  fprintf (stderr, " ->  Check at https://github.com/wiringpi/wiringpi/issues.\n") ;
+  fprintf (stderr, "Oops: Unable to determine Raspberry Pi board revision from %s and from /proc/cpuinfo\n", revfile) ;
+  struct utsname sys_info;
+  if (uname(&sys_info) == 0) {
+    fprintf (stderr, "      system name = %s\n", sys_info.sysname);
+    //fprintf (stderr, "  node name   = %s\n", sys_info.nodename);
+    fprintf (stderr, "      release     = %s\n", sys_info.release);
+    fprintf (stderr, "      version     = %s\n", sys_info.version);
+    fprintf (stderr, "      machine     = %s\n", sys_info.machine);
+  }
+  if (strstr(sys_info.machine, "arm") == NULL && strstr(sys_info.machine, "aarch")==NULL) {
+    fprintf (stderr, " -> This is not an ARM architecture; it cannot be a Raspberry Pi.\n") ;
+    fprintf (stderr, " -> WiringPi is designed for Raspberry Pi and can only be used with a Raspberry Pi.\n\n") ;
+  } else {
+    fprintf (stderr, " -> %s\n", why) ;
+    fprintf (stderr, " -> Check at https://github.com/wiringpi/wiringpi/issues.\n\n") ;
+  }
   exit (EXIT_FAILURE) ;
 }
 
@@ -904,10 +919,6 @@ int piBoardRev (void)
 {
   return piGpioLayout () ;
 }
-
-
-const char* revfile = "/proc/device-tree/system/linux,revision";
-
 
 const char* GetPiRevision(char* line, int linelength, unsigned int* revision) {
 
@@ -1011,6 +1022,8 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
   const char *c ;
   unsigned int revision = 0x00 ;
   int bRev, bType, bProc, bMfg, bMem, bWarranty ;
+
+  //piGpioLayoutOops ("this is only a test case");
 
   c = GetPiRevision(line, maxlength,  &revision); // device tree
   if (NULL==c) {

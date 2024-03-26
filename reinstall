@@ -1,11 +1,44 @@
 #!/bin/sh
 vMaj=`cut -d. -f1 VERSION`
 vMin=`cut -d. -f2 VERSION`
-DEBVERSION=$vMaj.$vMin
-sudo apt -y remove wiringpi
-./build clean
-./build debian
-mv debian-template/wiringpi_${DEBVERSION}_armhf.deb .
-sudo apt install ./wiringpi_${DEBVERSION}_armhf.deb
+WPIVERSION=$vMaj.$vMin
+ARCH=$(dpkg-architecture -qDEB_HOST_ARCH)
 
+if [ -f /etc/os-release ]; then
+    # load vars from /etc/os-release
+    . /etc/os-release
+    if [ "$ID" = "raspbian" ] || [ "$ID" = "debian" ] || [ "$ID" = "linuxmint" ]; then
+        if [ "$ID" = "raspbian" ]; then
+            echo OS: Raspberry Pi OS
+        else
+            echo OS: Debian
+        fi
+        echo using all in one deb-package
+        echo ============================
+        echo 
 
+        sudo apt -y remove wiringpi
+        ./build clean
+        ./build debian
+        mv debian-template/wiringpi_${WPIVERSION}_${ARCH}.deb .
+        sudo apt install ./wiringpi_${WPIVERSION}_${ARCH}.deb
+
+    elif [ "$ID" = "debian" ] || [ "$ID" = "linuxmint" ]; then
+        echo OS: Ubuntu/Mint
+        echo using 3 deb-package
+        echo ===================
+        echo 
+
+        sudo apt -y remove libwiringpi2
+        sudo apt -y remove libwiringpi3
+        sudo apt -y remove wiringpi libwiringpi-dev
+        ./build clean
+        ./build ubuntu
+        #mv debian-template/wiringpi_${WPIVERSION}_armhf.deb .
+        #sudo apt install ./wiringpi_${WPIVERSION}_armhf.deb
+    fi
+
+else
+    echo OS unknown, exit
+    exit
+fi
