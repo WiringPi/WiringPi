@@ -1,18 +1,12 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: wiringpi
-Source: https://git.drogon.net/?p=wiringPi;a=summary
+Source: https://github.com/WiringPi/WiringPi
 
 Files: *
-Copyright: 2012-2018 Gordon Henderson <projects@drogon.net>
+Copyright: 2009-2018 Gordon Henderson <projects@drogon.net>
+           2024 The WiringPi Community <wiringpi@gc2.at>
 License: LGPL-3.0+
 
-Files: wiringPi/wiringShift.h
-Copyright: 2009-2012 Gordon Henderson <projects@drogon.net>
-License: LGPL-3.0+
-
-Files: debian/*
-Copyright: 2019 Dave Jones <dave.jones@canonical.com>
-License: LGPL-3.0+
 
 License: LGPL-3.0+
  This package is free software; you can redistribute it and/or

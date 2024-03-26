@@ -1,52 +1,5 @@
-wiringpi (3.1-1) unstable; urgency=low
+wiringpi (3.2-1) stable; urgency=low
 
   * New maintainers. Support for Pi 5 and many improvements.
 
- -- Rafael Diniz <rafael@rhizomatica.org>  Tue, 12 Mar 2024 21:01:01 +0000
-
-wiringpi (2.70-4) unstable; urgency=low
-
-  * Working also on bookworm.
-
- -- Rafael Diniz <rafael@rhizomatica.org>  Tue, 06 Feb 2024 11:55:31 +0000
-
-wiringpi (2.70-3) unstable; urgency=low
-
-  * Make it work with recent kernels
-
- -- Rafael Diniz <rafael@rhizomatica.org>  Fri, 24 Nov 2023 16:01:05 +0000
-
-wiringpi (2.70-2) unstable; urgency=low
-
-  * Sync to upstream
-
- -- Rafael Diniz <rafael@rhizomatica.org>  Tue, 02 May 2023 18:33:12 +0300
-
-wiringpi (2.50-0ubuntu2) hirsute; urgency=medium
-
-  * d/p/0001-Fix-for-multiple-definition-of-comDat-76.patch: Cherrypick patch
-    from upstream fork to fix FTBFS with GCC 10.
-
- -- Logan Rosen <logan@ubuntu.com>  Thu, 07 Jan 2021 22:18:31 -0500
-
-wiringpi (2.50-0ubuntu1) eoan; urgency=medium
-
-  * New upstream release 2.50 (LP: #1824370).
-
- -- Dave Jones <dave@waveform.org.uk>  Thu, 11 Apr 2019 14:41:08 +0000
-
-wiringpi (2.46-0ubuntu4) bionic; urgency=medium
-
-  * Use v3 quilt format
-  * Add patch to fix build system to work with -as-needed, and to remove
-    redundant library dependencies
-  * Add patch to build and run on arm64
-
- -- Dave Jones <dave.jones@canonical.com>  Wed, 20 Feb 2019 10:28:07 +0000
-
-wiringpi (2.26~iwj) rpi-unstable; urgency=low
-
-  * Initial version with real Debian source package build.
-
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Sep 2015 18:31:35 +0100
-
+ -- Rafael Diniz <rafael@rhizomatica.org>  Tue, 26 Mar 2024 22:31:31 +0000

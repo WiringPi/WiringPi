@@ -1,6 +1,6 @@
 Source: wiringpi
 Priority: optional
-Maintainer: Rafael Diniz <rafael@rhizomatica.org>
+Maintainer: The WiringPi Community <wiringpi@gc2.at>
 Build-Depends: debhelper (>= 10)
 Standards-Version: 4.1.2
 Section: libs
