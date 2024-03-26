@@ -43,6 +43,7 @@
 #include "../version.h"
 
 extern int wiringPiDebug ;
+int gpioDebug ;
 
 // External functions I can't be bothered creating a separate .h file for:
 
@@ -556,16 +557,43 @@ void doExport (int argc, char *argv [])
  *********************************************************************************
  */
 
-static void wfi (void)
-  { exit (0) ; }
+static volatile int iterations ;
+static volatile int globalCounter ;
+
+void printgpioflush(const char* text) {
+  if (gpioDebug) {
+    printf(text);
+    fflush(stdout);
+  }
+}
+
+void printgpio(const char* text) {
+  if (gpioDebug) {
+    printf(text);
+    fflush(stdout);
+  }
+}
+
+static void wfi (void) { 
+  globalCounter++;
+  if(globalCounter>=iterations) {
+    printgpio("finished\n");
+    exit (0) ; 
+  } else {
+    printgpioflush("I");
+  }
+}
 
 void doWfi (int argc, char *argv [])
 {
-  int pin, mode ;
+  int pin, mode;
+  int timeoutSec = 2147483647;
 
-  if (argc != 4)
+  iterations = 1;
+  globalCounter = 0;
+  if (argc != 4 && argc != 5 && argc != 6)
   {
-    fprintf (stderr, "Usage: %s wfi pin mode\n", argv [0]) ;
+    fprintf (stderr, "Usage: %s wfi pin mode [interations] [timeout sec.]\n", argv [0]) ;
     exit (1) ;
   }
 
@@ -579,6 +607,12 @@ void doWfi (int argc, char *argv [])
     fprintf (stderr, "%s: wfi: Invalid mode: %s. Should be rising, falling or both\n", argv [1], argv [3]) ;
     exit (1) ;
   }
+  if (argc>=5) {
+    iterations = atoi(argv [4]);
+  }
+  if (argc>=6) {
+    timeoutSec = atoi(argv [5]);
+  }
 
   if (wiringPiISR (pin, mode, &wfi) < 0)
   {
@@ -586,8 +620,13 @@ void doWfi (int argc, char *argv [])
     exit (1) ;
   }
 
-  for (;;)
-    delay (9999) ;
+  printgpio("wait for interrupt function call \n");
+  for (int Sec=0; Sec<timeoutSec; ++Sec) {
+    printgpioflush(".");
+    delay (999);
+  }
+  printgpio("\nstopping wait for interrupt\n");
+  wiringPiISRStop (pin); 
 }
 
 
@@ -1359,6 +1398,11 @@ int main (int argc, char *argv [])
   {
     printf ("gpio: wiringPi debug mode enabled\n") ;
     wiringPiDebug = TRUE ;
+  }
+  if (getenv ("GPIO_DEBUG") != NULL)
+  {
+    printf ("gpio: gpio debug mode enabled\n") ;
+    gpioDebug = TRUE ;
   }
 
   if (argc == 1)

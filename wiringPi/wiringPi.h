@@ -239,7 +239,7 @@ extern          void piBoardId           (int *model, int *rev, int *mem, int *m
 extern          int  wpiPinToGpio        (int wpiPin) ;
 extern          int  physPinToGpio       (int physPin) ;
 extern          void setPadDrive         (int group, int value) ;
-extern          void setPadDrivePin      (int pin, int value);     // Interface V2
+extern          void setPadDrivePin      (int pin, int value);     // Interface V3.0
 extern          int  getAlt              (int pin) ;
 extern          void pwmToneWrite        (int pin, int freq) ;
 extern          void pwmSetMode          (int mode) ;
@@ -256,6 +256,8 @@ extern          void digitalWriteByte2   (int value) ;
 
 extern int  waitForInterrupt    (int pin, int mS) ;
 extern int  wiringPiISR         (int pin, int mode, void (*function)(void)) ;
+extern int  wiringPiISRStop     (int pin) ;  //V3.2
+extern int  waitForInterruptClose(int pin) ; //V3.2
 
 // Threads
 
