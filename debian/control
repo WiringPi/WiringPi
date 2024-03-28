@@ -1,29 +1,38 @@
 Source: wiringpi
-Section: electronics
 Priority: optional
-Maintainer: Ian Jackson <ijackson@chiark.greenend.org.uk>
-Standards-Version: 3.8.0
-Homepage: https://github.com/WiringPi/WiringPi
-Build-Depends: debhelper (>= 8)
-
-Package: libwiringpi2
+Maintainer: The WiringPi Community <wiringpi@gc2.at>
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.2
 Section: libs
-Architecture: armhf
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: GPIO librariees for Raspberry Pi (runtime).
- Runtime for the popular wiringPi library.
-
-Package: wiringpi
-Architecture: armhf
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: gpio utility for Raspberry Pi
- The wiringPi gpio command line utility, for GPIO access on a
- Raspberry Pi from the command line.
+Homepage: https://wiringpi.com/
+Vcs-Browser: https://github.com/WiringPi/WiringPi/
 
 Package: libwiringpi-dev
-Architecture: armhf
-Depends: libwiringpi2 (= ${binary:Version}), libc6-dev, ${misc:Depends}
-Suggests: wiringpi
-Description: GPIO development library for Raspberry Pi
- Development libraries to allow GPIO access on a Raspberry Pi from C
- and C++ programs.
+Section: libdevel
+Architecture: any
+Multi-Arch: same
+Depends: libwiringpi3 (= ${binary:Version}), ${misc:Depends}
+Description: Raspberry Pi library for controlling GPIO devices
+ A Raspberry Pi specific library for querying and controlling the GPIO pins,
+ and a variety of devices that connect to them from C, C++, or BASIC.
+ .
+ This package contains the development files (headers, etc.) for compiling
+ applications against libwiringPi.
+
+Package: libwiringpi3
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Raspberry Pi library for controlling GPIO devices
+ A Raspberry Pi specific library for querying and controlling the GPIO pins,
+ and a variety of devices that connect to them from C, C++, or BASIC.
+ .
+ This package contains the shared libraries libwiringPi and libwiringPiDev.
+
+Package: wiringpi
+Architecture: any
+Multi-Arch: foreign
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Raspberry Pi tool for controlling GPIO devices
+ A command line utility for querying and controlling the GPIO pins from the
+ shell.

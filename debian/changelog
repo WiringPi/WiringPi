@@ -1,6 +1,5 @@
-wiringpi (2.26~iwj) rpi-unstable; urgency=low
+wiringpi (3.2-1) stable; urgency=low
 
-  * Initial version with real Debian source package build.
+  * New maintainers. Support for Pi 5 and many improvements.
 
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Sep 2015 18:31:35 +0100
-
+ -- Rafael Diniz <rafael@rhizomatica.org>  Tue, 26 Mar 2024 22:31:31 +0000
