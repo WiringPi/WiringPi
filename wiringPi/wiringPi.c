@@ -857,7 +857,7 @@ static void usingGpioMemCheck (const char *what)
 void PrintSystemStdErr () {
   struct utsname sys_info;
   if (uname(&sys_info) == 0) {
-    fprintf (stderr, "      wiringpi    : %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
+    fprintf (stderr, "      WiringPi    : %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
     fprintf (stderr, "      system name : %s\n", sys_info.sysname);
     //fprintf (stderr, "  node name   : %s\n", sys_info.nodename);
     fprintf (stderr, "      release     : %s\n", sys_info.release);
