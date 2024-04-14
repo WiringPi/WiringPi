@@ -2522,6 +2522,10 @@ int wiringPiUserLevelAccess(void)
   struct stat statBuf ;
   const char* gpiomemModule = gpiomem_BCM;
 
+  if (RaspberryPiModel<0) { //need to detect pi model
+    int   model, rev, mem, maker, overVolted ;
+    piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+  }
   if (PI_MODEL_5 == RaspberryPiModel) {
     gpiomemModule = gpiomem_RP1;
   }
@@ -2529,6 +2533,61 @@ int wiringPiUserLevelAccess(void)
   return stat(gpiomemModule, &statBuf) == 0 ? 1 : 0;
 }
 
+
+int wiringPiGlobalMemoryAccess(void)
+{
+  const char* gpiomemGlobal;
+  int fd=-1;
+  unsigned int MMAP_size;
+  unsigned int BaseAddr, PWMAddr;
+
+  if (RaspberryPiModel<0) { //need to detect pi model
+    int   model, rev, mem, maker, overVolted ;
+    piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+  }
+  if (PI_MODEL_5 == RaspberryPiModel) {
+    gpiomemGlobal = pciemem_RP1;
+    MMAP_size = pciemem_RP1_Size;
+    BaseAddr  = (RP1_IO0_Addr-RP1_BASE_Addr) ;
+    PWMAddr	  = RP1_PWM0_Addr-RP1_BASE_Addr;
+  } else {
+    gpiomemGlobal = gpiomem_global;
+    MMAP_size = BLOCK_SIZE;
+    BaseAddr	= piGpioBase + 0x00200000 ;
+    PWMAddr	  = piGpioBase + 0x0020C000 ;
+  }
+
+  if ((fd = open (gpiomemGlobal, O_RDWR | O_SYNC | O_CLOEXEC)) >0) {
+    int returnvalue = 1; // OK
+
+    uint32_t * lgpio = (uint32_t *)mmap(0, MMAP_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, BaseAddr) ;
+    if (lgpio == MAP_FAILED) {
+      returnvalue = 0;
+      if (wiringPiDebug)
+        fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (GPIO) failed: %s\n", strerror (errno)) ;
+    } else {
+      munmap(lgpio, MMAP_size);
+      if (PI_MODEL_5 == RaspberryPiModel) {
+        returnvalue = 2;    // GPIO & PWM accessible (same area, nothing to mmap)
+      } else {
+        //check PWM area
+        uint32_t* lpwm = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, PWMAddr) ;
+        if (lpwm == MAP_FAILED) {
+          returnvalue = 1;    // only GPIO accessible
+          if (wiringPiDebug)
+            fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (PWM) failed: %s\n", strerror (errno)) ;
+        } else {
+          returnvalue = 2;  // GPIO & PWM accessible
+          munmap(lpwm, BLOCK_SIZE);
+        }
+      }
+    }
+
+    close(fd);
+    return returnvalue;
+  }
+  return 0;  // Failed!
+}
 
 /*
  * wiringPiSetup:
@@ -2633,9 +2692,12 @@ int wiringPiSetup (void)
     gpiomemModule = gpiomem_RP1;
   }
 
+  usingGpioMem = FALSE;
   if (gpiomemGlobal==NULL || (fd = open (gpiomemGlobal, O_RDWR | O_SYNC | O_CLOEXEC)) < 0)
   {
-
+    if (wiringPiDebug) {
+      printf ("wiringPi: no access to %s try %s\n", gpiomemGlobal, gpiomemModule) ;
+    }
     if (gpiomemModule && (fd = open (gpiomemModule, O_RDWR | O_SYNC | O_CLOEXEC) ) >= 0)	// We're using gpiomem
     {
       piGpioBase   = 0 ;
@@ -2648,7 +2710,7 @@ int wiringPiSetup (void)
 	"  Try running with sudo?\n", gpiomemGlobal, gpiomemModule, strerror (errno)) ;
   }
   if (wiringPiDebug) {
-    printf ("wiringPi: access to %s succeded\n", usingGpioMem ? gpiomemModule : gpiomemGlobal) ;
+    printf ("wiringPi: access to %s succeded %d\n", usingGpioMem ? gpiomemModule : gpiomemGlobal, fd) ;
   }
 //	GPIO:
  if (PI_MODEL_5 != model) {

@@ -1377,10 +1377,20 @@ static void doVersion (char *argv [])
     }
   }
 
-  if (wiringPiUserLevelAccess())		// User level GPIO is GO
-    printf ("  * This Raspberry Pi supports user-level GPIO access.\n") ;
-  else
-    printf ("  * Root or sudo required for GPIO access.\n") ;
+  int bGlobalAccess = wiringPiGlobalMemoryAccess();		// User level GPIO is GO
+  switch(bGlobalAccess) {
+    case 1:
+        printf ("  * This system supports basic user-level GPIO access via /dev/mem.\n") ;
+        break;
+    case 2:
+        printf ("  * This system supports full  user-level GPIO access via /dev/mem.\n") ;
+        break;
+  }
+  if (wiringPiUserLevelAccess()) {
+        printf ("  * This system supports basic user-level GPIO access via /dev/gpiomem.\n") ;
+  } else if(0==bGlobalAccess) {
+        printf ("  * This system may require root or sudo for GPIO access.\n") ;
+  }
 }
 
 
