@@ -2548,8 +2548,8 @@ int wiringPiGlobalMemoryAccess(void)
   if (PI_MODEL_5 == RaspberryPiModel) {
     gpiomemGlobal = pciemem_RP1;
     MMAP_size = pciemem_RP1_Size;
-    BaseAddr  = (RP1_IO0_Addr-RP1_BASE_Addr) ;
-    PWMAddr	  = RP1_PWM0_Addr-RP1_BASE_Addr;
+    BaseAddr  = 0x00000000;
+    PWMAddr	  = 0x00000000;  //not supported so far
   } else {
     gpiomemGlobal = gpiomem_global;
     MMAP_size = BLOCK_SIZE;
