@@ -46,12 +46,13 @@
 
 // wiringPi modes
 
-#define	WPI_MODE_PINS		 0
-#define	WPI_MODE_GPIO		 1
-#define	WPI_MODE_GPIO_SYS	 2
-#define	WPI_MODE_PHYS		 3
-#define	WPI_MODE_PIFACE		 4
-#define	WPI_MODE_UNINITIALISED	-1
+#define	WPI_MODE_PINS		        0
+#define	WPI_MODE_GPIO		        1
+#define	WPI_MODE_GPIO_SYS	      2  // deprecated since 3.2
+#define	WPI_MODE_PHYS		        3
+#define	WPI_MODE_PIFACE		      4
+#define	WPI_MODE_GPIO_DEVICE	  5  // BCM numbers like WPI_MODE_GPIO
+#define	WPI_MODE_UNINITIALISED -1
 
 // Pin modes
 
@@ -214,6 +215,7 @@ extern int  wiringPiSetup       (void) ;
 extern int  wiringPiSetupSys    (void) ;
 extern int  wiringPiSetupGpio   (void) ;
 extern int  wiringPiSetupPhys   (void) ;
+extern int  wiringPiSetupGpioDevice(void) ;        //Interface 3.3
 
 extern          void pinModeAlt          (int pin, int mode) ;
 extern          void pinMode             (int pin, int mode) ;
