@@ -48,7 +48,8 @@ SRC	=	blink.c blink8.c blink12.c					\
 		delayTest.c serialRead.c serialTest.c okLed.c ds1302.c		\
 		lowPower.c							\
 		max31855.c							\
-		rht03.c
+		rht03.c								\
+		28BYJ-48.c
 
 OBJ	=	$(SRC:.c=.o)
 
@@ -152,6 +153,10 @@ ds1302:	ds1302.o
 max31855:	max31855.o
 	$Q echo [link]
 	$Q $(CC) -o $@ max31855.o $(LDFLAGS) $(LDLIBS)
+
+28BYJ-48:	28BYJ-48.o
+	$Q echo [link]
+	$Q $(CC) -o $@ 28BYJ-48.o $(LDFLAGS) $(LDLIBS)
 
 .c.o:
 	$Q echo [CC] $<
