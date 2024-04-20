@@ -398,12 +398,20 @@ int wiringPiTryGpioMem  = FALSE ;
 // sysFds:
 //	Map a file descriptor from the /sys/class/gpio/gpioX/value
 
-static unsigned int cdflags [64] =
+static unsigned int lineFlags [64] =
 {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+} ;
+
+static int lineFds [64] =
+{
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 } ;
 
 static int sysFds [64] =
@@ -1557,6 +1565,48 @@ int GetChipFd() {
   return chipFd;
 }
 
+void releaseLine(int pin) {
+
+  if (wiringPiDebug)
+    printf ("releaseLine: pin:%d\n", pin) ;
+  lineFlags[pin] = 0;
+  close(lineFds[pin]);
+  lineFds[pin] = -1;
+}
+
+int requestLine(int pin, unsigned int lineRequestFlags) {
+  struct gpiohandle_request rq;
+
+   if (lineFds[pin]>=0) {
+    if (lineRequestFlags == lineFlags[pin]) {
+      //already requested
+      return lineFds[pin];
+    } else {
+      //different request -> rerequest
+      releaseLine(pin);
+    }
+  }
+
+  //requested line
+  if (GetChipFd()<0) {
+    return -1;  // error
+  }
+  rq.lineoffsets[0] = pin;
+  rq.lines = 1;
+  rq.flags = lineRequestFlags;
+  int ret = ioctl(chipFd, GPIO_GET_LINEHANDLE_IOCTL, &rq);
+  if (ret || rq.fd<0) {
+    ReportDeviceError("get line handle", pin, "RequestLine", ret);
+    return -1;  // error
+  }
+
+  lineFlags[pin] = lineRequestFlags;
+  lineFds[pin] = rq.fd;
+  if (wiringPiDebug)
+    printf ("requestLine succeeded: pin:%d, flags: %u, fd :%d\n", pin, lineRequestFlags, lineFds[pin]) ;
+  return lineFds[pin];
+}
+
 /*
  *********************************************************************************
  * Core Functions
@@ -1636,28 +1686,17 @@ void pinModeFlagsDevice (int pin, int mode, unsigned int flags) {
     case OUTPUT:
       lflag |= GPIOHANDLE_REQUEST_OUTPUT;
       break;
-  }
-  if (GetChipFd()<0) {
-    return;  // error
+    case PM_OFF:
+      pinModeFlagsDevice(pin, INPUT, 0);
+      releaseLine(pin);
+      return;
   }
 
-  struct gpiohandle_request rq;
-  rq.lineoffsets[0] = pin;
-  rq.lines = 1;
-  rq.flags = lflag;
-  if (wiringPiDebug)
-    printf ("pinModeFlagsDevice: ioctl pin:%d cmd: GPIO_GET_LINEHANDLE_IOCTL, flags: %u\n", pin, lflag) ;
-  int ret = ioctl(chipFd, GPIO_GET_LINEHANDLE_IOCTL, &rq);
-  if (ret) {
-    ReportDeviceError("get line handle", pin, "pinMode", ret);
-    return;  // error
-  }
-  cdflags[pin] = lflag;
-  close(rq.fd);
+  requestLine(pin, lflag);
 }
 
 void pinModeDevice (int pin, int mode) {
-  pinModeFlagsDevice (pin, mode, cdflags[pin]);
+  pinModeFlagsDevice(pin, mode, lineFlags[pin]);
 }
 
 void pinMode (int pin, int mode)
@@ -1684,7 +1723,8 @@ void pinMode (int pin, int mode)
         pin = physToGpio [pin];
         break;
       case WPI_MODE_GPIO_DEVICE:
-        return pinModeDevice(pin, mode);
+        pinModeDevice(pin, mode);
+        return;
       case WPI_MODE_GPIO:
         break;
     }
@@ -1727,7 +1767,7 @@ void pinMode (int pin, int mode)
     {
       RETURN_ON_MODEL5
       if ((alt = gpioToPwmALT [pin]) == 0)	// Not a hardware capable PWM pin
-	return ;
+	      return ;
 
       usingGpioMemCheck ("pinMode PWM") ;
 
@@ -1744,7 +1784,7 @@ void pinMode (int pin, int mode)
     {
       RETURN_ON_MODEL5
       if ((alt = gpioToGpClkALT0 [pin]) == 0)	// Not a GPIO_CLOCK pin
-	return ;
+	      return ;
 
       usingGpioMemCheck ("pinMode CLOCK") ;
 
@@ -1770,7 +1810,7 @@ void pinMode (int pin, int mode)
  *********************************************************************************
  */
 void pullUpDnControlDevice (int pin, int pud) {
-  unsigned int flag = cdflags[pin];
+  unsigned int flag = lineFlags[pin];
   unsigned int biasflags = GPIOHANDLE_REQUEST_BIAS_DISABLE | GPIOHANDLE_REQUEST_BIAS_PULL_UP | GPIOHANDLE_REQUEST_BIAS_PULL_DOWN;
 
   flag &= ~biasflags;
@@ -1782,12 +1822,12 @@ void pullUpDnControlDevice (int pin, int pud) {
   }
 
   // reset input/output
-  if (cdflags[pin] & GPIOHANDLE_REQUEST_OUTPUT) {
+  if (lineFlags[pin] & GPIOHANDLE_REQUEST_OUTPUT) {
     pinModeFlagsDevice (pin, OUTPUT, flag);
-  } else if(cdflags[pin] & GPIOHANDLE_REQUEST_INPUT) {
+  } else if(lineFlags[pin] & GPIOHANDLE_REQUEST_INPUT) {
     pinModeFlagsDevice (pin, INPUT, flag);
   } else {
-    cdflags[pin] = flag; // only store for later
+    lineFlags[pin] = flag; // only store for later
   }
 }
 
@@ -1865,34 +1905,30 @@ void pullUpDnControl (int pin, int pud)
 }
 
 
+
+
 /*
  * digitalRead:
  *	Read the value of a given Pin, returning HIGH or LOW
  *********************************************************************************
  */
 
-int digitalReadDevice (int pin) {
-  struct gpiohandle_data    data;
-  struct gpiohandle_request rq;
+int digitalReadDevice (int pin) {   // INPUT and OUTPUT should work
 
-  if (GetChipFd()<0) {
-    return LOW;  // error
+   if (lineFds[pin]<0) {
+    // line not requested - auto request on first read as input
+    pinModeDevice(pin, INPUT);
   }
-  rq.lineoffsets[0] = pin;
-  rq.lines = 1;
-  rq.flags = GPIOHANDLE_REQUEST_INPUT;
-  int ret = ioctl(chipFd, GPIO_GET_LINEHANDLE_IOCTL, &rq);
-  if (ret) {
-    ReportDeviceError("get line handle", pin, "digitalRead", ret);
-    return LOW;  // error
+  if (lineFds[pin]>=0) {
+    struct gpiohandle_data data;
+    int ret = ioctl(lineFds[pin], GPIOHANDLE_GET_LINE_VALUES_IOCTL, &data);
+    if (ret) {
+      ReportDeviceError("get line values", pin, "digitalRead", ret);
+      return LOW;  // error
+    }
+    return data.values[0];
   }
-  ret = ioctl(rq.fd, GPIOHANDLE_GET_LINE_VALUES_IOCTL, &data);
-  if (ret) {
-    ReportDeviceError("get line values", pin, "digitalRead", ret);
-    return LOW;  // error
-  }
-  close(rq.fd);
-  return data.values[0];
+  return LOW;  // error , need to request line before
 }
 
 
@@ -1969,33 +2005,27 @@ unsigned int digitalRead8 (int pin)
 
 void digitalWriteDevice (int pin, int value) {
 
-  struct gpiohandle_data    data;
-  struct gpiohandle_request rq;
-
   if (wiringPiDebug)
     printf ("digitalWriteDevice: ioctl pin:%d value: %d\n", pin, value) ;
 
-  if (GetChipFd()<0) {
-    return;  // error
+  if (lineFds[pin]<0) {
+    // line not requested - auto request on first write as output
+    pinModeDevice(pin, OUTPUT);
   }
-  rq.lineoffsets[0] = pin;
-  rq.lines = 1;
-  rq.flags = GPIOHANDLE_REQUEST_OUTPUT;
-  int ret = ioctl(chipFd, GPIO_GET_LINEHANDLE_IOCTL, &rq);
-  if (ret && rq.fd>0) {
-    ReportDeviceError("get line handle", pin, "digitalWrite", ret);
-    return;  // error
+  if (lineFds[pin]>=0 && (lineFlags[pin] & GPIOHANDLE_REQUEST_OUTPUT)>0) {
+    struct gpiohandle_data data;
+    data.values[0] = value;
+    if (wiringPiDebug)
+      printf ("digitalWriteDevice: ioctl pin:%d cmd: GPIOHANDLE_SET_LINE_VALUES_IOCTL, value: %d\n", pin, value) ;
+    int ret = ioctl(lineFds[pin], GPIOHANDLE_SET_LINE_VALUES_IOCTL, &data);
+    if (ret) {
+      ReportDeviceError("set line values", pin, "digitalWrite", ret);
+      return;  // error
+    }
+  } else {
+    fprintf(stderr, "digitalWrite: no output (%d)\n", lineFlags[pin]);
   }
-  data.values[0] = value;
-  if (wiringPiDebug)
-    printf ("digitalWriteDevice: ioctl pin:%d cmd: GPIOHANDLE_SET_LINE_VALUES_IOCTL, value: %d\n", pin, value) ;
-  ret = ioctl(rq.fd, GPIOHANDLE_SET_LINE_VALUES_IOCTL, &data);
-  if (ret) {
-    ReportDeviceError("set line values", pin, "digitalWrite", ret);
-    return;  // error
-  }
-  close(rq.fd);
-  return;
+  return; // error
 }
 
 void digitalWrite (int pin, int value)

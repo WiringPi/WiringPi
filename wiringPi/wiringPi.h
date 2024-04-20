@@ -63,6 +63,7 @@
 #define	SOFT_PWM_OUTPUT		 4
 #define	SOFT_TONE_OUTPUT	 5
 #define	PWM_TONE_OUTPUT		 6
+#define	PM_OFF		         7   // to input / release line
 
 #define	LOW			 0
 #define	HIGH			 1
