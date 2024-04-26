@@ -218,6 +218,7 @@ extern int  wiringPiSetupGpio   (void) ;
 extern int  wiringPiSetupPhys   (void) ;
 extern int  wiringPiSetupGpioDevice(void) ;        //Interface 3.3
 
+extern          int  GetChipFd           ();
 extern          void pinModeAlt          (int pin, int mode) ;
 extern          void pinMode             (int pin, int mode) ;
 extern          void pullUpDnControl     (int pin, int pud) ;

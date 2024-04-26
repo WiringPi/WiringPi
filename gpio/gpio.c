@@ -1363,7 +1363,7 @@ static void doVersion (char *argv [])
       piModelNames [model], piRevisionNames [rev], piMemorySize [mem], piMakerNames [maker], warranty ? "[Out of Warranty]" : "") ;
 
 // Check for device tree
-  printf ("System details:\n") ;
+  printf ("\nSystem details:\n") ;
   if (stat ("/proc/device-tree", &statBuf) == 0) {	// We're on a devtree system ...
     printf ("  * Device tree present.\n") ;
   }
@@ -1394,9 +1394,13 @@ static void doVersion (char *argv [])
   } else  {
         printf ("  * Does not support basic user-level GPIO access via /dev/gpiomem.\n") ;
     if(0==bGlobalAccess) {
-        printf ("  * root or sudo may be required for GPIO access.\n") ;
+        printf ("  * root or sudo may be required for direct GPIO access.\n") ;
     }
   }
+  if (GetChipFd()>0) {
+    printf ("  * Supports basic user-level GPIO access via /dev/gpiochip (slow).\n") ;
+  }
+
 }
 
 
