@@ -84,12 +84,19 @@ int main (void)
   pinMode (11, OUTPUT) ;
   speedTest (11, FAST_COUNT) ;
 
-// Switch to SYS mode:
+// Switch to SYS mode: -> character device ABI
 
-  system ("/usr/local/bin/gpio export 17 out") ;
   printf ("\n/sys/class/gpio method: (%8d iterations)\n", SLOW_COUNT) ;
   wiringPiSetupSys () ;
   speedTest (17, SLOW_COUNT) ;
+
+// character device ABI
+
+  printf ("\ncharacter device ABI method: (%8d iterations)\n", SLOW_COUNT) ;
+  wiringPiSetupGpioDevice () ;
+  pinMode (17, OUTPUT) ;
+  speedTest (17, SLOW_COUNT) ;
+
 
   return 0 ;
 }

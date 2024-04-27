@@ -395,9 +395,6 @@ int wiringPiReturnCodes = FALSE ;
 
 int wiringPiTryGpioMem  = FALSE ;
 
-// sysFds:
-//	Map a file descriptor from the /sys/class/gpio/gpioX/value
-
 static unsigned int lineFlags [64] =
 {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -414,7 +411,7 @@ static int lineFds [64] =
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 } ;
 
-static int sysFds [64] =
+static int isrFds [64] =
 {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -2323,7 +2320,7 @@ int waitForInterrupt (int pin, int mS)
   else if (wiringPiMode == WPI_MODE_PHYS)
     pin = physToGpio [pin] ;
 
-  if ((fd = sysFds [pin]) == -1)
+  if ((fd = isrFds [pin]) == -1)
     return -2 ;
 
   // Setup poll structure
@@ -2338,10 +2335,10 @@ int waitForInterrupt (int pin, int mS)
   } else {
     //if (polls.revents & POLLIN) 
     if (wiringPiDebug) {
-      printf ("wiringPi: IRQ line %d received %d, fd=%d\n", pin, ret, sysFds [pin]) ;
+      printf ("wiringPi: IRQ line %d received %d, fd=%d\n", pin, ret, isrFds[pin]) ;
     }
     /* read event data */
-    int readret = read(sysFds [pin], &evdata, sizeof(evdata));
+    int readret = read(isrFds [pin], &evdata, sizeof(evdata));
     if (readret == sizeof(evdata)) {
       if (wiringPiDebug) {
         printf ("wiringPi: IRQ data id: %d, timestamp: %lld\n", evdata.id, evdata.timestamp) ;
@@ -2407,7 +2404,7 @@ int waitForInterruptInit (int pin, int mode)
 
   /* set event fd nonbloack read */
   int fd_line = req.fd;
-  sysFds [pin] = fd_line;
+  isrFds [pin] = fd_line;
   int flags = fcntl(fd_line, F_GETFL);
   flags |= O_NONBLOCK;
   ret = fcntl(fd_line, F_SETFL, flags);
@@ -2421,7 +2418,7 @@ int waitForInterruptInit (int pin, int mode)
 
 
 int waitForInterruptClose (int pin) {
-  if (sysFds[pin]>0) {
+  if (isrFds[pin]>0) {
     if (wiringPiDebug) {
       printf ("wiringPi: waitForInterruptClose close thread 0x%lX\n", (unsigned long)isrThreads[pin]) ;
     }    
@@ -2434,9 +2431,9 @@ int waitForInterruptClose (int pin) {
         fprintf (stderr, "wiringPi: waitForInterruptClose could not cancel thread\n");
       }
     }
-    close(sysFds [pin]);
+    close(isrFds [pin]);
   }
-  sysFds [pin] = -1;
+  isrFds [pin] = -1;
   isrFunctions [pin] = NULL;
 
   /* -not closing so far - other isr may be using it - only close if no other is using - will code later
