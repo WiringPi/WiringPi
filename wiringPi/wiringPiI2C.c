@@ -47,7 +47,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
@@ -154,6 +153,21 @@ int wiringPiI2CReadReg16 (int fd, int reg)
     return data.word & 0xFFFF ;
 }
 
+int wiringPiI2CReadBlockData (int fd, int reg, uint8_t size, uint8_t *values)
+{
+  union i2c_smbus_data data;
+
+  if (size>I2C_SMBUS_BLOCK_MAX) {
+    size = I2C_SMBUS_BLOCK_MAX;
+  }
+  data.block[0] = size;
+  int result = i2c_smbus_access (fd, I2C_SMBUS_READ, reg, I2C_SMBUS_I2C_BLOCK_DATA, &data);
+  if (result<0) {
+    return result;
+  }
+  memcpy(values, &data.block[1], size);
+  return data.block[0];
+}
 
 /*
  * wiringPiI2CWrite:
@@ -189,6 +203,17 @@ int wiringPiI2CWriteReg16 (int fd, int reg, int value)
   return i2c_smbus_access (fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_WORD_DATA, &data) ;
 }
 
+int wiringPiI2CWriteBlockData (int fd, int reg, uint8_t size, const uint8_t *values)
+{
+    union i2c_smbus_data data;
+
+    if (size>I2C_SMBUS_BLOCK_MAX) {
+      size = I2C_SMBUS_BLOCK_MAX;
+    }
+    data.block[0] = size;
+    memcpy(&data.block[1], values, size);
+    return i2c_smbus_access (fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_BLOCK_DATA, &data) ;
+}
 
 /*
  * wiringPiI2CSetupInterface:
