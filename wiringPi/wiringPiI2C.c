@@ -47,6 +47,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <errno.h>
 #include <string.h>
 #include <fcntl.h>
@@ -153,7 +154,7 @@ int wiringPiI2CReadReg16 (int fd, int reg)
     return data.word & 0xFFFF ;
 }
 
-int wiringPiI2CReadBlockData (int fd, int reg, uint8_t size, uint8_t *values)
+int wiringPiI2CReadBlockData (int fd, int reg, uint8_t *values, uint8_t size)
 {
   union i2c_smbus_data data;
 
@@ -167,6 +168,11 @@ int wiringPiI2CReadBlockData (int fd, int reg, uint8_t size, uint8_t *values)
   }
   memcpy(values, &data.block[1], size);
   return data.block[0];
+}
+
+int wiringPiI2CRawRead (int fd, uint8_t *values, uint8_t size)
+{
+  return(read(fd, values, size));
 }
 
 /*
@@ -203,7 +209,7 @@ int wiringPiI2CWriteReg16 (int fd, int reg, int value)
   return i2c_smbus_access (fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_WORD_DATA, &data) ;
 }
 
-int wiringPiI2CWriteBlockData (int fd, int reg, uint8_t size, const uint8_t *values)
+int wiringPiI2CWriteBlockData (int fd, int reg, const uint8_t *values, uint8_t size)
 {
     union i2c_smbus_data data;
 
@@ -213,6 +219,11 @@ int wiringPiI2CWriteBlockData (int fd, int reg, uint8_t size, const uint8_t *val
     data.block[0] = size;
     memcpy(&data.block[1], values, size);
     return i2c_smbus_access (fd, I2C_SMBUS_WRITE, reg, I2C_SMBUS_BLOCK_DATA, &data) ;
+}
+
+int wiringPiI2CRawWrite (int fd, const uint8_t *values, uint8_t size)
+{
+  return(write(fd, values, size));
 }
 
 /*
