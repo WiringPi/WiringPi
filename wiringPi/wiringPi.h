@@ -207,8 +207,6 @@ extern int wiringPiFailure (int fatal, const char *message, ...) ;
 extern struct wiringPiNodeStruct *wiringPiFindNode (int pin) ;
 extern struct wiringPiNodeStruct *wiringPiNewNode  (int pinBase, int numPins) ;
 
-extern int GPIOToSysFS(const int pin) ;
-
 extern void wiringPiVersion	(int *major, int *minor) ;
 extern int  wiringPiGlobalMemoryAccess(void);         //Interface 3.3
 extern int  wiringPiUserLevelAccess (void) ;
