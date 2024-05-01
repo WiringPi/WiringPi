@@ -1,5 +1,5 @@
 ﻿// WiringPi test program: Kernel char device interface / sysfs successor
-// Compile: gcc -Wall wiringpi_test2_device.c -o wiringpi_test2_device -lwiringPi
+// Compile: gcc -Wall wiringpi_test4_device.c -o wiringpi_test4_device -lwiringPi
 
 #include <wiringPi.h>
 #include <stdio.h>
@@ -10,9 +10,9 @@
 #include <sys/time.h>
 
 
-const int GPIO = 19;
-const int GPIOIN = 26;
-const int  ToggleValue = 4;
+const int GPIO = 35; //BCM 19
+const int GPIOIN = 37; //BCM 26;
+const int ToggleValue = 4;
 
 void CheckGPIO(int out) {
 	int in  = digitalRead(GPIOIN);
@@ -42,11 +42,11 @@ void pullUpDnControlEx (int pin ,int mode) {
 
 int main (void) {
 
-	printf("WiringPi GPIO test program 2 (using GPIO%d (output) and GPIO%d (input) via sys)\n", GPIO, GPIOIN);
+	printf("WiringPi GPIO test program 2 (using physical GPIO%d (output) and GPIO%d (input) via GPIO device)\n", GPIO, GPIOIN);
     printf(" testing pullUpDnControl and pinMode PM_OFF\n");
 
-	if (wiringPiSetupSys()  == -1) {
-		printf("wiringPiSetupSys failed\n\n");
+	if (wiringPiSetupGpioDevice(WPI_PIN_PHYS)  == -1) {
+		printf("wiringPiSetupGpioDevice failed\n\n");
 		exit(EXIT_FAILURE);
 	}
 	pinMode(GPIOIN, INPUT);
