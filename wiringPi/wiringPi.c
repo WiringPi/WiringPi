@@ -1689,8 +1689,14 @@ void pinMode (int pin, int mode)
       case WPI_MODE_PHYS:
         pin = physToGpio [pin];
         break;
-      case WPI_MODE_GPIO_DEVICE:
+      case WPI_MODE_GPIO_DEVICE_BCM:
         pinModeDevice(pin, mode);
+        return;
+      case WPI_MODE_GPIO_DEVICE_WPI:
+        pinModeDevice(pinToGpio[pin], mode);
+        return;
+      case WPI_MODE_GPIO_DEVICE_PHYS:
+        pinModeDevice(physToGpio[pin], mode);
         return;
       case WPI_MODE_GPIO:
         break;
@@ -1817,8 +1823,12 @@ void pullUpDnControl (int pin, int pud)
       case WPI_MODE_PHYS:
         pin = physToGpio [pin];
         break;
-      case WPI_MODE_GPIO_DEVICE:
+      case WPI_MODE_GPIO_DEVICE_BCM:
         return pullUpDnControlDevice(pin, pud);
+      case WPI_MODE_GPIO_DEVICE_WPI:
+        return pullUpDnControlDevice(pinToGpio[pin], pud);
+      case WPI_MODE_GPIO_DEVICE_PHYS:
+        return pullUpDnControlDevice(physToGpio[pin], pud);
       case WPI_MODE_GPIO:
         break;
     }
@@ -1915,8 +1925,12 @@ int digitalRead (int pin)
       case WPI_MODE_PHYS:
         pin = physToGpio [pin];
         break;
-      case WPI_MODE_GPIO_DEVICE:
+      case WPI_MODE_GPIO_DEVICE_BCM:
         return digitalReadDevice(pin);
+      case WPI_MODE_GPIO_DEVICE_WPI:
+        return digitalReadDevice(pinToGpio[pin]);
+      case WPI_MODE_GPIO_DEVICE_PHYS:
+        return digitalReadDevice(physToGpio[pin]);
       case WPI_MODE_GPIO:
         break;
     }
@@ -2011,8 +2025,14 @@ void digitalWrite (int pin, int value)
       case WPI_MODE_PHYS:
         pin = physToGpio [pin];
         break;
-      case WPI_MODE_GPIO_DEVICE:
+      case WPI_MODE_GPIO_DEVICE_BCM:
         digitalWriteDevice(pin, value);
+        return;
+      case WPI_MODE_GPIO_DEVICE_WPI:
+        digitalWriteDevice(pinToGpio[pin], value);
+        return;
+      case WPI_MODE_GPIO_DEVICE_PHYS:
+        digitalWriteDevice(physToGpio[pin], value);
         return;
       case WPI_MODE_GPIO:
         break;
@@ -2933,7 +2953,6 @@ int wiringPiSetup (void)
     _wiringPiPads  = pads ;
     _wiringPiTimer = timer ;
     _wiringPiRio   = NULL ;
- } else {
     unsigned int MMAP_size = (usingGpioMem) ? gpiomem_RP1_Size : pciemem_RP1_Size;
 
     GPIO_PADS 	= (RP1_PADS0_Addr-RP1_IO0_Addr) ;
@@ -3024,13 +3043,24 @@ int wiringPiSetupPhys (void)
   return 0 ;
 }
 
+int wiringPiSetupPinType (enum WPIPinType pinType) {
+  if (wiringPiDebug)
+    printf ("wiringPi: wiringPiSetupPinType(%d) called\n", (int) pinType) ;
+  switch (pinType) {
+    case WPI_PIN_BCM:  return wiringPiSetupGpio();
+    case WPI_PIN_WPI:  return wiringPiSetup();
+    case WPI_PIN_PHYS: return wiringPiSetupPhys();
+    default:           return -1;
+  }
+}
 
-int wiringPiSetupGpioDevice (void) {
+
+int wiringPiSetupGpioDevice (enum WPIPinType pinType) {
  if (wiringPiSetuped)
     return 0 ;
-  if (wiringPiDebug)
-    printf ("wiringPi: wiringPiSetupGpioDevice called\n") ;
-
+  if (wiringPiDebug) {
+    printf ("wiringPi: wiringPiSetupGpioDevice(%d) called\n", (int)pinType) ;
+  }
   if (getenv (ENV_DEBUG) != NULL)
     wiringPiDebug = TRUE ;
 
@@ -3042,7 +3072,6 @@ int wiringPiSetupGpioDevice (void) {
   }
   wiringPiSetuped = TRUE ;
 
-  // not used or needed but still assigned
   if (piGpioLayout () == GPIO_LAYOUT_PI1_REV1){
     pinToGpio  = pinToGpioR1 ;
     physToGpio = physToGpioR1 ;
@@ -3053,7 +3082,20 @@ int wiringPiSetupGpioDevice (void) {
 
   initialiseEpoch () ;
 
-  wiringPiMode = WPI_MODE_GPIO_DEVICE ;
+  switch (pinType) {
+    case WPI_PIN_BCM:
+      wiringPiMode = WPI_MODE_GPIO_DEVICE_BCM;
+      break;
+    case WPI_PIN_WPI:
+      wiringPiMode = WPI_MODE_GPIO_DEVICE_WPI;
+      break;
+    case WPI_PIN_PHYS:
+      wiringPiMode = WPI_MODE_GPIO_DEVICE_PHYS;
+      break;
+    default:
+      wiringPiSetuped = FALSE;
+      return -1;
+  }
 
   return 0 ;
 }
@@ -3072,5 +3114,5 @@ int wiringPiSetupSys (void)
     return 0 ;
   if (wiringPiDebug)
     printf ("wiringPi: wiringPiSetupSys called\n") ;
-  return wiringPiSetupGpioDevice();
+  return wiringPiSetupGpioDevice(WPI_PIN_BCM);
 }

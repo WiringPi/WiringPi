@@ -46,12 +46,14 @@
 
 // wiringPi modes
 
-#define	WPI_MODE_PINS		        0
-#define	WPI_MODE_GPIO		        1
-#define	WPI_MODE_GPIO_SYS	      2  // deprecated since 3.2
-#define	WPI_MODE_PHYS		        3
-#define	WPI_MODE_PIFACE		      4
-#define	WPI_MODE_GPIO_DEVICE	  5  // BCM numbers like WPI_MODE_GPIO
+#define	WPI_MODE_PINS		          0
+#define	WPI_MODE_GPIO		          1
+#define	WPI_MODE_GPIO_SYS	        2  // deprecated since 3.2
+#define	WPI_MODE_PHYS		          3
+#define	WPI_MODE_PIFACE		        4
+#define	WPI_MODE_GPIO_DEVICE_BCM  5  // BCM pin numbers like WPI_MODE_GPIO
+#define	WPI_MODE_GPIO_DEVICE_WPI  6  // WiringPi pin numbers like WPI_MODE_PINS
+#define	WPI_MODE_GPIO_DEVICE_PHYS 7  // Physic pin numbers like WPI_MODE_PHYS
 #define	WPI_MODE_UNINITIALISED -1
 
 // Pin modes
@@ -207,14 +209,21 @@ extern int wiringPiFailure (int fatal, const char *message, ...) ;
 extern struct wiringPiNodeStruct *wiringPiFindNode (int pin) ;
 extern struct wiringPiNodeStruct *wiringPiNewNode  (int pinBase, int numPins) ;
 
+enum WPIPinType {
+  WPI_PIN_BCM = 1,
+  WPI_PIN_WPI,
+  WPI_PIN_PHYS,
+};
+
 extern void wiringPiVersion	(int *major, int *minor) ;
-extern int  wiringPiGlobalMemoryAccess(void);         //Interface 3.3
+extern int  wiringPiGlobalMemoryAccess(void);             //Interface V3.3
 extern int  wiringPiUserLevelAccess (void) ;
 extern int  wiringPiSetup       (void) ;
 extern int  wiringPiSetupSys    (void) ;
 extern int  wiringPiSetupGpio   (void) ;
 extern int  wiringPiSetupPhys   (void) ;
-extern int  wiringPiSetupGpioDevice(void) ;        //Interface 3.3
+extern int  wiringPiSetupPinType (enum WPIPinType pinType);   //Interface V3.3
+extern int  wiringPiSetupGpioDevice(enum WPIPinType pinType); //Interface V3.3
 
 extern          int  GetChipFd           ();
 extern          void pinModeAlt          (int pin, int mode) ;
