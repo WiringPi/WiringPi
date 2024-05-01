@@ -553,21 +553,6 @@ int piBoard() {
   return RaspberryPiModel<0 ? 0 : 1;
 }
 
-int GPIOToSysFS(const int pin) {
-  int sysfspin =  pin;
-  piBoard();
-  if (PI_MODEL_5 == RaspberryPiModel) {
-    sysfspin = pin + 399;
-    if (sysfspin<399 || sysfspin>426) {  // only 399-426 supported, 40-pin GPIO header
-      sysfspin = -1;
-    }
-  }
-  if (wiringPiDebug)
-    printf ("GPIOToSysFS: translate bcm gpio %d to sysfs gpio %d\n", pin,  sysfspin) ;
-
-  return sysfspin;
-}
-
 int GetMaxPin() {
   return PI_MODEL_5 == RaspberryPiModel ? 27 : 63;
 }
