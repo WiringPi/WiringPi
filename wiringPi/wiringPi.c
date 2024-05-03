@@ -1110,6 +1110,37 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
   }
 
   RaspberryPiModel = *model;
+
+  switch (RaspberryPiModel){
+    case PI_MODEL_A:
+    case PI_MODEL_B:
+    case PI_MODEL_AP:
+    case PI_MODEL_BP:
+    case PI_ALPHA:
+    case PI_MODEL_CM:
+    case PI_MODEL_ZERO:
+    case PI_MODEL_ZERO_W:
+      piGpioBase = GPIO_PERI_BASE_OLD ;
+      piGpioPupOffset = GPPUD ;
+      break ;
+
+    case PI_MODEL_4B:
+    case PI_MODEL_400:
+    case PI_MODEL_CM4:
+      piGpioBase = GPIO_PERI_BASE_2711 ;
+      piGpioPupOffset = GPPUPPDN0 ;
+      break ;
+
+    case PI_MODEL_5:
+      piGpioBase = GPIO_PERI_BASE_2712 ;
+      piGpioPupOffset = 0 ;
+      break ;
+
+    default:
+      piGpioBase = GPIO_PERI_BASE_2835 ;
+      piGpioPupOffset = GPPUD ;
+      break ;
+  }
 }
 
 
@@ -2731,7 +2762,7 @@ int wiringPiGlobalMemoryAccess(void)
     if (lgpio == MAP_FAILED) {
       returnvalue = 0;
       if (wiringPiDebug)
-        fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (GPIO) failed: %s\n", strerror (errno)) ;
+        fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (GPIO 0x%X,0x%X) failed: %s\n", BaseAddr, MMAP_size, strerror (errno)) ;
     } else {
       munmap(lgpio, MMAP_size);
       if (PI_MODEL_5 == RaspberryPiModel) {
@@ -2742,7 +2773,7 @@ int wiringPiGlobalMemoryAccess(void)
         if (lpwm == MAP_FAILED) {
           returnvalue = 1;    // only GPIO accessible
           if (wiringPiDebug)
-            fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (PWM) failed: %s\n", strerror (errno)) ;
+            fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (PWM 0x%X,0x%X) failed: %s\n", PWMAddr, MMAP_size, strerror (errno)) ;
         } else {
           returnvalue = 2;  // GPIO & PWM accessible
           munmap(lpwm, BLOCK_SIZE);
@@ -2810,40 +2841,6 @@ int wiringPiSetup (void)
   {
      pinToGpio =  pinToGpioR2 ;
     physToGpio = physToGpioR2 ;
-  }
-
-// ...
-
-  switch (model)
-  {
-    case PI_MODEL_A:
-    case PI_MODEL_B:
-    case PI_MODEL_AP:
-    case PI_MODEL_BP:
-    case PI_ALPHA:
-    case PI_MODEL_CM:
-    case PI_MODEL_ZERO:
-    case PI_MODEL_ZERO_W:
-      piGpioBase = GPIO_PERI_BASE_OLD ;
-      piGpioPupOffset = GPPUD ;
-      break ;
-
-    case PI_MODEL_4B:
-    case PI_MODEL_400:
-    case PI_MODEL_CM4:
-      piGpioBase = GPIO_PERI_BASE_2711 ;
-      piGpioPupOffset = GPPUPPDN0 ;
-      break ;
-
-    case PI_MODEL_5:
-      piGpioBase = GPIO_PERI_BASE_2712 ;
-      piGpioPupOffset = 0 ;
-      break ;
-
-    default:
-      piGpioBase = GPIO_PERI_BASE_2835 ;
-      piGpioPupOffset = GPPUD ;
-      break ;
   }
 
 // Open the master /dev/ memory control device
@@ -2938,6 +2935,7 @@ int wiringPiSetup (void)
     _wiringPiPads  = pads ;
     _wiringPiTimer = timer ;
     _wiringPiRio   = NULL ;
+  } else {
     unsigned int MMAP_size = (usingGpioMem) ? gpiomem_RP1_Size : pciemem_RP1_Size;
 
     GPIO_PADS 	= (RP1_PADS0_Addr-RP1_IO0_Addr) ;
