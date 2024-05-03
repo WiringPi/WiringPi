@@ -1397,15 +1397,15 @@ static void doVersion (char *argv [])
   printf ("\n") ;
   piBoardId (&model, &rev, &mem, &maker, &warranty) ;
 
-  printf ("Raspberry Pi Details:\n") ;
+  printf ("Hardware details:\n") ;
   printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s %s\n", 
       piModelNames [model], piRevisionNames [rev], piMemorySize [mem], piMakerNames [maker], warranty ? "[Out of Warranty]" : "") ;
 
 // Check for device tree
-
-  if (stat ("/proc/device-tree", &statBuf) == 0)	// We're on a devtree system ...
-    printf ("  * Device tree is enabled.\n") ;
-
+  printf ("System details:\n") ;
+  if (stat ("/proc/device-tree", &statBuf) == 0) {	// We're on a devtree system ...
+    printf ("  * Device tree present.\n") ;
+  }
   if (stat ("/proc/device-tree/model", &statBuf) == 0)	// Output Kernel idea of board type
   {
     if ((fd = fopen ("/proc/device-tree/model", "r")) != NULL)
@@ -1415,14 +1415,30 @@ static void doVersion (char *argv [])
         perror("Error reading /proc/device-tree/model");
       }
       fclose (fd) ;
-      printf ("  *--> %s\n", name) ;
+      printf ("      Model: %s\n", name) ;
     }
   }
 
-  if (wiringPiUserLevelAccess())		// User level GPIO is GO
-    printf ("  * This Raspberry Pi supports user-level GPIO access.\n") ;
-  else
-    printf ("  * Root or sudo required for GPIO access.\n") ;
+  int bGlobalAccess = wiringPiGlobalMemoryAccess();		// User level GPIO is GO
+  switch(bGlobalAccess) {
+    case 0:
+        printf ("  * Does not support basic user-level GPIO access via memory.\n") ;
+        break;
+    case 1:
+        printf ("  * Supports basic user-level GPIO access via /dev/mem.\n") ;
+        break;
+    case 2:
+        printf ("  * Supports full  user-level GPIO access via memory.\n") ;
+        break;
+  }
+  if (wiringPiUserLevelAccess()) {
+        printf ("  * Supports basic user-level GPIO access via /dev/gpiomem.\n") ;
+  } else  {
+        printf ("  * Does not support basic user-level GPIO access via /dev/gpiomem.\n") ;
+    if(0==bGlobalAccess) {
+        printf ("  * root or sudo may be required for GPIO access.\n") ;
+    }
+  }
 }
 
 
