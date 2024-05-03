@@ -558,8 +558,8 @@ int GetMaxPin() {
 }
 
 
-#define RETURN_ON_MODEL5 if (PI_MODEL_5 == RaspberryPiModel) { if (wiringPiDebug) printf("Function not supported on Pi5\n");  return; } 
- 
+#define RETURN_ON_MODEL5 if (PI_MODEL_5 == RaspberryPiModel) { if (wiringPiDebug) printf("Function not supported on Pi5\n");  return; }
+
 int FailOnModel5() {
   if (PI_MODEL_5 == RaspberryPiModel) {
     return wiringPiFailure (WPI_ALMOST, "Function not supported on Raspberry Pi 5.\n"
@@ -831,12 +831,12 @@ static void usingGpioMemCheck (const char *what)
 void PrintSystemStdErr () {
   struct utsname sys_info;
   if (uname(&sys_info) == 0) {
-    fprintf (stderr, "      wiringpi    = %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
-    fprintf (stderr, "      system name = %s\n", sys_info.sysname);
-    //fprintf (stderr, "  node name   = %s\n", sys_info.nodename);
-    fprintf (stderr, "      release     = %s\n", sys_info.release);
-    fprintf (stderr, "      version     = %s\n", sys_info.version);
-    fprintf (stderr, "      machine     = %s\n", sys_info.machine);
+    fprintf (stderr, "      WiringPi    : %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
+    fprintf (stderr, "      system name : %s\n", sys_info.sysname);
+    //fprintf (stderr, "  node name   : %s\n", sys_info.nodename);
+    fprintf (stderr, "      release     : %s\n", sys_info.release);
+    fprintf (stderr, "      version     : %s\n", sys_info.version);
+    fprintf (stderr, "      machine     : %s\n", sys_info.machine);
     if (strstr(sys_info.machine, "arm") == NULL && strstr(sys_info.machine, "aarch")==NULL) {
       fprintf (stderr, " -> This is not an ARM architecture; it cannot be a Raspberry Pi.\n") ;
     }
@@ -1200,16 +1200,16 @@ void setPadDrive (int group, int value)
     if (PI_MODEL_5 == RaspberryPiModel) {
       if (-1==group) {
         printf ("Pad register:\n");
-        for (int pin=0, maxpin=GetMaxPin(); pin<=maxpin; ++pin) { 
+        for (int pin=0, maxpin=GetMaxPin(); pin<=maxpin; ++pin) {
           unsigned int drive = (pads[1+pin] & RP1_PAD_DRIVE_MASK)>>4;
           printf ("  Pin %2d: 0x%08X drive: 0x%d = %2dmA\n", pin, pads[1+pin], drive, 0==drive ? 2 : drive*4) ;
-        }        
+        }
       }
       if (group !=0) { // only GPIO range @RP1
         return ;
-      } 
+      }
       switch(value) {
-        default: 
+        default:
                 /* bcm*/                 // RP1
         case 0: /* 2mA*/ value=0; break; // 2mA
         case 1: /* 4mA*/
@@ -1220,9 +1220,9 @@ void setPadDrive (int group, int value)
         case 6: /*14mA*/
         case 7: /*16mA*/ value=3; break; //12mA
       }
-      wrVal = (value << 4); //Drive strength 0-3   
+      wrVal = (value << 4); //Drive strength 0-3
       //set for all pins even when it's avaiable for each pin separately
-      for (int pin=0, maxpin=GetMaxPin(); pin<=maxpin; ++pin) { 
+      for (int pin=0, maxpin=GetMaxPin(); pin<=maxpin; ++pin) {
         pads[1+pin] = (pads[1+pin] & RP1_INV_PAD_DRIVE_MASK) | wrVal;
       }
       rdVal = pads[1+17]; // only pin 17 readback, for logging
@@ -1234,7 +1234,7 @@ void setPadDrive (int group, int value)
       if ((group < 0) || (group > 2))
         return ;
 
-      wrVal = BCM_PASSWORD | 0x18 | value; //Drive strength 0-7  
+      wrVal = BCM_PASSWORD | 0x18 | value; //Drive strength 0-7
       *(pads + group + 11) = wrVal ;
       rdVal = *(pads + group + 11);
     }
@@ -1620,7 +1620,7 @@ void pinModeAlt (int pin, int mode)
 
     if (PI_MODEL_5 == RaspberryPiModel) {
 
-      //confusion! diffrent to to BCM!  this is taking directly the value for the register 
+      //confusion! diffrent to to BCM!  this is taking directly the value for the register
     /*
     "alt0" 0b100
     "alt1" 0b101
@@ -1728,7 +1728,7 @@ void pinMode (int pin, int mode)
     shift   = gpioToShift  [pin] ;
 
     if (mode == INPUT) {
-      if (PI_MODEL_5 == RaspberryPiModel) { 
+      if (PI_MODEL_5 == RaspberryPiModel) {
         pads[1+pin] = (pin<=8) ? RP1_PAD_DEFAULT_0TO8 : RP1_PAD_DEFAULT_FROM9;
         gpio[2*pin+1] = RP1_FSEL_GPIO | RP1_DEBOUNCE_DEFAULT; // GPIO
         rio[RP1_RIO_OE + RP1_CLR_OFFSET] = 1<<pin;            // Input
@@ -2060,7 +2060,7 @@ void digitalWrite (int pin, int value)
         rio[RP1_RIO_OUT + RP1_CLR_OFFSET] = 1<<pin;
       } else {
         //printf("Set pin %d >>0x%08x<< to high\n", pin, 1<<pin);
-        rio[RP1_RIO_OUT + RP1_SET_OFFSET] = 1<<pin; 
+        rio[RP1_RIO_OUT + RP1_SET_OFFSET] = 1<<pin;
       }
     } else {
       if (value == LOW)
@@ -2316,7 +2316,7 @@ unsigned int digitalReadByte2 (void)
 
 int waitForInterrupt (int pin, int mS)
 {
-  int fd, ret; 
+  int fd, ret;
   struct pollfd polls ;
   struct gpioevent_data evdata;
   //struct gpio_v2_line_request req2;
@@ -2339,7 +2339,7 @@ int waitForInterrupt (int pin, int mS)
   if (ret <= 0) {
     fprintf(stderr, "wiringPi: ERROR: poll returned=%d\n", ret);
   } else {
-    //if (polls.revents & POLLIN) 
+    //if (polls.revents & POLLIN)
     if (wiringPiDebug) {
       printf ("wiringPi: IRQ line %d received %d, fd=%d\n", pin, ret, isrFds[pin]) ;
     }
@@ -2427,7 +2427,7 @@ int waitForInterruptClose (int pin) {
   if (isrFds[pin]>0) {
     if (wiringPiDebug) {
       printf ("wiringPi: waitForInterruptClose close thread 0x%lX\n", (unsigned long)isrThreads[pin]) ;
-    }    
+    }
     if (pthread_cancel(isrThreads[pin]) == 0) {
       if (wiringPiDebug) {
         printf ("wiringPi: waitForInterruptClose thread canceled successfuly\n") ;
@@ -2527,7 +2527,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
   if(waitForInterruptInit (pin, mode)<0) {
     if (wiringPiDebug) {
       fprintf (stderr, "wiringPi: waitForInterruptInit failed\n") ;
-    }    
+    }
   };
 
   if (wiringPiDebug) {
@@ -3087,7 +3087,7 @@ int wiringPiSetupGpioDevice (enum WPIPinType pinType) {
  * wiringPiSetupSys:
  * GPIO Sysfs Interface for Userspace is deprecated
  *   https://www.kernel.org/doc/html/v5.5/admin-guide/gpio/sysfs.html
- * 
+ *
  * Switched to new GPIO driver Interface in version 3.3
  */
 
