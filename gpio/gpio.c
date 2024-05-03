@@ -1138,7 +1138,7 @@ static void doVersion (char *argv [])
         printf ("  * root or sudo may be required for direct GPIO access.\n") ;
     }
   }
-  if (GetChipFd()>0) {
+  if (wiringPiGpioDeviceGetFd()>0) {
     printf ("  * Supports basic user-level GPIO access via /dev/gpiochip (slow).\n") ;
   }
 

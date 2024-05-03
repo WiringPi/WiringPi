@@ -1503,7 +1503,7 @@ void pinEnableED01Pi (int pin)
 const char DEV_GPIO_PI[] ="/dev/gpiochip0";
 const char DEV_GPIO_PI5[]="/dev/gpiochip4";
 
-int GetChipFd() {
+int wiringPiGpioDeviceGetFd() {
   if (chipFd<0) {
     piBoard();
     const char* gpiochip = PI_MODEL_5 == RaspberryPiModel ? DEV_GPIO_PI5 : DEV_GPIO_PI;
@@ -1540,7 +1540,7 @@ int requestLine(int pin, unsigned int lineRequestFlags) {
   }
 
   //requested line
-  if (GetChipFd()<0) {
+  if (wiringPiGpioDeviceGetFd()<0) {
     return -1;  // error
   }
   rq.lineoffsets[0] = pin;
@@ -2338,7 +2338,7 @@ int waitForInterruptInit (int pin, int mode)
 
   /* open gpio */
   sleep(1);
-  if (GetChipFd()<0) {
+  if (wiringPiGpioDeviceGetFd()<0) {
     return -1;
   }
 
@@ -3052,7 +3052,7 @@ int wiringPiSetupGpioDevice (enum WPIPinType pinType) {
   if (getenv (ENV_CODES) != NULL)
     wiringPiReturnCodes = TRUE ;
 
-  if (GetChipFd()<0) {
+  if (wiringPiGpioDeviceGetFd()<0) {
     return -1;
   }
   wiringPiSetuped = TRUE ;

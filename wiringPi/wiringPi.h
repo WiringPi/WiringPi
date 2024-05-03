@@ -216,7 +216,7 @@ enum WPIPinType {
 };
 
 extern void wiringPiVersion	(int *major, int *minor) ;
-extern int  wiringPiGlobalMemoryAccess(void);             //Interface V3.3
+extern int  wiringPiGlobalMemoryAccess(void);                 //Interface V3.3
 extern int  wiringPiUserLevelAccess (void) ;
 extern int  wiringPiSetup       (void) ;
 extern int  wiringPiSetupSys    (void) ;
@@ -225,7 +225,7 @@ extern int  wiringPiSetupPhys   (void) ;
 extern int  wiringPiSetupPinType (enum WPIPinType pinType);   //Interface V3.3
 extern int  wiringPiSetupGpioDevice(enum WPIPinType pinType); //Interface V3.3
 
-extern          int  GetChipFd           ();
+extern          int  wiringPiGpioDeviceGetFd();               //Interface V3.3
 extern          void pinModeAlt          (int pin, int mode) ;
 extern          void pinMode             (int pin, int mode) ;
 extern          void pullUpDnControl     (int pin, int pud) ;
