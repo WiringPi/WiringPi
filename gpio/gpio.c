@@ -610,7 +610,6 @@ void printgpioflush(const char* text) {
 void printgpio(const char* text) {
   if (gpioDebug) {
     printf("%s", text);
-    fflush(stdout);
   }
 }
 
@@ -660,7 +659,7 @@ void doWfi (int argc, char *argv [])
     exit (1) ;
   }
 
-  printgpio("wait for interrupt function call \n");
+  printgpio("wait for interrupt function call\n");
   for (int Sec=0; Sec<timeoutSec; ++Sec) {
     printgpioflush(".");
     delay (999);

@@ -58,10 +58,10 @@ static int myAnalogRead(struct wiringPiNodeStruct *node, int pin)
 
 static void myAnalogWrite(struct wiringPiNodeStruct *node, int pin, int value)
 {
-    int *ptr = (int *)(intptr_t)node->data0;
-    int myPin = pin - node->pinBase;
+  int *ptr = (int *)(intptr_t)node->data0;
+  int myPin = pin - node->pinBase;
 
-    *(ptr + myPin) = value;
+  *(ptr + myPin) = value;
 }
 
 
@@ -79,25 +79,25 @@ int pseudoPinsSetup(const int pinBase)
 
     node = wiringPiNewNode(pinBase, PSEUDO_PINS);
     if (node == NULL) {
-        perror("Error creating new wiringPi node");
-        return FALSE;
+      fprintf(stderr, "Error creating new wiringPi node");
+      return FALSE;
     }
 
     node->fd = shm_open(SHARED_NAME, O_CREAT | O_RDWR, 0666);
     if (node->fd < 0) {
-        perror("Error opening shared memory");
-        return FALSE;
+      perror("Error opening shared memory");
+      return FALSE;
     }
 
     if (ftruncate(node->fd, PSEUDO_PINS * sizeof(int)) < 0) {
-        perror("Error resizing shared memory");
-        return FALSE;
+      perror("Error resizing shared memory");
+      return FALSE;
     }
 
     ptr = mmap(NULL, PSEUDO_PINS * sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, node->fd, 0);
     if (ptr == MAP_FAILED) {
-        perror("Error mapping shared memory");
-        return FALSE;
+      perror("Error mapping shared memory");
+      return FALSE;
     }
 
     node->data0 = (unsigned int)(uintptr_t)ptr;

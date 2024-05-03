@@ -157,7 +157,7 @@ void serialPutchar(const int fd, const unsigned char c)
 {
     ssize_t bytes_written = write(fd, &c, 1);
     if (bytes_written != 1) {
-        perror("Error writing to file descriptor");
+      perror("Error writing to file descriptor");
     }
 }
 
@@ -173,7 +173,7 @@ void serialPuts(const int fd, const char *s)
     size_t len = strlen(s);
     ssize_t bytes_written = write(fd, s, len);
     if (bytes_written != (ssize_t)len) {
-        perror("Error writing to file descriptor");
+      perror("Error writing to file descriptor");
     }
 }
 
