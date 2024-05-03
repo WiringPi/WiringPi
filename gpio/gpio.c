@@ -290,13 +290,33 @@ static void doLoad (int argc, char *argv [])
   if (!moduleLoaded (module1))
   {
     sprintf (cmd, "%s %s%s", findExecutable (MODPROBE), module1, args1) ;
-    system (cmd) ;
+    int ret = system(cmd);
+    if (ret == -1) {
+      perror("Error executing command");
+    } else if (WIFEXITED(ret)) {
+      int exit_status = WEXITSTATUS(ret);
+      if (exit_status != 0) {
+        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
+      }
+    } else {
+      fprintf(stderr, "Command terminated by signal\n");
+    }
   }
 
   if (!moduleLoaded (module2))
   {
     sprintf (cmd, "%s %s%s", findExecutable (MODPROBE), module2, args2) ;
-    system (cmd) ;
+    int ret = system(cmd);
+    if (ret == -1) {
+      perror("Error executing command");
+    } else if (WIFEXITED(ret)) {
+      int exit_status = WEXITSTATUS(ret);
+      if (exit_status != 0) {
+        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
+      }
+    } else {
+      fprintf(stderr, "Command terminated by signal\n");
+    }
   }
 
   if (!moduleLoaded (module2))
@@ -350,13 +370,33 @@ static void doUnLoad (int argc, char *argv [])
   if (moduleLoaded (module1))
   {
     sprintf (cmd, "%s %s", findExecutable (RMMOD), module1) ;
-    system (cmd) ;
+    int ret = system(cmd);
+    if (ret == -1) {
+      perror("Error executing command");
+    } else if (WIFEXITED(ret)) {
+      int exit_status = WEXITSTATUS(ret);
+      if (exit_status != 0) {
+        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
+      }
+    } else {
+      fprintf(stderr, "Command terminated by signal\n");
+    }
   }
 
   if (moduleLoaded (module2))
   {
     sprintf (cmd, "%s %s", findExecutable (RMMOD), module2) ;
-    system (cmd) ;
+    int ret = system(cmd);
+    if (ret == -1) {
+      perror("Error executing command");
+    } else if (WIFEXITED(ret)) {
+      int exit_status = WEXITSTATUS(ret);
+      if (exit_status != 0) {
+        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
+      }
+    } else {
+      fprintf(stderr, "Command terminated by signal\n");
+    }
   }
 }
 
@@ -562,15 +602,14 @@ static volatile int globalCounter ;
 
 void printgpioflush(const char* text) {
   if (gpioDebug) {
-    printf(text);
+    printf("%s", text); 
     fflush(stdout);
   }
 }
 
 void printgpio(const char* text) {
   if (gpioDebug) {
-    printf(text);
-    fflush(stdout);
+    printf("%s", text);
   }
 }
 
@@ -620,7 +659,7 @@ void doWfi (int argc, char *argv [])
     exit (1) ;
   }
 
-  printgpio("wait for interrupt function call \n");
+  printgpio("wait for interrupt function call\n");
   for (int Sec=0; Sec<timeoutSec; ++Sec) {
     printgpioflush(".");
     delay (999);
@@ -1371,7 +1410,10 @@ static void doVersion (char *argv [])
   {
     if ((fd = fopen ("/proc/device-tree/model", "r")) != NULL)
     {
-      fgets (name, 80, fd) ;
+      if (fgets(name, sizeof(name), fd) == NULL) {
+        // Handle error or end of file condition
+        perror("Error reading /proc/device-tree/model");
+      }
       fclose (fd) ;
       printf ("  *--> %s\n", name) ;
     }
