@@ -395,10 +395,23 @@ int wiringPiReturnCodes = FALSE ;
 
 int wiringPiTryGpioMem  = FALSE ;
 
-// sysFds:
-//	Map a file descriptor from the /sys/class/gpio/gpioX/value
+static unsigned int lineFlags [64] =
+{
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+} ;
 
-static int sysFds [64] =
+static int lineFds [64] =
+{
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+} ;
+
+static int isrFds [64] =
 {
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -531,27 +544,13 @@ static int physToGpioR2 [64] =
   -1, -1,
 } ;
 
-const int _5v=-1;
-const int _0v=-1;
-const int _3v=-1;
 
-
-int GPIOToSysFS(const int pin) {
-  int sysfspin =  pin;
+int piBoard() {
   if (RaspberryPiModel<0) { //need to detect pi model
-    int   model, rev, mem, maker, overVolted ;
-    piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
+    int   model, rev, mem, maker, overVolted;
+    piBoardId (&model, &rev, &mem, &maker, &overVolted);
   }
-  if (PI_MODEL_5 == RaspberryPiModel) {
-    sysfspin = pin + 399;
-    if (sysfspin<399 || sysfspin>426) {  // only 399-426 supported, 40-pin GPIO header
-      sysfspin = -1;
-    }
-  }
-  if (wiringPiDebug)
-    printf ("GPIOToSysFS: translate bcm gpio %d to sysfs gpio %d\n", pin,  sysfspin) ;
-
-  return sysfspin;
+  return RaspberryPiModel<0 ? 0 : 1;
 }
 
 int GetMaxPin() {
@@ -559,8 +558,8 @@ int GetMaxPin() {
 }
 
 
-#define RETURN_ON_MODEL5 if (PI_MODEL_5 == RaspberryPiModel) { if (wiringPiDebug) printf("Function not supported on Pi5\n");  return; } 
- 
+#define RETURN_ON_MODEL5 if (PI_MODEL_5 == RaspberryPiModel) { if (wiringPiDebug) printf("Function not supported on Pi5\n");  return; }
+
 int FailOnModel5() {
   if (PI_MODEL_5 == RaspberryPiModel) {
     return wiringPiFailure (WPI_ALMOST, "Function not supported on Raspberry Pi 5.\n"
@@ -859,6 +858,10 @@ void piFunctionOops (const char *function, const char* suggestion, const char* u
   exit (EXIT_FAILURE) ;
 }
 
+void ReportDeviceError(const char *function, int pin, const char *mode, int ret) {
+  fprintf(stderr, "wiringPi: ERROR: ioctl %s of %d (%s) returned error '%s' (%d)\n", function, pin, mode, strerror(errno), ret);
+}
+
 
 /*
  * piGpioLayout:
@@ -898,10 +901,7 @@ void piGpioLayoutOops (const char *why)
 
 int piGpioLayout (void)
 {
-  if (-1==RaspberryPiLayout) {
-    int   model, rev, mem, maker, overVolted ;
-    piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
-  }
+  piBoard();
   return RaspberryPiLayout;
 }
 
@@ -1110,6 +1110,37 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
   }
 
   RaspberryPiModel = *model;
+
+  switch (RaspberryPiModel){
+    case PI_MODEL_A:
+    case PI_MODEL_B:
+    case PI_MODEL_AP:
+    case PI_MODEL_BP:
+    case PI_ALPHA:
+    case PI_MODEL_CM:
+    case PI_MODEL_ZERO:
+    case PI_MODEL_ZERO_W:
+      piGpioBase = GPIO_PERI_BASE_OLD ;
+      piGpioPupOffset = GPPUD ;
+      break ;
+
+    case PI_MODEL_4B:
+    case PI_MODEL_400:
+    case PI_MODEL_CM4:
+      piGpioBase = GPIO_PERI_BASE_2711 ;
+      piGpioPupOffset = GPPUPPDN0 ;
+      break ;
+
+    case PI_MODEL_5:
+      piGpioBase = GPIO_PERI_BASE_2712 ;
+      piGpioPupOffset = 0 ;
+      break ;
+
+    default:
+      piGpioBase = GPIO_PERI_BASE_2835 ;
+      piGpioPupOffset = GPPUD ;
+      break ;
+  }
 }
 
 
@@ -1169,16 +1200,16 @@ void setPadDrive (int group, int value)
     if (PI_MODEL_5 == RaspberryPiModel) {
       if (-1==group) {
         printf ("Pad register:\n");
-        for (int pin=0, maxpin=GetMaxPin(); pin<=maxpin; ++pin) { 
+        for (int pin=0, maxpin=GetMaxPin(); pin<=maxpin; ++pin) {
           unsigned int drive = (pads[1+pin] & RP1_PAD_DRIVE_MASK)>>4;
           printf ("  Pin %2d: 0x%08X drive: 0x%d = %2dmA\n", pin, pads[1+pin], drive, 0==drive ? 2 : drive*4) ;
-        }        
+        }
       }
       if (group !=0) { // only GPIO range @RP1
         return ;
-      } 
+      }
       switch(value) {
-        default: 
+        default:
                 /* bcm*/                 // RP1
         case 0: /* 2mA*/ value=0; break; // 2mA
         case 1: /* 4mA*/
@@ -1189,9 +1220,9 @@ void setPadDrive (int group, int value)
         case 6: /*14mA*/
         case 7: /*16mA*/ value=3; break; //12mA
       }
-      wrVal = (value << 4); //Drive strength 0-3   
+      wrVal = (value << 4); //Drive strength 0-3
       //set for all pins even when it's avaiable for each pin separately
-      for (int pin=0, maxpin=GetMaxPin(); pin<=maxpin; ++pin) { 
+      for (int pin=0, maxpin=GetMaxPin(); pin<=maxpin; ++pin) {
         pads[1+pin] = (pads[1+pin] & RP1_INV_PAD_DRIVE_MASK) | wrVal;
       }
       rdVal = pads[1+17]; // only pin 17 readback, for logging
@@ -1203,7 +1234,7 @@ void setPadDrive (int group, int value)
       if ((group < 0) || (group > 2))
         return ;
 
-      wrVal = BCM_PASSWORD | 0x18 | value; //Drive strength 0-7  
+      wrVal = BCM_PASSWORD | 0x18 | value; //Drive strength 0-7
       *(pads + group + 11) = wrVal ;
       rdVal = *(pads + group + 11);
     }
@@ -1500,6 +1531,65 @@ void pinEnableED01Pi (int pin)
 #endif
 
 
+const char DEV_GPIO_PI[] ="/dev/gpiochip0";
+const char DEV_GPIO_PI5[]="/dev/gpiochip4";
+
+int wiringPiGpioDeviceGetFd() {
+  if (chipFd<0) {
+    piBoard();
+    const char* gpiochip = PI_MODEL_5 == RaspberryPiModel ? DEV_GPIO_PI5 : DEV_GPIO_PI;
+    chipFd = open(gpiochip, O_RDWR);
+    if (chipFd < 0) {
+      fprintf(stderr, "wiringPi: ERROR: %s open ret=%d\n", gpiochip, chipFd);
+    } else if (wiringPiDebug) {
+      printf ("wiringPi: Open chip %s succeded, fd=%d\n", gpiochip, chipFd) ;
+    }
+  }
+  return chipFd;
+}
+
+void releaseLine(int pin) {
+
+  if (wiringPiDebug)
+    printf ("releaseLine: pin:%d\n", pin) ;
+  lineFlags[pin] = 0;
+  close(lineFds[pin]);
+  lineFds[pin] = -1;
+}
+
+int requestLine(int pin, unsigned int lineRequestFlags) {
+  struct gpiohandle_request rq;
+
+   if (lineFds[pin]>=0) {
+    if (lineRequestFlags == lineFlags[pin]) {
+      //already requested
+      return lineFds[pin];
+    } else {
+      //different request -> rerequest
+      releaseLine(pin);
+    }
+  }
+
+  //requested line
+  if (wiringPiGpioDeviceGetFd()<0) {
+    return -1;  // error
+  }
+  rq.lineoffsets[0] = pin;
+  rq.lines = 1;
+  rq.flags = lineRequestFlags;
+  int ret = ioctl(chipFd, GPIO_GET_LINEHANDLE_IOCTL, &rq);
+  if (ret || rq.fd<0) {
+    ReportDeviceError("get line handle", pin, "RequestLine", ret);
+    return -1;  // error
+  }
+
+  lineFlags[pin] = lineRequestFlags;
+  lineFds[pin] = rq.fd;
+  if (wiringPiDebug)
+    printf ("requestLine succeeded: pin:%d, flags: %u, fd :%d\n", pin, lineRequestFlags, lineFds[pin]) ;
+  return lineFds[pin];
+}
+
 /*
  *********************************************************************************
  * Core Functions
@@ -1530,7 +1620,7 @@ void pinModeAlt (int pin, int mode)
 
     if (PI_MODEL_5 == RaspberryPiModel) {
 
-      //confusion! diffrent to to BCM!  this is taking directly the value for the register 
+      //confusion! diffrent to to BCM!  this is taking directly the value for the register
     /*
     "alt0" 0b100
     "alt1" 0b101
@@ -1563,6 +1653,35 @@ void rp1_set_pad(int pin, int slewfast, int schmitt, int pulldown, int pullup, i
   pads[1+pin] = (slewfast != 0) | ((schmitt != 0) << 1) | ((pulldown != 0) << 2) | ((pullup != 0) << 3) | ((drive & 0x3) << 4) | ((inputenable != 0) << 6) | ((outputdisable != 0) << 7);
 }
 
+void pinModeFlagsDevice (int pin, int mode, unsigned int flags) {
+  unsigned int lflag = flags;
+  if (wiringPiDebug)
+      printf ("pinModeFlagsDevice: pin:%d mode:%d, flags: %u\n", pin, mode, flags) ;
+
+  lflag &= ~(GPIOHANDLE_REQUEST_INPUT | GPIOHANDLE_REQUEST_OUTPUT);
+  switch(mode) {
+    default:
+      fprintf(stderr, "pinMode: invalid mode request (only input und output supported)\n");
+      return;
+    case INPUT:
+      lflag |= GPIOHANDLE_REQUEST_INPUT;
+      break;
+    case OUTPUT:
+      lflag |= GPIOHANDLE_REQUEST_OUTPUT;
+      break;
+    case PM_OFF:
+      pinModeFlagsDevice(pin, INPUT, 0);
+      releaseLine(pin);
+      return;
+  }
+
+  requestLine(pin, lflag);
+}
+
+void pinModeDevice (int pin, int mode) {
+  pinModeFlagsDevice(pin, mode, lineFlags[pin]);
+}
+
 void pinMode (int pin, int mode)
 {
   int    fSel, shift, alt ;
@@ -1570,18 +1689,34 @@ void pinMode (int pin, int mode)
   int origPin = pin ;
 
   if (wiringPiDebug)
-      printf ("pinMode: pin:%d mode:%d\n", pin, mode) ;
+    printf ("pinMode: pin:%d mode:%d\n", pin, mode) ;
 
   setupCheck ("pinMode") ;
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-board pin
   {
-    /**/ if (wiringPiMode == WPI_MODE_PINS)
-      pin = pinToGpio [pin] ;
-    else if (wiringPiMode == WPI_MODE_PHYS)
-      pin = physToGpio [pin] ;
-    else if (wiringPiMode != WPI_MODE_GPIO)
-      return ;
+    switch(wiringPiMode) {
+      default: //WPI_MODE_GPIO_SYS
+        fprintf(stderr, "pinMode: invalid mode\n");
+        return;
+      case WPI_MODE_PINS:
+        pin = pinToGpio [pin];
+        break;
+      case WPI_MODE_PHYS:
+        pin = physToGpio [pin];
+        break;
+      case WPI_MODE_GPIO_DEVICE_BCM:
+        pinModeDevice(pin, mode);
+        return;
+      case WPI_MODE_GPIO_DEVICE_WPI:
+        pinModeDevice(pinToGpio[pin], mode);
+        return;
+      case WPI_MODE_GPIO_DEVICE_PHYS:
+        pinModeDevice(physToGpio[pin], mode);
+        return;
+      case WPI_MODE_GPIO:
+        break;
+    }
 
     if (wiringPiDebug)
       printf ("pinMode: bcm pin:%d mode:%d\n", pin, mode) ;
@@ -1593,7 +1728,7 @@ void pinMode (int pin, int mode)
     shift   = gpioToShift  [pin] ;
 
     if (mode == INPUT) {
-      if (PI_MODEL_5 == RaspberryPiModel) { 
+      if (PI_MODEL_5 == RaspberryPiModel) {
         pads[1+pin] = (pin<=8) ? RP1_PAD_DEFAULT_0TO8 : RP1_PAD_DEFAULT_FROM9;
         gpio[2*pin+1] = RP1_FSEL_GPIO | RP1_DEBOUNCE_DEFAULT; // GPIO
         rio[RP1_RIO_OE + RP1_CLR_OFFSET] = 1<<pin;            // Input
@@ -1621,7 +1756,7 @@ void pinMode (int pin, int mode)
     {
       RETURN_ON_MODEL5
       if ((alt = gpioToPwmALT [pin]) == 0)	// Not a hardware capable PWM pin
-	return ;
+	      return ;
 
       usingGpioMemCheck ("pinMode PWM") ;
 
@@ -1638,7 +1773,7 @@ void pinMode (int pin, int mode)
     {
       RETURN_ON_MODEL5
       if ((alt = gpioToGpClkALT0 [pin]) == 0)	// Not a GPIO_CLOCK pin
-	return ;
+	      return ;
 
       usingGpioMemCheck ("pinMode CLOCK") ;
 
@@ -1663,6 +1798,28 @@ void pinMode (int pin, int mode)
  *	Control the internal pull-up/down resistors on a GPIO pin.
  *********************************************************************************
  */
+void pullUpDnControlDevice (int pin, int pud) {
+  unsigned int flag = lineFlags[pin];
+  unsigned int biasflags = GPIOHANDLE_REQUEST_BIAS_DISABLE | GPIOHANDLE_REQUEST_BIAS_PULL_UP | GPIOHANDLE_REQUEST_BIAS_PULL_DOWN;
+
+  flag &= ~biasflags;
+  switch (pud){
+    case PUD_OFF:  flag |= GPIOHANDLE_REQUEST_BIAS_DISABLE;   break;
+    case PUD_UP:   flag |= GPIOHANDLE_REQUEST_BIAS_PULL_UP;   break;
+    case PUD_DOWN: flag |= GPIOHANDLE_REQUEST_BIAS_PULL_DOWN; break;
+    default: return ; /* An illegal value */
+  }
+
+  // reset input/output
+  if (lineFlags[pin] & GPIOHANDLE_REQUEST_OUTPUT) {
+    pinModeFlagsDevice (pin, OUTPUT, flag);
+  } else if(lineFlags[pin] & GPIOHANDLE_REQUEST_INPUT) {
+    pinModeFlagsDevice (pin, INPUT, flag);
+  } else {
+    lineFlags[pin] = flag; // only store for later
+  }
+}
+
 
 void pullUpDnControl (int pin, int pud)
 {
@@ -1672,13 +1829,25 @@ void pullUpDnControl (int pin, int pud)
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
-
-     /**/ if (wiringPiMode == WPI_MODE_PINS)
-      pin = pinToGpio [pin] ;
-    else if (wiringPiMode == WPI_MODE_PHYS)
-      pin = physToGpio [pin] ;
-    else if (wiringPiMode != WPI_MODE_GPIO)
-      return ;
+    switch(wiringPiMode) {
+      default: //WPI_MODE_GPIO_SYS
+        fprintf(stderr, "pinMode: invalid mode\n");
+        return;
+      case WPI_MODE_PINS:
+        pin = pinToGpio [pin];
+        break;
+      case WPI_MODE_PHYS:
+        pin = physToGpio [pin];
+        break;
+      case WPI_MODE_GPIO_DEVICE_BCM:
+        return pullUpDnControlDevice(pin, pud);
+      case WPI_MODE_GPIO_DEVICE_WPI:
+        return pullUpDnControlDevice(pinToGpio[pin], pud);
+      case WPI_MODE_GPIO_DEVICE_PHYS:
+        return pullUpDnControlDevice(physToGpio[pin], pud);
+      case WPI_MODE_GPIO:
+        break;
+    }
 
     if (PI_MODEL_5 == RaspberryPiModel) {
       unsigned int pullbits = pads[1+pin] & RP1_INV_PUD_MASK; // remove bits
@@ -1697,11 +1866,10 @@ void pullUpDnControl (int pin, int pud)
         unsigned int pullbits;
         unsigned int pull;
 
-        switch (pud)
-        {
-         case PUD_OFF: pull = 0; break;
-         case PUD_UP: pull = 1; break;
-          case PUD_DOWN: pull = 2; break;
+        switch (pud) {
+         case PUD_OFF:  pull = 0; break;
+         case PUD_UP:   pull = 1; break;
+         case PUD_DOWN: pull = 2; break;
          default: return ; /* An illegal value */
         }
 
@@ -1730,11 +1898,32 @@ void pullUpDnControl (int pin, int pud)
 }
 
 
+
+
 /*
  * digitalRead:
  *	Read the value of a given Pin, returning HIGH or LOW
  *********************************************************************************
  */
+
+int digitalReadDevice (int pin) {   // INPUT and OUTPUT should work
+
+   if (lineFds[pin]<0) {
+    // line not requested - auto request on first read as input
+    pinModeDevice(pin, INPUT);
+  }
+  if (lineFds[pin]>=0) {
+    struct gpiohandle_data data;
+    int ret = ioctl(lineFds[pin], GPIOHANDLE_GET_LINE_VALUES_IOCTL, &data);
+    if (ret) {
+      ReportDeviceError("get line values", pin, "digitalRead", ret);
+      return LOW;  // error
+    }
+    return data.values[0];
+  }
+  return LOW;  // error , need to request line before
+}
+
 
 int digitalRead (int pin)
 {
@@ -1742,14 +1931,25 @@ int digitalRead (int pin)
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
-    if (wiringPiMode == WPI_MODE_GPIO_SYS)
-      return LOW ;
-    else if (wiringPiMode == WPI_MODE_PINS)
-      pin = pinToGpio [pin] ;
-    else if (wiringPiMode == WPI_MODE_PHYS)
-      pin = physToGpio [pin] ;
-    else if (wiringPiMode != WPI_MODE_GPIO)
-      return LOW ;
+    switch(wiringPiMode) {
+      default: //WPI_MODE_GPIO_SYS
+        fprintf(stderr, "digitalRead: invalid mode\n");
+        return LOW;
+      case WPI_MODE_PINS:
+        pin = pinToGpio [pin];
+        break;
+      case WPI_MODE_PHYS:
+        pin = physToGpio [pin];
+        break;
+      case WPI_MODE_GPIO_DEVICE_BCM:
+        return digitalReadDevice(pin);
+      case WPI_MODE_GPIO_DEVICE_WPI:
+        return digitalReadDevice(pinToGpio[pin]);
+      case WPI_MODE_GPIO_DEVICE_PHYS:
+        return digitalReadDevice(physToGpio[pin]);
+      case WPI_MODE_GPIO:
+        break;
+    }
 
     if (PI_MODEL_5 == RaspberryPiModel) {
       switch(gpio[2*pin] & RP1_STATUS_LEVEL_MASK) {
@@ -1800,27 +2000,67 @@ unsigned int digitalRead8 (int pin)
  *********************************************************************************
  */
 
+void digitalWriteDevice (int pin, int value) {
+
+  if (wiringPiDebug)
+    printf ("digitalWriteDevice: ioctl pin:%d value: %d\n", pin, value) ;
+
+  if (lineFds[pin]<0) {
+    // line not requested - auto request on first write as output
+    pinModeDevice(pin, OUTPUT);
+  }
+  if (lineFds[pin]>=0 && (lineFlags[pin] & GPIOHANDLE_REQUEST_OUTPUT)>0) {
+    struct gpiohandle_data data;
+    data.values[0] = value;
+    if (wiringPiDebug)
+      printf ("digitalWriteDevice: ioctl pin:%d cmd: GPIOHANDLE_SET_LINE_VALUES_IOCTL, value: %d\n", pin, value) ;
+    int ret = ioctl(lineFds[pin], GPIOHANDLE_SET_LINE_VALUES_IOCTL, &data);
+    if (ret) {
+      ReportDeviceError("set line values", pin, "digitalWrite", ret);
+      return;  // error
+    }
+  } else {
+    fprintf(stderr, "digitalWrite: no output (%d)\n", lineFlags[pin]);
+  }
+  return; // error
+}
+
 void digitalWrite (int pin, int value)
 {
   struct wiringPiNodeStruct *node = wiringPiNodes ;
 
   if ((pin & PI_GPIO_MASK) == 0)		// On-Board Pin
   {
-    if (wiringPiMode == WPI_MODE_GPIO_SYS)	// Sys mode
-      return ;
-    else if (wiringPiMode == WPI_MODE_PINS)
-      pin = pinToGpio [pin] ;
-    else if (wiringPiMode == WPI_MODE_PHYS)
-      pin = physToGpio [pin] ;
-    else if (wiringPiMode != WPI_MODE_GPIO)
-      return ;
+    switch(wiringPiMode) {
+      default: //WPI_MODE_GPIO_SYS
+        fprintf(stderr, "digitalWrite: invalid mode\n");
+        return;
+      case WPI_MODE_PINS:
+        pin = pinToGpio [pin];
+        break;
+      case WPI_MODE_PHYS:
+        pin = physToGpio [pin];
+        break;
+      case WPI_MODE_GPIO_DEVICE_BCM:
+        digitalWriteDevice(pin, value);
+        return;
+      case WPI_MODE_GPIO_DEVICE_WPI:
+        digitalWriteDevice(pinToGpio[pin], value);
+        return;
+      case WPI_MODE_GPIO_DEVICE_PHYS:
+        digitalWriteDevice(physToGpio[pin], value);
+        return;
+      case WPI_MODE_GPIO:
+        break;
+    }
+
     if (PI_MODEL_5 == RaspberryPiModel) {
       if (value == LOW) {
         //printf("Set pin %d >>0x%08x<< to low\n", pin, 1<<pin);
         rio[RP1_RIO_OUT + RP1_CLR_OFFSET] = 1<<pin;
       } else {
         //printf("Set pin %d >>0x%08x<< to high\n", pin, 1<<pin);
-        rio[RP1_RIO_OUT + RP1_SET_OFFSET] = 1<<pin; 
+        rio[RP1_RIO_OUT + RP1_SET_OFFSET] = 1<<pin;
       }
     } else {
       if (value == LOW)
@@ -2076,7 +2316,7 @@ unsigned int digitalReadByte2 (void)
 
 int waitForInterrupt (int pin, int mS)
 {
-  int fd, ret; 
+  int fd, ret;
   struct pollfd polls ;
   struct gpioevent_data evdata;
   //struct gpio_v2_line_request req2;
@@ -2086,7 +2326,7 @@ int waitForInterrupt (int pin, int mS)
   else if (wiringPiMode == WPI_MODE_PHYS)
     pin = physToGpio [pin] ;
 
-  if ((fd = sysFds [pin]) == -1)
+  if ((fd = isrFds [pin]) == -1)
     return -2 ;
 
   // Setup poll structure
@@ -2099,12 +2339,12 @@ int waitForInterrupt (int pin, int mS)
   if (ret <= 0) {
     fprintf(stderr, "wiringPi: ERROR: poll returned=%d\n", ret);
   } else {
-    //if (polls.revents & POLLIN) 
+    //if (polls.revents & POLLIN)
     if (wiringPiDebug) {
-      printf ("wiringPi: IRQ line %d received %d, fd=%d\n", pin, ret, sysFds [pin]) ;
+      printf ("wiringPi: IRQ line %d received %d, fd=%d\n", pin, ret, isrFds[pin]) ;
     }
     /* read event data */
-    int readret = read(sysFds [pin], &evdata, sizeof(evdata));
+    int readret = read(isrFds [pin], &evdata, sizeof(evdata));
     if (readret == sizeof(evdata)) {
       if (wiringPiDebug) {
         printf ("wiringPi: IRQ data id: %d, timestamp: %lld\n", evdata.id, evdata.timestamp) ;
@@ -2116,9 +2356,6 @@ int waitForInterrupt (int pin, int mS)
   }
   return ret;
 }
-
-const char DEV_GPIO_PI[] ="/dev/gpiochip0";
-const char DEV_GPIO_PI5[]="/dev/gpiochip4";
 
 int waitForInterruptInit (int pin, int mode)
 {
@@ -2132,16 +2369,8 @@ int waitForInterruptInit (int pin, int mode)
 
   /* open gpio */
   sleep(1);
-  const char* gpiochip = PI_MODEL_5 == RaspberryPiModel ? DEV_GPIO_PI5 : DEV_GPIO_PI;
-  if (chipFd < 0) {
-    chipFd = open(gpiochip, O_RDWR);
-    if (chipFd < 0) {
-      fprintf(stderr, "wiringPi: ERROR: %s open ret=%d\n", gpiochip, chipFd);
-      return -1;
-    }
-  }
-  if (wiringPiDebug) {
-    printf ("wiringPi: Open chip %s succeded, fd=%d\n", gpiochip, chipFd) ;
+  if (wiringPiGpioDeviceGetFd()<0) {
+    return -1;
   }
 
   struct gpioevent_request req;
@@ -2172,7 +2401,7 @@ int waitForInterruptInit (int pin, int mode)
   //later implement GPIO_V2_GET_LINE_IOCTL req2
   int ret = ioctl(chipFd, GPIO_GET_LINEEVENT_IOCTL, &req);
   if (ret) {
-    fprintf(stderr, "wiringPi: ERROR: %s ioctl get line %d %s returned %d\n", gpiochip, pin, strmode, ret);
+    ReportDeviceError("get line event", pin , strmode, ret);
     return -1;
   }
   if (wiringPiDebug) {
@@ -2181,12 +2410,12 @@ int waitForInterruptInit (int pin, int mode)
 
   /* set event fd nonbloack read */
   int fd_line = req.fd;
-  sysFds [pin] = fd_line;
+  isrFds [pin] = fd_line;
   int flags = fcntl(fd_line, F_GETFL);
   flags |= O_NONBLOCK;
   ret = fcntl(fd_line, F_SETFL, flags);
   if (ret) {
-    fprintf(stderr, "wiringPi: ERROR: %s fcntl set nonblock read=%d\n", gpiochip, chipFd);
+    fprintf(stderr, "wiringPi: ERROR: fcntl set nonblock return=%d\n", ret);
     return -1;
   }
 
@@ -2195,10 +2424,10 @@ int waitForInterruptInit (int pin, int mode)
 
 
 int waitForInterruptClose (int pin) {
-  if (sysFds[pin]>0) {
+  if (isrFds[pin]>0) {
     if (wiringPiDebug) {
       printf ("wiringPi: waitForInterruptClose close thread 0x%lX\n", (unsigned long)isrThreads[pin]) ;
-    }    
+    }
     if (pthread_cancel(isrThreads[pin]) == 0) {
       if (wiringPiDebug) {
         printf ("wiringPi: waitForInterruptClose thread canceled successfuly\n") ;
@@ -2208,9 +2437,9 @@ int waitForInterruptClose (int pin) {
         fprintf (stderr, "wiringPi: waitForInterruptClose could not cancel thread\n");
       }
     }
-    close(sysFds [pin]);
+    close(isrFds [pin]);
   }
-  sysFds [pin] = -1;
+  isrFds [pin] = -1;
   isrFunctions [pin] = NULL;
 
   /* -not closing so far - other isr may be using it - only close if no other is using - will code later
@@ -2298,7 +2527,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
   if(waitForInterruptInit (pin, mode)<0) {
     if (wiringPiDebug) {
       fprintf (stderr, "wiringPi: waitForInterruptInit failed\n") ;
-    }    
+    }
   };
 
   if (wiringPiDebug) {
@@ -2497,10 +2726,7 @@ int wiringPiUserLevelAccess(void)
   struct stat statBuf ;
   const char* gpiomemModule = gpiomem_BCM;
 
-  if (RaspberryPiModel<0) { //need to detect pi model
-    int   model, rev, mem, maker, overVolted ;
-    piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
-  }
+  piBoard();
   if (PI_MODEL_5 == RaspberryPiModel) {
     gpiomemModule = gpiomem_RP1;
   }
@@ -2516,10 +2742,7 @@ int wiringPiGlobalMemoryAccess(void)
   unsigned int MMAP_size;
   unsigned int BaseAddr, PWMAddr;
 
-  if (RaspberryPiModel<0) { //need to detect pi model
-    int   model, rev, mem, maker, overVolted ;
-    piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
-  }
+  piBoard();
   if (PI_MODEL_5 == RaspberryPiModel) {
     gpiomemGlobal = pciemem_RP1;
     MMAP_size = pciemem_RP1_Size;
@@ -2539,7 +2762,7 @@ int wiringPiGlobalMemoryAccess(void)
     if (lgpio == MAP_FAILED) {
       returnvalue = 0;
       if (wiringPiDebug)
-        fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (GPIO) failed: %s\n", strerror (errno)) ;
+        fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (GPIO 0x%X,0x%X) failed: %s\n", BaseAddr, MMAP_size, strerror (errno)) ;
     } else {
       munmap(lgpio, MMAP_size);
       if (PI_MODEL_5 == RaspberryPiModel) {
@@ -2550,7 +2773,7 @@ int wiringPiGlobalMemoryAccess(void)
         if (lpwm == MAP_FAILED) {
           returnvalue = 1;    // only GPIO accessible
           if (wiringPiDebug)
-            fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (PWM) failed: %s\n", strerror (errno)) ;
+            fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (PWM 0x%X,0x%X) failed: %s\n", PWMAddr, MMAP_size, strerror (errno)) ;
         } else {
           returnvalue = 2;  // GPIO & PWM accessible
           munmap(lpwm, BLOCK_SIZE);
@@ -2618,40 +2841,6 @@ int wiringPiSetup (void)
   {
      pinToGpio =  pinToGpioR2 ;
     physToGpio = physToGpioR2 ;
-  }
-
-// ...
-
-  switch (model)
-  {
-    case PI_MODEL_A:
-    case PI_MODEL_B:
-    case PI_MODEL_AP:
-    case PI_MODEL_BP:
-    case PI_ALPHA:
-    case PI_MODEL_CM:
-    case PI_MODEL_ZERO:
-    case PI_MODEL_ZERO_W:
-      piGpioBase = GPIO_PERI_BASE_OLD ;
-      piGpioPupOffset = GPPUD ;
-      break ;
-
-    case PI_MODEL_4B:
-    case PI_MODEL_400:
-    case PI_MODEL_CM4:
-      piGpioBase = GPIO_PERI_BASE_2711 ;
-      piGpioPupOffset = GPPUPPDN0 ;
-      break ;
-
-    case PI_MODEL_5:
-      piGpioBase = GPIO_PERI_BASE_2712 ;
-      piGpioPupOffset = 0 ;
-      break ;
-
-    default:
-      piGpioBase = GPIO_PERI_BASE_2835 ;
-      piGpioPupOffset = GPPUD ;
-      break ;
   }
 
 // Open the master /dev/ memory control device
@@ -2746,7 +2935,7 @@ int wiringPiSetup (void)
     _wiringPiPads  = pads ;
     _wiringPiTimer = timer ;
     _wiringPiRio   = NULL ;
- } else {
+  } else {
     unsigned int MMAP_size = (usingGpioMem) ? gpiomem_RP1_Size : pciemem_RP1_Size;
 
     GPIO_PADS 	= (RP1_PADS0_Addr-RP1_IO0_Addr) ;
@@ -2837,21 +3026,76 @@ int wiringPiSetupPhys (void)
   return 0 ;
 }
 
+int wiringPiSetupPinType (enum WPIPinType pinType) {
+  if (wiringPiDebug)
+    printf ("wiringPi: wiringPiSetupPinType(%d) called\n", (int) pinType) ;
+  switch (pinType) {
+    case WPI_PIN_BCM:  return wiringPiSetupGpio();
+    case WPI_PIN_WPI:  return wiringPiSetup();
+    case WPI_PIN_PHYS: return wiringPiSetupPhys();
+    default:           return -1;
+  }
+}
+
+
+int wiringPiSetupGpioDevice (enum WPIPinType pinType) {
+ if (wiringPiSetuped)
+    return 0 ;
+  if (wiringPiDebug) {
+    printf ("wiringPi: wiringPiSetupGpioDevice(%d) called\n", (int)pinType) ;
+  }
+  if (getenv (ENV_DEBUG) != NULL)
+    wiringPiDebug = TRUE ;
+
+  if (getenv (ENV_CODES) != NULL)
+    wiringPiReturnCodes = TRUE ;
+
+  if (wiringPiGpioDeviceGetFd()<0) {
+    return -1;
+  }
+  wiringPiSetuped = TRUE ;
+
+  if (piGpioLayout () == GPIO_LAYOUT_PI1_REV1){
+    pinToGpio  = pinToGpioR1 ;
+    physToGpio = physToGpioR1 ;
+  } else {
+    pinToGpio  = pinToGpioR2 ;
+    physToGpio = physToGpioR2 ;
+  }
+
+  initialiseEpoch () ;
+
+  switch (pinType) {
+    case WPI_PIN_BCM:
+      wiringPiMode = WPI_MODE_GPIO_DEVICE_BCM;
+      break;
+    case WPI_PIN_WPI:
+      wiringPiMode = WPI_MODE_GPIO_DEVICE_WPI;
+      break;
+    case WPI_PIN_PHYS:
+      wiringPiMode = WPI_MODE_GPIO_DEVICE_PHYS;
+      break;
+    default:
+      wiringPiSetuped = FALSE;
+      return -1;
+  }
+
+  return 0 ;
+}
 
 /*
  * wiringPiSetupSys:
  * GPIO Sysfs Interface for Userspace is deprecated
  *   https://www.kernel.org/doc/html/v5.5/admin-guide/gpio/sysfs.html
- * The last Raspberry Pi Kernel with Sysfs was 6.1.
- * If needed, please use WiringPi 3.1.
- * 
+ *
+ * Switched to new GPIO driver Interface in version 3.3
  */
 
 int wiringPiSetupSys (void)
 {
-  piFunctionOops("wiringPiSetupSys",
-   "use WiringPi 3.1 (last version with GPIO Sysfs interface)",
-   "https://www.kernel.org/doc/html/v5.5/admin-guide/gpio/sysfs.html");
-
-  return 0 ;
+  if (wiringPiSetuped)
+    return 0 ;
+  if (wiringPiDebug)
+    printf ("wiringPi: wiringPiSetupSys called\n") ;
+  return wiringPiSetupGpioDevice(WPI_PIN_BCM);
 }

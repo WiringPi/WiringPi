@@ -29,13 +29,6 @@ gpio \- Command-line access to Raspberry Pi's GPIO
 .B readall
 .PP
 .B gpio
-.B unexportall/exports
-.PP
-.B gpio
-.B export/edge/unexport
-.B ...
-.PP
-.B gpio
 .B wfi
 .B ...
 .PP
@@ -77,10 +70,6 @@ somewhat slow control of the GPIO pins.
 It can also control the IO's on the PiFace IO board and load the SPI and I2C
 kernel modules if required.
 
-Additionally, it can be used to set the exports in the \fI/sys/class/gpio\fR
-system directory to allow subsequent programs to use the \fR/sys/class/gpio\fR
-interface without needing to be run as root.
-
 .SH OPTIONS
 
 .TP
@@ -90,15 +79,14 @@ Output the current version including the board revision of the Raspberry Pi.
 .TP
 .B \-g
 Use the BCM_GPIO pins numbers rather than wiringPi pin numbers.
-\fINote:\fR The BCM_GPIO pin numbers are always used with the 
-export and edge commands.
+.\" \fINote:\fR The BCM_GPIO pin numbers are always used with character device ABI.
 
 .TP
 .B \-1
 Use the physical pin numbers rather than wiringPi pin numbers.
 \fINote:\fR that this applies to the P1 connector only. It is not possible to
 use pins on the Revision 2 P5 connector this way, and as with \-g the
-BCM_GPIO pin numbers are always used with the export and edge commands.
+.\" BCM_GPIO pin numbers are always used with character device ABI.
 
 .TP
 .B \-x extension
@@ -191,47 +179,6 @@ pull-up, pull-down or tristate (off) controls.
 The ALT modes can also be set using \fIalt0\fR, \fIalt1\fR,  ... \fIalt5\fR.
 
 .TP
-.B unexportall
-Un-Export all the GPIO pins in the /sys/class/gpio directory.
-
-.TP
-.B exports
-Print a list (if any) of all the exported GPIO pins and their current values.
-
-.TP
-.B export
-Export a GPIO pin in the \fI/sys/class/gpio\fR directory. Use like the
-mode command above however only \fIin\fR, \fIout\fR, \fIhigh\fR and
-\fRlow\fR are supported at this time. Note that the pin number is the
-\fBBCM_GPIO\fR number and not the wiringPi number. The \fIhigh\fR and
-\fIlow\fR commands pre-set the output value at the same time as the
-export to output mode.
-
-Once a GPIO pin has been exported, the \fBgpio\fR program changes the
-ownership of the \fI/sys/class/gpio/gpioX/value\fR and if present in
-later kernels, the \fI/sys/class/gpio/gpioX/edge\fR pseudo files to
-that of the user running the \fBgpio\fR program. This means that you
-can have a small script of gpio exports to setup the gpio pins as your
-program requires without the need to run anything as root, or with the
-sudo command.
-
-.TP
-.B edge
-This exports a GPIO pin in the \fI/sys/class/gpio\fR directory, set
-the direction to input and set the edge interrupt method to \fInone\fR,
-\fIrising\fR, \fIfalling\fR or \fIboth\fR.  Use like the export command
-above and note that \fBBCM_GPIO\fR pin number is used not not wiringPi pin
-numbering.
-
-Like the export commands above, ownership is set to that of the 
-calling user, allowing subsequent access from user programs without
-requiring root/sudo.
-
-.TP
-.B unexport
-Un-Export a GPIO pin in the /sys/class/gpio directory.
-
-.TP
 .B wfi <pin> <mode>
 This set the given pin to the supplied interrupt mode: rising, falling
 or both then waits for the interrupt to happen. It's a non-busy wait,
@@ -299,17 +246,9 @@ gpio mode 1 pwm # Set pin 1 to PWM mode
 .PP
 gpio pwm 1 512 # Set pin 1 to PWM value 512 - half brightness
 .PP
-gpio export 17 out # Set GPIO Pin 17 to output
-.PP
-gpio export 0 in # Set GPIO Pin 0 (SDA0) to input.
-.PP
 gpio -g read 0 # Read GPIO Pin 0 (SDA0)
 
 .SH "NOTES"
-
-When using the \fIexport\fR, \fIedge\fR or \fIunexport\fR commands, the
-pin numbers are \fBalways\fR native BCM_GPIO numbers and never wiringPi
-pin numbers.
 
 As of kernels 4.1.7, a user-level GPIO access mechanism is available,
 however wiringPi will not use this by default - because at this time
@@ -326,13 +265,13 @@ in future releases once the /dev/gpiomem interface is fully operational.
 .SH "SEE ALSO"
 
 .LP
-WiringPi's home page
+WiringPi's development
 .IP
 https://github.com/WiringPi/WiringPi/
 
 .SH AUTHOR
 
-Gordon Henderson
+Gordon Henderson and contributors
 
 .SH "REPORTING BUGS"
 
@@ -340,7 +279,8 @@ Please report bugs to https://github.com/WiringPi/WiringPi/issues
 
 .SH COPYRIGHT
 
-Copyright (c) 2012-2018 Gordon Henderson
+Copyright (c) 2012-2024 Gordon Henderson and contributors
+.br
 This is free software; see the source for copying conditions. There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
