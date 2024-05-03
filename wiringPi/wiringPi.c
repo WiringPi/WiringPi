@@ -536,31 +536,6 @@ const int _0v=-1;
 const int _3v=-1;
 
 
-static int physToSysGPIOPi5 [41] =
-{
-   -1,		// 0
-  _3v, _5v,	// 1, 2
-  401, _5v,
-  402, _0v,
-  403, 413,
-  _0v, 414,
-  416, 417,
-  426, _0v,
-  421, 422,
-  _3v, 423,
-  409, _0v,
-  408, 424,
-  410, 407,
-  _0v, 406,
-  399, 400,
-  404, _0v,
-  405, 411,
-  412, _0v,
-  418, 415,
-  425, 419,
-  _0v, 420, //39, 40
-} ;
-
 int GPIOToSysFS(const int pin) {
   int sysfspin =  pin;
   if (RaspberryPiModel<0) { //need to detect pi model
@@ -857,12 +832,12 @@ static void usingGpioMemCheck (const char *what)
 void PrintSystemStdErr () {
   struct utsname sys_info;
   if (uname(&sys_info) == 0) {
-    fprintf (stderr, "      wiringpi    = %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
-    fprintf (stderr, "      system name = %s\n", sys_info.sysname);
-    //fprintf (stderr, "  node name   = %s\n", sys_info.nodename);
-    fprintf (stderr, "      release     = %s\n", sys_info.release);
-    fprintf (stderr, "      version     = %s\n", sys_info.version);
-    fprintf (stderr, "      machine     = %s\n", sys_info.machine);
+    fprintf (stderr, "      WiringPi    : %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
+    fprintf (stderr, "      system name : %s\n", sys_info.sysname);
+    //fprintf (stderr, "  node name   : %s\n", sys_info.nodename);
+    fprintf (stderr, "      release     : %s\n", sys_info.release);
+    fprintf (stderr, "      version     : %s\n", sys_info.version);
+    fprintf (stderr, "      machine     : %s\n", sys_info.machine);
     if (strstr(sys_info.machine, "arm") == NULL && strstr(sys_info.machine, "aarch")==NULL) {
       fprintf (stderr, " -> This is not an ARM architecture; it cannot be a Raspberry Pi.\n") ;
     }
@@ -2875,7 +2850,7 @@ int wiringPiSetupPhys (void)
 int wiringPiSetupSys (void)
 {
   piFunctionOops("wiringPiSetupSys",
-   "use wringpi 3.1 (last version with GPIO Sysfs interface)",
+   "use WiringPi 3.1 (last version with GPIO Sysfs interface)",
    "https://www.kernel.org/doc/html/v5.5/admin-guide/gpio/sysfs.html");
 
   return 0 ;
