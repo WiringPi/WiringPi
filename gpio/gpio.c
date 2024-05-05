@@ -72,8 +72,8 @@ char *usage = "Usage: gpio -v\n"
               "       gpio <mode/read/write/aread/awritewb/pwm/pwmTone/clock> ...\n"
               "       gpio <toggle/blink> <pin>\n"
 	      "       gpio readall\n"
-	      "       gpio unexportall/exports\n"
-	      "       gpio export/edge/unexport ...\n"
+//	      "       gpio unexportall/exports\n"
+//	      "       gpio export/edge/unexport ...\n"
 	      "       gpio wfi <pin> <mode>\n"
 	      "       gpio drive <group> <value>\n"
 	      "       gpio pwm-bal/pwm-ms \n"
@@ -88,15 +88,6 @@ char *usage = "Usage: gpio -v\n"
 	      "       gpio gbr <channel>\n"
 	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
 
-
-int GPIOToSysFS_ExitonFail (const int pin, const char* name) {
-  int pinFS = GPIOToSysFS(pin);
-  if (pinFS<0) {
-    fprintf (stderr, "%s: invalid sysfs pin of bcm pin %d\n", name, pin) ;
-    exit (1) ;
-  }
-  return pinFS;
-}
 
 #ifdef	NOT_FOR_NOW
 /*
@@ -290,13 +281,33 @@ static void doLoad (int argc, char *argv [])
   if (!moduleLoaded (module1))
   {
     sprintf (cmd, "%s %s%s", findExecutable (MODPROBE), module1, args1) ;
-    system (cmd) ;
+    int ret = system(cmd);
+    if (ret == -1) {
+      perror("Error executing command");
+    } else if (WIFEXITED(ret)) {
+      int exit_status = WEXITSTATUS(ret);
+      if (exit_status != 0) {
+        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
+      }
+    } else {
+      fprintf(stderr, "Command terminated by signal\n");
+    }
   }
 
   if (!moduleLoaded (module2))
   {
     sprintf (cmd, "%s %s%s", findExecutable (MODPROBE), module2, args2) ;
-    system (cmd) ;
+    int ret = system(cmd);
+    if (ret == -1) {
+      perror("Error executing command");
+    } else if (WIFEXITED(ret)) {
+      int exit_status = WEXITSTATUS(ret);
+      if (exit_status != 0) {
+        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
+      }
+    } else {
+      fprintf(stderr, "Command terminated by signal\n");
+    }
   }
 
   if (!moduleLoaded (module2))
@@ -350,13 +361,33 @@ static void doUnLoad (int argc, char *argv [])
   if (moduleLoaded (module1))
   {
     sprintf (cmd, "%s %s", findExecutable (RMMOD), module1) ;
-    system (cmd) ;
+    int ret = system(cmd);
+    if (ret == -1) {
+      perror("Error executing command");
+    } else if (WIFEXITED(ret)) {
+      int exit_status = WEXITSTATUS(ret);
+      if (exit_status != 0) {
+        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
+      }
+    } else {
+      fprintf(stderr, "Command terminated by signal\n");
+    }
   }
 
   if (moduleLoaded (module2))
   {
     sprintf (cmd, "%s %s", findExecutable (RMMOD), module2) ;
-    system (cmd) ;
+    int ret = system(cmd);
+    if (ret == -1) {
+      perror("Error executing command");
+    } else if (WIFEXITED(ret)) {
+      int exit_status = WEXITSTATUS(ret);
+      if (exit_status != 0) {
+        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
+      }
+    } else {
+      fprintf(stderr, "Command terminated by signal\n");
+    }
   }
 }
 
@@ -392,159 +423,22 @@ static void doI2Cdetect (UNU int argc, char *argv [])
 }
 
 
+void SYSFS_DEPRECATED(const char *progName) {
+  fprintf(stderr, "%s: GPIO Sysfs Interface for Userspace is deprecated (https://www.kernel.org/doc/Documentation/gpio/sysfs.txt).\n Function is now useless and empty.\n\n", progName);
+}
+
 /*
- * doExports:
+ * doExports:  -> deprecated, removed
  *	List all GPIO exports
  *********************************************************************************
  */
 
-static void doExports (UNU int argc, UNU char *argv [])
-{
-  int fd ;
-  int pin, l, first ;
-  char fName [128] ;
-  char buf [16] ;
-
-  for (first = 0, pin = 0 ; pin < 64 ; ++pin)	// Crude, but effective
-  {
-
-// Try to read the direction
-    int pinFS = GPIOToSysFS(pin);
-    if (pinFS<0) {
-      continue;
-    }
-    sprintf (fName, "/sys/class/gpio/gpio%d/direction", pinFS) ;
-    if ((fd = open (fName, O_RDONLY)) == -1)
-      continue ;
-
-    if (first == 0)
-    {
-      ++first ;
-      printf ("GPIO Pins exported:\n") ;
-    }
-
-    if(pinFS==pin) {
-      printf ("%4d: ", pin) ;
-    } else {
-      printf ("%4d (%4d): ", pin, pinFS) ;
-    }
-
-    if ((l = read (fd, buf, 16)) == 0)
-      sprintf (buf, "%s", "?") ;
- 
-    buf [l] = 0 ;
-    if ((buf [strlen (buf) - 1]) == '\n')
-      buf [strlen (buf) - 1] = 0 ;
-
-    printf ("%-3s", buf) ;
-
-    close (fd) ;
-
-// Try to Read the value
-
-    sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
-    if ((fd = open (fName, O_RDONLY)) == -1)
-    {
-      printf ("No Value file (huh?)\n") ;
-      continue ;
-    }
-
-    if ((l = read (fd, buf, 16)) == 0)
-      sprintf (buf, "%s", "?") ;
-
-    buf [l] = 0 ;
-    if ((buf [strlen (buf) - 1]) == '\n')
-      buf [strlen (buf) - 1] = 0 ;
-
-    printf ("  %s", buf) ;
-
-// Read any edge trigger file
-
-    sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
-    if ((fd = open (fName, O_RDONLY)) == -1)
-    {
-      printf ("\n") ;
-      continue ;
-    }
-
-    if ((l = read (fd, buf, 16)) == 0)
-      sprintf (buf, "%s", "?") ;
-
-    buf [l] = 0 ;
-    if ((buf [strlen (buf) - 1]) == '\n')
-      buf [strlen (buf) - 1] = 0 ;
-
-    printf ("  %-8s\n", buf) ;
-
-    close (fd) ;
-  }
-}
-
-
 /*
- * doExport:
+ * doExport:  -> deprecated, removed
  *	gpio export pin mode
  *	This uses the /sys/class/gpio device interface.
  *********************************************************************************
  */
-
-void doExport (int argc, char *argv [])
-{
-  FILE *fd ;
-  int pin ;
-  char *mode ;
-  char fName [128] ;
-
-  if (argc != 4)
-  {
-    fprintf (stderr, "Usage: %s export pin mode\n", argv [0]) ;
-    exit (1) ;
-  }
-
-  pin = atoi (argv [2]) ;
-  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
-  mode = argv [3] ;
-
-  if ((fd = fopen ("/sys/class/gpio/export", "w")) == NULL)
-  {
-    fprintf (stderr, "%s: Unable to open GPIO export interface: %s\n", argv [0], strerror (errno)) ;
-    exit (1) ;
-  }
-
-  fprintf (fd, "%d\n", pinFS) ;
-  fclose (fd) ;
-  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pinFS) ;
-  if ((fd = fopen (fName, "w")) == NULL)
-  {
-    fprintf (stderr, "%s: Unable to open GPIO direction interface for pin %d: %s\n", argv [0], pin, strerror (errno)) ;
-    exit (1) ;
-  }
-
-  /**/ if ((strcasecmp (mode, "in")   == 0) || (strcasecmp (mode, "input")  == 0))
-    fprintf (fd, "in\n") ;
-  else if ((strcasecmp (mode, "out")  == 0) || (strcasecmp (mode, "output") == 0))
-    fprintf (fd, "out\n") ;
-  else if ((strcasecmp (mode, "high") == 0) || (strcasecmp (mode, "up")     == 0))
-    fprintf (fd, "high\n") ;
-  else if ((strcasecmp (mode, "low")  == 0) || (strcasecmp (mode, "down")   == 0))
-    fprintf (fd, "low\n") ;
-  else
-  {
-    fprintf (stderr, "%s: Invalid mode: %s. Should be in, out, high or low\n", argv [1], mode) ;
-    exit (1) ;
-  }
-
-  fclose (fd) ;
-
-// Change ownership so the current user can actually use it
-
-  sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
-  changeOwner (argv [0], fName) ;
-
-  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
-  changeOwner (argv [0], fName) ;
-
-}
 
 
 /*
@@ -562,15 +456,14 @@ static volatile int globalCounter ;
 
 void printgpioflush(const char* text) {
   if (gpioDebug) {
-    printf(text);
+    printf("%s", text); 
     fflush(stdout);
   }
 }
 
 void printgpio(const char* text) {
   if (gpioDebug) {
-    printf(text);
-    fflush(stdout);
+    printf("%s", text);
   }
 }
 
@@ -620,7 +513,7 @@ void doWfi (int argc, char *argv [])
     exit (1) ;
   }
 
-  printgpio("wait for interrupt function call \n");
+  printgpio("wait for interrupt function call\n");
   for (int Sec=0; Sec<timeoutSec; ++Sec) {
     printgpioflush(".");
     delay (999);
@@ -630,141 +523,28 @@ void doWfi (int argc, char *argv [])
 }
 
 
-
 /*
- * doEdge:
+ * doEdge:  -> deprecated, removed
  *	gpio edge pin mode
  *	Easy access to changing the edge trigger on a GPIO pin
  *	This uses the /sys/class/gpio device interface.
  *********************************************************************************
  */
 
-void doEdge (int argc, char *argv [])
-{
-  FILE *fd ;
-  int pin ;
-  char *mode ;
-  char fName [128] ;
-
-  if (argc != 4)
-  {
-    fprintf (stderr, "Usage: %s edge pin mode\n", argv [0]) ;
-    exit (1) ;
-  }
-
-  pin  = atoi (argv [2]) ;
-  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
-  mode = argv [3] ;
-
-// Export the pin and set direction to input
-
-  if ((fd = fopen ("/sys/class/gpio/export", "w")) == NULL)
-  {
-    fprintf (stderr, "%s: Unable to open GPIO export interface: %s\n", argv [0], strerror (errno)) ;
-    exit (1) ;
-  }
-
-  fprintf (fd, "%d\n", pinFS) ;
-  fclose (fd) ;
-
-  sprintf (fName, "/sys/class/gpio/gpio%d/direction", pinFS) ;
-  if ((fd = fopen (fName, "w")) == NULL)
-  {
-    fprintf (stderr, "%s: Unable to open GPIO direction interface for pin %d: %s\n", argv [0], pin, strerror (errno)) ;
-    exit (1) ;
-  }
-
-  fprintf (fd, "in\n") ;
-  fclose (fd) ;
-
-  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
-  if ((fd = fopen (fName, "w")) == NULL)
-  {
-    fprintf (stderr, "%s: Unable to open GPIO edge interface for pin %d: %s\n", argv [0], pin, strerror (errno)) ;
-    exit (1) ;
-  }
-
-  /**/ if (strcasecmp (mode, "none")    == 0) fprintf (fd, "none\n") ;
-  else if (strcasecmp (mode, "rising")  == 0) fprintf (fd, "rising\n") ;
-  else if (strcasecmp (mode, "falling") == 0) fprintf (fd, "falling\n") ;
-  else if (strcasecmp (mode, "both")    == 0) fprintf (fd, "both\n") ;
-  else
-  {
-    fprintf (stderr, "%s: Invalid mode: %s. Should be none, rising, falling or both\n", argv [1], mode) ;
-    exit (1) ;
-  }
-
-// Change ownership of the value and edge files, so the current user can actually use it!
-
-  sprintf (fName, "/sys/class/gpio/gpio%d/value", pinFS) ;
-  changeOwner (argv [0], fName) ;
-
-  sprintf (fName, "/sys/class/gpio/gpio%d/edge", pinFS) ;
-  changeOwner (argv [0], fName) ;
-
-  fclose (fd) ;
-}
-
-
 /*
- * doUnexport:
+ * doUnexport: -> deprecated, removed
  *	gpio unexport pin
  *	This uses the /sys/class/gpio device interface.
  *********************************************************************************
  */
 
-void doUnexport (int argc, char *argv [])
-{
-  FILE *fd ;
-  int pin ;
-
-  if (argc != 3)
-  {
-    fprintf (stderr, "Usage: %s unexport pin\n", argv [0]) ;
-    exit (1) ;
-  }
-
-  pin = atoi (argv [2]) ;
-  int pinFS = GPIOToSysFS_ExitonFail(pin, argv [0]);
-
-  if ((fd = fopen ("/sys/class/gpio/unexport", "w")) == NULL)
-  {
-    fprintf (stderr, "%s: Unable to open GPIO export interface\n", argv [0]) ;
-    exit (1) ;
-  }
-
-  fprintf (fd, "%d\n", pinFS) ;
-  fclose (fd) ;
-}
-
-
 /*
- * doUnexportAll:
+ * doUnexportAll: -> deprecated, removed
  *	gpio unexportall
  *	Un-Export all the GPIO pins.
  *	This uses the /sys/class/gpio device interface.
  *********************************************************************************
  */
-
-void doUnexportall (char *progName)
-{
-  FILE *fd ;
-  int pin ;
-
-  for (pin = 0 ; pin < 63 ; ++pin)
-  {
-    int pinFS = GPIOToSysFS(pin);
-    if (pinFS>=0) {
-      if ((fd = fopen ("/sys/class/gpio/unexport", "w")) == NULL)
-      {
-        fprintf (stderr, "%s: Unable to open GPIO export interface\n", progName) ;
-        exit (1) ;
-      }
-      fprintf (fd, "%d\n", pinFS) ;
-      fclose (fd) ;
-    }
-  }
-}
 
 
 /*
@@ -1358,29 +1138,52 @@ static void doVersion (char *argv [])
   printf ("\n") ;
   piBoardId (&model, &rev, &mem, &maker, &warranty) ;
 
-  printf ("Raspberry Pi Details:\n") ;
+  printf ("Hardware details:\n") ;
   printf ("  Type: %s, Revision: %s, Memory: %dMB, Maker: %s %s\n", 
       piModelNames [model], piRevisionNames [rev], piMemorySize [mem], piMakerNames [maker], warranty ? "[Out of Warranty]" : "") ;
 
 // Check for device tree
-
-  if (stat ("/proc/device-tree", &statBuf) == 0)	// We're on a devtree system ...
-    printf ("  * Device tree is enabled.\n") ;
-
+  printf ("\nSystem details:\n") ;
+  if (stat ("/proc/device-tree", &statBuf) == 0) {	// We're on a devtree system ...
+    printf ("  * Device tree present.\n") ;
+  }
   if (stat ("/proc/device-tree/model", &statBuf) == 0)	// Output Kernel idea of board type
   {
     if ((fd = fopen ("/proc/device-tree/model", "r")) != NULL)
     {
-      fgets (name, 80, fd) ;
+      if (fgets(name, sizeof(name), fd) == NULL) {
+        // Handle error or end of file condition
+        perror("Error reading /proc/device-tree/model");
+      }
       fclose (fd) ;
-      printf ("  *--> %s\n", name) ;
+      printf ("      Model: %s\n", name) ;
     }
   }
 
-  if (wiringPiUserLevelAccess())		// User level GPIO is GO
-    printf ("  * This Raspberry Pi supports user-level GPIO access.\n") ;
-  else
-    printf ("  * Root or sudo required for GPIO access.\n") ;
+  int bGlobalAccess = wiringPiGlobalMemoryAccess();		// User level GPIO is GO
+  switch(bGlobalAccess) {
+    case 0:
+        printf ("  * Does not support basic user-level GPIO access via memory.\n") ;
+        break;
+    case 1:
+        printf ("  * Supports basic user-level GPIO access via /dev/mem.\n") ;
+        break;
+    case 2:
+        printf ("  * Supports full  user-level GPIO access via memory.\n") ;
+        break;
+  }
+  if (wiringPiUserLevelAccess()) {
+        printf ("  * Supports basic user-level GPIO access via /dev/gpiomem.\n") ;
+  } else  {
+        printf ("  * Does not support basic user-level GPIO access via /dev/gpiomem.\n") ;
+    if(0==bGlobalAccess) {
+        printf ("  * root or sudo may be required for direct GPIO access.\n") ;
+    }
+  }
+  if (wiringPiGpioDeviceGetFd()>0) {
+    printf ("  * Supports basic user-level GPIO access via /dev/gpiochip (slow).\n") ;
+  }
+
 }
 
 
@@ -1466,13 +1269,13 @@ int main (int argc, char *argv [])
     exit (EXIT_FAILURE) ;
   }
 
-// Initial test for /sys/class/gpio operations:
+// Initial test for /sys/class/gpio operations:  - -> deprecated, empty but still there
 
-  /**/ if (strcasecmp (argv [1], "exports"    ) == 0)	{ doExports     (argc, argv) ;	return 0 ; }
-  else if (strcasecmp (argv [1], "export"     ) == 0)	{ doExport      (argc, argv) ;	return 0 ; }
-  else if (strcasecmp (argv [1], "edge"       ) == 0)	{ doEdge        (argc, argv) ;	return 0 ; }
-  else if (strcasecmp (argv [1], "unexport"   ) == 0)	{ doUnexport    (argc, argv) ;	return 0 ; }
-  else if (strcasecmp (argv [1], "unexportall") == 0)	{ doUnexportall (argv [0]) ;	return 0 ; }
+  /**/ if (strcasecmp (argv [1], "exports"    ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
+  else if (strcasecmp (argv [1], "export"     ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
+  else if (strcasecmp (argv [1], "edge"       ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
+  else if (strcasecmp (argv [1], "unexport"   ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
+  else if (strcasecmp (argv [1], "unexportall") == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
 
 // Check for load command:
 

@@ -46,12 +46,15 @@
 
 // wiringPi modes
 
-#define	WPI_MODE_PINS		 0
-#define	WPI_MODE_GPIO		 1
-#define	WPI_MODE_GPIO_SYS	 2
-#define	WPI_MODE_PHYS		 3
-#define	WPI_MODE_PIFACE		 4
-#define	WPI_MODE_UNINITIALISED	-1
+#define	WPI_MODE_PINS		          0
+#define	WPI_MODE_GPIO		          1
+#define	WPI_MODE_GPIO_SYS	        2  // deprecated since 3.2
+#define	WPI_MODE_PHYS		          3
+#define	WPI_MODE_PIFACE		        4
+#define	WPI_MODE_GPIO_DEVICE_BCM  5  // BCM pin numbers like WPI_MODE_GPIO
+#define	WPI_MODE_GPIO_DEVICE_WPI  6  // WiringPi pin numbers like WPI_MODE_PINS
+#define	WPI_MODE_GPIO_DEVICE_PHYS 7  // Physic pin numbers like WPI_MODE_PHYS
+#define	WPI_MODE_UNINITIALISED -1
 
 // Pin modes
 
@@ -62,6 +65,7 @@
 #define	SOFT_PWM_OUTPUT		 4
 #define	SOFT_TONE_OUTPUT	 5
 #define	PWM_TONE_OUTPUT		 6
+#define	PM_OFF		         7   // to input / release line
 
 #define	LOW			 0
 #define	HIGH			 1
@@ -205,15 +209,23 @@ extern int wiringPiFailure (int fatal, const char *message, ...) ;
 extern struct wiringPiNodeStruct *wiringPiFindNode (int pin) ;
 extern struct wiringPiNodeStruct *wiringPiNewNode  (int pinBase, int numPins) ;
 
-extern int GPIOToSysFS(const int pin) ;
+enum WPIPinType {
+  WPI_PIN_BCM = 1,
+  WPI_PIN_WPI,
+  WPI_PIN_PHYS,
+};
 
 extern void wiringPiVersion	(int *major, int *minor) ;
+extern int  wiringPiGlobalMemoryAccess(void);                 //Interface V3.3
 extern int  wiringPiUserLevelAccess (void) ;
 extern int  wiringPiSetup       (void) ;
 extern int  wiringPiSetupSys    (void) ;
 extern int  wiringPiSetupGpio   (void) ;
 extern int  wiringPiSetupPhys   (void) ;
+extern int  wiringPiSetupPinType (enum WPIPinType pinType);   //Interface V3.3
+extern int  wiringPiSetupGpioDevice(enum WPIPinType pinType); //Interface V3.3
 
+extern          int  wiringPiGpioDeviceGetFd();               //Interface V3.3
 extern          void pinModeAlt          (int pin, int mode) ;
 extern          void pinMode             (int pin, int mode) ;
 extern          void pullUpDnControl     (int pin, int pud) ;
