@@ -75,11 +75,11 @@ static int         spiFds [7][3] =
 int SPICheckLimits(const int number, const int channel) {
   if (channel<0 || channel>=WPI_MaxSPIChannels) {
     fprintf (stderr, "wiringPiSPI: Invalid SPI channel (%d, valid range 0-%d)", channel, WPI_MaxSPIChannels-1);
-    return EINVAL;
+    return -EINVAL;
   }
   if (number<0 || number>=WPI_MaxSPINumbers) {
     fprintf (stderr, "wiringPiSPI: Invalid SPI number  (%d, valid range 0-%d)", number, WPI_MaxSPINumbers-1);
-    return EINVAL;
+    return -EINVAL;
   }
 
   return 0;  //sucess
@@ -122,7 +122,7 @@ int wiringPiSPIxDataRW (const int number, const int channel, unsigned char *data
   RETURN_ON_LIMIT_FAIL
   if (-1==spiFds[number][channel]) {
     fprintf (stderr, "wiringPiSPI: Invalid SPI number/channel (need wiringPiSPIxSetupMode before read/write)");
-    return EBADF;
+    return -EBADF;
   }
 
   struct spi_ioc_transfer spi ;
@@ -159,7 +159,7 @@ int wiringPiSPIxSetupMode(const int number, const int channel, const int speed, 
   RETURN_ON_LIMIT_FAIL
   if (mode<0 || mode>3) { // Mode is 0, 1, 2 or 3 original
     fprintf (stderr, "wiringPiSPI: Invalid mode (%d, valid range 0-%d)", mode, 3);
-    return EINVAL;
+    return -EINVAL;
   }
 
   snprintf (spiDev, 31, "/dev/spidev%d.%d", number, channel) ;
