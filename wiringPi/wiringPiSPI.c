@@ -72,7 +72,6 @@ static int         spiFds [7][3] =
 };
 
 
-
 int SPICheckLimits(const int number, const int channel) {
   if (channel<0 || channel>=WPI_MaxSPIChannels) {
     fprintf (stderr, "wiringPiSPI: Invalid SPI channel (%d, valid range 0-%d)", channel, WPI_MaxSPIChannels-1);
@@ -119,13 +118,16 @@ int wiringPiSPIGetFd(int channel) {
 
 int wiringPiSPIxDataRW (const int number, const int channel, unsigned char *data, const int len)
 {
-  struct spi_ioc_transfer spi ;
 
   RETURN_ON_LIMIT_FAIL
+  if (-1==spiFds[number][channel]) {
+    fprintf (stderr, "wiringPiSPI: Invalid SPI number/channel (need wiringPiSPIxSetupMode before read/write)");
+    return EBADF;
+  }
 
+  struct spi_ioc_transfer spi ;
 // Mentioned in spidev.h but not used in the original kernel documentation
 //	test program )-:
-
   memset (&spi, 0, sizeof (spi)) ;
 
   spi.tx_buf        = (unsigned long)data ;
