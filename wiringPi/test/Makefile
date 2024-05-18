@@ -50,7 +50,7 @@ test:
 
 xotest:
 	@error_state=false ; \
-	for t in $(xotests)  ; do \
+	for t in $(tests) $(xotests)  ; do \
 		echo === unit test: $${t} === ; \
 		time ./$${t} ; \
 		if [ $$? -ne 0 ]; then \

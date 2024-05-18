@@ -104,14 +104,14 @@ int main(int argc, char *argv []){
     checkVoltage(0.1f, "Analog value 1xLow");
 
     digitalWriteEx(21, GPIOIn, HIGH);
-    checkVoltage(3.0f, "Analog value 1xHigh");
+    checkVoltage(3.1f, "Analog value 1xHigh");
 
     pinMode(22, OUTPUT);
     digitalWriteEx(22, -1, LOW);
     checkVoltage(1.55f, "Analog value Half (1H/1L)");
 
     digitalWriteEx(22, GPIOIn, HIGH);
-    checkVoltage(3.1f, "Analog value 2xHigh");
+    checkVoltage(3.2f, "Analog value 2xHigh");
 
     pinMode(24, OUTPUT);
     digitalWriteEx(24, GPIOIn, HIGH);
@@ -172,7 +172,7 @@ int main(int argc, char *argv []){
     }
     ret = wiringPiSPIxGetFd(0, spiChannel);
     CheckSame("Fd after close", ret, -1);
-    
+
     return UnitTestState();
 }
 
