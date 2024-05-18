@@ -4,7 +4,6 @@
 #include "wpi_test.h"
 #include <string.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <sys/time.h>
 
@@ -166,5 +165,5 @@ int main (void) {
   }
   pinMode(OUTpin, INPUT);
 
-  return 0 ;
+  return UnitTestState();
 }
