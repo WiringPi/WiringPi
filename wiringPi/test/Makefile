@@ -43,9 +43,9 @@ test:
 		echo  ; echo  ; \
 	done ; \
 	if [ "$$error_state" = true ]; then \
-		echo "STD TEST FAILED"; \
+		echo "\n\e[5mSTD TEST FAILED\e[0m\n"; \
 	else \
-		echo "STD TEST SUCCESS"; \
+		echo "\n\e[5mSTD TEST SUCCESS\e[0m\n"; \
 	fi
 
 xotest:
@@ -59,9 +59,9 @@ xotest:
 		echo  ; echo  ; \
 	done
 	if [ "$$error_state" = true ]; then \
-		echo "XO TEST FAILED"; \
+		echo "\n\e[5mSTD/XO TEST FAILED\e[0m\n"; \
 	else \
-		echo "XO TEST SUCCESS"; \
+		echo "\n\e[5mSTD/XO TEST SUCCESS\e[0m\n"; \
 	fi
 
 clean: 
