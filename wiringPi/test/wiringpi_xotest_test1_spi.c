@@ -108,7 +108,7 @@ int main(int argc, char *argv []){
 
     pinMode(22, OUTPUT);
     digitalWriteEx(22, -1, LOW);
-    checkVoltage(1.55f, "Analog value Half (1H/1L)");
+    checkVoltage(1.65f, "Analog value Half (1H/1L)");
 
     digitalWriteEx(22, GPIOIn, HIGH);
     checkVoltage(3.2f, "Analog value 2xHigh");
