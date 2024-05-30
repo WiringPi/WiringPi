@@ -10,6 +10,34 @@
 const int GPIO = 19;
 const int GPIOIN = 26;
 const int ToggleValue = 4;
+int RaspberryPiModel = -1;
+
+
+void SetAndCheckMode(int pin, int mode) {
+	enum WPIPinALT AltGpio = WPI_ALT_UNKNOWN;
+
+	switch(mode) {
+		case INPUT:
+			pinMode(pin, INPUT);
+			AltGpio = getPinModeAlt(pin);
+			CheckSame("Pin mode input", AltGpio, WPI_ALT_INPUT);
+			break;
+		case OUTPUT:
+			pinMode(pin, OUTPUT);
+			AltGpio = getPinModeAlt(pin);
+			CheckSame("Pin mode output", AltGpio, WPI_ALT_OUTPUT);
+			break;
+		case PM_OFF:
+			pinMode(pin, PM_OFF);
+			AltGpio = getPinModeAlt(pin);
+			CheckSame("Pin mode off(input)", AltGpio, (PI_MODEL_5 == RaspberryPiModel) ?  WPI_NONE : WPI_ALT_INPUT);
+			break;
+		default:
+			pinMode(pin, mode);
+			printf("pinmode %d of pin %d not checked", mode, pin);
+			break;
+	}
+}
 
 
 int main (void) {
@@ -21,8 +49,23 @@ int main (void) {
 		printf("wiringPiSetupGpio failed\n\n");
 		exit(EXIT_FAILURE);
 	}
-	pinMode(GPIOIN, INPUT);
-	pinMode(GPIO, OUTPUT);
+
+	int rev, mem, maker, overVolted;
+	piBoardId(&RaspberryPiModel, &rev, &mem, &maker, &overVolted);
+	CheckNotSame("Model: ", RaspberryPiModel, -1);
+	if (PI_MODEL_5 == RaspberryPiModel) {
+		printf("Raspberry Pi 5 with RP1 found\n");
+	} else {
+		printf("Raspberry Pi with BCM GPIO found (not Pi 5)\n");
+	}
+
+
+	enum WPIPinAlt AltGpio = WPI_ALT_UNKNOWN;
+	AltGpio = getPinModeAlt(23);
+	CheckSame("Pin mode default", AltGpio, PI_MODEL_5 == RaspberryPiModel ? WPI_NONE : WPI_ALT_INPUT);
+
+	SetAndCheckMode(GPIOIN, INPUT);
+	SetAndCheckMode(GPIO, OUTPUT);
 
 	printf("toggle %d times ...\n", ToggleValue);
 	for (int loop=1; loop<ToggleValue; loop++) {
@@ -36,7 +79,9 @@ int main (void) {
 
 	printf("\nWiringPi GPIO test program (using GPIO%d (input pull up/down) and GPIO%d (input))\n", GPIO, GPIOIN);
 	pullUpDnControl (GPIO, PUD_UP);
-	pinMode(GPIO, INPUT);
+	SetAndCheckMode(GPIO, INPUT);
+
+
 	delayMicroseconds(3000000);
 	pullUpDnControl (GPIOIN, PUD_OFF);
 
@@ -50,6 +95,11 @@ int main (void) {
 	//Error wrong direction - only for fun
 	digitalWrite(GPIO, LOW);
 
-  return UnitTestState();
-}
+	SetAndCheckMode(GPIO, OUTPUT);
+	SetAndCheckMode(GPIO, PM_OFF);
+	//pinModeAlt (GPIO, 0x1F);
+	//AltGpio = getPinModeAlt(GPIO);
+	//CheckSame("Pin mode off(default)", AltGpio, 0x1F);
 
+	return UnitTestState();
+}

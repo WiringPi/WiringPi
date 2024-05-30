@@ -60,11 +60,31 @@ void pullUpDnControlEx (int GPIO, int GPIOIN, int mode) {
 }
 
 
+void CheckSameText(const char* msg, const char*  value, const char*  expect) {
+    if (!strcmp(value, expect)) {
+        printf("%39s (%10s==%10s) -> %spassed%s\n", msg, value, expect, COLORGRN, COLORDEF);
+    } else {
+        printf("%39s (%10s<>%10s) -> %sfailed%s\n", msg, value, expect, COLORRED, COLORDEF);
+        globalError=1;
+    }
+}
+
+
 void CheckSame(const char* msg, int value, int expect) {
     if (value==expect) {
         printf("%39s (% 3d==% 3d) -> %spassed%s\n", msg, value, expect, COLORGRN, COLORDEF);
     } else {
         printf("%39s (% 3d<>% 3d) -> %sfailed%s\n", msg, value, expect, COLORRED, COLORDEF);
+        globalError=1;
+    }
+}
+
+
+void CheckNotSame(const char* msg, int value, int expect) {
+    if (value!=expect) {
+        printf("%39s (% 3d<>% 3d) -> %spassed%s\n", msg, value, expect, COLORGRN, COLORDEF);
+    } else {
+        printf("%39s (% 3d==% 3d) -> %sfailed%s\n", msg, value, expect, COLORRED, COLORDEF);
         globalError=1;
     }
 }
