@@ -1318,8 +1318,8 @@ int getAlt (int pin)
 }
 
 
-enum WPIPinALT getPinModeAlt(int pin) {
-  return (enum WPIPinALT) getAlt(pin);
+enum WPIPinAlt getPinModeAlt(int pin) {
+  return (enum WPIPinAlt) getAlt(pin);
 }
 
 
