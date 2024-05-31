@@ -14,7 +14,7 @@ int RaspberryPiModel = -1;
 
 
 void SetAndCheckMode(int pin, int mode) {
-	enum WPIPinALT AltGpio = WPI_ALT_UNKNOWN;
+	enum WPIPinAlt AltGpio = WPI_ALT_UNKNOWN;
 
 	switch(mode) {
 		case INPUT:
