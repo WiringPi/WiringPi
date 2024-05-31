@@ -6,7 +6,9 @@ tests = wiringpi_test1_sysfs wiringpi_test2_sysfs wiringpi_test3_device_wpi wiri
 
 xotests = wiringpi_xotest_test1_spi
 
-all: $(tests) $(xotests)
+i2ctests = wiringpi_i2c_test1_pcf8574
+
+all: $(tests) $(xotests) $(i2ctests)
 
 wiringpi_test1_sysfs: 
 	${CC} ${CFLAGS} wiringpi_test1_sysfs.c -o wiringpi_test1_sysfs -lwiringPi
@@ -32,6 +34,9 @@ wiringpi_test7_version:
 wiringpi_xotest_test1_spi:
 	${CC} ${CFLAGS} wiringpi_xotest_test1_spi.c -o wiringpi_xotest_test1_spi -lwiringPi
 
+wiringpi_i2c_test1_pcf8574:
+	${CC} ${CFLAGS} wiringpi_i2c_test1_pcf8574.c -o wiringpi_i2c_test1_pcf8574 -lwiringPi
+
 test:
 	@error_state=false ; \
 	for t in $(tests) ; do \
@@ -51,7 +56,7 @@ test:
 xotest:
 	@error_state=false ; \
 	for t in $(tests) $(xotests)  ; do \
-		echo === unit test: $${t} === ; \
+		echo === XO unit test: $${t} === ; \
 		time ./$${t} ; \
 		if [ $$? -ne 0 ]; then \
 		  error_state=true ; \
@@ -64,7 +69,23 @@ xotest:
 		echo "\n\e[5mSTD/XO TEST SUCCESS\e[0m\n"; \
 	fi
 
+i2ctest:
+	@error_state=false ; \
+	for t in $(tests) $(i2ctests)  ; do \
+		echo === I2C unit test: $${t} === ; \
+		time ./$${t} ; \
+		if [ $$? -ne 0 ]; then \
+		  error_state=true ; \
+		fi ; \
+		echo  ; echo  ; \
+	done
+	if [ "$$error_state" = true ]; then \
+		echo "\n\e[5mSTD/I2C TEST FAILED\e[0m\n"; \
+	else \
+		echo "\n\e[5mSTD/I2C TEST SUCCESS\e[0m\n"; \
+	fi
+
 clean: 
-	for t in $(tests) $(xotests) ; do \
+	for t in $(tests) $(xotests) $(i2ctests) ; do \
 		rm -fv $${t} ; \
 	done
