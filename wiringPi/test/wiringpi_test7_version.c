@@ -8,4 +8,6 @@ int main (void) {
 
   CheckSame("version major", major, VERSION_MAJOR);
   CheckSame("version minor", minor, VERSION_MINOR);
+
+  return UnitTestState();
 }

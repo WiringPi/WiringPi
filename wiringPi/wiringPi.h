@@ -225,8 +225,28 @@ extern int  wiringPiSetupPhys   (void) ;
 extern int  wiringPiSetupPinType (enum WPIPinType pinType);   //Interface V3.3
 extern int  wiringPiSetupGpioDevice(enum WPIPinType pinType); //Interface V3.3
 
+
+enum WPIPinAlt {
+  WPI_ALT_UNKNOWN = -1,
+  WPI_ALT_INPUT = 0,
+  WPI_ALT_OUTPUT,
+  WPI_ALT5,
+  WPI_ALT4,
+  WPI_ALT0,
+  WPI_ALT1,
+  WPI_ALT2,
+  WPI_ALT3,
+  WPI_ALT6,
+  WPI_ALT7,
+  WPI_ALT8,
+  WPI_ALT9,
+  WPI_NONE = 0x1F,  // Pi5 default
+};
+
+
 extern          int  wiringPiGpioDeviceGetFd();               //Interface V3.3
 extern          void pinModeAlt          (int pin, int mode) ;
+extern          enum WPIPinAlt getPinModeAlt       (int pin) ;  // Interface V3.5, same as getAlt but wie enum
 extern          void pinMode             (int pin, int mode) ;
 extern          void pullUpDnControl     (int pin, int pud) ;
 extern          int  digitalRead         (int pin) ;
