@@ -72,15 +72,11 @@ char *usage = "Usage: gpio -v\n"
               "       gpio <mode/read/write/aread/awritewb/pwm/pwmTone/clock> ...\n"
               "       gpio <toggle/blink> <pin>\n"
 	      "       gpio readall\n"
-//	      "       gpio unexportall/exports\n"
-//	      "       gpio export/edge/unexport ...\n"
 	      "       gpio wfi <pin> <mode>\n"
 	      "       gpio drive <group> <value>\n"
 	      "       gpio pwm-bal/pwm-ms \n"
 	      "       gpio pwmr <range> \n"
 	      "       gpio pwmc <divider> \n"
-	      "       gpio load spi/i2c\n"
-	      "       gpio unload spi/i2c\n"
 	      "       gpio i2cd/i2cdetect\n"
 	      "       gpio rbx/rbd\n"
 	      "       gpio wb <value>\n"
@@ -110,287 +106,6 @@ static int decodePin (const char *str)
 #endif
 
 
-/*
- * findExecutable:
- *	Code to locate the path to the given executable. We have a fixed list
- *	of locations to try which completely overrides any $PATH environment.
- *	This may be detrimental, however it avoids the reliance on $PATH
- *	which may be a security issue when this program is run a set-uid-root.
- *********************************************************************************
- */
-
-static const char *searchPath [] =
-{
-  "/sbin",
-  "/usr/sbin",
-  "/bin",
-  "/usr/bin",
-  NULL,
-} ;
-
-static char *findExecutable (const char *progName)
-{
-  static char *path = NULL ;
-  int len = strlen (progName) ;
-  int i = 0 ;
-  struct stat statBuf ;
-
-  for (i = 0 ; searchPath [i] != NULL ; ++i)
-  {
-    path = malloc (strlen (searchPath [i]) + len + 2) ;
-    sprintf (path, "%s/%s", searchPath [i], progName) ;
-
-    if (stat (path, &statBuf) == 0)
-      return path ;
-    free (path) ;
-  }
-
-  return NULL ;
-}
-
-
-/*
- * changeOwner:
- *	Change the ownership of the file to the real userId of the calling
- *	program so we can access it.
- *********************************************************************************
- */
-
-static void changeOwner (char *cmd, char *file)
-{
-  uid_t uid = getuid () ;
-  uid_t gid = getgid () ;
-
-  if (chown (file, uid, gid) != 0)
-  {
-
-// Removed (ignoring) the check for not existing as I'm fed-up with morons telling me that
-//	the warning message is an error.
-
-    if (errno != ENOENT)
-      fprintf (stderr, "%s: Unable to change ownership of %s: %s\n", cmd, file, strerror (errno)) ;
-  }
-}
-
-
-/*
- * moduleLoaded:
- *	Return true/false if the supplied module is loaded
- *********************************************************************************
- */
-
-static int moduleLoaded (char *modName)
-{
-  int len   = strlen (modName) ;
-  int found = FALSE ;
-  FILE *fd = fopen ("/proc/modules", "r") ;
-  char line [80] ;
-
-  if (fd == NULL)
-  {
-    fprintf (stderr, "gpio: Unable to check /proc/modules: %s\n", strerror (errno)) ;
-    exit (1) ;
-  }
-
-  while (fgets (line, 80, fd) != NULL)
-  {
-    if (strncmp (line, modName, len) != 0)
-      continue ;
-
-    found = TRUE ;
-    break ;
-  }
-
-  fclose (fd) ;
-
-  return found ;
-}
-
-
-/*
- * doLoad:
- *	Load either the spi or i2c modules and change device ownerships, etc.
- *********************************************************************************
- */
-
-static void checkDevTree (char *argv [])
-{
-  struct stat statBuf ;
-
-  if (stat ("/proc/device-tree", &statBuf) == 0)	// We're on a devtree system ...
-  {
-    fprintf (stderr,
-"%s: Unable to load/unload modules as this Pi has the device tree enabled.\n"
-"  You need to run the raspi-config program (as root) and select the\n"
-"  modules (SPI or I2C) that you wish to load/unload there and reboot.\n", argv [0]) ;
-    exit (1) ;
-  }
-}
-
-static void _doLoadUsage (char *argv [])
-{
-  fprintf (stderr, "Usage: %s load <spi/i2c> [I2C baudrate in Kb/sec]\n", argv [0]) ;
-  exit (1) ;
-}
-
-static void doLoad (int argc, char *argv [])
-{
-  char *module1, *module2 ;
-  char cmd [80] ;
-  char *file1, *file2 ;
-  char args1 [32], args2 [32] ;
-
-  checkDevTree (argv) ;
-
-  if (argc < 3)
-    _doLoadUsage (argv) ;
-
-  args1 [0] = args2 [0] = 0 ;
-
-  /**/ if (strcasecmp (argv [2], "spi") == 0)
-  {
-    module1 = "spidev" ;
-    module2 = "spi_bcm2708" ;
-    file1  = "/dev/spidev0.0" ;
-    file2  = "/dev/spidev0.1" ;
-    if (argc == 4)
-    {
-      fprintf (stderr, "%s: Unable to set the buffer size now. Load aborted. Please see the man page.\n", argv [0]) ;
-      exit (1) ;
-    }
-    else if (argc > 4)
-      _doLoadUsage (argv) ;
-  }
-  else if (strcasecmp (argv [2], "i2c") == 0)
-  {
-    module1 = "i2c_dev" ;
-    module2 = "i2c_bcm2708" ;
-    file1  = "/dev/i2c-0" ;
-    file2  = "/dev/i2c-1" ;
-    if (argc == 4)
-      sprintf (args2, " baudrate=%d", atoi (argv [3]) * 1000) ;
-    else if (argc > 4)
-      _doLoadUsage (argv) ;
-  }
-  else
-    _doLoadUsage (argv) ;
-
-  if (findExecutable ("modprobe") == NULL)
-    printf ("No found\n") ;
-
-  if (!moduleLoaded (module1))
-  {
-    sprintf (cmd, "%s %s%s", findExecutable (MODPROBE), module1, args1) ;
-    int ret = system(cmd);
-    if (ret == -1) {
-      perror("Error executing command");
-    } else if (WIFEXITED(ret)) {
-      int exit_status = WEXITSTATUS(ret);
-      if (exit_status != 0) {
-        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
-      }
-    } else {
-      fprintf(stderr, "Command terminated by signal\n");
-    }
-  }
-
-  if (!moduleLoaded (module2))
-  {
-    sprintf (cmd, "%s %s%s", findExecutable (MODPROBE), module2, args2) ;
-    int ret = system(cmd);
-    if (ret == -1) {
-      perror("Error executing command");
-    } else if (WIFEXITED(ret)) {
-      int exit_status = WEXITSTATUS(ret);
-      if (exit_status != 0) {
-        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
-      }
-    } else {
-      fprintf(stderr, "Command terminated by signal\n");
-    }
-  }
-
-  if (!moduleLoaded (module2))
-  {
-    fprintf (stderr, "%s: Unable to load %s\n", argv [0], module2) ;
-    exit (1) ;
-  }
-
-  sleep (1) ;	// To let things get settled
-
-  changeOwner (argv [0], file1) ;
-  changeOwner (argv [0], file2) ;
-}
-
-
-/*
- * doUnLoad:
- *	Un-Load either the spi or i2c modules and change device ownerships, etc.
- *********************************************************************************
- */
-
-static void _doUnLoadUsage (char *argv [])
-{
-  fprintf (stderr, "Usage: %s unload <spi/i2c>\n", argv [0]) ;
-  exit (1) ;
-}
-
-static void doUnLoad (int argc, char *argv [])
-{
-  char *module1, *module2 ;
-  char cmd [80] ;
-
-  checkDevTree (argv) ;
-
-  if (argc != 3)
-    _doUnLoadUsage (argv) ;
-
-  /**/ if (strcasecmp (argv [2], "spi") == 0)
-  {
-    module1 = "spidev" ;
-    module2 = "spi_bcm2708" ;
-  }
-  else if (strcasecmp (argv [2], "i2c") == 0)
-  {
-    module1 = "i2c_dev" ;
-    module2 = "i2c_bcm2708" ;
-  }
-  else
-    _doUnLoadUsage (argv) ;
-
-  if (moduleLoaded (module1))
-  {
-    sprintf (cmd, "%s %s", findExecutable (RMMOD), module1) ;
-    int ret = system(cmd);
-    if (ret == -1) {
-      perror("Error executing command");
-    } else if (WIFEXITED(ret)) {
-      int exit_status = WEXITSTATUS(ret);
-      if (exit_status != 0) {
-        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
-      }
-    } else {
-      fprintf(stderr, "Command terminated by signal\n");
-    }
-  }
-
-  if (moduleLoaded (module2))
-  {
-    sprintf (cmd, "%s %s", findExecutable (RMMOD), module2) ;
-    int ret = system(cmd);
-    if (ret == -1) {
-      perror("Error executing command");
-    } else if (WIFEXITED(ret)) {
-      int exit_status = WEXITSTATUS(ret);
-      if (exit_status != 0) {
-        fprintf(stderr, "Command failed with exit status %d\n", exit_status);
-      }
-    } else {
-      fprintf(stderr, "Command terminated by signal\n");
-    }
-  }
-}
-
 
 /*
  * doI2Cdetect:
@@ -398,33 +113,28 @@ static void doUnLoad (int argc, char *argv [])
  *********************************************************************************
  */
 
-static void doI2Cdetect (UNU int argc, char *argv [])
+static void doI2Cdetect (const char *progName)
 {
   int port = piGpioLayout () == GPIO_LAYOUT_PI1_REV1 ? 0 : 1 ;
-  char *c, *command ;
+  char command[64];
 
-  if ((c = findExecutable (I2CDETECT)) == NULL)
-  {
-    fprintf (stderr, "%s: Unable to find i2cdetect command: %s\n", argv [0], strerror (errno)) ;
-    return ;
+  snprintf(command, 64, "i2cdetect -y %d", port);
+  int ret = system(command);
+  if (ret < 0) {
+    fprintf (stderr, "%s: Unable to run i2cdetect: %s\n", progName, strerror(errno));
   }
-
-  if (!moduleLoaded ("i2c_dev"))
-  {
-    fprintf (stderr, "%s: The I2C kernel module(s) are not loaded.\n", argv [0]) ;
-    return ;
+  if (0x7F00 == (ret & 0xFF00)) {
+    fprintf (stderr, "%s: i2cdetect not found, please install i2c-tools\n", progName);
   }
-
-  command = malloc (strlen (c) + 16) ;
-  sprintf (command, "%s -y %d", c, port) ;
-  if (system (command) < 0)
-    fprintf (stderr, "%s: Unable to run i2cdetect: %s\n", argv [0], strerror (errno)) ;
-
 }
 
 
 void SYSFS_DEPRECATED(const char *progName) {
   fprintf(stderr, "%s: GPIO Sysfs Interface for Userspace is deprecated (https://www.kernel.org/doc/Documentation/gpio/sysfs.txt).\n Function is now useless and empty.\n\n", progName);
+}
+
+void LOAD_DEPRECATED(const char *progName) {
+  fprintf(stderr, "%s: load/unload modules is deprecated. You need to run the raspi-config program (as root) and select the interface option (SPI or I2C) that you wish to de-/activate.\n\n", progName);
 }
 
 /*
@@ -1269,7 +979,7 @@ int main (int argc, char *argv [])
     exit (EXIT_FAILURE) ;
   }
 
-// Initial test for /sys/class/gpio operations:  - -> deprecated, empty but still there
+// Initial test for /sys/class/gpio operations:  --> deprecated, empty but still there
 
   /**/ if (strcasecmp (argv [1], "exports"    ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
   else if (strcasecmp (argv [1], "export"     ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
@@ -1277,10 +987,10 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "unexport"   ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
   else if (strcasecmp (argv [1], "unexportall") == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
 
-// Check for load command:
+// Check for un-/load command:  --> deprecated, empty but still there
 
-  if (strcasecmp (argv [1], "load"   ) == 0)	{ doLoad   (argc, argv) ; return 0 ; }
-  if (strcasecmp (argv [1], "unload" ) == 0)	{ doUnLoad (argc, argv) ; return 0 ; }
+  if (strcasecmp (argv [1], "load"   ) == 0)	{ LOAD_DEPRECATED(argv[0]) ; return 0 ; }
+  if (strcasecmp (argv [1], "unload" ) == 0)	{ LOAD_DEPRECATED(argv[0]) ; return 0 ; }
 
 // Check for usb power command
 
@@ -1413,8 +1123,8 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "nreadall" ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "pins"     ) == 0) doReadall    () ;
   else if (strcasecmp (argv [1], "qmode"    ) == 0) doQmode      (argc, argv) ;
-  else if (strcasecmp (argv [1], "i2cdetect") == 0) doI2Cdetect  (argc, argv) ;
-  else if (strcasecmp (argv [1], "i2cd"     ) == 0) doI2Cdetect  (argc, argv) ;
+  else if (strcasecmp (argv [1], "i2cdetect") == 0) doI2Cdetect  (argv [0]) ;
+  else if (strcasecmp (argv [1], "i2cd"     ) == 0) doI2Cdetect  (argv [0]) ;
   else if (strcasecmp (argv [1], "reset"    ) == 0) doReset      (argv [0]) ;
   else if (strcasecmp (argv [1], "wb"       ) == 0) doWriteByte  (argc, argv) ;
   else if (strcasecmp (argv [1], "rbx"      ) == 0) doReadByte   (argc, argv, TRUE) ;
