@@ -48,7 +48,7 @@ high | low
 range
 .PP
 .B gpio
-.B load \ i2c/spi ...
+.B i2cd
 .PP
 .B gpio
 .B gbr
@@ -67,8 +67,7 @@ converters on the Gertboard. It's designed for simple testing and
 diagnostic purposes, but can be used in shell scripts for general if
 somewhat slow control of the GPIO pins.
 
-It can also control the IO's on the PiFace IO board and load the SPI and I2C
-kernel modules if required.
+It can also control the IO's on the PiFace IO board.
 
 .SH OPTIONS
 
@@ -206,6 +205,10 @@ Change the PWM mode to balanced (the default) or mark:space ratio (traditional)
 .TP
 .B pwmr
 Change the PWM range register. The default is 1024.
+
+.TP
+.B i2cd
+Executes i2c-detect for the default I2C port on the P1 connector.
 
 .TP
 .B gbr

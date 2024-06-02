@@ -1,7 +1,7 @@
 /*
  * pcf8574.c:
  *	Extend wiringPi with the PCF8574 I2C GPIO expander chip
- *	Copyright (c) 2013 Gordon Henderson
+ *	Copyright (c) 2013-2024 Gordon Henderson and contributors
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/
@@ -33,8 +33,9 @@
 
 /*
  * myPinMode:
- *	The PCF8574 is an odd chip - the pins are effectively bi-directional,
- *	however the pins should be drven high when used as an input pin...
+ *	The PCF8574 is a 8-Bit I/O Expander with Open-drain output.
+ *  The pins are effectively bi-directional,
+ *	however the pins should be driven high when used as an input pin...
  *	So, we're effectively copying digitalWrite...
  *********************************************************************************
  */
@@ -102,7 +103,7 @@ static int myDigitalRead (struct wiringPiNodeStruct *node, int pin)
  * pcf8574Setup:
  *	Create a new instance of a PCF8574 I2C GPIO interface. We know it
  *	has 8 pins, so all we need to know here is the I2C address and the
- *	user-defined pin base.
+ *	user-defined pin base. Default address (A0-A3 low) is 0x20.
  *********************************************************************************
  */
 
