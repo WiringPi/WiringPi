@@ -2,9 +2,7 @@
 // Compile: gcc -Wall wiringpi_test2_device.c -o wiringpi_test2_device -lwiringPi
 
 #include "wpi_test.h"
-#include <stdlib.h>
 #include <signal.h>
-#include <string.h>
 #include <time.h>
 #include <sys/time.h>
 
@@ -50,5 +48,5 @@ int main (void) {
 	CheckGPIO(GPIO, GPIOIN, LOW);
 	delayMicroseconds(600000);
 
-	return(EXIT_SUCCESS);
+  return UnitTestState();
 }

@@ -156,8 +156,12 @@ const unsigned int RP1_DEBOUNCE_DEFAULT_VALUE = 4;
 const unsigned int RP1_DEBOUNCE_MASK    = 0x7f;
 const unsigned int RP1_DEBOUNCE_DEFAULT = (RP1_DEBOUNCE_DEFAULT_VALUE << 5);
 
+const unsigned int RP1_IRQRESET = 0x10000000; //CTRL Bit 28
+
 const unsigned int RP1_PAD_DEFAULT_0TO8      = (0x0B | 0x70);  //Slewfast, Schmitt, PullUp,   | 12mA, Input enable
 const unsigned int RP1_PAD_DEFAULT_FROM9     = (0x07 | 0x70);  //Slewfast, Schmitt, PullDown, | 12mA, Input enable
+const unsigned int RP1_PAD_IC_DEFAULT_0TO8  = 0x9A; //pull-up, Schmitt
+const unsigned int RP1_PAD_IC_DEFAULT_FROM9 = 0x96; //pull-down, Schmitt
 
 const unsigned int RP1_PAD_DRIVE_MASK   = 0x00000030;
 const unsigned int RP1_INV_PAD_DRIVE_MASK = ~(RP1_PAD_DRIVE_MASK);
@@ -1314,6 +1318,11 @@ int getAlt (int pin)
 }
 
 
+enum WPIPinAlt getPinModeAlt(int pin) {
+  return (enum WPIPinAlt) getAlt(pin);
+}
+
+
 /*
  * pwmSetMode:
  *	Select the native "balanced" mode, or standard mark:space mode
@@ -1727,11 +1736,16 @@ void pinMode (int pin, int mode)
     fSel    = gpioToGPFSEL [pin] ;
     shift   = gpioToShift  [pin] ;
 
-    if (mode == INPUT) {
+    if (INPUT==mode  || PM_OFF==mode) {
       if (PI_MODEL_5 == RaspberryPiModel) {
-        pads[1+pin] = (pin<=8) ? RP1_PAD_DEFAULT_0TO8 : RP1_PAD_DEFAULT_FROM9;
-        gpio[2*pin+1] = RP1_FSEL_GPIO | RP1_DEBOUNCE_DEFAULT; // GPIO
-        rio[RP1_RIO_OE + RP1_CLR_OFFSET] = 1<<pin;            // Input
+        if (INPUT==mode) {
+          pads[1+pin] = (pin<=8) ? RP1_PAD_DEFAULT_0TO8 : RP1_PAD_DEFAULT_FROM9;
+          gpio[2*pin+1] = RP1_FSEL_GPIO | RP1_DEBOUNCE_DEFAULT; // GPIO
+          rio[RP1_RIO_OE + RP1_CLR_OFFSET] = 1<<pin;            // Input
+        } else  { //PM_OFF
+          pads[1+pin] = (pin<=8) ? RP1_PAD_IC_DEFAULT_0TO8 : RP1_PAD_IC_DEFAULT_FROM9;
+          gpio[2*pin+1] = RP1_IRQRESET | RP1_FSEL_NONE_HW | RP1_DEBOUNCE_DEFAULT; // default but with irq reset
+        }
       } else {
         *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) ; // Sets bits to zero = input
       }

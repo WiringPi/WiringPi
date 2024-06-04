@@ -2,9 +2,7 @@
 // Compile: gcc -Wall wiringpi_test1_device.c -o wiringpi_test1_device -lwiringPi
 
 #include "wpi_test.h"
-#include <stdlib.h>
 #include <signal.h>
-#include <string.h>
 #include <time.h>
 #include <sys/time.h>
 
@@ -52,6 +50,6 @@ int main (void) {
 	//Error wrong direction - only for fun
 	digitalWrite(GPIO, LOW);
 
-	return(EXIT_SUCCESS);
+  return UnitTestState();
 }
 
