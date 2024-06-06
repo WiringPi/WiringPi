@@ -75,7 +75,7 @@ install: gpio
 	$Q mkdir -p		$(DESTDIR)$(PREFIX)/bin
 	$Q cp gpio		$(DESTDIR)$(PREFIX)/bin
 ifneq ($(WIRINGPI_SUID),0)
-	$Q chown root.root	$(DESTDIR)$(PREFIX)/bin/gpio
+	$Q chown root:root	$(DESTDIR)$(PREFIX)/bin/gpio
 	$Q chmod 4755		$(DESTDIR)$(PREFIX)/bin/gpio
 endif
 	$Q mkdir -p		$(DESTDIR)$(PREFIX)/share/man/man1
