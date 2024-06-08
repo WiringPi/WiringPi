@@ -2,13 +2,16 @@ CC = gcc
 CFLAGS = -Wall
 LDFLAGS = 
 
+# Need BCM26 <-> BCM19 connected (1kOhm)
 tests = wiringpi_test1_sysfs wiringpi_test2_sysfs wiringpi_test3_device_wpi wiringpi_test4_device_phys wiringpi_test5_default wiringpi_test6_isr wiringpi_test7_version
 
-xotests = wiringpi_xotest_test1_spi
+# Need XO hardware
+xotests = wiringpi_xotest_test1_spi wiringpi_i2c_test1_pcf8574
 
-i2ctests = wiringpi_i2c_test1_pcf8574
+# Need PiFace hardware and tests condition
+pifacetests = wiringpi_piface_test1
 
-all: $(tests) $(xotests) $(i2ctests)
+all: $(tests) $(xotests) $(pifacetests)
 
 wiringpi_test1_sysfs: 
 	${CC} ${CFLAGS} wiringpi_test1_sysfs.c -o wiringpi_test1_sysfs -lwiringPi
@@ -36,6 +39,9 @@ wiringpi_xotest_test1_spi:
 
 wiringpi_i2c_test1_pcf8574:
 	${CC} ${CFLAGS} wiringpi_i2c_test1_pcf8574.c -o wiringpi_i2c_test1_pcf8574 -lwiringPi
+
+wiringpi_piface_test1:
+	${CC} ${CFLAGS} wiringpi_piface_test1.c -o wiringpi_piface_test1 -lwiringPi
 
 test:
 	@error_state=false ; \
@@ -69,10 +75,10 @@ xotest:
 		echo "\n\e[5mSTD/XO TEST SUCCESS\e[0m\n"; \
 	fi
 
-i2ctest:
+pifacetest:
 	@error_state=false ; \
-	for t in $(tests) $(i2ctests)  ; do \
-		echo === I2C unit test: $${t} === ; \
+	for t in $(tests) $(pifacetests)  ; do \
+		echo === PiFace unit test: $${t} === ; \
 		time ./$${t} ; \
 		if [ $$? -ne 0 ]; then \
 		  error_state=true ; \
@@ -80,12 +86,12 @@ i2ctest:
 		echo  ; echo  ; \
 	done
 	if [ "$$error_state" = true ]; then \
-		echo "\n\e[5mSTD/I2C TEST FAILED\e[0m\n"; \
+		echo "\n\e[5mPIFACE TEST FAILED\e[0m\n"; \
 	else \
-		echo "\n\e[5mSTD/I2C TEST SUCCESS\e[0m\n"; \
+		echo "\n\e[5mPIFACE TEST SUCCESS\e[0m\n"; \
 	fi
 
 clean: 
-	for t in $(tests) $(xotests) $(i2ctests) ; do \
+	for t in $(tests) $(xotests) $(pifacetests) ; do \
 		rm -fv $${t} ; \
 	done
