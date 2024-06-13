@@ -80,7 +80,11 @@ int piGpioLayoutLegacy (void)
     if (strncmp (line, "Hardware", 8) == 0)
       break ;
 
-  if (strncmp (line, "Hardware", 8) != 0)
+  FILE * modelFd;
+  
+  if ((strncmp (line, "Hardware", 8) != 0) && 
+	  (((modelFd = fopen ("/sys/firmware/devicetree/base/model", "r")) != NULL) ||
+		  (fgets (line, 64, modelFd) != NULL)))
     piGpioLayoutOops ("No \"Hardware\" line") ;
 
   if (wiringPiDebug)
