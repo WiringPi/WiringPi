@@ -20,14 +20,14 @@ void CheckGPIO(int GPIO, int GPIOIN, int out) {
 
     int in = out;
     if (GPIOIN>=0) {
-        in  = digitalRead(GPIOIN);
+		in = digitalRead(GPIOIN);
     }
     int readback = digitalRead(GPIO);
 
     int pass = 0;
-    if (out==readback && in==out) {
-        pass = 1;
-    }
+	if (out==readback && in==out) {
+		pass = 1;
+	}
 
     if (GPIOIN>=0) {
         printf("set GPIO%02d = %d (readback %d), in GPIO%02d = %d         ", GPIO, out, readback, GPIOIN, in);
@@ -41,6 +41,11 @@ void CheckGPIO(int GPIO, int GPIOIN, int out) {
         globalError=1;
         printf("-> %sfailed%s\n", COLORRED, COLORDEF );
     }
+}
+
+
+void CheckInversGPIO(int GPIO, int GPIOIN, int out) {
+	CheckGPIO(GPIO, GPIOIN, out==HIGH ? LOW : HIGH);
 }
 
 

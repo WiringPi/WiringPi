@@ -268,6 +268,7 @@ extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio
 extern          int  piGpioLayout        (void) ;
 extern          int  piBoardRev          (void) ;	// Deprecated, but does the same as piGpioLayout
 extern          void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
+extern          int  piBoard40Pin        (void) ;                   // Interface V3.7
 extern          int  wpiPinToGpio        (int wpiPin) ;
 extern          int  physPinToGpio       (int physPin) ;
 extern          void setPadDrive         (int group, int value) ;

@@ -557,6 +557,27 @@ int piBoard() {
   return RaspberryPiModel<0 ? 0 : 1;
 }
 
+
+int piBoard40Pin() {
+  if (!piBoard()){
+	  // Board not detected
+	  return -1;
+  }
+  switch(RaspberryPiModel){
+	case PI_MODEL_A:
+	case PI_MODEL_B:
+		return 0;
+// PI_MODEL_CM
+// PI_MODEL_CM3
+// PI_MODEL_CM4  
+// PI_MODEL_CM4S
+//     ? guess yes
+	default: 
+		return 1;
+  }
+}
+
+
 int GetMaxPin() {
   return PI_MODEL_5 == RaspberryPiModel ? 27 : 63;
 }

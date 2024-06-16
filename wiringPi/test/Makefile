@@ -41,7 +41,7 @@ wiringpi_i2c_test1_pcf8574:
 	${CC} ${CFLAGS} wiringpi_i2c_test1_pcf8574.c -o wiringpi_i2c_test1_pcf8574 -lwiringPi
 
 wiringpi_piface_test1:
-	${CC} ${CFLAGS} wiringpi_piface_test1.c -o wiringpi_piface_test1 -lwiringPi
+	${CC} ${CFLAGS} wiringpi_piface_test1.c -o wiringpi_piface_test1 -lwiringPi -lwiringPiDev
 
 test:
 	@error_state=false ; \
