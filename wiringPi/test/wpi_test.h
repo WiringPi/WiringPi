@@ -105,6 +105,16 @@ void CheckSameFloat(const char* msg, float value, float expect) {
 }
 
 
+void CheckSameDouble(const char* msg, double value, double expect, double epsilon) {
+    if (fabs(value-expect)<epsilon) {
+        printf("%35s (%.3f==%.3f) -> %spassed%s \n", msg, value, expect, COLORGRN, COLORDEF);
+    } else {
+        printf("%35s (%.3f<>%.3f) -> %sfailed%s \n" , msg, value, expect, COLORRED, COLORDEF);
+        globalError=1;
+    }
+}
+
+
 int UnitTestState() {
     printf("\n\nUNIT TEST STATE: ");
     if (globalError) {
