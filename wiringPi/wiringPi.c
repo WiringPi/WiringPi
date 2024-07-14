@@ -1156,6 +1156,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     case PI_MODEL_4B:
     case PI_MODEL_400:
     case PI_MODEL_CM4:
+    case PI_MODEL_CM4S: 
       piGpioBase = GPIO_PERI_BASE_2711 ;
       piGpioPupOffset = GPPUPPDN0 ;
       break ;
