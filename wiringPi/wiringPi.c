@@ -238,6 +238,10 @@ static          int wiringPiSetuped = FALSE ;
 #define	PWM1_SERIAL     0x0200  // Run in serial mode
 #define	PWM1_ENABLE     0x0100  // Channel Enable
 
+const int PWMCLK_DIVI_MAX = 0xFFF; // 3 Byte max size for Clock devider
+const int OSC_FREQ_DEFAULT = 192; // x100kHz OSC
+const int OSC_FREQ_BCM2711 = 540; // x100kHz OSC
+
 // Timer
 //	Word offsets
 
@@ -1355,10 +1359,14 @@ void pwmSetMode (int mode)
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
     FailOnModel5();
-    if (mode == PWM_MODE_MS)
+    if (mode == PWM_MODE_MS) {
       *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE | PWM0_MS_MODE | PWM1_MS_MODE ;
-    else
+    } else {
       *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE ;
+    }
+    if (wiringPiDebug) {
+      printf ("Enable PWM mode: %s. Current register: 0x%08X\n", mode == PWM_MODE_MS ? "mark:space (freq. stable)" : "balanced (freq. change)", *(pwm + PWM_CONTROL));
+    }
   }
 }
 
@@ -1375,8 +1383,16 @@ void pwmSetRange (unsigned int range)
   FailOnModel5();
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
+    /* would be possible on ms mode but not on bal, deactivated, use pwmc modify instead
+    if (piGpioBase == GPIO_PERI_BASE_2711) {
+      range = (OSC_FREQ_BCM2711*range)/OSC_FREQ_DEFAULT;
+    }
+    */
     *(pwm + PWM0_RANGE) = range ; delayMicroseconds (10) ;
     *(pwm + PWM1_RANGE) = range ; delayMicroseconds (10) ;
+    if (wiringPiDebug) {
+      printf ("PWM range: %u. Current register: 0x%08X\n", range, *(pwm + PWM0_RANGE));
+    }
   }
 }
 
@@ -1394,17 +1410,23 @@ void pwmSetClock (int divisor)
   uint32_t pwm_control ;
 
   FailOnModel5();
-  if (piGpioBase == GPIO_PERI_BASE_2711)
-  {
-    divisor = 540*divisor/192;
+  if (piGpioBase == GPIO_PERI_BASE_2711) {
+    //calculate value for OSC 54MHz -> 19.2MHz
+    // Pi 4 max divisor is 1456, Pi0-3 is 4095 (0xFFF)
+    divisor = (OSC_FREQ_BCM2711*divisor)/OSC_FREQ_DEFAULT;
   }
-  divisor &= 4095 ;
+  if (divisor > PWMCLK_DIVI_MAX) {
+    divisor = PWMCLK_DIVI_MAX;
+  }
+  if (divisor < 1) {
+    divisor = 1;
+  }
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
-    if (wiringPiDebug)
-      printf ("Setting to: %d. Current: 0x%08X\n", divisor, *(clk + PWMCLK_DIV)) ;
-
+    if (wiringPiDebug) {
+      printf ("PWM clock divisor: Old register: 0x%08X\n", *(clk + PWMCLK_DIV)) ;
+    }
     pwm_control = *(pwm + PWM_CONTROL) ;		// preserve PWM_CONTROL
 
 // We need to stop PWM prior to stopping PWM clock in MS mode otherwise BUSY
@@ -1429,8 +1451,9 @@ void pwmSetClock (int divisor)
     *(clk + PWMCLK_CNTL) = BCM_PASSWORD | 0x11 ;	// Start PWM clock
     *(pwm + PWM_CONTROL) = pwm_control ;		// restore PWM_CONTROL
 
-    if (wiringPiDebug)
-      printf ("Set     to: %d. Now    : 0x%08X\n", divisor, *(clk + PWMCLK_DIV)) ;
+    if (wiringPiDebug) {
+      printf ("PWM clock divisor %d. Current register: 0x%08X\n", divisor, *(clk + PWMCLK_DIV));
+    }
   }
 }
 
@@ -1459,9 +1482,9 @@ void gpioClockSet (int pin, int freq)
   divr = 19200000 % freq ;
   divf = (int)((double)divr * 4096.0 / 19200000.0) ;
 
-  if (divi > 4095)
-    divi = 4095 ;
-
+  if (divi > PWMCLK_DIVI_MAX) {
+    divi = PWMCLK_DIVI_MAX;
+  }
   *(clk + gpioToClkCon [pin]) = BCM_PASSWORD | GPIO_CLOCK_SOURCE ;		// Stop GPIO Clock
   while ((*(clk + gpioToClkCon [pin]) & 0x80) != 0)				// ... and wait
     ;
@@ -2154,8 +2177,16 @@ void pwmWrite (int pin, int value)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
+    /* would be possible on ms mode but not on bal, deactivated, use pwmc modify instead
+    if (piGpioBase == GPIO_PERI_BASE_2711) {
+      value = (OSC_FREQ_BCM2711*value)/OSC_FREQ_DEFAULT;
+    }
+    */
     usingGpioMemCheck ("pwmWrite") ;
     *(pwm + gpioToPwmPort [pin]) = value ;
+    if (wiringPiDebug) {
+      printf ("PWM value: %u. Current register: 0x%08X\n", value, *(pwm + gpioToPwmPort[pin]));
+    }
   }
   else
   {
@@ -2741,6 +2772,15 @@ unsigned int micros (void)
 
 
   return (uint32_t)(now - epochMicro) ;
+}
+
+
+unsigned long long piMicros64(void) {
+  struct  timespec ts;
+
+  clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
+  uint64_t now  = (uint64_t)ts.tv_sec * (uint64_t)1000000 + (uint64_t)(ts.tv_nsec / 1000) ;
+  return (now - epochMicro) ;
 }
 
 /*
