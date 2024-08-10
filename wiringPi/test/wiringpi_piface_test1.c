@@ -49,7 +49,10 @@ int main (int argc, char *argv []) {
 	const int RELAY1 = PIFACE+1;
 	const int RELAY1IN = PIFACE+7;
 
+
 	printf("\nRelays async:\n");
+	pullUpDnControl(RELAY0IN, PUD_UP);
+	pullUpDnControl(RELAY1IN, PUD_UP);
 	for (int loop = 0, end=3 ; loop<end ; ++loop) {
 		int sleep = defaultsleep*(end-loop);
 		printf("sleep %d ms:\n", sleep/1000);
