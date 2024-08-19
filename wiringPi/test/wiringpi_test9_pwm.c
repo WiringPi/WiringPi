@@ -141,7 +141,7 @@ int main (void) {
         return UnitTestState();
       }
       printf("Wait for start ...\n");
-      delay(250);
+      delay(500);
       printf("Start:\n");
       //MeasureAndCheckFreq("50\% Duty (default)", 300.000);   //FAIL , freq (pwmc=32) to high for irq count
 
@@ -215,5 +215,8 @@ int main (void) {
      printf("set PWM@GPIO%d (output) back to input\n", PWM);
      pinMode(PWM, INPUT);
    }
+
+   printf("\nDid %d PWM GPIO tests with model %d\n", testruns, RaspberryPiModel);
+
    return UnitTestState();
 }
