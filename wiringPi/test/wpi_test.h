@@ -95,8 +95,8 @@ void CheckNotSame(const char* msg, int value, int expect) {
 }
 
 
-void CheckSameFloat(const char* msg, float value, float expect) {
-    if (fabs(value-expect)<0.08) {
+void CheckSameFloat(const char* msg, float value, float expect, float epsilon) {
+    if (fabs(value-expect)<epsilon) {
         printf("%35s (%.3f==%.3f) -> %spassed%s \n", msg, value, expect, COLORGRN, COLORDEF);
     } else {
         printf("%35s (%.3f<>%.3f) -> %sfailed%s \n" , msg, value, expect, COLORRED, COLORDEF);
@@ -104,6 +104,9 @@ void CheckSameFloat(const char* msg, float value, float expect) {
     }
 }
 
+void CheckSameFloatX(const char* msg, float value, float expect) {
+  return CheckSameFloat(msg, value, expect, 0.08f);
+}
 
 void CheckSameDouble(const char* msg, double value, double expect, double epsilon) {
     if (fabs(value-expect)<epsilon) {

@@ -9,15 +9,8 @@
 #include <time.h>
 #include <stdint.h>
 
-/*
-int PWM0[2]    = {18, 12};
-int PWM0_IN[2] = {17, 13};
-int PWM1[2]    = {13, 19};
-int PWM1_IN[2] = {12, 16};
-*/
-
 int PWM_OUT[4] = { 18, 12, 13, 19 };
-int PWM_IN[4]  = { 17, 13, 12, 16 };
+int PWM_IN[4]  = { 17, 13, 12, 26 };
 
 volatile int gCounter = 0;
 
@@ -27,25 +20,25 @@ void ISR_FREQIN(void) {
 }
 
 double MeasureAndCheckFreq(const char* msg, double expect_freq) {
-    double fFrequency;
-    clock_t CPUClockBegin, CPUClockEnd;
-    int CountBegin, CountEnd;
-    double CPUClockInterval, CountInterval;
-    double elapsed_time, CPULoad;
+  double fFrequency;
+  clock_t CPUClockBegin, CPUClockEnd;
+  int CountBegin, CountEnd;
+  double CPUClockInterval, CountInterval;
+  double elapsed_time, CPULoad;
   uint64_t tbegin, tend;
   int SleepMs = 1200;
 
   CPUClockBegin = clock();
-    tbegin = piMicros64();
+  tbegin = piMicros64();
   CountBegin = gCounter;
   delay(SleepMs);
   CountEnd = gCounter;
   CPUClockEnd = clock();
-    tend = piMicros64();
+  tend = piMicros64();
 
   elapsed_time = (double)(tend-tbegin)/1.0e6;
   CountInterval = CountEnd - CountBegin;
-    CPUClockInterval = CPUClockEnd - CPUClockBegin;
+  CPUClockInterval = CPUClockEnd - CPUClockBegin;
   CPULoad = CPUClockInterval*100.0 / CLOCKS_PER_SEC / elapsed_time;
   fFrequency = CountInterval / elapsed_time / 1000;
 
@@ -121,29 +114,35 @@ int main (void) {
     }
 
     for (int testrun=0; testrun<testruns; testrun++) {
-        PWM = PWM_OUT[testrun];
-        FREQIN = PWM_IN[testrun];
-
-        printf("using PWM@GPIO%d (output) and GPIO%d (input))\n", PWM, FREQIN);
-
-
-    // INT_EDGE_BOTH, INT_EDGE_FALLING, INT_EDGE_RISING only one ISR per input
-        int result = wiringPiISR(FREQIN, INT_EDGE_RISING, &ISR_FREQIN);
-      CheckSame("Register ISR", result, 0);
-       if (result < 0) {
-            printf("Unable to setup ISR for GPIO %d (%s)\n\n",
-              FREQIN, strerror(errno));
-        return UnitTestState();
-        }
-
+      PWM = PWM_OUT[testrun];
+      FREQIN = PWM_IN[testrun];
+      printf("using PWM@GPIO%d (output) and GPIO%d (input)\n", PWM, FREQIN);
+      delay(1000);
       printf("\n");
       printf("*********************************\n");
       printf("*          PWM BAL mode         *\n");
       printf("*********************************\n");
-      pinMode(PWM, PWM_OUTPUT);  //pwmr=1024, pwmc=32
       const int pmw = 512;
-      int pmwr = 1024;
+      int pmwr = 1024; //default!
+
+      printf("Set pwm 50%% and enable PWM output (600 kHz?) \n");
       pwmWrite(PWM, pmw);  //50% Duty
+      pinMode(PWM, PWM_OUTPUT);  //Mode BAL, pwmr=1024, pwmc=32
+      printf("pwmc 4.8kHz\n");
+      pwmSetClock(2000);
+      delay(250);
+
+      printf("Register ISR@%d\n", PWM);
+    // INT_EDGE_BOTH, INT_EDGE_FALLING, INT_EDGE_RISING only one ISR per input
+      int result = wiringPiISR(FREQIN, INT_EDGE_RISING, &ISR_FREQIN);
+      CheckSame("Register ISR", result, 0);
+      if (result < 0) {
+        printf("Unable to setup ISR for GPIO %d (%s)\n\n", FREQIN, strerror(errno));
+        return UnitTestState();
+      }
+      printf("Wait for start ...\n");
+      delay(250);
+      printf("Start:\n");
       //MeasureAndCheckFreq("50\% Duty (default)", 300.000);   //FAIL , freq (pwmc=32) to high for irq count
 
       for (int c_duty=0, c_duty_end = sizeof(tests_duty)/sizeof(tests_duty[0]); c_duty<c_duty_end; c_duty++) {
@@ -181,44 +180,40 @@ int main (void) {
       printf("*********************************\n");
       printf("*          PWM MS mode          *\n");
       printf("*********************************\n");
-      pwmSetMode(PWM_MODE_MS) ;
-
       int pwmc = 10;
+      printf("SetClock pwmc=%d and enable MS mode\n", pwmc);
       pwmSetClock(pwmc);
-      delay(2500);
-
+      pwmSetMode(PWM_MODE_MS);
+      printf("Wait for start ...\n");
+      delay(250);
+      printf("Start:\n");
       for (int c_pmwr=0, c_pmwr_end = sizeof(tests_pwmr)/sizeof(tests_pwmr[0]); c_pmwr<c_pmwr_end; c_pmwr++) {
         int pwmr = tests_pwmr[c_pmwr];
         double freq = 19200.0/(double)pwmc/(double)pwmr;
         if (freq>MaxFreq) {
-            printf("* Set Clock (pwmc, pwmr) %d, %d not possible on system (to slow to measure %g kHz with ISR), ignore\n", pwmc, pwmr, freq);
-            continue;
+          printf("* Set Clock (pwmc, pwmr) %d, %d not possible on system (to slow to measure %g kHz with ISR), ignore\n", pwmc, pwmr, freq);
+          continue;
         }
         sprintf(msg, "Set range (pwmr) %d", pwmr);
         pwmSetRange(pwmr);
 
         for (int c_pmw=0, c_pmw_end = sizeof(tests_pwm)/sizeof(tests_pwm[0]); c_pmw<c_pmw_end; c_pmw++) {
-            int pwm = pwmr*tests_pwm[c_pmw]/100;
-            sprintf(msg, "Set pwm %d/%d (%d %%)", pwm, pwmr, tests_pwm[c_pmw]);
-            pwmWrite(PWM, pwm);
-            delay(250);
-            MeasureAndCheckFreq(msg, freq);
+          int pwm = pwmr*tests_pwm[c_pmw]/100;
+          sprintf(msg, "Set pwm %d/%d (%d %%)", pwm, pwmr, tests_pwm[c_pmw]);
+          pwmWrite(PWM, pwm);
+          delay(250);
+          MeasureAndCheckFreq(msg, freq);
         }
       }
 
-
-       result = wiringPiISRStop(FREQIN);
-       CheckSame("\n\nRelease ISR", result, 0);
-       if (result < 0) {
-            printf("Unable to release ISR for GPIO %d (%s)\n\n",
-              FREQIN, strerror(errno));
-        return UnitTestState();
-       }
-       pinMode(PWM, INPUT);
-
-    }
-
-
-
-    return UnitTestState();
+      result = wiringPiISRStop(FREQIN);
+      CheckSame("\n\nRelease ISR", result, 0);
+      if (result < 0) {
+       printf("Unable to release ISR for GPIO %d (%s)\n\n", FREQIN, strerror(errno));
+       return UnitTestState();
+     }
+     printf("set PWM@GPIO%d (output) back to input\n", PWM);
+     pinMode(PWM, INPUT);
+   }
+   return UnitTestState();
 }
