@@ -58,10 +58,12 @@
 
 // Pin modes
 
-#define	INPUT			 0
-#define	OUTPUT			 1
-#define	PWM_OUTPUT		 2
-#define	GPIO_CLOCK		 3
+#define	INPUT			         0
+#define	OUTPUT			       1
+#define	PWM_OUTPUT		     2
+#define	PWM_MS_OUTPUT	     8
+#define	PWM_BAL_OUTPUT     9
+#define	GPIO_CLOCK		     3
 #define	SOFT_PWM_OUTPUT		 4
 #define	SOFT_TONE_OUTPUT	 5
 #define	PWM_TONE_OUTPUT		 6

@@ -1794,6 +1794,9 @@ void pinMode (int pin, int mode)
       } else {
         *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) ; // Sets bits to zero = input
       }
+      if (PM_OFF==mode && !usingGpioMem && pwm && PI_MODEL_5!=RaspberryPiModel && gpioToPwmALT[pin]>0) { //PWM pin -> reset
+        pwmWrite(origPin, 0);
+      }
     } else if (mode == OUTPUT) {
       if (PI_MODEL_5 == RaspberryPiModel) {
         pads[1+pin] = (pin<=8) ? RP1_PAD_DEFAULT_0TO8 : RP1_PAD_DEFAULT_FROM9;
@@ -1811,22 +1814,26 @@ void pinMode (int pin, int mode)
       pinMode (origPin, PWM_OUTPUT) ;	// Call myself to enable PWM mode
       pwmSetMode (PWM_MODE_MS) ;
     }
-    else if (mode == PWM_OUTPUT)
-    {
+    else if (PWM_OUTPUT==mode || PWM_MS_OUTPUT==mode || PWM_BAL_OUTPUT==mode) {
       RETURN_ON_MODEL5
       if ((alt = gpioToPwmALT [pin]) == 0)	// Not a hardware capable PWM pin
 	      return ;
 
-      usingGpioMemCheck ("pinMode PWM") ;
+      usingGpioMemCheck("pinMode PWM") ;  // exit on error!
 
-// Set pin to PWM mode
-
+      // Set pin to PWM mode
       *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
       delayMicroseconds (110) ;		// See comments in pwmSetClockWPi
 
-      pwmSetMode  (PWM_MODE_BAL) ;	// Pi default mode
-      pwmSetRange (1024) ;		// Default range of 1024
-      pwmSetClock (32) ;		// 19.2 / 32 = 600KHz - Also starts the PWM
+      if (PWM_OUTPUT==mode || PWM_BAL_OUTPUT==mode) {
+        pwmSetMode(PWM_MODE_BAL);	// Pi default mode
+      } else {
+        pwmSetMode(PWM_MODE_MS);
+      }
+      if (PWM_OUTPUT==mode) {  // predefine
+        pwmSetRange (1024) ;		// Default range of 1024
+        pwmSetClock (32) ;		// 19.2 / 32 = 600KHz - Also starts the PWM
+      }
     }
     else if (mode == GPIO_CLOCK)
     {
