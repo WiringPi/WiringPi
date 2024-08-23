@@ -73,41 +73,41 @@ int main (void) {
     int rev, mem, maker, overVolted, RaspberryPiModel;
     piBoardId(&RaspberryPiModel, &rev, &mem, &maker, &overVolted);
     CheckNotSame("Model: ", RaspberryPiModel, -1);
-      int Pi4 = 0;
-      double MaxFreq = 100.0;
-      switch(RaspberryPiModel) {
-        case PI_MODEL_A:
-        case PI_MODEL_B:
-        case PI_MODEL_BP:
-        case PI_MODEL_AP:
-        case PI_MODEL_ZERO:
-        case PI_MODEL_ZERO_W:
-        case PI_MODEL_CM:
-          MaxFreq = 13.0; // 12.5 kHz -> ~40% CPU@800 MHz
-          printf(" - Pi1/BCM2835 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
-          break;
-        case PI_MODEL_2:
-          MaxFreq = 20.0;
-          printf(" - Pi2/BCM2836 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
-          break;
-        case PI_MODEL_3B:
-        case PI_MODEL_CM3:
-        case PI_MODEL_3BP:
-        case PI_MODEL_3AP:
-        case PI_MODEL_CM3P:
-        case PI_MODEL_ZERO_2W:
-          MaxFreq = 50.0;
-          printf(" - Pi3/BCM2837 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
-          break;
-        case PI_MODEL_4B:
-        case PI_MODEL_400:
-        case PI_MODEL_CM4:
-        case PI_MODEL_CM4S:
-          Pi4 = 1;
-          break;
-        case PI_MODEL_5:
-          return UnitTestState();  //not supported so far
-      }
+    int Pi4 = 0;
+    double MaxFreq = 100.0;
+    switch(RaspberryPiModel) {
+      case PI_MODEL_A:
+      case PI_MODEL_B:
+      case PI_MODEL_BP:
+      case PI_MODEL_AP:
+      case PI_MODEL_ZERO:
+      case PI_MODEL_ZERO_W:
+      case PI_MODEL_CM:
+        MaxFreq = 13.0; // 12.5 kHz -> ~40% CPU@800 MHz
+        printf(" - Pi1/BCM2835 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
+        break;
+      case PI_MODEL_2:
+        MaxFreq = 20.0;
+        printf(" - Pi2/BCM2836 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
+        break;
+      case PI_MODEL_3B:
+      case PI_MODEL_CM3:
+      case PI_MODEL_3BP:
+      case PI_MODEL_3AP:
+      case PI_MODEL_CM3P:
+      case PI_MODEL_ZERO_2W:
+        MaxFreq = 50.0;
+        printf(" - Pi3/BCM2837 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
+        break;
+      case PI_MODEL_4B:
+      case PI_MODEL_400:
+      case PI_MODEL_CM4:
+      case PI_MODEL_CM4S:
+        Pi4 = 1;
+        break;
+      case PI_MODEL_5:
+        return UnitTestState();  //not supported so far
+    }
 
     if (!piBoard40Pin()) {
         testruns = 1;  // only fist PWM0, supported
