@@ -22,7 +22,7 @@ set(HEADERS
 )
 
 # Compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wformat=2 -Winline -pipe -fPIC")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wformat=2 -Winline -pipe")
 
 # Add the library target
 add_library(wiringPiDev SHARED ${SRC})

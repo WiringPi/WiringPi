@@ -43,7 +43,7 @@ set(HEADERS
     wpiExtensions.h
 )
 # Compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wformat=2 -Winline -pipe -fPIC -Wformat-security")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wformat=2 -Winline -pipe -Wformat-security")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-soname,libwiringPi.so${WIRINGPI_SONAME_SUFFIX}")
 
 # Read version from version.h
