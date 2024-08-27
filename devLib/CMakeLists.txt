@@ -28,7 +28,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wformat=2 -Winline -pipe")
 add_library(wiringPiDev SHARED ${SRC})
 
 # Set the library version
-set_target_properties(wiringPiDev PROPERTIES VERSION ${VERSION} SOVERSION ${WIRINGPI_SONAME_SUFFIX})
+set_target_properties(wiringPiDev PROPERTIES VERSION ${WIRINGPI_VERSION} SOVERSION ${WIRINGPI_SOVERSION})
 
 # Install headers
 install(FILES ${HEADERS} DESTINATION include)
