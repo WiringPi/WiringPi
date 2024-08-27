@@ -6,6 +6,8 @@ project(gpio)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(libcrypt REQUIRED IMPORTED_TARGET)
 
+find_package(Threads REQUIRED)
+
 # Source files
 set(SRC
     gpio.c
@@ -23,7 +25,7 @@ find_library(WIRINGPI_LIB wiringPi)
 find_library(WIRINGPI_DEV_LIB wiringPiDev)
 
 # Link the required libraries
-target_link_libraries(gpio ${WIRINGPI_LIB} ${WIRINGPI_DEV_LIB} pthread rt m PkgConfig::libcrypt)
+target_link_libraries(gpio ${WIRINGPI_LIB} ${WIRINGPI_DEV_LIB} Threads::Threads m PkgConfig::libcrypt)
 
 # Install the executable
 install(TARGETS gpio DESTINATION bin)
