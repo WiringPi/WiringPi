@@ -27,6 +27,9 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wformat=2 -Winline -pipe")
 # Add the library target
 add_library(wiringPiDev SHARED ${SRC})
 
+target_include_directories(wiringPiDev PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(wiringPiDev PRIVATE wiringPi)
+
 # Set the library version
 set_target_properties(wiringPiDev PROPERTIES VERSION ${WIRINGPI_VERSION} SOVERSION ${WIRINGPI_SOVERSION})
 
