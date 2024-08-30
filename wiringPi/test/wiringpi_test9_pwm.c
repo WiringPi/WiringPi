@@ -74,6 +74,7 @@ int main (void) {
     piBoardId(&RaspberryPiModel, &rev, &mem, &maker, &overVolted);
     CheckNotSame("Model: ", RaspberryPiModel, -1);
     int Pi4 = 0;
+    int Pi5 = 0;
     double MaxFreq = 100.0;
     switch(RaspberryPiModel) {
       case PI_MODEL_A:
@@ -106,7 +107,8 @@ int main (void) {
         Pi4 = 1;
         break;
       case PI_MODEL_5:
-        return UnitTestState();  //not supported so far
+         Pi5 = 1;
+         break;
     }
 
     if (!piBoard40Pin()) {
@@ -144,7 +146,7 @@ int main (void) {
       delay(500);
       printf("Start:\n");
       //MeasureAndCheckFreq("50\% Duty (default)", 300.000);   //FAIL , freq (pwmc=32) to high for irq count
-
+      if(!Pi5) {
       for (int c_duty=0, c_duty_end = sizeof(tests_duty)/sizeof(tests_duty[0]); c_duty<c_duty_end; c_duty++) {
         double tests_duty_corr;
         if (tests_duty[c_duty]>(pmwr/2)) {
@@ -173,6 +175,7 @@ int main (void) {
           sprintf(msg, "Set Clock (pwmc) %d, %d%% duty", pwmc, tests_duty[c_duty]*100/pmwr);
           MeasureAndCheckFreq(msg, freq);
         }
+      }
       }
 
       delay(250);

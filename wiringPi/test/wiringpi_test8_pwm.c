@@ -19,7 +19,7 @@ void ISR_FREQIN(void) {
     gCounter++;
 }
 
-double MeasureAndCheckFreq(const char* msg, double expect_freq) {
+double MeasureAndCheckFreqTolerance(const char* msg, double expect_freq, int tolerance) {
   double fFrequency;
   clock_t CPUClockBegin, CPUClockEnd;
   int CountBegin, CountEnd;
@@ -46,15 +46,18 @@ double MeasureAndCheckFreq(const char* msg, double expect_freq) {
     elapsed_time, CPULoad, CountInterval, fFrequency);
 
   CheckSameDouble("Wait for freq. meas.", elapsed_time, SleepMs/1000.0, 0.1); //100ms tolerance. maybe problematic on high freq/cpu load
-  CheckSameDouble(msg, fFrequency, expect_freq, (expect_freq!=0.0) ? expect_freq*2/100:0.1); //2% tolerance
+  CheckSameDouble(msg, fFrequency, expect_freq, (expect_freq!=0.0) ? expect_freq*tolerance/100 : 0.1); //x% tolerance
   return fFrequency;
+}
+
+double MeasureAndCheckFreq(const char* msg, double expect_freq) {
+ return MeasureAndCheckFreqTolerance(msg, expect_freq, 2);
 }
 
 
 int main (void) {
 
     int major, minor;
-//    char msg[255];
     int PWM, FREQIN;
 
     wiringPiVersion(&major, &minor);
@@ -67,10 +70,6 @@ int main (void) {
     int rev, mem, maker, overVolted, RaspberryPiModel;
     piBoardId(&RaspberryPiModel, &rev, &mem, &maker, &overVolted);
     CheckNotSame("Model: ", RaspberryPiModel, -1);
-    switch(RaspberryPiModel) {
-      case PI_MODEL_5:
-        return UnitTestState();  //not supported so far
-    }
 
     PWM = 18;
     FREQIN = 17;
@@ -84,82 +83,97 @@ int main (void) {
         return UnitTestState();
     }
 
-    printf("Set pwm 0%% and enable PWM output\n");
+    printf("\n==> Set pwm 0%% and enable PWM output with PWM_OUTPUT (default mode)\n");
     pwmWrite(PWM, 0);  // <--  Allways start with 0 Hz
     pinMode(PWM, PWM_OUTPUT);  //Mode BAL, pwmr=1024, pwmc=32
     delay(250);
     double duty_fact = 0.0;
     double freq = 0.0;
-    MeasureAndCheckFreq("PMW BAL without change", freq);
+    MeasureAndCheckFreq("PMW Pi0-4:BAL/Pi5:MS without change", freq);
 
+    printf("Keep pwm 0%% and set mode MS\n");
     pwmSetMode(PWM_MODE_MS);
     delay(250);
     MeasureAndCheckFreq("PWM MS without change", freq);
 
-    // Now Change values 
-    pwmSetMode(PWM_MODE_BAL);
-    int pwmc  = 1000;
-    int pwmr  = 1024;
-    int pwm   =  512;
-    pwmSetClock(pwmc);
-    pwmSetRange(pwmr);
-    pwmWrite(PWM, pwm);
-    delay(250);   
-    duty_fact = (double)pwm/(double)pwmr;
-    printf("duty factor: %g\n", duty_fact);
-    freq = 19200.0/pwmc*duty_fact;
-    MeasureAndCheckFreq("PWM BAL with settings", freq);
+    int pwmc;
+    int pwmr;
+    int pwm;
+
+    if (RaspberryPiModel!=PI_MODEL_5) {
+      pwmSetMode(PWM_MODE_BAL);
+      pwmc  = 1000;
+      pwmr  = 1024;
+      pwm   =  512;
+      duty_fact = (double)pwm/(double)pwmr;
+      printf("\n==> set mode BAL, pwmc=%d, pwmr=%d, pwm=%d, duty=%g%%\n", pwmc, pwmr, pwm, duty_fact*100);
+      pwmSetClock(pwmc);
+      pwmSetRange(pwmr);
+      pwmWrite(PWM, pwm);
+      delay(250);
+      freq = 19200.0/pwmc*duty_fact;
+      MeasureAndCheckFreq("PWM BAL with settings", freq);
+    }
 
     pwmSetMode(PWM_MODE_MS);
     pwmc  = 10;
     pwmr  = 256;
     pwm   =  171;
+    duty_fact = (double)pwm/(double)pwmr;
+    printf("\n==> set mode MS, pwmc=%d, pwmr=%d, pwm%d, duty=%g%%\n", pwmc, pwmr, pwm, duty_fact*100);
     pwmSetClock(pwmc);
     pwmSetRange(pwmr);
     pwmWrite(PWM, pwm);
-    delay(250);   
-    duty_fact = (double)pwm/(double)pwmr;
-    printf("duty factor: %g\n", duty_fact);
+    delay(250);
     freq = 19200.0/(double)pwmc/(double)pwmr;
     MeasureAndCheckFreq("PWM BAL with settings", freq);
 
     printf("set PWM@GPIO%d (output) off\n", PWM);
     pinMode(PWM, PM_OFF);
-    delay(1000); 
+    delay(1000);
     MeasureAndCheckFreq("PMW off", 0.0);
 
-    printf("Set pwm settings and enable PWM\n");
-    pwmc  = 800;
-    pwmr  = 2048;
-    pwm   =  768;
-    pwmSetRange(pwmr);
-    pwmSetClock(pwmc);
-    pwmWrite(PWM, pwm); 
-    pinMode(PWM, PWM_BAL_OUTPUT);
-    delay(250); 
-    duty_fact = (double)pwm/(double)pwmr;
-    printf("duty factor: %g\n", duty_fact);
-    freq = 19200.0/pwmc*duty_fact;
-    MeasureAndCheckFreq("PMW BAL start values", freq);
+    if (RaspberryPiModel!=PI_MODEL_5) {
+      pwmc  = 800;
+      pwmr  = 2048;
+      pwm   =  768;
+      duty_fact = (double)pwm/(double)pwmr;
+      printf("\n==> set mode PWM_BAL_OUTPUT, pwmc=%d, pwmr=%d, pwm%d, duty=%g%%\n", pwmc, pwmr, pwm, duty_fact*100);
+      pwmSetRange(pwmr);
+      pwmSetClock(pwmc);
+      pwmWrite(PWM, pwm);
+      pinMode(PWM, PWM_BAL_OUTPUT);
+      delay(250);
+      freq = 19200.0/pwmc*duty_fact;
+      MeasureAndCheckFreq("PMW BAL start values", freq);
+    }
 
     printf("set PWM@GPIO%d (output) off\n", PWM);
     pinMode(PWM, PM_OFF);
-    delay(1000); 
+    delay(1000);
     MeasureAndCheckFreq("PMW off", 0.0);
 
     printf("Set pwm settings and enable PWM\n");
     pwmc  = 5;
     pwmr  = 1024;
     pwm   =  768;
+    duty_fact = (double)pwm/(double)pwmr;
+    printf("\n==> set mode PWM_MS_OUTPUT, pwmc=%d, pwmr=%d, pwm%d, duty=%g%%\n", pwmc, pwmr, pwm, duty_fact*100);
     pwmSetRange(pwmr);
     pwmSetClock(pwmc);
-    pwmWrite(PWM, pwm); 
+    pwmWrite(PWM, pwm);
     pinMode(PWM, PWM_MS_OUTPUT);
-    delay(250); 
-    duty_fact = (double)pwm/(double)pwmr;
-    printf("duty factor: %g\n", duty_fact);
+    delay(250);
     freq = 19200.0/(double)pwmc/(double)pwmr;
     MeasureAndCheckFreq("PMW MS start values", freq);
+
+    printf("set PWM@GPIO%d (output) off\n", PWM);
+    pinMode(PWM, PM_OFF);
+    delay(1000);
+    MeasureAndCheckFreq("PMW off", 0.0);
+
+    printf("set PWM0 CLK off @ Pi5\n");
+    pwmSetClock(0);
 
     result = wiringPiISRStop(FREQIN);
     CheckSame("\n\nRelease ISR", result, 0);
