@@ -54,7 +54,7 @@ test:
 	@error_state=false ; \
 	for t in $(tests) ; do \
 		echo === unit test: $${t} === ; \
-		if [ $${t} = *"pwm" ]; then \
+		if [ $${t} = *"8_pwm" ] || [ $${t} = *"9_pwm" ]; then \
 			time sudo ./$${t} ; \
 		else \
 			time ./$${t} ; \
@@ -74,7 +74,7 @@ xotest:
 	@error_state=false ; \
 	for t in $(tests) $(xotests)  ; do \
 		echo === XO unit test: $${t} === ; \
-		if [ $${t} = *"pwm" ]; then \
+		if [ $${t} = *"8_pwm" ] || [ $${t} = *"9_pwm" ]; then \
 			time sudo ./$${t} ; \
 		else \
 			time ./$${t} ; \
@@ -94,7 +94,7 @@ pifacetest:
 	@error_state=false ; \
 	for t in $(tests) $(pifacetests)  ; do \
 		echo === PiFace unit test: $${t} === ; \
-		if [ $${t} = *"pwm" ]; then \
+		if [ $${t} = *"8_pwm" ] || [ $${t} = *"9_pwm" ]; then \
 			time sudo ./$${t} ; \
 		else \
 			time ./$${t} ; \
