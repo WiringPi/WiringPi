@@ -8,7 +8,7 @@ Welcome to the WiringPi Library, the highly performant GPIO access library for R
 
 Whether you’re working on a simple LED blink project or a complex automation system, WiringPi provides the tools you need to get the job done efficiently.
 
-## How to use:
+## How to use
 
 To compile programs with wiringPi Library, you need to include `wiringPi.h` as well as link against `wiringPi`:
 
