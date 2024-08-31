@@ -1,11 +1,16 @@
-# WiringPi
+# WiringPi Library
+Welcome to the WiringPi Library, the highly performant GPIO access library for Raspberry Pi boards. This library is written in C and is designed to provide fast and efficient control of the GPIO pins by directly accessing the hardware registers using DMA. 
 
-WiringPi is a _performant_ GPIO access library written in C for Raspberry Pi boards.
+**Key Features:** 
+- **Support:** WiringPi supports all Raspberry Pi Boards including Pi 5 ( :construction: On the Pi 5, only the GCLK functionality is currently not supported due to missing documentation of the RP1 chip).
+- **High Performance:** By directly accessing the hardware registers, WiringPi ensures minimal latency and maximum performance for your GPIO operations.
+- **Wide Adoption:** WiringPi is widely used in numerous projects, making it a reliable choice for your Raspberry Pi GPIO needs.
 
-:warning:️ :construction: on Pi5, PWM support is currently under development and _will not work at this point_. If you're interested in the progress, please check the [corresponding issue](https://github.com/GrazerComputerClub/WiringPi/issues/21).
+Whether you’re working on a simple LED blink project or a complex automation system, WiringPi provides the tools you need to get the job done efficiently.
 
+## How to use
 
-To compile programs with wiringPi, you need to include `wiringPi.h` as well as link against `wiringPi`:
+To compile programs with wiringPi Library, you need to include `wiringPi.h` as well as link against `wiringPi`:
 
 ```c
 #include <wiringPi.h> // Include WiringPi library!
@@ -143,7 +148,7 @@ Please don't email GC2 for reporting issues, you might [contact us](mailto:wirin
 
 ## History
 
-This repository is the continuation of 'Gordon's wiringPi' which has been [deprecated](https://web.archive.org/web/20220405225008/http://wiringpi.com/wiringpi-deprecated/), a while ago.
+This repository is the continuation of 'Gordon's wiringPi 2.5' which has been [deprecated](https://web.archive.org/web/20220405225008/http://wiringpi.com/wiringpi-deprecated/), a while ago.
 
 * The last "old wiringPi" source of Gordon's release can be found at the
   [`final_source_2.50`](https://github.com/WiringPi/WiringPi/tree/final_official_2.50) tag.
