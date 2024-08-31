@@ -1,7 +1,8 @@
 # WiringPi Library
-Welcome to the WiringPi Library, the highly performant GPIO access library for Raspberry Pi boards. This library is written in C and is designed to provide fast and efficient control of the GPIO pins by directly accessing the hardware registers using DMA.
-Key Features: 
-- **Support:** WiringPi supports all Raspberry Pi Boards including Pi 5 ( :construction: On the Pi 5, only the GCLK functionality is currently not supported due to missing documentation of the RP1 chip.).
+Welcome to the WiringPi Library, the highly performant GPIO access library for Raspberry Pi boards. This library is written in C and is designed to provide fast and efficient control of the GPIO pins by directly accessing the hardware registers using DMA. 
+
+**Key Features:** 
+- **Support:** WiringPi supports all Raspberry Pi Boards including Pi 5 ( :construction: On the Pi 5, only the GCLK functionality is currently not supported due to missing documentation of the RP1 chip).
 - **High Performance:** By directly accessing the hardware registers, WiringPi ensures minimal latency and maximum performance for your GPIO operations.
 - **Wide Adoption:** WiringPi is widely used in numerous projects, making it a reliable choice for your Raspberry Pi GPIO needs.
 
