@@ -20,14 +20,14 @@ void CheckGPIO(int GPIO, int GPIOIN, int out) {
 
     int in = out;
     if (GPIOIN>=0) {
-        in  = digitalRead(GPIOIN);
+		in = digitalRead(GPIOIN);
     }
     int readback = digitalRead(GPIO);
 
     int pass = 0;
-    if (out==readback && in==out) {
-        pass = 1;
-    }
+	if (out==readback && in==out) {
+		pass = 1;
+	}
 
     if (GPIOIN>=0) {
         printf("set GPIO%02d = %d (readback %d), in GPIO%02d = %d         ", GPIO, out, readback, GPIOIN, in);
@@ -41,6 +41,11 @@ void CheckGPIO(int GPIO, int GPIOIN, int out) {
         globalError=1;
         printf("-> %sfailed%s\n", COLORRED, COLORDEF );
     }
+}
+
+
+void CheckInversGPIO(int GPIO, int GPIOIN, int out) {
+	CheckGPIO(GPIO, GPIOIN, out==HIGH ? LOW : HIGH);
 }
 
 
@@ -90,8 +95,21 @@ void CheckNotSame(const char* msg, int value, int expect) {
 }
 
 
-void CheckSameFloat(const char* msg, float value, float expect) {
-    if (fabs(value-expect)<0.08) {
+void CheckSameFloat(const char* msg, float value, float expect, float epsilon) {
+    if (fabs(value-expect)<epsilon) {
+        printf("%35s (%.3f==%.3f) -> %spassed%s \n", msg, value, expect, COLORGRN, COLORDEF);
+    } else {
+        printf("%35s (%.3f<>%.3f) -> %sfailed%s \n" , msg, value, expect, COLORRED, COLORDEF);
+        globalError=1;
+    }
+}
+
+void CheckSameFloatX(const char* msg, float value, float expect) {
+  return CheckSameFloat(msg, value, expect, 0.08f);
+}
+
+void CheckSameDouble(const char* msg, double value, double expect, double epsilon) {
+    if (fabs(value-expect)<epsilon) {
         printf("%35s (%.3f==%.3f) -> %spassed%s \n", msg, value, expect, COLORGRN, COLORDEF);
     } else {
         printf("%35s (%.3f<>%.3f) -> %sfailed%s \n" , msg, value, expect, COLORRED, COLORDEF);

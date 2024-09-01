@@ -7,8 +7,8 @@
 #include <sys/time.h>
 
 
-const int GPIO = 24; //BCM 19
-const int GPIOIN = 25; //BCM 26;
+int GPIO = 24; //BCM 19
+int GPIOIN = 25; //BCM 26;
 const int ToggleValue = 4;
 
 
@@ -21,6 +21,11 @@ int main (void) {
 		printf("wiringPiSetupGpioDevice failed\n\n");
 		exit(EXIT_FAILURE);
 	}
+	if (!piBoard40Pin()) {
+		GPIO = 4;  //BCM 23
+		GPIOIN = 5;  //BCM 24
+	}
+	
 	pinMode(GPIOIN, INPUT);
 	pinMode(GPIO, OUTPUT);
 

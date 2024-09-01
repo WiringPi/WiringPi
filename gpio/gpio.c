@@ -816,7 +816,7 @@ static void doPwmClock (int argc, char *argv [])
 
   if ((clock < 1) || (clock > 4095))
   {
-    fprintf (stderr, "%s: clock must be between 0 and 4096\n", argv [0]) ;
+    fprintf (stderr, "%s: pwm clock must be between 1 and 4095\n", argv [0]) ;
     exit (1) ;
   }
 
