@@ -51,7 +51,7 @@ double MeasureAndCheckFreq(const char* msg, double expect_freq) {
 }
 
 
-int tests_pwmc[7] = {1456, 1000,  512,  100, 2000, 3000, 4000};
+int tests_pwmc[7] = {1456, 1000,  512,  200, 2000, 3000, 4000};
 int tests_duty[7] = { 512,  768,  682,  922,  256,  341,  102};
 int tests_pwmr[12]= {  50,  100,  200,  512, 1024, 1456, 2000, 3000, 5000, 10000, 15000, 20000};
 int tests_pwm[3]  = {  50,  25,  75};

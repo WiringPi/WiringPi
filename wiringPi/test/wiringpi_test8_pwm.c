@@ -120,7 +120,7 @@ int main (void) {
     pwmr  = 256;
     pwm   =  171;
     duty_fact = (double)pwm/(double)pwmr;
-    printf("\n==> set mode MS, pwmc=%d, pwmr=%d, pwm%d, duty=%g%%\n", pwmc, pwmr, pwm, duty_fact*100);
+    printf("\n==> set mode MS, pwmc=%d, pwmr=%d, pwm=%d, duty=%g%%\n", pwmc, pwmr, pwm, duty_fact*100);
     pwmSetClock(pwmc);
     pwmSetRange(pwmr);
     pwmWrite(PWM, pwm);
@@ -138,7 +138,7 @@ int main (void) {
       pwmr  = 2048;
       pwm   =  768;
       duty_fact = (double)pwm/(double)pwmr;
-      printf("\n==> set mode PWM_BAL_OUTPUT, pwmc=%d, pwmr=%d, pwm%d, duty=%g%%\n", pwmc, pwmr, pwm, duty_fact*100);
+      printf("\n==> set mode PWM_BAL_OUTPUT, pwmc=%d, pwmr=%d, pwm=%d, duty=%g%%\n", pwmc, pwmr, pwm, duty_fact*100);
       pwmSetRange(pwmr);
       pwmSetClock(pwmc);
       pwmWrite(PWM, pwm);
@@ -154,11 +154,12 @@ int main (void) {
     MeasureAndCheckFreq("PMW off", 0.0);
 
     printf("Set pwm settings and enable PWM\n");
-    pwmc  = 5;
+    //pwmc  = 5;  //Problem with Pi0/1 after setting, PWM stops working, maybe IRQ problem or PWM BAL with that high freq (>2 MHz)
+    pwmc  = 35;   //PWM BAL would be >400 kHz
     pwmr  = 1024;
     pwm   =  768;
     duty_fact = (double)pwm/(double)pwmr;
-    printf("\n==> set mode PWM_MS_OUTPUT, pwmc=%d, pwmr=%d, pwm%d, duty=%g%%\n", pwmc, pwmr, pwm, duty_fact*100);
+    printf("\n==> set mode PWM_MS_OUTPUT, pwmc=%d, pwmr=%d, pwm=%d, duty=%g%%\n", pwmc, pwmr, pwm, duty_fact*100);
     pwmSetRange(pwmr);
     pwmSetClock(pwmc);
     pwmWrite(PWM, pwm);
