@@ -43,19 +43,13 @@ set(HEADERS
     wpiExtensions.h
 )
 # Compiler flags
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wformat=2 -Winline -pipe -fPIC -Wformat-security")
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-soname,libwiringPi.so${WIRINGPI_SONAME_SUFFIX}")
-
-# Read version from version.h
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/../version.h" VERSION)
-string(REGEX REPLACE ".*VERSION \"([0-9]+.[0-9]+)\".*" "\\1" VERSION "${VERSION}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wformat=2 -Winline -pipe -Wformat-security")
 
 # Add the library target
 add_library(wiringPi SHARED ${SRC})
 
 # Set the library version
-set(WIRINGPI_SONAME_SUFFIX "1")
-set_target_properties(wiringPi PROPERTIES VERSION ${VERSION} SOVERSION ${WIRINGPI_SONAME_SUFFIX})
+set_target_properties(wiringPi PROPERTIES VERSION ${WIRINGPI_VERSION} SOVERSION ${WIRINGPI_SOVERSION})
 target_include_directories(wiringPi PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Add -lm to link with the math library
