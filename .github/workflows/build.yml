@@ -11,6 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run build
+      - name: Install dependencies
         run: |
-          ./build
+          sudo apt-get install -y cmake
+
+      - name: Configure
+        run: |
+          cmake -S . -B build-wiringpi
+
+      - name: Build
+        run: |
+          cmake --build build-wiringpi
+
+      - name: Install
+        run: |
+          sudo cmake --install build-wiringpi --prefix /usr
