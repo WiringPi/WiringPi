@@ -75,8 +75,9 @@ static void doReadallExternal (void)
  *********************************************************************************
  */
 
+#define MAX_ALTS 11
 static const char unknown_alt[] = " - ";
-static const char *alts [] =
+static const char *alts [MAX_ALTS+1] =
 {
   "IN", "OUT", "ALT5", "ALT4", "ALT0", "ALT1", "ALT2", "ALT3", "ALT6", "ALT7", "ALT8", "ALT9"
 } ;
@@ -84,7 +85,7 @@ static const char *alts [] =
 
 static const char* GetAltString(int alt) {
 
-  if (alt>=0 && alt<=11) {
+  if (alt>=0 && alt<=MAX_ALTS) {
     return alts[alt];
   }
 

@@ -1658,19 +1658,62 @@ void pinEnableED01Pi (int pin)
 }
 #endif
 
+#define ZeroMemory(Destination,Length) memset((Destination),0,(Length))
 
-const char DEV_GPIO_PI[] ="/dev/gpiochip0";
-const char DEV_GPIO_PI5[]="/dev/gpiochip4";
+
+int OpenAndCheckGpioChip(int GPIONo, const char* label, const unsigned int lines) {
+  char szGPIOChip[30];
+
+  sprintf(szGPIOChip, "/dev/gpiochip%d", GPIONo);
+  int Fd = open(szGPIOChip, O_RDWR);
+  if (Fd < 0) {
+    fprintf(stderr, "wiringPi: ERROR: %s open ret=%d\n", szGPIOChip, Fd);
+    return Fd;
+  } else {
+    if (wiringPiDebug) {
+      printf("wiringPi: Open chip %s succeded, fd=%d\n", szGPIOChip, Fd) ;
+    }
+    struct gpiochip_info chipinfo;
+    ZeroMemory(&chipinfo, sizeof(chipinfo));
+    int ret = ioctl(Fd, GPIO_GET_CHIPINFO_IOCTL, &chipinfo);
+    if (0==ret) {
+      if (wiringPiDebug) {
+        printf("%s: name=%s, label=%s, lines=%u\n", szGPIOChip, chipinfo.name, chipinfo.label, chipinfo.lines) ;
+      }
+      int chipOK = 1;
+      if (label[0]!='\0' && NULL==strstr(chipinfo.label, label)) {
+        chipOK = 0;
+      }
+      if (lines>0 && chipinfo.lines!=lines) {
+        chipOK = 0;
+      }
+      if (chipOK) {
+        if (wiringPiDebug) {
+          printf("%s: valid, fd=%d\n", szGPIOChip, Fd);
+        }
+      } else {
+        if (wiringPiDebug) {
+          printf("%s: invalid, search for '%s' with %u lines!\n", szGPIOChip, label, lines) ;
+        }
+        close(Fd);
+        return -1; // invalid chip
+      }
+    }
+  }
+  return Fd;
+}
 
 int wiringPiGpioDeviceGetFd() {
   if (chipFd<0) {
     piBoard();
-    const char* gpiochip = PI_MODEL_5 == RaspberryPiModel ? DEV_GPIO_PI5 : DEV_GPIO_PI;
-    chipFd = open(gpiochip, O_RDWR);
-    if (chipFd < 0) {
-      fprintf(stderr, "wiringPi: ERROR: %s open ret=%d\n", gpiochip, chipFd);
-    } else if (wiringPiDebug) {
-      printf ("wiringPi: Open chip %s succeded, fd=%d\n", gpiochip, chipFd) ;
+    if (PI_MODEL_5 == RaspberryPiModel) {
+      chipFd = OpenAndCheckGpioChip(0, "rp1", 54);   // /dev/gpiochip0 @ Pi5 since Kernel 6.6.47
+      if (chipFd<0) {
+        chipFd = OpenAndCheckGpioChip(4, "rp1", 54);  // /dev/gpiochip4 @ Pi5 with older kernel
+      }
+    } else {
+      // not all Pis have same number of lines: Pi0, Pi1, Pi3, 54 lines, Pi4, 58 lines (CM ?), see #280, so this check is disabled
+      chipFd = OpenAndCheckGpioChip(0, "bcm", 0);
     }
   }
   return chipFd;
