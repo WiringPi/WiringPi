@@ -1671,14 +1671,14 @@ int OpenAndCheckGpioChip(int GPIONo, const char* label, const unsigned int lines
     return Fd;
   } else {
     if (wiringPiDebug) {
-      printf ("wiringPi: Open chip %s succeded, fd=%d\n", szGPIOChip, Fd) ;
+      printf("wiringPi: Open chip %s succeded, fd=%d\n", szGPIOChip, Fd) ;
     }
     struct gpiochip_info chipinfo;
     ZeroMemory(&chipinfo, sizeof(chipinfo));
     int ret = ioctl(Fd, GPIO_GET_CHIPINFO_IOCTL, &chipinfo);
     if (0==ret) {
       if (wiringPiDebug) {
-        printf ("%s: name=%s, label=%s, lines=%u\n", szGPIOChip, chipinfo.name, chipinfo.label, chipinfo.lines) ;
+        printf("%s: name=%s, label=%s, lines=%u\n", szGPIOChip, chipinfo.name, chipinfo.label, chipinfo.lines) ;
       }
       int chipOK = 1;
       if (label[0]!='\0' && NULL==strstr(chipinfo.label, label)) {
@@ -1688,10 +1688,12 @@ int OpenAndCheckGpioChip(int GPIONo, const char* label, const unsigned int lines
         chipOK = 0;
       }
       if (chipOK) {
-        printf ("%s: valid, fd=%d\n", szGPIOChip, Fd);
+        if (wiringPiDebug) {
+          printf("%s: valid, fd=%d\n", szGPIOChip, Fd);
+        }
       } else {
         if (wiringPiDebug) {
-          printf ("%s: invalid, search for '%s' with %u lines!\n", szGPIOChip, label, lines) ;
+          printf("%s: invalid, search for '%s' with %u lines!\n", szGPIOChip, label, lines) ;
         }
         close(Fd);
         return -1; // invalid chip
@@ -1710,7 +1712,7 @@ int wiringPiGpioDeviceGetFd() {
         chipFd = OpenAndCheckGpioChip(4, "rp1", 54);  // /dev/gpiochip4 @ Pi5 with older kernel
       }
     } else {
-      // not sure if all Pis have 54 lines (Pi1v1, Pi1v2 and CM ?), so this check is disabled
+      // not all Pis have same number of lines: Pi0, Pi1, Pi3, 54 lines, Pi4, 58 lines (CM ?), see #280, so this check is disabled
       chipFd = OpenAndCheckGpioChip(0, "bcm", 0);
     }
   }
