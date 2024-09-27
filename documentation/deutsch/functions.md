@@ -437,3 +437,87 @@ int main (void) {
     pinMode(18, PM_OFF);
 }
 ```
+
+
+## I2C - Bus
+
+
+``wiringPiI2CRawWrite`` und ``wiringPiI2CRawRead`` sind die neuen Funktionen der Version 3 mit denen nun direkt I2C-Daten gesendet und gelesen weden können.  
+Die anderen Schreib- und Lese-Funktionen verwenden das SMBus-Protokoll, das üblicherweise bei I2C-Chips Verwendung findet.
+
+
+### wiringPiI2CSetup
+
+Öffnet den default I2C-Bus am Raspberry Pi und adressiert das angegebene Gerät / Slave.
+
+>>>
+```C
+wiringPiI2CSetup(const int devId)
+```
+
+``devId``: I2C-Gerät / Slave Adresse.  
+``Rückgabewert``:  Datei Handle zum I2C-Bus   
+> -1 ... Fehler bzw. EXIT
+
+**Beispiel**
+>>>
+```C
+wiringPiI2CSetup(0x20);
+```
+
+
+### wiringPiI2CSetupInterface
+
+Öffnet den angebenen I2C-Bus und adressiert das angegebene I2C-Gerät / Slave.
+
+>>>
+```C
+wiringPiI2CSetupInterface(const char *device, int devId)
+```
+
+``devId``: I2C-Gerät / Slave Adresse.  
+``Rückgabewert``:  Datei Handle zum I2C-Bus   
+> -1 ... Fehler bzw. EXIT
+
+**Beispiel**
+>>>
+```C
+wiringPiI2CSetupInterface("/dev/i2c-1", 0x20);
+```
+
+
+### wiringPiI2CWrite / wiringPiI2CWriteReg8 / wiringPiI2CWriteReg16 / wiringPiI2CWriteBlockData
+
+### wiringPiI2CRawWrite
+
+
+
+## wiringPiI2CRead / wiringPiI2CReadReg8 / wiringPiI2CReadReg16 / wiringPiI2CReadBlockData
+
+### wiringPiI2CRawRead
+
+>>>
+```C
+int wiringPiI2CRawRead(int fd, uint8_t *values, uint8_t size)
+```
+
+``fd``: Datei Handle.  
+``values``: Lesepuffer.  
+``size``: Anzahl der Bytes die in den Lesepuffer gelesen werden sollen.  
+``Rückgabewert``:  Anzahl der Bytes die gelesen wurden.
+
+**Beispiel**
+>>>
+```C
+uint8_t i2cvalue;
+int result = wiringPiI2CRawRead(fd, &i2cvalue, 1);
+if (1 == result) {
+    // 1 byte received, stored to i2cvalue  
+} else {
+    // error
+}
+```
+
+
+## SPI - Bus
+
