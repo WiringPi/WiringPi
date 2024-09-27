@@ -34,7 +34,7 @@ sudo apt purge wiringpi
 
 ## Pin-Nummerierung und Raspbery Pi Modelle
 
-Pins: https://pinout.xyz/pinout/wiringpi
+GPIOs: https://pinout.xyz/pinout/wiringpi
 
 **Raspberry Pi Modelle mit 40-Pin GPIO J8 Header:**
 
@@ -101,8 +101,7 @@ Pins: https://pinout.xyz/pinout/wiringpi
  |     |     |     GND | 25 I 26  | CE1     | 11  | 7   |
 
 
-**Hinweise**
-
+**Hinweise**  
 Beachten Sie die abweichende Pin-Nummern und den I2C0 bei Raspberry Pi 1B Rev. 1!
 
 
@@ -194,20 +193,19 @@ void pinMode(int pin, int mode)
 pinMode(17, OUTPUT);
 ```
 
-**Support:**
+**Support:**  
 PM_OFF setzt den GPIO zurück (Input) und gibt ihn frei. PWM wird beendet.  
 Raspberry Pi 5 unterstützt den PWM BAL (Balanced) Modus nicht. Bei PWM_OUTPUT wird der MS Modus aktiviert.
 GPIO_CLOCK wird bei Raspberry Pi 5 (RP1) aktuell noch nicht unterstützt.
 
-** PWM Ausgang **
+**PWM Ausgang**  
 PWM_OUTPUT aktiviert den angegeben PWM Ausgang mit den Einstellungen: 
- - Modus: Balanced (Pi0-4), MS (Pi 5)
+ - Modus: BAL-Balanced (Pi0-4), MS-Mark/Space (Pi 5)
  - Range: 1024  
- - Clock: 32  
+ - Divider: 32  
 
 Um sicher zu stellen, dass der Ausgang ohne aktiver Frequenz startet, sollte man vor der Aktivierung ``pwmWrite(PWM_GPIO, 0);`` ausführen. 
 Danach können die entsprechenden Clock und Range Werte angepasst werden, ohne das bereits ungewollt eine Frequenz ausgegeben wird.
-
 
 
 ### pinMode
@@ -281,11 +279,11 @@ if (value==HIGH)
 ```
 
 
-## Verwendung ISR
+## Interrupts
 
 ### wiringPiISR
 
-Registriert eine Interrupt Service Routine (ISR) die bei Flankenwechsel ausgeführt wird.
+Registriert eine Interrupt Service Routine (ISR) bzw. Funktion die bei Flankenwechsel ausgeführt wird.
 
 >>>
 ```C
@@ -293,13 +291,14 @@ int wiringPiISR(int pin, int mode, void (*function)(void));
 ```
 
 ``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer).  
-``mode``: Der Widerstand.  
-> INT_EDGE_RISING ... Steigende Flanke  
-> INT_EDGE_FALLING ... Fallende Flanke
-> INT_EDGE_BOTH ... Steigende und fallende Flanke
-> *function .. Funktionspointer für ISR
+``mode``: Auslösende Flankenmodus
+ - INT_EDGE_RISING ... Steigende Flanke  
+ - INT_EDGE_FALLING ... Fallende Flanke  
+ - INT_EDGE_BOTH ... Steigende und fallende Flanke  
+
+``*function``: Funktionspointer für ISR  
 ``Rückgabewert``:   
-> 0 ... Erfolgreich  
+ > 0 ... Erfolgreich  
 <!-- > <>0 ... Fehler, zur Zeit nicht implementiert -->
 
 Beispiel siehe wiringPiISRStop.
@@ -339,24 +338,6 @@ int main (void) {
 }
 ```
 
-**Beispiel:**
-
-```C
-static volatile int edgeCounter;
-
-static void isr(void) { 
-  edgeCounter++;
-}
-
-int main (void) {
-    wiringPiSetupPinType(WPI_PIN_BCM);
-    edgeCounter = 0;
-    wiringPiISR (17, INT_EDGE_RISING, &isr);
-    Sleep(1000);
-    wiringPiISRStop(17);
-    printf("%d rinsing edges\n", edgeCounter)
-}
-```
 
 ### waitForInterrupt
 
@@ -368,16 +349,16 @@ int  waitForInterrupt (int pin, int mS)
 ```
 
 ``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer).  
-``mS``: Timeout in Milisekunden. 
+``mS``: Timeout in Milisekunden.  
 ``Rückgabewert``: Fehler  
 > 0 ... Erfolgreich  
 > -1 ... GPIO Device Chip nicht erfolgreich geöffnet  
 > -2 ... ISR wurde nicht registriert (wiringPiISR muss aufgerufen werden)
 
 
-## PWM (Pulsweitenmodulation)
+## Hardware PWM (Pulsweitenmodulation)
 
-Verfügbare pins:  https://pinout.xyz/pinout/pwm
+Verfügbare GPIOs:  https://pinout.xyz/pinout/pwm
 
 ### pwmWrite
 
@@ -393,51 +374,51 @@ pwmWrite(int pin, int value)
 
 ### pwmSetRange
 
-Setzt den Bereich für den PWM-Wert. Haupt eine Auswirkung auf die PWM Frequenz.
-Gilt für alle PWM Pins und PWM Kanäle.
+Setzt den Bereich für den PWM-Wert für alle PWM Pins bzw. PWM Kanäle.  
+Für die Berechnung der PWM Frequenz (M/S Mode) gilt 19200/divisor/range.
+Bei Befehl ``pinMode(pin,PWM_OUTPUT)`` wird automatisch der Wert 1024 für den Teiler gesetzt. 
 
 >>>
 ```C
 pwmSetRange (unsigned int range)
 ```
 
-``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer).  
 ``range``: PWM Range
 
 ### pwmSetMode
 
-Setzt den PWM Modus auf
+Setzt den PWM Modus für alle PWM Pins bzw. PWM Kanäle.   
 
 >>>
 ```C
 pwmSetMode(int mode);
 ```
 
-``mode``: Teiler (0-4095) 
-> PWM_MODE_MS ... Mark/Space Modus (PWM Frequenz fix)  
-> PWM_MODE_BAL ... Balanced Modus (PWM Frequenz variabel)
+``mode``: PWM Modus
+ - PWM_MODE_MS ... Mark/Space Modus (PWM Frequenz fix)  
+ - PWM_MODE_BAL ... Balanced Modus (PWM Frequenz variabel)
 
-**Support:**
+**Support:**  
 Raspberry Pi 5 unterstützt den Balanced Modus nicht!
 
 
 ### pwmSetClock
 
-Setzt den Teiler für den PWM Basistakt. Der Basistakt ist für alle Raspberry Pis auf 1900 kHz normiert.
-Der Raspberry Pi 4 max divisor is 1456,
-
+Setzt den Teiler für den PWM Basistakt. Der Basistakt ist für alle Raspberry Pis auf 1900 kHz normiert.  
+Für die Berechnung der PWM Frequenz (M/S Mode) gilt 19200/divisor/range.
+Bei Befehl ``pinMode(pin,PWM_OUTPUT)`` wird automatisch der Wert 32 für den Teiler gesetzt. 
 
 >>>
 ```C
 pwmSetClock(int divisor)
 ```
 
-``divisor``: Teiler (Raspberry Pi 4: 0-4095, alle anderen 0-4095) 
-> 0 ... Deaktivert den PWM Takt bei Raspberry Pi 5, bei anderen Pi's wird divisor 1 benutzt    
+``divisor``: Teiler  (Raspberry Pi 4: 1-1456, alle anderen 1-4095) 
+- 0 ... Deaktivert den PWM Takt bei Raspberry Pi 5, bei anderen Pi's wird divisor 1 benutzt    
 
-**Support:**
-Der Raspberry Pi 4 hat aufgrund seines höheren internen Basistakt nur einen Einstellbereich von 0-1456.
-Ansonsten gilt 1-4095 für einen gültigen Teiler.
+**Support:**  
+Der Raspberry Pi 4 hat aufgrund seines höheren internen Basistakt nur einen Einstellbereich von 1-1456.  
+Ansonsten gilt 0-4095 für einen gültigen Teiler.
 
 
 **Beispiel:**
@@ -453,7 +434,6 @@ int main (void) {
     double freq = 19200.0/(double)pwmc/(double)pwmr;
     printf("PWM 50%% @ %g kHz", freq);
     delay(250);
-    
     pinMode(18, PM_OFF);
 }
 ```
