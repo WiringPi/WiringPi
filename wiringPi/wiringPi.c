@@ -2182,10 +2182,14 @@ int digitalRead (int pin)
     }
 
     if (PI_MODEL_5 == RaspberryPiModel) {
-      switch(gpio[2*pin] & RP1_STATUS_LEVEL_MASK) {
-        default: // 11 or 00 not allowed, give LOW!
-        case RP1_STATUS_LEVEL_LOW:  return LOW ;
-        case RP1_STATUS_LEVEL_HIGH: return HIGH ;
+      const unsigned int status = gpio[2*pin] & RP1_STATUS_LEVEL_MASK;
+      if (RP1_STATUS_LEVEL_LOW==status) {
+        return LOW;
+      } else if (RP1_STATUS_LEVEL_HIGH==status) {
+        return HIGH;
+      } else { // 11 or 00 not allowed, give LOW!
+        fprintf(stderr, "digitalRead: invalid status %u\n", status);
+        return LOW;
       }
     } else {
       if ((*(gpio + gpioToGPLEV [pin]) & (1 << (pin & 31))) != 0)

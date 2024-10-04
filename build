@@ -100,7 +100,7 @@ if [ x$1 = "xdebian" ]; then
   cd $here/gpio
   make install-deb INCLUDE='-I../wiringPi -I../devLib' LDFLAGS=-L../debian-template/wiringPi/usr/lib DEB_DESTDIR=${deb_destdir}
   cd $here/debian-template
-  fakeroot dpkg-deb --build wiringPi
+  dpkg-deb --build wiringPi
   dpkg-name -o wiringPi.deb
   exit
 fi
@@ -119,30 +119,28 @@ fi
   echo
   echo "WiringPi Library"
   cd wiringPi
-  $sudo make uninstall
   if [ x$1 = "xstatic" ]; then
     make -j5 static
     check_make_ok
-    $sudo make install-static
+     oe_runmake-static
   else
     make -j5
     check_make_ok
-    $sudo make install
+     oe_runmake
   fi
   check_make_ok
 
   echo
   echo "WiringPi Devices Library"
   cd ../devLib
-  $sudo make uninstall
   if [ x$1 = "xstatic" ]; then
     make -j5 static
     check_make_ok
-    $sudo make install-static
+     oe_runmake-static
   else
     make -j5
     check_make_ok
-    $sudo make install
+     oe_runmake
   fi
   check_make_ok
 
@@ -151,15 +149,14 @@ fi
   cd ../gpio
   make -j5
   check_make_ok
-  $sudo make install
-  check_make_ok
+   oe_runmake
 
 # echo
 # echo "wiringPi Daemon"
 # cd ../wiringPiD
 # make -j5
 # check_make_ok
-# $sudo make install
+#  oe_runmake
 # check_make_ok
 
 # echo
