@@ -38,6 +38,9 @@ set(CPACK_GENERATOR "DEB")
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "Grazer Computer Club - GC2 <wiringpi@gc2.at>")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6, libcrypt1")
+set(CPACK_DEBIAN_PACKAGE_CONTROL_EXTRA
+    "${CMAKE_CURRENT_SOURCE_DIR}/debian-template/wiringPi/DEBIAN/postinst"
+    "${CMAKE_CURRENT_SOURCE_DIR}/debian-template/wiringPi/DEBIAN/postrm")
 
 # Check for arm or arm64 architecture
 # Let CMake determine a value otherwise
