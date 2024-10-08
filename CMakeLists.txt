@@ -9,6 +9,6 @@ string(REGEX REPLACE "([0-9]+)\..*" "\\1" WIRINGPI_SOVERSION "${WIRINGPI_VERSION
 # Include subdirectories
 add_subdirectory(devLib)
 add_subdirectory(gpio)
-#add_subdirectory(pins)
+add_subdirectory(pins)
 add_subdirectory(wiringPi)
 #add_subdirectory(wiringPiD)
