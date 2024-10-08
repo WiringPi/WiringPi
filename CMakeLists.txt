@@ -15,7 +15,7 @@ set(WIRINGPI_VERSION_MINOR ${CMAKE_MATCH_2})
 # Include subdirectories
 add_subdirectory(devLib)
 add_subdirectory(gpio)
-#add_subdirectory(pins)
+add_subdirectory(pins)
 add_subdirectory(wiringPi)
 #add_subdirectory(wiringPiD)
 

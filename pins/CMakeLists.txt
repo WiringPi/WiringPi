@@ -1,26 +1,23 @@
 # CMakeLists.txt for pins
 project(pins LANGUAGES NONE)
 
-# Source file
-set(SRC pins.tex)
+find_program (PDFLATEX pdflatex)
 
-# Add custom target to generate PDF
-add_custom_target(pins_pdf
-    COMMAND latex ${SRC}
-    COMMAND dvipdf ${SRC:.tex=.dvi}
-    COMMENT "Generating PDF"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
+if(NOT PDFLATEX)
+    message(WARNING "Disabling pins target as pdflatex not found!")
+else()
+    add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/pins.pdf
+        COMMAND ${PDFLATEX} -interaction=nonstopmode -halt-on-error ${CMAKE_CURRENT_SOURCE_DIR}/pins.tex
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating pins.pdf"
+    )
 
-# Add clean target
-add_custom_target(clean_pins
-    COMMAND rm -f *.dvi *.aux *.log *.ps *.toc *.bak *~
-    COMMENT "Cleaning pins"
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-)
+    # Add custom target to generate PDF
+    add_custom_target(pins
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/pins.pdf
+    )
 
-# Add dependencies
-add_dependencies(pins_pdf clean_pins)
-
-# Install PDF
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pins.pdf DESTINATION share/pins)
+    # Install PDF
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pins.pdf DESTINATION share/pins)
+endif()
