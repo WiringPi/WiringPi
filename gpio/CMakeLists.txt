@@ -1,6 +1,4 @@
 # CMakeLists.txt for gpio
-
-cmake_minimum_required(VERSION 3.10)
 project(gpio)
 
 find_package(PkgConfig REQUIRED)
@@ -24,7 +22,7 @@ add_executable(gpio ${SRC})
 target_link_libraries(gpio wiringPi wiringPiDev Threads::Threads m PkgConfig::libcrypt)
 
 # Install the executable
-install(TARGETS gpio DESTINATION bin)
+install(TARGETS gpio DESTINATION bin COMPONENT Runtime)
 
 # Install man page
-install(FILES gpio.1 DESTINATION share/man/man1)
+install(FILES gpio.1 DESTINATION share/man/man1 COMPONENT Runtime)

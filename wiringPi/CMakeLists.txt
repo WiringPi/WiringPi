@@ -1,6 +1,4 @@
 # CMakeLists.txt for wiringPi
-
-cmake_minimum_required(VERSION 3.10)
 project(WiringPi)
 
 # Source files
@@ -49,12 +47,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wformat=2 -Winline -pipe -Wfo
 add_library(wiringPi SHARED ${SRC})
 
 # Set the library version
-set_target_properties(wiringPi PROPERTIES VERSION ${WIRINGPI_VERSION} SOVERSION ${WIRINGPI_SOVERSION})
+set_target_properties(wiringPi PROPERTIES VERSION ${WIRINGPI_VERSION} SOVERSION ${WIRINGPI_VERSION_MAJOR})
 target_include_directories(wiringPi PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 # Add -lm to link with the math library
 target_link_libraries(wiringPi PUBLIC m crypt)
 # Install headers
-install(FILES ${HEADERS} DESTINATION include)
+install(FILES ${HEADERS} DESTINATION include COMPONENT Development)
 # Install the library
-install(TARGETS wiringPi LIBRARY DESTINATION lib)
+install(TARGETS wiringPi LIBRARY DESTINATION lib COMPONENT Runtime NAMELINK_COMPONENT Development)

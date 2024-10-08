@@ -1,6 +1,4 @@
 # CMakeLists.txt for devLib
-
-cmake_minimum_required(VERSION 3.10)
 project(devLib)
 
 # Source files
@@ -31,9 +29,9 @@ target_include_directories(wiringPiDev PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(wiringPiDev PRIVATE wiringPi)
 
 # Set the library version
-set_target_properties(wiringPiDev PROPERTIES VERSION ${WIRINGPI_VERSION} SOVERSION ${WIRINGPI_SOVERSION})
+set_target_properties(wiringPiDev PROPERTIES VERSION ${WIRINGPI_VERSION} SOVERSION ${WIRINGPI_VERSION_MAJOR})
 
 # Install headers
-install(FILES ${HEADERS} DESTINATION include)
+install(FILES ${HEADERS} DESTINATION include COMPONENT Development)
 # Install the library
-install(TARGETS wiringPiDev LIBRARY DESTINATION lib)
+install(TARGETS wiringPiDev LIBRARY DESTINATION lib COMPONENT Runtime NAMELINK_COMPONENT Development)

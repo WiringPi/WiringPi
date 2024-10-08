@@ -1,6 +1,4 @@
 # CMakeLists.txt for pins
-
-cmake_minimum_required(VERSION 3.10)
 project(pins LANGUAGES NONE)
 
 # Source file
