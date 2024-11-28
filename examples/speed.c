@@ -93,7 +93,7 @@ int main (void)
 // character device ABI
 
   printf ("\ncharacter device ABI method: (%8d iterations)\n", SLOW_COUNT) ;
-  wiringPiSetupGpioDevice () ;
+  wiringPiSetupGpioDevice (WPI_PIN_BCM) ;
   pinMode (17, OUTPUT) ;
   speedTest (17, SLOW_COUNT) ;
 

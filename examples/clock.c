@@ -65,7 +65,7 @@ void drawClockHands (void)
   struct tm *now ;
   double angle, p, x0, y0, x1, y1 ;
   int h24, h, m, s ;
-  char text [20] ;
+  char text [40] ;
 
   time (&t) ;
   now = localtime (&t) ;

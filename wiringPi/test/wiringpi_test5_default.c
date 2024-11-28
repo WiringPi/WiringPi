@@ -7,8 +7,8 @@
 #include <sys/time.h>
 
 
-const int GPIO = 19;
-const int GPIOIN = 26;
+int GPIO = 19;
+int GPIOIN = 26;
 const int ToggleValue = 4;
 int RaspberryPiModel = -1;
 
@@ -57,6 +57,10 @@ int main (void) {
 		printf("Raspberry Pi 5 with RP1 found\n");
 	} else {
 		printf("Raspberry Pi with BCM GPIO found (not Pi 5)\n");
+	}
+	if (!piBoard40Pin()) {
+		GPIO = 23;
+		GPIOIN = 24;
 	}
 
 
