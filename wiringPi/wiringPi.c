@@ -3004,22 +3004,22 @@ int CheckPCIeFileContent(const char* pcieaddress, const char* filename, const ch
   int Found = 0;
 
   snprintf(file_path, sizeof(file_path), "%s/%s/%s", pcie_path, pcieaddress, filename);
-  printf("Open file: %s\n", file_path);
+  if (wiringPiDebug) { printf("Open: %s  ->", file_path); }
   FILE *device_file = fopen(file_path, "r");
   if (device_file != NULL) {
-      char buffer[64];
-      if (fgets(buffer, sizeof(buffer), device_file) != NULL) {
-          printf("  %s: %s", filename, buffer);
-          if (strstr(buffer, content) != NULL) {
-            Found = 1;
-            printf("  >> correct\n");
-          } else {
-            printf("  >> wrong\n");
-          }
+    char buffer[64];
+    if (fgets(buffer, sizeof(buffer), device_file) != NULL) {
+      if (wiringPiDebug) { printf("  %s", buffer); }
+      if (strstr(buffer, content) != NULL) {
+        Found = 1;
+        if (wiringPiDebug) { printf("    >> correct\n"); }
+      } else {
+        if (wiringPiDebug) { printf("    >> wrong\n"); }
       }
-      fclose(device_file);
+    }
+    fclose(device_file);
   } else {
-    perror("fopen");
+    if (wiringPiDebug) { perror("fopen"); };
   }
   return Found;
 }
@@ -3032,7 +3032,7 @@ void GetRP1Memory() {
     struct dirent *entry;
 
     if (dir == NULL) {
-        perror("opendir");
+        if (wiringPiDebug) { perror("opendir"); };
         return;
     }
     while ((entry = readdir(dir)) != NULL) {
@@ -3040,7 +3040,7 @@ void GetRP1Memory() {
             if (CheckPCIeFileContent(entry->d_name, "device", pciemem_RP1_Device) &&
                 CheckPCIeFileContent(entry->d_name, "vendor", pciemem_RP1_Ventor)) {
               snprintf(pciemem_RP1, sizeof(pciemem_RP1), "%s/%s/%s", pcie_path, entry->d_name, pciemem_RP1_bar);
-              printf("RP1 device memory found at '%s'\n", pciemem_RP1);
+              if (wiringPiDebug) { printf("RP1 device memory found at '%s'\n", pciemem_RP1); }
               break;
             }
         }
