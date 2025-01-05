@@ -1,8 +1,12 @@
-# WiringPi-Bibliothek Dokumentation
-Die WiringPi-Bibliothek ermöglicht den Zugriff auf die GPIO-Pins des Raspberry Pi. In dieser Dokumentation finden Sie Informationen zu den verfügbaren Funktionen und deren Verwendung.
-Seit Version 3 werden nun auch wieder Erweiterungen an der Schnittstelle vorgenommen. Bei Neuimplementierungen sollte man auf die aktuellen bzw. neunen Funktionen setzen, da WiringPi 3 auch auf alten Systemen (ab Kernel 5.10) installiert werden kann.  
+# Dokumentation WiringPi-Bibliothek
 
-ACHTUNG: Diese Dokumemtation ist noch in Arbeit und somit unvollständig.  
+Die WiringPi-Bibliothek ermöglicht den Zugriff auf die GPIO-Pins des Raspberry Pi. In dieser Dokumentation finden Sie Informationen zu den verfügbaren Funktionen und deren Verwendung. 
+Seit Version 3 werden nun auch wieder Erweiterungen an der Schnittstelle vorgenommen. Bei Neuimplementierungen sollte man auf die aktuellen bzw. neunen Funktionen setzen.  
+Das alte [GPIO Sysfs Interface for Userspace](https://www.kernel.org/doc/Documentation/gpio/sysfs.txt) wird nun nicht mehr unterstützt. 
+
+**ACHTUNG:** Diese Dokumemtation ist noch in Arbeit und somit unvollständig.  
+Die Inhalte dieser Dokumentation wurden mit Sorgfalt und nach bestem Wissen und Gewissen erstellt. Die Autoren übernehmen jedoch keine Gewähr für die Richtigkeit, Vollständigkeit und Aktualität der bereitgestellten Informationen. Die Nutzung der Inhalte der Dokumentation erfolgt auf eigene Gefahr.  
+Für Schäden materieller oder immaterieller Art, die durch die Nutzung oder Nichtnutzung der dargebotenen Informationen oder durch die Nutzung fehlerhafter und unvollständiger Informationen verursacht wurden, wird grundsätzlich keine Haftung übernommen.
 
 ## Installation
 
@@ -127,7 +131,7 @@ Bei dieser Variante wird nicht direkt auf den GPIO-Speicher (DMA) zugegriffen so
 <!-- Achtung Code der die neunen Funktionen benutzt ist nicht mehr mit der älterer Library Versionen 2 kompatibel! -->
 
 
-### wiringPiSetup V2
+### wiringPiSetup V2 (veraltet)
 
 Inialisierung WiringPi in klassischer Art.  
 >>>
@@ -362,7 +366,7 @@ Verfügbare GPIOs:  https://pinout.xyz/pinout/pwm
 
 ### pwmWrite
 
-Verändert den PWM Wert des Pins. Mögliche Werte sind 0-<PWM Range> 
+Verändert den PWM Wert des Pins. Mögliche Werte sind 0-{PWM Range} 
 
 >>>
 ```C
@@ -457,12 +461,12 @@ wiringPiI2CSetup(const int devId)
 
 ``devId``: I2C-Gerät / Slave Adresse.  
 ``Rückgabewert``:  Datei Handle zum I2C-Bus   
-> -1 ... Fehler bzw. EXIT
+> -1 ... Fehler bzw. EXIT (Programm Beendigung)
 
 **Beispiel**
 >>>
 ```C
-wiringPiI2CSetup(0x20);
+int fd = wiringPiI2CSetup(0x20);
 ```
 
 
@@ -477,24 +481,58 @@ wiringPiI2CSetupInterface(const char *device, int devId)
 
 ``devId``: I2C-Gerät / Slave Adresse.  
 ``Rückgabewert``:  Datei Handle zum I2C-Bus   
-> -1 ... Fehler bzw. EXIT
+> -1 ... Fehler bzw. EXIT (Programm Beendigung)
 
 **Beispiel**
 >>>
 ```C
-wiringPiI2CSetupInterface("/dev/i2c-1", 0x20);
+int fd = wiringPiI2CSetupInterface("/dev/i2c-1", 0x20);
 ```
 
 
 ### wiringPiI2CWrite / wiringPiI2CWriteReg8 / wiringPiI2CWriteReg16 / wiringPiI2CWriteBlockData
 
+...
+
 ### wiringPiI2CRawWrite
 
 
+Schreiben von Daten zu einem I2C-Slave.
 
-## wiringPiI2CRead / wiringPiI2CReadReg8 / wiringPiI2CReadReg16 / wiringPiI2CReadBlockData
+>>>
+```C
+int wiringPiI2CRawWrite(int fd, const uint8_t *values, uint8_t size)
+```
+
+``fd``: Datei Handle.  
+``values``: Quellpuffer.  
+``size``: Anzahl der Bytes die com Quellpuffer geschrieben werden sollen.  
+``Rückgabewert``:  Anzahl der Bytes die geschrieben wurden.
+
+**Beispiel**
+>>>
+```C
+int fd = wiringPiI2CSetup(I2C_ADDR);
+if (fd>0) {
+    uint8_t i2cvalue = 0x55;
+    int result = wiringPiI2CRawWrite(fd, &i2cvalue, 1);
+    if (1 == result) {
+        // 1 byte from i2cvalue send to I2C_ADDR slave  
+    } else {
+        // error
+    }
+} else {
+    // error
+}
+```
+
+### wiringPiI2CRead / wiringPiI2CReadReg8 / wiringPiI2CReadReg16 / wiringPiI2CReadBlockData
+
+...
 
 ### wiringPiI2CRawRead
+
+Lesen von Daten von einem I2C-Slave.
 
 >>>
 ```C
@@ -502,17 +540,22 @@ int wiringPiI2CRawRead(int fd, uint8_t *values, uint8_t size)
 ```
 
 ``fd``: Datei Handle.  
-``values``: Lesepuffer.  
-``size``: Anzahl der Bytes die in den Lesepuffer gelesen werden sollen.  
+``values``: Zielpuffer.  
+``size``: Anzahl der Bytes die in den Zielpuffer gelesen werden sollen.  
 ``Rückgabewert``:  Anzahl der Bytes die gelesen wurden.
 
 **Beispiel**
 >>>
 ```C
-uint8_t i2cvalue;
-int result = wiringPiI2CRawRead(fd, &i2cvalue, 1);
-if (1 == result) {
-    // 1 byte received, stored to i2cvalue  
+int fd = wiringPiI2CSetup(I2C_ADDR);
+if (fd>0) {
+    uint8_t i2cvalue;
+    int result = wiringPiI2CRawRead(fd, &i2cvalue, 1);
+    if (1 == result) {
+        // 1 byte received from I2C_ADDR and stored to i2cvalue  
+    } else {
+        // error
+    }
 } else {
     // error
 }
@@ -521,3 +564,4 @@ if (1 == result) {
 
 ## SPI - Bus
 
+...
