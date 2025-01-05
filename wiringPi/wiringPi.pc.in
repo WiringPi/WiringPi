@@ -1,0 +1,11 @@
+prefix=@prefix@
+exec_prefix=${prefix}
+libdir=@libdir@
+includedir=@includedir@
+
+Name: WiringPi
+Description: The arguably fastest GPIO Library for the Raspberry Pi 
+Version: @VERSION@
+
+Libs: -L${libdir} -lwiringPi
+Cflags: -I${includedir}
