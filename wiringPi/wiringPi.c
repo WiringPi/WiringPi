@@ -2859,24 +2859,30 @@ void delay (unsigned int howLong)
 }
 
 /*
- * msDelay:
+ * delayMilliseconds:
  *	Wait for some number of milliseconds
  *********************************************************************************
  */
-void msDelay (unsigned int time_ms) {
+void delayMilliseconds (unsigned int time_ms) {
   struct timespec sleeper, t_remained ;
-  int interup_cnt = 32 ; // maximum number of interruptions
+  int interup_cnt = 0 ; // sleep interruption counter
 
   sleeper.tv_sec  = (time_t)(time_ms / 1000) ;
   // '1000 * 1000' is easier to read vs. '1000000'
   sleeper.tv_nsec = (long)(time_ms % 1000) * 1000 * 1000 ;
 
-  // 'nanosleep' can be interuped by a signal or error.
-  // If interrupt is due to signal then resume sleep.
-  // If it's due to error print it and exit a function.
-  // Let's set a limit for number of interuptions to
-  // detect if something strange happens in the system.
+  // 'nanosleep' can be interrupted by a signal or an error.
+  // If the interruption is due to a signal, resume sleeping.
+  // If it's due to an error, print the error and exit the
+  // function.
+  //
+  // 'interup_cnt' is used to detect frequent interruptions,
+  // which might indicate that something unusual is happening.
+  // If this occurs, print an error message and resume sleeping.
+
   while (nanosleep (&sleeper, &t_remained) == -1) {
+    interup_cnt++;
+
     if (errno != 0) {
       perror (strerror (errno));
       return;
@@ -2885,9 +2891,8 @@ void msDelay (unsigned int time_ms) {
     sleeper.tv_sec  = t_remained.tv_sec;
     sleeper.tv_nsec = t_remained.tv_nsec;
 
-    if( (--interup_cnt) == 0 ) {
+    if( interup_cnt == 128 ) {
       perror ("nanosleep(...) has been frequently interrupted") ;
-      break;
     }
   }
 
