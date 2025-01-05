@@ -1,7 +1,7 @@
 /*
  * wiringPi:
  *	Arduino look-a-like Wiring library for the Raspberry Pi
- *	Copyright (c) 2012-2024 Gordon Henderson and contributors
+ *	Copyright (c) 2012-2025 Gordon Henderson and contributors
  *	Additional code for pwmSetClock by Chris Hall <chris@kchall.plus.com>
  *
  *	Thanks to code samples from Gert Jan van Loo and the
@@ -73,6 +73,7 @@
 #include <byteswap.h>
 #include <sys/utsname.h>
 #include <linux/gpio.h>
+#include <dirent.h>
 
 #include "softPwm.h"
 #include "softTone.h"
@@ -222,13 +223,19 @@ const char* gpiomem_global    = "/dev/mem";
 const char* gpiomem_BCM       = "/dev/gpiomem";
 const char* gpiomem_RP1       = "/dev/gpiomem0";
 const int   gpiomem_RP1_Size  = 0x00030000;
-// PCIe Memory access, static define - maybe needed to detect in future
+// PCIe memory access, need to detect path / PCIe address
 //dmesg: rp1 0000:01:00.0: bar1 len 0x400000, start 0x1f00000000, end 0x1f003fffff, flags, 0x40200
-const char* pciemem_RP1_path  = "/sys/bus/pci/devices/0000:01:00.0";
-const char* pciemem_RP1       = "/sys/bus/pci/devices/0000:01:00.0/resource1";
+const char* pcie_path         = "/sys/bus/pci/devices";
+//const char* pciemem_RP1_path  = "/sys/bus/pci/devices/0000:01:00.0";
+//const char* pciemem_RP1       = "/sys/bus/pci/devices/0000:01:00.0/resource1";
+char pciemem_RP1[512] = { '\0' };
+const char* pciemem_RP1_bar   = "resource1";
 const int   pciemem_RP1_Size  = 0x00400000;
-const unsigned short pciemem_RP1_Ventor= 0x1de4;
-const unsigned short pciemem_RP1_Device= 0x0001;
+//const unsigned short pciemem_RP1_Ventor= 0x1de4;
+//const unsigned short pciemem_RP1_Device= 0x0001;
+const char* pciemem_RP1_Ventor= "0x1de4";
+const char* pciemem_RP1_Device= "0x0001";
+
 
 static volatile unsigned int GPIO_PADS ;
 static volatile unsigned int GPIO_CLOCK_ADR ;
@@ -3027,6 +3034,57 @@ int wiringPiUserLevelAccess(void)
 }
 
 
+int CheckPCIeFileContent(const char* pcieaddress, const char* filename, const char* content) {
+  char file_path[512];
+  int Found = 0;
+
+  snprintf(file_path, sizeof(file_path), "%s/%s/%s", pcie_path, pcieaddress, filename);
+  if (wiringPiDebug) { printf("Open: %s  ->", file_path); }
+  FILE *device_file = fopen(file_path, "r");
+  if (device_file != NULL) {
+    char buffer[64];
+    if (fgets(buffer, sizeof(buffer), device_file) != NULL) {
+      if (wiringPiDebug) { printf("  %s", buffer); }
+      if (strstr(buffer, content) != NULL) {
+        Found = 1;
+        if (wiringPiDebug) { printf("    >> correct\n"); }
+      } else {
+        if (wiringPiDebug) { printf("    >> wrong\n"); }
+      }
+    }
+    fclose(device_file);
+  } else {
+    if (wiringPiDebug) { perror("fopen"); };
+  }
+  return Found;
+}
+
+
+void GetRP1Memory() {
+
+    pciemem_RP1[0] = '\0';
+    DIR *dir = opendir(pcie_path);
+    struct dirent *entry;
+
+    if (dir == NULL) {
+        if (wiringPiDebug) { perror("opendir"); };
+        return;
+    }
+    while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_type == DT_LNK) {
+            if (CheckPCIeFileContent(entry->d_name, "device", pciemem_RP1_Device) &&
+                CheckPCIeFileContent(entry->d_name, "vendor", pciemem_RP1_Ventor)) {
+              snprintf(pciemem_RP1, sizeof(pciemem_RP1), "%s/%s/%s", pcie_path, entry->d_name, pciemem_RP1_bar);
+              if (wiringPiDebug) { printf("RP1 device memory found at '%s'\n", pciemem_RP1); }
+              break;
+            }
+        }
+    }
+
+    closedir(dir);
+}
+
+
 int wiringPiGlobalMemoryAccess(void)
 {
   const char* gpiomemGlobal;
@@ -3036,6 +3094,7 @@ int wiringPiGlobalMemoryAccess(void)
 
   piBoard();
   if (PI_MODEL_5 == RaspberryPiModel) {
+    GetRP1Memory(pciemem_RP1, sizeof(pciemem_RP1));
     gpiomemGlobal = pciemem_RP1;
     MMAP_size = pciemem_RP1_Size;
     BaseAddr  = 0x00000000;
@@ -3144,6 +3203,7 @@ int wiringPiSetup (void)
   const char* gpiomemModule = gpiomem_BCM;
 
   if (PI_MODEL_5 == model) {
+    GetRP1Memory();
     gpiomemGlobal = pciemem_RP1;
     gpiomemModule = gpiomem_RP1;
 

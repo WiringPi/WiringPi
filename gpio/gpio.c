@@ -2,7 +2,7 @@
  * gpio.c:
  *	Swiss-Army-Knife, Set-UID command-line interface to the Raspberry
  *	Pi's GPIO.
- *	Copyright (c) 2012-2024 Gordon Henderson and contributors
+ *	Copyright (c) 2012-2025 Gordon Henderson and contributors
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/
@@ -842,7 +842,7 @@ static void doVersion (char *argv [])
 
   wiringPiVersion (&vMaj, &vMin) ;
   printf ("gpio version: %d.%d\n", vMaj, vMin) ;
-  printf ("Copyright (c) 2012-2024 Gordon Henderson and contributors\n") ;
+  printf ("Copyright (c) 2012-2025 Gordon Henderson and contributors\n") ;
   printf ("This is free software with ABSOLUTELY NO WARRANTY.\n") ;
   printf ("For details type: %s -warranty\n", argv [0]) ;
   printf ("\n") ;
@@ -955,7 +955,7 @@ int main (int argc, char *argv [])
   if (strcasecmp (argv [1], "-warranty") == 0)
   {
     printf ("gpio version: %s\n", VERSION) ;
-    printf ("Copyright (c) 2012-2024 Gordon Henderson and contributors\n") ;
+    printf ("Copyright (c) 2012-2025 Gordon Henderson and contributors\n") ;
     printf ("\n") ;
     printf ("    This program is free software; you can redistribute it and/or modify\n") ;
     printf ("    it under the terms of the GNU Leser General Public License as published\n") ;
