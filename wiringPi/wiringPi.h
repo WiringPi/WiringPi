@@ -58,10 +58,12 @@
 
 // Pin modes
 
-#define	INPUT			 0
-#define	OUTPUT			 1
-#define	PWM_OUTPUT		 2
-#define	GPIO_CLOCK		 3
+#define	INPUT			         0
+#define	OUTPUT			       1
+#define	PWM_OUTPUT		     2
+#define	PWM_MS_OUTPUT	     8
+#define	PWM_BAL_OUTPUT     9
+#define	GPIO_CLOCK		     3
 #define	SOFT_PWM_OUTPUT		 4
 #define	SOFT_TONE_OUTPUT	 5
 #define	PWM_TONE_OUTPUT		 6
@@ -268,6 +270,7 @@ extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio
 extern          int  piGpioLayout        (void) ;
 extern          int  piBoardRev          (void) ;	// Deprecated, but does the same as piGpioLayout
 extern          void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
+extern          int  piBoard40Pin        (void) ;                   // Interface V3.7
 extern          int  wpiPinToGpio        (int wpiPin) ;
 extern          int  physPinToGpio       (int physPin) ;
 extern          void setPadDrive         (int group, int value) ;
@@ -307,6 +310,8 @@ extern void         delay             (unsigned int howLong) ;
 extern void         delayMicroseconds (unsigned int howLong) ;
 extern unsigned int millis            (void) ;
 extern unsigned int micros            (void) ;
+
+extern unsigned long long piMicros64(void);   // Interface V3.7
 
 #ifdef __cplusplus
 }

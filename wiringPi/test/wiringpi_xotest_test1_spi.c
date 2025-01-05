@@ -47,7 +47,7 @@ void checkVoltage(float expect, const char* szexpect) {
     int CH1 = AnalogRead(spiChannel, 1, &returnvalue);
     //float value0 = CH0 * fRefVoltage / fResolution;
     float value1 = CH1 * fRefVoltage / fResolution;
-    CheckSameFloat(szexpect, value1, expect);
+    CheckSameFloat(szexpect, value1, expect, 0.1);
     delayMicroseconds(300);
 }
 

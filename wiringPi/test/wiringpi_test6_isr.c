@@ -8,8 +8,8 @@
 #include <sys/time.h>
 
 
-const int GPIO = 19;
-const int GPIOIN = 26;
+int GPIO = 19;
+int GPIOIN = 26;
 const int ToggleValue = 4;
 
 
@@ -115,55 +115,61 @@ double DurationTime(int Enge, int OUTpin, int IRQpin) {
   return fTime;
 }
 
-int main (void) {
-  const int IRQpin = GPIOIN ;
-  const int OUTpin = GPIO ;
-  int major, minor;
 
-  wiringPiVersion(&major, &minor);
+int main (void) {
+
+	int major, minor;
+
+	wiringPiVersion(&major, &minor);
 
 	printf("WiringPi GPIO test program 1 (using GPIO%d (output) and GPIO%d (input))\n", GPIO, GPIOIN);
 	printf(" testing irq\n");
 
-  printf("\nISR test (WiringPi %d.%d)\n", major, minor);
+	printf("\nISR test (WiringPi %d.%d)\n", major, minor);
 
-  wiringPiSetupGpio() ;
+	wiringPiSetupGpio() ;
+	if (!piBoard40Pin()) {
+		GPIO = 23;
+		GPIOIN = 24;
+	}
+	int IRQpin = GPIOIN ;
+	int OUTpin = GPIO ;
+	
+	pinMode(IRQpin, INPUT);
+	pinMode(OUTpin, OUTPUT);
+	digitalWrite (OUTpin, LOW) ;
 
-  pinMode(IRQpin, INPUT);
-  pinMode(OUTpin, OUTPUT);
-  digitalWrite (OUTpin, LOW) ;
 
+	printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d rising\n", IRQpin, OUTpin);
+	wiringPiISR (IRQpin, INT_EDGE_RISING, &wfi) ;
+	sleep(1);
+	StartSequence (INT_EDGE_RISING, OUTpin);
+	printf("Testing close\n");
 
-  printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d rising\n", IRQpin, OUTpin);
-  wiringPiISR (IRQpin, INT_EDGE_RISING, &wfi) ;
-  sleep(1);
-  StartSequence (INT_EDGE_RISING, OUTpin);
-  printf("Testing close\n");
-  
-  wiringPiISRStop (IRQpin) ;
+	wiringPiISRStop (IRQpin) ;
 
-  printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d falling\n", IRQpin, OUTpin);
-  wiringPiISR (IRQpin, INT_EDGE_FALLING, &wfi) ;
-  sleep(1);
-  StartSequence (INT_EDGE_FALLING, OUTpin);
-  printf("Testing close\n");
-  wiringPiISRStop (IRQpin) ;
+	printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d falling\n", IRQpin, OUTpin);
+	wiringPiISR (IRQpin, INT_EDGE_FALLING, &wfi) ;
+	sleep(1);
+	StartSequence (INT_EDGE_FALLING, OUTpin);
+	printf("Testing close\n");
+	wiringPiISRStop (IRQpin) ;
 
-  printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d both\n", IRQpin, OUTpin);
-  wiringPiISR (IRQpin, INT_EDGE_BOTH, &wfi) ;
-  sleep(1);
-  StartSequence (INT_EDGE_BOTH, OUTpin);
-  printf("Testing close\n");
-  wiringPiISRStop (IRQpin) ;
+	printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d both\n", IRQpin, OUTpin);
+	wiringPiISR (IRQpin, INT_EDGE_BOTH, &wfi) ;
+	sleep(1);
+	StartSequence (INT_EDGE_BOTH, OUTpin);
+	printf("Testing close\n");
+	wiringPiISRStop (IRQpin) ;
 
-  for (int count=0; count<2; count++) {
-    printf("Measuring duration IRQ @ GPIO%d with trigger @ GPIO%d rising\n", IRQpin, OUTpin);
-    DurationTime(INT_EDGE_RISING, OUTpin, IRQpin);
+	for (int count=0; count<2; count++) {
+	printf("Measuring duration IRQ @ GPIO%d with trigger @ GPIO%d rising\n", IRQpin, OUTpin);
+	DurationTime(INT_EDGE_RISING, OUTpin, IRQpin);
 
-    printf("Measuring duration IRQ @ GPIO%d with trigger @ GPIO%d falling\n", IRQpin, OUTpin);
-    DurationTime(INT_EDGE_FALLING, OUTpin, IRQpin);
-  }
-  pinMode(OUTpin, INPUT);
+	printf("Measuring duration IRQ @ GPIO%d with trigger @ GPIO%d falling\n", IRQpin, OUTpin);
+	DurationTime(INT_EDGE_FALLING, OUTpin, IRQpin);
+	}
+	pinMode(OUTpin, INPUT);
 
-  return UnitTestState();
+	return UnitTestState();
 }

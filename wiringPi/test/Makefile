@@ -1,35 +1,47 @@
 CC = gcc
 CFLAGS = -Wall
-LDFLAGS = 
+LDFLAGS =
 
-tests = wiringpi_test1_sysfs wiringpi_test2_sysfs wiringpi_test3_device_wpi wiringpi_test4_device_phys wiringpi_test5_default wiringpi_test6_isr wiringpi_test7_version
+# Need BCM19 <-> BCM26, +PWM: BCM12 <-> BCM13, BCM18 <-> BCM17 connected (1kOhm)
+tests = wiringpi_test0_version wiringpi_test1_sysfs wiringpi_test2_sysfs wiringpi_test3_device_wpi wiringpi_test4_device_phys wiringpi_test5_default wiringpi_test6_isr wiringpi_test8_pwm wiringpi_test9_pwm
 
-xotests = wiringpi_xotest_test1_spi
+# Need XO hardware
+xotests = wiringpi_xotest_test1_spi wiringpi_i2c_test1_pcf8574 wiringpi_test8_pwm wiringpi_test9_pwm
 
-i2ctests = wiringpi_i2c_test1_pcf8574
+# Need PiFace hardware and BCM23 <-> BCM24 , BCM18 <-> BCM17 connected (1kOhm), and PiFace Out7<->In4, Out6<->In5, R0_NO<->In6, R0_NO<->In7, R_C<-100Ohm->GND
+pifacetests = wiringpi_piface_test1 wiringpi_test8_pwm wiringpi_test9_pwm
 
-all: $(tests) $(xotests) $(i2ctests)
+all: $(tests) $(xotests) $(pifacetests)
 
-wiringpi_test1_sysfs: 
+wiringpi_test1_sysfs:
 	${CC} ${CFLAGS} wiringpi_test1_sysfs.c -o wiringpi_test1_sysfs -lwiringPi
 
-wiringpi_test2_sysfs: 
+wiringpi_test2_sysfs:
 	${CC} ${CFLAGS} wiringpi_test2_sysfs.c -o wiringpi_test2_sysfs -lwiringPi
 
-wiringpi_test3_device_wpi: 
+wiringpi_test3_device_wpi:
 	${CC} ${CFLAGS} wiringpi_test3_device_wpi.c -o wiringpi_test3_device_wpi -lwiringPi
 
-wiringpi_test4_device_phys: 
+wiringpi_test4_device_phys:
 	${CC} ${CFLAGS} wiringpi_test4_device_phys.c -o wiringpi_test4_device_phys -lwiringPi
 
-wiringpi_test5_default: 
+wiringpi_test5_default:
 	${CC} ${CFLAGS} wiringpi_test5_default.c -o wiringpi_test5_default -lwiringPi
 
-wiringpi_test6_isr: 
+wiringpi_test6_isr:
 	${CC} ${CFLAGS} wiringpi_test6_isr.c -o wiringpi_test6_isr -lwiringPi
 
-wiringpi_test7_version: 
-	${CC} ${CFLAGS} wiringpi_test7_version.c -o wiringpi_test7_version -lwiringPi
+wiringpi_test0_version:
+	${CC} ${CFLAGS} wiringpi_test0_version.c -o wiringpi_test0_version -lwiringPi
+
+wiringpi_test8_pwm:
+	${CC} ${CFLAGS} wiringpi_test8_pwm.c -o wiringpi_test8_pwm -lwiringPi
+
+wiringpi_test9_pwm:
+	${CC} ${CFLAGS} wiringpi_test9_pwm.c -o wiringpi_test9_pwm -lwiringPi
+
+wiringpi_piface_test1:
+	${CC} ${CFLAGS} wiringpi_piface_test1.c -o wiringpi_piface_test1 -lwiringPi -lwiringPiDev
 
 wiringpi_xotest_test1_spi:
 	${CC} ${CFLAGS} wiringpi_xotest_test1_spi.c -o wiringpi_xotest_test1_spi -lwiringPi
@@ -37,11 +49,16 @@ wiringpi_xotest_test1_spi:
 wiringpi_i2c_test1_pcf8574:
 	${CC} ${CFLAGS} wiringpi_i2c_test1_pcf8574.c -o wiringpi_i2c_test1_pcf8574 -lwiringPi
 
+
 test:
 	@error_state=false ; \
 	for t in $(tests) ; do \
 		echo === unit test: $${t} === ; \
-		time ./$${t}; \
+		if [ $${t} = *"8_pwm" ] || [ $${t} = *"9_pwm" ]; then \
+			time sudo ./$${t} ; \
+		else \
+			time ./$${t} ; \
+		fi ; \
 		if [ $$? -ne 0 ]; then \
 		  error_state=true ; \
 		fi ; \
@@ -57,7 +74,11 @@ xotest:
 	@error_state=false ; \
 	for t in $(tests) $(xotests)  ; do \
 		echo === XO unit test: $${t} === ; \
-		time ./$${t} ; \
+		if [ $${t} = *"8_pwm" ] || [ $${t} = *"9_pwm" ]; then \
+			time sudo ./$${t} ; \
+		else \
+			time ./$${t} ; \
+		fi ; \
 		if [ $$? -ne 0 ]; then \
 		  error_state=true ; \
 		fi ; \
@@ -69,23 +90,27 @@ xotest:
 		echo "\n\e[5mSTD/XO TEST SUCCESS\e[0m\n"; \
 	fi
 
-i2ctest:
+pifacetest:
 	@error_state=false ; \
-	for t in $(tests) $(i2ctests)  ; do \
-		echo === I2C unit test: $${t} === ; \
-		time ./$${t} ; \
+	for t in $(tests) $(pifacetests)  ; do \
+		echo === PiFace unit test: $${t} === ; \
+		if [ $${t} = *"8_pwm" ] || [ $${t} = *"9_pwm" ]; then \
+			time sudo ./$${t} ; \
+		else \
+			time ./$${t} ; \
+		fi ; \
 		if [ $$? -ne 0 ]; then \
 		  error_state=true ; \
 		fi ; \
 		echo  ; echo  ; \
 	done
 	if [ "$$error_state" = true ]; then \
-		echo "\n\e[5mSTD/I2C TEST FAILED\e[0m\n"; \
+		echo "\n\e[5mPIFACE TEST FAILED\e[0m\n"; \
 	else \
-		echo "\n\e[5mSTD/I2C TEST SUCCESS\e[0m\n"; \
+		echo "\n\e[5mPIFACE TEST SUCCESS\e[0m\n"; \
 	fi
 
-clean: 
-	for t in $(tests) $(xotests) $(i2ctests) ; do \
+clean:
+	for t in $(tests) $(xotests) $(pifacetests) ; do \
 		rm -fv $${t} ; \
 	done
