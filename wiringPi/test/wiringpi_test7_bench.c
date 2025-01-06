@@ -34,7 +34,8 @@ int main (void) {
 	struct timeval t1, t2;
 
 	if (wiringPiSetupGpio()  == -1) {
-		printf("wiringPiSetupGpio failed\n\n");
+		printf("wiringPiSetupGpio failed\n\n");        fExpectMHzdigitalWrite = 4.0; //MHz;
+        fExpectMHzpinMode = 1.6;
 		exit(EXIT_FAILURE);
 	}
 
@@ -48,13 +49,19 @@ int main (void) {
 
     switch(RaspberryPiModel) {
       case PI_MODEL_A:
-      case PI_MODEL_B:
+      case PI_MODEL_B:  //ARM=800MHz: 3.8/1.5
       case PI_MODEL_BP:
       case PI_MODEL_AP:
-      case PI_MODEL_ZERO:
-      case PI_MODEL_ZERO_W:
       case PI_MODEL_CM:
-        ToggleValue /= 8; 
+        ToggleValue /= 7; 
+        fExpectMHzdigitalWrite = 3.8; //MHz;
+        fExpectMHzpinMode = 1.5;
+        break;
+      case PI_MODEL_ZERO:
+      case PI_MODEL_ZERO_W: //ARM=1000MHz: 4.8/2.0
+        ToggleValue /= 5; 
+        fExpectMHzdigitalWrite = 4.8; //MHz;
+        fExpectMHzpinMode = 2.0;
         break;
       case PI_MODEL_2:
         ToggleValue /= 4;
@@ -76,7 +83,9 @@ int main (void) {
         fExpectMHzpinMode = 4.1;
         break;
       case PI_MODEL_5:
-        ToggleValue *= 2; 
+        ToggleValue = ToggleValue*0.8; 
+        fExpectMHzdigitalWrite = 20.0; //MHz;
+        fExpectMHzpinMode = 2.5;
          break;
     }
 
@@ -109,6 +118,18 @@ int main (void) {
 	}
 	gettimeofday(&t2, NULL);
     ReportElaped("GPIO pinMode max. frequency ", fExpectMHzpinMode, t1, t2);
+
+    printf("\n\n");
+    printf("toggle % 3d million times pin mode and digitalWrite ..\n", ToggleValue/1000000);
+    gettimeofday(&t1, NULL);
+	for (int loop=1; loop<ToggleValue; loop++) {
+		pinMode(GPIO, OUTPUT);
+		digitalWrite(GPIO, LOW);
+		digitalWrite(GPIO, HIGH);
+		pinMode(GPIO, INPUT);
+	}
+	gettimeofday(&t2, NULL);
+    ReportElaped("GPIO pinMode max. frequency ", 1/(1/fExpectMHzpinMode+1/fExpectMHzdigitalWrite), t1, t2);
 
 
 	return(EXIT_SUCCESS);
