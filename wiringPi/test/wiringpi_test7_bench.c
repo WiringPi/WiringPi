@@ -34,8 +34,7 @@ int main (void) {
 	struct timeval t1, t2;
 
 	if (wiringPiSetupGpio()  == -1) {
-		printf("wiringPiSetupGpio failed\n\n");        fExpectMHzdigitalWrite = 4.0; //MHz;
-        fExpectMHzpinMode = 1.6;
+		printf("wiringPiSetupGpio failed\n\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -92,36 +91,45 @@ int main (void) {
 
 
 	printf("WiringPi GPIO speed test program (using GPIO %d) and toggle %d times\n", GPIO, ToggleValue);
-    printf(" testing digital Wirte and pinMode\n");	
+  printf(" testing digital Wirte and pinMode\n");	
 
 	pinMode(GPIO, OUTPUT);
 
-	printf("toggle % 3d million times pin value ...\n", ToggleValue/1000000);
+	printf("write % 3d million times pin value ...\n", ToggleValue/1000000);
 	gettimeofday(&t1, NULL);
 	for (int loop=1; loop<ToggleValue; loop++) {
 		digitalWrite(GPIO, LOW);
 		digitalWrite(GPIO, HIGH);
 	}
 	gettimeofday(&t2, NULL);
-    ReportElaped("GPIO digitalWrite max. frequency ", fExpectMHzdigitalWrite, t1, t2);
+  ReportElaped("GPIO digitalWrite max. frequency ", fExpectMHzdigitalWrite, t1, t2);
 
 	digitalWrite(GPIO, LOW);
 	pinMode(GPIO, INPUT);
+
+  printf("\n");
+  printf("% 3d million times digitalRead ...\n", ToggleValue/1000000);
+	gettimeofday(&t1, NULL);
+	for (int loop=1; loop<ToggleValue; loop++) {
+		digitalRead(GPIOIN);
+	}
+	gettimeofday(&t2, NULL);
+  ReportElaped("GPIO digitalRead max. read ", fExpectMHzdigitalWrite, t1, t2);
     
-    ToggleValue /= 10;
-    printf("\n\n");
-    printf("toggle % 3d million times pin mode...\n", ToggleValue/1000000);
-    gettimeofday(&t1, NULL);
+  ToggleValue /= 10;
+  printf("\n");
+  printf("toggle % 3d million times pin mode...\n", ToggleValue/1000000);
+  gettimeofday(&t1, NULL);
 	for (int loop=1; loop<ToggleValue; loop++) {
 		pinMode(GPIO, OUTPUT);
 		pinMode(GPIO, INPUT);
 	}
 	gettimeofday(&t2, NULL);
-    ReportElaped("GPIO pinMode max. frequency ", fExpectMHzpinMode, t1, t2);
+  ReportElaped("GPIO pinMode max. frequency ", fExpectMHzpinMode, t1, t2);
 
-    printf("\n\n");
-    printf("toggle % 3d million times pin mode and digitalWrite ..\n", ToggleValue/1000000);
-    gettimeofday(&t1, NULL);
+  printf("\n");
+  printf("toggle % 3d million times pin mode and digitalWrite ..\n", ToggleValue/1000000);
+  gettimeofday(&t1, NULL);
 	for (int loop=1; loop<ToggleValue; loop++) {
 		pinMode(GPIO, OUTPUT);
 		digitalWrite(GPIO, LOW);
@@ -129,8 +137,22 @@ int main (void) {
 		pinMode(GPIO, INPUT);
 	}
 	gettimeofday(&t2, NULL);
-    ReportElaped("GPIO pinMode max. frequency ", 1/(1/fExpectMHzpinMode+1/fExpectMHzdigitalWrite), t1, t2);
+  ReportElaped("GPIO pinMode max. frequency ", 1/(1/fExpectMHzpinMode+1/fExpectMHzdigitalWrite), t1, t2);
 
+  ToggleValue *= 3;
+  printf("\n");
+  pinMode(GPIO, OUTPUT);
+  printf("% 3d million times digitalRead and digitalWrite ..\n", ToggleValue/1000000);
+  gettimeofday(&t1, NULL);
+	for (int loop=1; loop<ToggleValue; loop++) {
+		digitalWrite(GPIO, HIGH);
+		digitalRead(GPIOIN);
+	}
+	gettimeofday(&t2, NULL);
+  ReportElaped("GPIO pinMode max. frequency ", fExpectMHzdigitalWrite/2.6, t1, t2);
+
+	digitalWrite(GPIO, LOW);
+	pinMode(GPIO, INPUT);
 
 	return(EXIT_SUCCESS);
 }
