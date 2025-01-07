@@ -135,6 +135,7 @@ wiringPi has been wrapped for multiple languages:
 * PHP - https://github.com/WiringPi/WiringPi-PHP
 * Python - https://github.com/WiringPi/WiringPi-Python
 * Ruby - https://github.com/WiringPi/WiringPi-Ruby
+* Golang - github.com/kodybrown/wiringpi-go
 
 ## Support
 
