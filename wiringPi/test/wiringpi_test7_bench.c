@@ -15,6 +15,7 @@ float fExpectTimedigitalWrite = 1/10;
 float fExpectTimedigitalRead = 1/5;
 float fExpectTimepinMode = 1/4;
 float fWriteReadDelayFactor = 1.77;
+float fWriteReadFactor = 2.0;
 int GPIO = 19;
 int GPIOIN = 26;
 int RaspberryPiModel = -1;
@@ -44,7 +45,7 @@ int main (void) {
 	piBoardId(&RaspberryPiModel, &rev, &mem, &maker, &overVolted);
 	CheckNotSame("Model: ", RaspberryPiModel, -1);
 	if (!piBoard40Pin()) {
-	    GPIO = 23;
+	  GPIO = 23;
 		GPIOIN = 24;
 	}
 
@@ -56,12 +57,14 @@ int main (void) {
       case PI_MODEL_CM:
         ToggleValue /= 7; 
         fExpectTimedigitalWrite = 1/(3.8*2); //MHz;
+        fExpectTimedigitalRead = fExpectTimedigitalWrite*fWriteReadFactor;
         fExpectTimepinMode = 1/(1.5*2);
         break;
       case PI_MODEL_ZERO:
       case PI_MODEL_ZERO_W: //ARM=1000MHz: 4.8/2.0
         ToggleValue /= 5; 
         fExpectTimedigitalWrite = 1/(4.8*2); //MHz;
+        fExpectTimedigitalRead = fExpectTimedigitalWrite*fWriteReadFactor;
         fExpectTimepinMode = 1/(2.0*2);
         break;
       case PI_MODEL_2:
@@ -81,16 +84,19 @@ int main (void) {
       case PI_MODEL_CM4S:
         ToggleValue = ToggleValue; 
         fExpectTimedigitalWrite = 1/(2*24.5); //MHz;
+        fExpectTimedigitalRead = fExpectTimedigitalWrite*fWriteReadFactor;
         fExpectTimepinMode = 1/(2*4.1);
         break;
       case PI_MODEL_5:
         ToggleValue = ToggleValue*0.8; 
         fExpectTimedigitalWrite = 1/(2*20.0); //MHz;
+        fWriteReadFactor = 13;
+        fExpectTimedigitalRead = fExpectTimedigitalWrite*fWriteReadFactor;
         fExpectTimepinMode = 1/(2*2.5);
+        fWriteReadDelayFactor = 3.2;
          break;
     }
 
-    fExpectTimedigitalRead = fExpectTimedigitalWrite*2;
 
 
 
@@ -111,7 +117,7 @@ int main (void) {
 	digitalWrite(GPIO, LOW);
 	pinMode(GPIOIN, INPUT);
 
-  ToggleValue /=2;
+  ToggleValue /=(fExpectTimedigitalRead/fExpectTimedigitalWrite);
   printf("\n");
   printf("% 3d million times digitalRead ...\n", ToggleValue/1000000);
 	gettimeofday(&t1, NULL);
@@ -161,6 +167,11 @@ int main (void) {
   double elapsedTime = (t2.tv_sec-t1.tv_sec)+(t2.tv_usec-t1.tv_usec)/1000000.0;
   double fTimePerOperation = elapsedTime*1000000.0/ToggleValue/2;
   CheckSameFloat("Write <=> Read delay factor", fTimePerOperation/(fExpectTimedigitalWrite+fExpectTimedigitalRead), fWriteReadDelayFactor, 0.2);
+  if (RaspberryPiModel==PI_MODEL_5) {
+    printf("Rasperry Pi 5:\n");
+    printf("  * digitalRead has very slow speed, much higher then digitalWrite, factor %f.1 (typical ~2.0)\n", fWriteReadFactor);
+    printf("  * Toggle read/write operation has very slow speed, factor %f.1 (typical ~1.77) to single operation time\n", fWriteReadDelayFactor);
+  }
 
 	digitalWrite(GPIO, LOW);
 	pinMode(GPIO, INPUT);
