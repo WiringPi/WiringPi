@@ -128,7 +128,11 @@ int main (void) {
 	gettimeofday(&t2, NULL);
   ReportElapedTime("digitalRead", 2, fExpectTimedigitalRead, t1, t2);
     
-  ToggleValue /= 4;
+  if (RaspberryPiModel!=PI_MODEL_5) {
+    ToggleValue /= 4;
+  } else {
+    ToggleValue *= 1.5;
+  }
   printf("\n");
   printf("% 3d million times pinMode...\n", ToggleValue/1000000);
   gettimeofday(&t1, NULL);
@@ -151,7 +155,11 @@ int main (void) {
 	gettimeofday(&t2, NULL);
   ReportElapedTime("pinMode and digitalWrite", 2, fExpectTimepinMode+fExpectTimedigitalWrite, t1, t2);
 
-  ToggleValue *= 1.5;
+  if (RaspberryPiModel!=PI_MODEL_5) {
+    ToggleValue *= 1.5;
+  } else {
+    ToggleValue /= 5;
+  }
   printf("\n");
   pinMode(GPIO, OUTPUT);
   printf("Toggle % 3d million times digitalRead and digitalWrite ..\n", ToggleValue/1000000);
@@ -168,9 +176,9 @@ int main (void) {
   double fTimePerOperation = elapsedTime*1000000.0/ToggleValue/2;
   CheckSameFloat("Write <=> Read delay factor", fTimePerOperation/(fExpectTimedigitalWrite+fExpectTimedigitalRead), fWriteReadDelayFactor, 0.2);
   if (RaspberryPiModel==PI_MODEL_5) {
-    printf("Rasperry Pi 5:\n");
-    printf("  * digitalRead has very slow speed, much higher then digitalWrite, factor %f.1 (typical ~2.0)\n", fWriteReadFactor);
-    printf("  * Toggle read/write operation has very slow speed, factor %f.1 (typical ~1.77) to single operation time\n", fWriteReadDelayFactor);
+    printf("\nRasperry Pi 5:\n");
+    printf("  * digitalRead has very slow speed, much slower then digitalWrite, factor %.1f (typical ~2.0)\n", fWriteReadFactor);
+    printf("  * Toggle read/write operation has slow speed, factor %.2f (typical ~1.77) to single operation time\n", fWriteReadDelayFactor);
   }
 
 	digitalWrite(GPIO, LOW);
