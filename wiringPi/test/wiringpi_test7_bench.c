@@ -58,14 +58,12 @@ int main (void) {
     case PI_MODEL_BP:
     case PI_MODEL_AP:
     case PI_MODEL_CM:
-      //ToggleValue /= 7;
       fExpectTimedigitalWrite = 0.132; //us;
       fExpectTimedigitalRead  = 0.171; //us
       fExpectTimepinMode      = 0.334; //us
       break;
     case PI_MODEL_ZERO:
     case PI_MODEL_ZERO_W: //ARM=1000MHz
-      //ToggleValue /= 5;
       fExpectTimedigitalWrite = 0.104; //us;
       fExpectTimedigitalRead  = 0.135; //us
       fExpectTimepinMode      = 0.250; //us
@@ -85,14 +83,12 @@ int main (void) {
     case PI_MODEL_400:
     case PI_MODEL_CM4:
     case PI_MODEL_CM4S:
-      //ToggleValue = ToggleValue;
       fExpectTimedigitalWrite = 0.020; //us
       fExpectTimedigitalRead  = 0.038; //us
       fExpectTimepinMode      = 0.121; //us
       fWriteReadDelayFactor   = 1.86;
       break;
     case PI_MODEL_5:
-      //ToggleValue = ToggleValue*0.8;
       fExpectTimedigitalWrite = 0.025; //us
       fExpectTimedigitalRead  = 0.323; //us
       fExpectTimepinMode      = 0.200; //us
@@ -157,7 +153,6 @@ int main (void) {
   } else {
     ToggleValue /= 5;
   }
-  printf("\n");
   pinMode(GPIO, OUTPUT);
   printf("\nToggle % 3d million times digitalRead and digitalWrite ..\n", ToggleValue/1000000);
   gettimeofday(&t1, NULL);
@@ -175,8 +170,8 @@ int main (void) {
   CheckSameFloat("digitalWrite and digitalRead alternating factor", fTimePerOperation/(fExpectTimedigitalWrite+fExpectTimedigitalRead), fWriteReadDelayFactor, 0.2);
   if (RaspberryPiModel==PI_MODEL_5) {
     printf("\nRasperry Pi 5:\n");
-    printf("  * digitalRead has very slow speed, much slower then digitalWrite, factor %.1f (typical Pi4 ~2.0)\n", fWriteReadFactor);
-    printf("  * Alternating read/write operation has slow speed, factor %.2f (typical Pi4 ~1.77) to single operation time\n", fWriteReadDelayFactor);
+    printf("  * digitalRead has very slow speed, much slower then digitalWrite, factor %.1f (typical Pi4 ~1.9)\n", fWriteReadFactor);
+    printf("  * Alternating read/write operation has slow speed, factor %.2f (typical Pi4 ~1.86) to single operation time\n", fWriteReadDelayFactor);
   }
 
 	digitalWrite(GPIO, LOW);
