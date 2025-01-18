@@ -1,7 +1,7 @@
 /*
  * wiringPi.h:
  *	Arduino like Wiring library for the Raspberry Pi.
- *	Copyright (c) 2012-2017 Gordon Henderson
+ *	Copyright (c) 2012-2025 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/
@@ -93,6 +93,7 @@
 // Pi model types and version numbers
 //	Intended for the GPIO program Use at your own risk.
 // https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#new-style-revision-codes
+// https://github.com/raspberrypi/documentation/blob/develop/documentation/asciidoc/computers/raspberry-pi/revision-codes.adoc
 
 #define	PI_MODEL_A		 0
 #define	PI_MODEL_B		 1
@@ -115,6 +116,9 @@
 #define	PI_MODEL_CM4		20
 #define	PI_MODEL_CM4S		21
 #define	PI_MODEL_5		  23
+#define	PI_MODEL_CM5	  24
+#define	PI_MODEL_500	  25
+#define	PI_MODEL_CM5L	  26
 
 #define	PI_VERSION_1		0
 #define	PI_VERSION_1_1		1
