@@ -107,6 +107,9 @@ int main (void) {
         Pi4 = 1;
         break;
       case PI_MODEL_5:
+      case PI_MODEL_CM5:
+      case PI_MODEL_500:
+      case PI_MODEL_CM5L:
          Pi5 = 1;
          break;
     }
