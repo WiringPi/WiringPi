@@ -291,7 +291,7 @@ Registriert eine Interrupt Service Routine (ISR) bzw. Funktion die bei Flankenwe
 
 >>>
 ```C
-int wiringPiISR(int pin, int mode, void (*function)(void));
+int wiringPiISR(int pin, int mode, void (*function)(unsigned int, long long int), int bouncetime);
 ```
 
 ``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer).  
@@ -300,7 +300,9 @@ int wiringPiISR(int pin, int mode, void (*function)(void));
  - INT_EDGE_FALLING ... Fallende Flanke  
  - INT_EDGE_BOTH ... Steigende und fallende Flanke  
 
-``*function``: Funktionspointer für ISR  
+``*function``: Funktionspointer für ISR mit Rückgabeparameter pin: unsigned int und Zeitstempel: long long int
+
+``bouncetime``: Entprellzeit in ms, 0 ms schaltet das Entprellen ab   
 ``Rückgabewert``:   
  > 0 ... Erfolgreich  
 <!-- > <>0 ... Fehler, zur Zeit nicht implementiert -->
@@ -345,19 +347,41 @@ int main (void) {
 
 ### waitForInterrupt
 
-Wartet auf einen Aufruf der Interrupt Service Routine (ISR) mit Timeout.
+Wartet auf einen Aufruf der Interrupt Service Routine (ISR) mit Timeout und Entprellzeit in Millisekunden.
 
 >>>
 ```C
-int  waitForInterrupt (int pin, int mS)
+long long int  waitForInterrupt (int pin, int mS, int bouncetime)
 ```
 
 ``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer).  
-``mS``: Timeout in Milisekunden.  
-``Rückgabewert``: Fehler  
-> 0 ... Erfolgreich  
+``mS``: Timeout in Milisekunden. -1 warten ohne timeout, 0 wartet nicht, >0 wartet maximal mS Millisekunden
+
+``bouncetime``: Entprellzeit in Millisekunden, 0 schaltet Entprellen ab
+
+``Rückgabewert``: 
+> >0 ... Zeitstempel des Interrupt Ereignisses
+> 0 ... Timeout  
 > -1 ... GPIO Device Chip nicht erfolgreich geöffnet  
 > -2 ... ISR wurde nicht registriert (waitForInterruptInit muss aufgerufen werden)
+
+
+### waitForInterruptInit
+
+Initiaölisiert die Funktion waitForInterrupt
+>>>
+```C
+int  waitForInterruptInit (int pin, int mode)
+```
+``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer)
+
+``mode``: INT_EDGE_RISING,INT_EDGE_FALLING,INT_EDGE_BOTH
+
+``Rückgabewert``: 
+
+> -1 ... Fehler
+> 
+> 0 ... erfolgreich
 
 
 ## Hardware PWM (Pulsweitenmodulation)
