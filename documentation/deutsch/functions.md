@@ -357,7 +357,7 @@ int  waitForInterrupt (int pin, int mS)
 ``Rückgabewert``: Fehler  
 > 0 ... Erfolgreich  
 > -1 ... GPIO Device Chip nicht erfolgreich geöffnet  
-> -2 ... ISR wurde nicht registriert (wiringPiISR muss aufgerufen werden)
+> -2 ... ISR wurde nicht registriert (waitForInterruptInit muss aufgerufen werden)
 
 
 ## Hardware PWM (Pulsweitenmodulation)
