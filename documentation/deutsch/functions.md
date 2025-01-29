@@ -357,8 +357,8 @@ long long int  waitForInterrupt (int pin, int mS, int bouncetime)
 ``mS``: Timeout in Milisekunden.
  - \-1 warten ohne timeout
  - 0 wartet nicht
- - 1...n wartet maximal mS Millisekunden
-``bouncetime``: Entprellzeit in Millisekunden, 0 schaltet Entprellen ab
+ - 1...n wartet maximal n mS Millisekunden  
+``bouncetime``: Entprellzeit in Millisekunden, 0 schaltet Entprellen ab  
 
 ``Rückgabewert``: 
 > \>0 ... Zeitstempel des Interrupt Ereignisses in Mikrosekunden
@@ -376,12 +376,12 @@ Initialisiert die Funktion waitForInterrupt, definiert, welche Flanke den Interr
 int  waitForInterruptInit (int pin, int mode)
 ```
 
-``pin``: Der gewünschte Pin (BCM\-, WiringPi\- oder Pin\-Nummer)
-``mode``: INT_EDGE_RISING, INT_EDGE_FALLING, INT_EDGE_BOTH
+``pin``: Der gewünschte Pin (BCM\-, WiringPi\- oder Pin\-Nummer)  
+``mode``: INT_EDGE_RISING, INT_EDGE_FALLING, INT_EDGE_BOTH   
 
 ``Rückgabewert``: 
-> \-1 ... Fehler
-> 0 ... erfolgreich
+> \-1 ... Fehler  
+> 0 ... erfolgreich  
 
 
 ## Hardware PWM (Pulsweitenmodulation)
