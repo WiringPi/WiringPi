@@ -20,13 +20,13 @@ sudo apt install git
 git clone https://github.com/WiringPi/WiringPi.git
 cd WiringPi
 ./build debian
-mv debian-template/wiringpi-3.0-1.deb .
+mv debian-template/wiringpi-3.13.deb .
 ```
 
 **Debian-Paket installieren:**
 
 ```bash
-sudo apt install ./wiringpi-3.0-1.deb
+sudo apt install ./wiringpi-3.13.deb
 ```
 
 **Debian-Paket deinstallieren:**

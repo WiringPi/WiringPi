@@ -473,9 +473,10 @@ static int isrFds [64] =
 
 // ISR Data
 static int chipFd = -1;
-static void (*isrFunctions [64])(void) ;
+static void (*isrFunctions [64])(unsigned int, long long int) ;
 static pthread_t isrThreads[64];
 static int isrMode[64];
+static unsigned long long lastcall[64];
 
 // Doing it the Arduino way with lookup tables...
 //	Yes, it's probably more innefficient than all the bit-twidling, but it
@@ -2566,16 +2567,26 @@ unsigned int digitalReadByte2 (void)
  *	This is actually done via the /dev/gpiochip interface regardless of
  *	the wiringPi access mode in-use. Maybe sometime it might get a better
  *	way for a bit more efficiency.
+ *  Returns timestamp in microseconds, when interrupt happened
  *********************************************************************************
  */
 
-int waitForInterrupt (int pin, int mS)
+long long int waitForInterrupt (int pin, int mS, int bouncetime)  // bounctime in milliseconds
 {
-  int fd, ret;
+  long long int ret;
+  int fd;
   struct pollfd polls ;
   struct gpioevent_data evdata;
   //struct gpio_v2_line_request req2;
+  struct timeval tv_timenow;
+  unsigned long long timenow;
+  int finished = 0;
+  int initial_edge = 1;
 
+  if (wiringPiDebug) {
+    printf ("waitForInterrupt: mS = %d,  bouncetime = %d\n", mS, bouncetime) ;
+  }
+  
   if (wiringPiMode == WPI_MODE_PINS)
     pin = pinToGpio [pin] ;
   else if (wiringPiMode == WPI_MODE_PHYS)
@@ -2590,23 +2601,46 @@ int waitForInterrupt (int pin, int mS)
   polls.revents = 0;
 
   // Wait for it ...
-  ret = poll(&polls, 1, mS);
-  if (ret <= 0) {
-    fprintf(stderr, "wiringPi: ERROR: poll returned=%d\n", ret);
-  } else {
-    //if (polls.revents & POLLIN)
-    if (wiringPiDebug) {
-      printf ("wiringPi: IRQ line %d received %d, fd=%d\n", pin, ret, isrFds[pin]) ;
-    }
-    /* read event data */
-    int readret = read(isrFds [pin], &evdata, sizeof(evdata));
-    if (readret == sizeof(evdata)) {
-      if (wiringPiDebug) {
-        printf ("wiringPi: IRQ data id: %d, timestamp: %lld\n", evdata.id, evdata.timestamp) ;
+  while (!finished) {
+    ret = (long long int)poll(&polls, 1, mS);
+    if (ret < 0) {
+      if (wiringPiDebug) {  
+        fprintf(stderr, "wiringPi: ERROR: poll returned=%lld\n", ret);
       }
-      ret = evdata.id;
-    } else {
-      ret = 0;
+      break;
+    } else if (ret == 0) { 
+      if (wiringPiDebug) {  
+        fprintf(stderr, "wiringPi: timeout: poll returned=%lld\n", ret);
+      }
+      break;    
+    }
+    else {
+      //if (polls.revents & POLLIN)
+      if (wiringPiDebug) {
+        printf ("wiringPi: IRQ line %d received %lld, fd=%d\n", pin, ret, isrFds[pin]) ;
+      }
+      if (initial_edge) {    // first time triggers with current state, so ignore
+        initial_edge = 0;
+      } else {
+      /* read event data */
+        int readret = read(isrFds [pin], &evdata, sizeof(evdata));
+        if (readret == sizeof(evdata)) {
+          if (wiringPiDebug) {
+            printf ("wiringPi: IRQ data id: %d, timestamp: %lld\n", evdata.id, evdata.timestamp) ;
+          }
+//      ret = evdata.id;
+          gettimeofday(&tv_timenow, NULL);
+          timenow = tv_timenow.tv_sec*1E6 + tv_timenow.tv_usec;
+          if (bouncetime == 0 || timenow - lastcall[pin] > (unsigned int)bouncetime*1000 || lastcall[pin] == 0 || lastcall[pin] > timenow) {
+             lastcall[pin] = timenow;
+             finished = 1;
+             ret = evdata.timestamp / 1000LL;    // nanoseconds u64 to microseconds
+          }
+        } else {
+          ret = -1;
+          break;
+        }
+      }
     }
   }
   return ret;
@@ -2683,7 +2717,7 @@ int waitForInterruptClose (int pin) {
     if (wiringPiDebug) {
       printf ("wiringPi: waitForInterruptClose close thread 0x%lX\n", (unsigned long)isrThreads[pin]) ;
     }
-    if (pthread_cancel(isrThreads[pin]) == 0) {
+    if (isrThreads[pin] && pthread_cancel(isrThreads[pin]) == 0) {
       if (wiringPiDebug) {
         printf ("wiringPi: waitForInterruptClose thread canceled successfuly\n") ;
       }
@@ -2696,7 +2730,7 @@ int waitForInterruptClose (int pin) {
   }
   isrFds [pin] = -1;
   isrFunctions [pin] = NULL;
-
+  lastcall[pin] = 0;
   /* -not closing so far - other isr may be using it - only close if no other is using - will code later
   if (chipFd>0) {
     close(chipFd);
@@ -2722,23 +2756,25 @@ int wiringPiISRStop (int pin) {
  *********************************************************************************
  */
 
-static void *interruptHandler (UNU void *arg)
+static void *interruptHandler (void *arg)
 {
   int pin ;
-
+  int bouncetime;
+  
   (void)piHiPri (55) ;	// Only effective if we run as root
 
   pin   = pinPass ;
+  bouncetime = *(int *)arg;
   pinPass = -1 ;
-
+  
   for (;;) {
-    int ret = waitForInterrupt(pin, -1);
-    if ( ret> 0) {
+    long long int ret = waitForInterrupt(pin, -1, bouncetime);
+    if ( ret> 0) {      // return timestamp in microseconds
       if (wiringPiDebug) {
         printf ("wiringPi: call function\n") ;
       }
       if(isrFunctions [pin]) {
-        isrFunctions [pin] () ;
+        isrFunctions [pin] ((unsigned int)pin, ret) ;
       }
       // wait again - in the past forever - now can be stopped by  waitForInterruptClose
     } else if( ret< 0) {
@@ -2762,7 +2798,7 @@ static void *interruptHandler (UNU void *arg)
  *********************************************************************************
  */
 
-int wiringPiISR (int pin, int mode, void (*function)(void))
+int wiringPiISR (int pin, int mode, void (*function)(unsigned int, long long int), int bouncetime)
 {
   const int maxpin = GetMaxPin();
 
@@ -2779,11 +2815,12 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
 
   isrFunctions [pin] = function ;
   isrMode[pin] = mode;
+  lastcall[pin] = 0;
   if(waitForInterruptInit (pin, mode)<0) {
     if (wiringPiDebug) {
       fprintf (stderr, "wiringPi: waitForInterruptInit failed\n") ;
     }
-  };
+  }
 
   if (wiringPiDebug) {
     printf ("wiringPi: mutex in\n") ;
@@ -2793,7 +2830,7 @@ int wiringPiISR (int pin, int mode, void (*function)(void))
     if (wiringPiDebug) {
       printf("wiringPi: pthread_create before 0x%lX\n", (unsigned long)isrThreads[pin]);
     }
-    if (pthread_create (&isrThreads[pin], NULL, interruptHandler, NULL)==0) {
+    if (pthread_create (&isrThreads[pin], NULL, interruptHandler, &bouncetime)==0) {
       if (wiringPiDebug) {
         printf("wiringPi: pthread_create successed, 0x%lX\n", (unsigned long)isrThreads[pin]);
       }
