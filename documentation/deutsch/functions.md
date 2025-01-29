@@ -301,10 +301,6 @@ int wiringPiISR(int pin, int mode, void (*function)(unsigned int, long long int)
  - INT_EDGE_BOTH ... Steigende und fallende Flanke  
 
 ``*function``: Funktionspointer für ISR mit Rückgabeparameter pin: unsigned int und Zeitstempel: long long int
-<<<<<<< HEAD
-=======
-
->>>>>>> 349a5adb389ccc8c2baf649cfc7408401eb26e66
 ``bouncetime``: Entprellzeit in ms, 0 ms schaltet das Entprellen ab   
 ``Rückgabewert``:   
  > 0 ... Erfolgreich  
@@ -358,20 +354,11 @@ long long int  waitForInterrupt (int pin, int mS, int bouncetime)
 ```
 
 ``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer).  
-<<<<<<< HEAD
 ``mS``: Timeout in Milisekunden. -1 warten ohne timeout, 0 wartet nicht, \>0 wartet maximal mS Millisekunden
 ``bouncetime``: Entprellzeit in Millisekunden, 0 schaltet Entprellen ab
 
 ``Rückgabewert``: 
 > \>0 ... Zeitstempel des Interrupt Ereignisses in Mikrosekunden
-=======
-``mS``: Timeout in Milisekunden. -1 warten ohne timeout, 0 wartet nicht, >0 wartet maximal mS Millisekunden
-
-``bouncetime``: Entprellzeit in Millisekunden, 0 schaltet Entprellen ab
-
-``Rückgabewert``: 
-> >0 ... Zeitstempel des Interrupt Ereignisses
->>>>>>> 349a5adb389ccc8c2baf649cfc7408401eb26e66
 > 0 ... Timeout  
 > -1 ... GPIO Device Chip nicht erfolgreich geöffnet  
 > -2 ... ISR wurde nicht registriert (waitForInterruptInit muss aufgerufen werden)
@@ -379,33 +366,18 @@ long long int  waitForInterrupt (int pin, int mS, int bouncetime)
 
 ### waitForInterruptInit
 
-<<<<<<< HEAD
 Initialisiert die Funktion waitForInterrupt, definiert, welche Flanke den Interrupt erzeugen soll
 
-=======
-Initiaölisiert die Funktion waitForInterrupt
->>>>>>> 349a5adb389ccc8c2baf649cfc7408401eb26e66
 >>>
 ```C
 int  waitForInterruptInit (int pin, int mode)
 ```
-<<<<<<< HEAD
 
 ``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer)
 ``mode``: INT_EDGE_RISING, INT_EDGE_FALLING, INT_EDGE_BOTH
 
 ``Rückgabewert``: 
 > -1 ... Fehler
-=======
-``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer)
-
-``mode``: INT_EDGE_RISING,INT_EDGE_FALLING,INT_EDGE_BOTH
-
-``Rückgabewert``: 
-
-> -1 ... Fehler
-> 
->>>>>>> 349a5adb389ccc8c2baf649cfc7408401eb26e66
 > 0 ... erfolgreich
 
 
