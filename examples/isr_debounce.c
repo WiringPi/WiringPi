@@ -1,6 +1,6 @@
 /*
  * isr_debounce.c:
- *	Wait for Interrupt test program  WiringPi >=3.2 - ISR method
+ *	Wait for Interrupt test program  WiringPi >=3.13 - ISR method
  *
  *
  */
@@ -10,9 +10,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <wiringPi.h>
-#include <wpiExtensions.h>
-#include <unistd.h>
-// #include <sys/time.h>
+
 #include <time.h>
 
 #define BOUNCETIME 300
@@ -99,7 +97,7 @@ int main (void)
     wiringPiISRStop (IRQpin) ;  
   }   
   else {
-    printf("waitForInterrupt returned success. ret = %lld\n\n", ret);     
+    printf("waitForInterrupt: falling edge fired at %lld microseconds\n\n", ret);    
     wiringPiISRStop (IRQpin) ;  
   }
   
