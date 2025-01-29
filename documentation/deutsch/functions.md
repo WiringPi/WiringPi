@@ -354,7 +354,8 @@ long long int  waitForInterrupt (int pin, int mS, int bouncetime)
 ```
 
 ``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer).  
-``mS``: Timeout in Milisekunden. -1 warten ohne timeout, 0 wartet nicht, \>0 wartet maximal mS Millisekunden
+``mS``: Timeout in Milisekunden. -1 warten ohne timeout, 0 wartet nicht, \>0 wartet maximal mS Millisekunden.
+
 ``bouncetime``: Entprellzeit in Millisekunden, 0 schaltet Entprellen ab
 
 ``Rückgabewert``: 
