@@ -353,15 +353,18 @@ Wartet auf einen Aufruf der Interrupt Service Routine (ISR) mit Timeout und Entp
 long long int  waitForInterrupt (int pin, int mS, int bouncetime)
 ```
 
-``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer).  
-``mS``: Timeout in Milisekunden. -1 warten ohne timeout, 0 wartet nicht, 1...n wartet maximal mS Millisekunden.
+``pin``: Der gewünschte Pin (BCM\-, WiringPi\- oder Pin\-Nummer).  
+``mS``: Timeout in Milisekunden.
+ - \-1 warten ohne timeout
+ - 0 wartet nicht
+ - 1...n wartet maximal mS Millisekunden
 ``bouncetime``: Entprellzeit in Millisekunden, 0 schaltet Entprellen ab
 
 ``Rückgabewert``: 
 > \>0 ... Zeitstempel des Interrupt Ereignisses in Mikrosekunden
 > 0 ... Timeout  
-> -1 ... GPIO Device Chip nicht erfolgreich geöffnet  
-> -2 ... ISR wurde nicht registriert (waitForInterruptInit muss aufgerufen werden)
+> \-1 ... GPIO Device Chip nicht erfolgreich geöffnet  
+> \-2 ... ISR wurde nicht registriert (waitForInterruptInit muss aufgerufen werden)
 
 
 ### waitForInterruptInit
@@ -373,11 +376,11 @@ Initialisiert die Funktion waitForInterrupt, definiert, welche Flanke den Interr
 int  waitForInterruptInit (int pin, int mode)
 ```
 
-``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer)
+``pin``: Der gewünschte Pin (BCM\-, WiringPi\- oder Pin\-Nummer)
 ``mode``: INT_EDGE_RISING, INT_EDGE_FALLING, INT_EDGE_BOTH
 
 ``Rückgabewert``: 
-> -1 ... Fehler
+> \-1 ... Fehler
 > 0 ... erfolgreich
 
 
