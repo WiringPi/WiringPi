@@ -294,13 +294,16 @@ Registriert eine Interrupt Service Routine (ISR) bzw. Funktion die bei Flankenwe
 int wiringPiISR(int pin, int mode, void (*function)(unsigned int, long long int), int bouncetime);
 ```
 
-``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer).  
-``mode``: Auslösende Flankenmodus
+``pin``: Der gewünschte Pin (BCM\-, WiringPi\- oder Pin\-Nummer).  
+``mode``: Auslösende Flankenmodus  
  - INT_EDGE_RISING ... Steigende Flanke  
  - INT_EDGE_FALLING ... Fallende Flanke  
  - INT_EDGE_BOTH ... Steigende und fallende Flanke  
 
-``*function``: Funktionspointer für ISR mit Rückgabeparameter pin: unsigned int und Zeitstempel: long long int
+``*function``: Funktionspointer für ISR mit Rückgabeparameter pin und Zeitstempel:   
+ > unsigned int: pin  
+ > long long int: Zeitstempel  
+ 
 ``bouncetime``: Entprellzeit in ms, 0 ms schaltet das Entprellen ab   
 ``Rückgabewert``:   
  > 0 ... Erfolgreich  
