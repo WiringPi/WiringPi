@@ -140,6 +140,9 @@ struct wiringPiNodeStruct *wiringPiNodes = NULL ;
 #define RP1_FSEL_NONE			0x09
 #define RP1_FSEL_NONE_HW	0x1f  //default, mask
 
+// maybe faster then piRP1Model
+#define ISRP1MODEL (PI_MODEL_5==RaspberryPiModel || PI_MODEL_CM5==RaspberryPiModel|| PI_MODEL_500==RaspberryPiModel || PI_MODEL_CM5L==RaspberryPiModel)
+
 //RP1 chip (@Pi5) RIO address
 const unsigned int RP1_RIO_OUT = 0x0000;
 const unsigned int RP1_RIO_OE  = (0x0004/4);
@@ -336,7 +339,7 @@ volatile unsigned int *_wiringPiRio ;
 
 static volatile unsigned int piGpioBase = 0 ;
 
-const char *piModelNames [24] =
+const char *piModelNames [PI_MODELS_MAX] =
 {
   "Model A",	//  0
   "Model B",	//  1
@@ -362,6 +365,9 @@ const char *piModelNames [24] =
   "CM4S",	// 21
   "Unknown22",	// 22
   "Pi 5",	// 23
+  "CM5",	// 24
+  "Pi 500",	// 25
+  "CM5 Lite",	// 26
 } ;
 
 const char *piProcessor [5] =
@@ -395,10 +401,10 @@ const char *piRevisionNames [16] =
 
 const char *piMakerNames [16] =
 {
-  "Sony",	//	 0
+  "Sony UK",//	 0
   "Egoman",	//	 1
   "Embest",	//	 2
-  "Unknown",//	 3
+  "Sony Japan",//	 3
   "Embest",	//	 4
   "Stadium",//	 5
   "Unknown06",	//	 6
@@ -421,7 +427,7 @@ const int piMemorySize [8] =
   2048,		//	 3
   4096,		//	 4
   8192,		//	 5
-     0,		//	 6
+ 16384,		//	 6
      0,		//	 7
 } ;
 
@@ -625,16 +631,27 @@ int piBoard40Pin() {
   }
 }
 
+int piRP1Model() {
+  switch(RaspberryPiModel){
+    case PI_MODEL_5:
+    case PI_MODEL_CM5:
+    case PI_MODEL_500:
+    case PI_MODEL_CM5L:
+      return 1;
+    default:
+      return 0;
+   }
+}
 
 int GetMaxPin() {
-  return PI_MODEL_5 == RaspberryPiModel ? 27 : 63;
+  return piRP1Model() ? 27 : 63;
 }
 
 
-#define RETURN_ON_MODEL5 if (PI_MODEL_5 == RaspberryPiModel) { if (wiringPiDebug) printf("Function not supported on Pi5\n");  return; }
+#define RETURN_ON_MODEL5 if (piRP1Model()) { if (wiringPiDebug) printf("Function not supported on Pi5\n");  return; }
 
 int FailOnModel5(const char *function) {
-  if (PI_MODEL_5 == RaspberryPiModel) {
+  if (piRP1Model()) {
     return wiringPiFailure (WPI_ALMOST, "Function '%s' not supported on Raspberry Pi 5.\n"
   "  Unable to continue. Keep an eye of new versions at https://github.com/wiringpi/wiringpi\n", function) ;
   }
@@ -1206,6 +1223,9 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
       break ;
 
     case PI_MODEL_5:
+    case PI_MODEL_CM5:
+    case PI_MODEL_500:
+    case PI_MODEL_CM5L:
       piGpioBase = GPIO_PERI_BASE_2712 ;
       piGpioPupOffset = 0 ;
       break ;
@@ -1251,7 +1271,7 @@ int physPinToGpio (int physPin)
  *********************************************************************************
  */
 void setPadDrivePin (int pin, int value) {
-  if (PI_MODEL_5 != RaspberryPiModel) return;
+  if (!piRP1Model()) return;
   if (pin < 0 || pin > GetMaxPin()) return ;
 
   uint32_t wrVal;
@@ -1271,7 +1291,7 @@ void setPadDrive (int group, int value)
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
     value = value & 7; // 0-7 supported
-    if (PI_MODEL_5 == RaspberryPiModel) {
+    if (piRP1Model()) {
       if (-1==group) {
         printf ("Pad register:\n");
         for (int pin=0, maxpin=GetMaxPin(); pin<=maxpin; ++pin) {
@@ -1342,7 +1362,7 @@ int getAlt (int pin)
   else if (wiringPiMode != WPI_MODE_GPIO)
     return 0 ;
 
-  if (PI_MODEL_5 == RaspberryPiModel) {
+  if (piRP1Model()) {
     alt = (gpio[2*pin+1] & RP1_FSEL_NONE_HW); //0-4  function
 
   /*
@@ -1402,7 +1422,7 @@ void pwmSetMode (int mode)
 {
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
-    if (PI_MODEL_5 == RaspberryPiModel) {
+    if (piRP1Model()) {
       if(mode != PWM_MODE_MS) {
         fprintf(stderr, "pwmSetMode: Raspberry Pi 5 missing feature PWM BAL mode\n");
       }
@@ -1441,7 +1461,7 @@ void pwmSetRange (unsigned int range)
       return;
     }
     int readback = 0x00;
-    if (PI_MODEL_5 == RaspberryPiModel) {
+    if (piRP1Model()) {
       pwm[RP1_PWM0_CHAN0_RANGE] = range;
       pwm[RP1_PWM0_CHAN1_RANGE] = range;
       pwm[RP1_PWM0_CHAN2_RANGE] = range;
@@ -1478,7 +1498,7 @@ void pwmSetClock (int divisor)
   if (divisor > PWMCLK_DIVI_MAX) {
     divisor = PWMCLK_DIVI_MAX;   // even on Pi5 4095 is OK
   }
-  if (PI_MODEL_5 == RaspberryPiModel) {
+  if (piRP1Model()) {
     if (divisor < 1) {
       if (wiringPiDebug) { printf("Disable PWM0 clock"); }
       clk[CLK_PWM0_CTRL] = RP1_CLK_PWM0_CTRL_DISABLE_MAGIC;   // 0 = disable on Pi5
@@ -1713,7 +1733,7 @@ int OpenAndCheckGpioChip(int GPIONo, const char* label, const unsigned int lines
 int wiringPiGpioDeviceGetFd() {
   if (chipFd<0) {
     piBoard();
-    if (PI_MODEL_5 == RaspberryPiModel) {
+    if (piRP1Model()) {
       chipFd = OpenAndCheckGpioChip(0, "rp1", 54);   // /dev/gpiochip0 @ Pi5 since Kernel 6.6.47
       if (chipFd<0) {
         chipFd = OpenAndCheckGpioChip(4, "rp1", 54);  // /dev/gpiochip4 @ Pi5 with older kernel
@@ -1793,7 +1813,7 @@ void pinModeAlt (int pin, int mode)
     else if (wiringPiMode != WPI_MODE_GPIO)
       return ;
 
-    if (PI_MODEL_5 == RaspberryPiModel) {
+    if (piRP1Model()) {
       //confusion! diffrent to to BCM!  this is taking directly the value for the register
       int modeRP1;
       switch(mode) {
@@ -1932,7 +1952,7 @@ void pinMode (int pin, int mode)
     shift   = gpioToShift  [pin] ;
 
     if (INPUT==mode  || PM_OFF==mode) {
-      if (PI_MODEL_5 == RaspberryPiModel) {
+      if (piRP1Model()) {
         if (INPUT==mode) {
           pads[1+pin] = (pin<=8) ? RP1_PAD_DEFAULT_0TO8 : RP1_PAD_DEFAULT_FROM9;
           gpio[2*pin+1] = RP1_FSEL_GPIO | RP1_DEBOUNCE_DEFAULT; // GPIO
@@ -1947,14 +1967,14 @@ void pinMode (int pin, int mode)
       if (PM_OFF==mode && !usingGpioMem && pwm && gpioToPwmALT[pin]>0) { //PWM pin -> reset
         pwmWrite(origPin, 0);
         int channel = gpioToPwmPort[pin];
-        if (channel>=0 && channel<=3 && PI_MODEL_5 == RaspberryPiModel) {
+        if (channel>=0 && channel<=3 && piRP1Model()) {
           unsigned int ctrl = pwm[RP1_PWM0_GLOBAL_CTRL];
           pwm[RP1_PWM0_GLOBAL_CTRL] = (ctrl & ~(1<<channel)) | RP1_PWM_CTRL_SETUPDATE;
           //printf("Disable PWM0[%d] (0x%08X->0x%08X)\n", channel, ctrl, pwm[RP1_PWM0_GLOBAL_CTRL]);
         }
       }
     } else if (mode == OUTPUT) {
-      if (PI_MODEL_5 == RaspberryPiModel) {
+      if (piRP1Model()) {
         pads[1+pin] = (pin<=8) ? RP1_PAD_DEFAULT_0TO8 : RP1_PAD_DEFAULT_FROM9;
         gpio[2*pin+1] = RP1_FSEL_GPIO | RP1_DEBOUNCE_DEFAULT; // GPIO
         rio[RP1_RIO_OE + RP1_SET_OFFSET] = 1<<pin;            // Output
@@ -1978,7 +1998,7 @@ void pinMode (int pin, int mode)
 	      return;
       }
       int channel = gpioToPwmPort[pin];
-      if (PI_MODEL_5 == RaspberryPiModel) {
+      if (piRP1Model()) {
         if (channel>=0 && channel<=3) {
           // enable channel pwm m:s mode
           pwm[RP1_PWM0_CHAN_START+RP1_PWM0_CHAN_OFFSET*channel+RP1_PWM0_CHAN_CTRL]  = (RP1_PWM_TRAIL_EDGE_MS | RP1_PWM_FIFO_POP_MASK);
@@ -2086,7 +2106,7 @@ void pullUpDnControl (int pin, int pud)
         break;
     }
 
-    if (PI_MODEL_5 == RaspberryPiModel) {
+    if (piRP1Model()) {
       unsigned int pullbits = pads[1+pin] & RP1_INV_PUD_MASK; // remove bits
       switch (pud){
         case PUD_OFF:  pads[1+pin] = pullbits;                break;
@@ -2188,7 +2208,7 @@ int digitalRead (int pin)
         break;
     }
 
-    if (PI_MODEL_5 == RaspberryPiModel) {
+    if (ISRP1MODEL) {
       switch(gpio[2*pin] & RP1_STATUS_LEVEL_MASK) {
         default: // 11 or 00 not allowed, give LOW!
         case RP1_STATUS_LEVEL_LOW:  return LOW ;
@@ -2291,7 +2311,7 @@ void digitalWrite (int pin, int value)
         break;
     }
 
-    if (PI_MODEL_5 == RaspberryPiModel) {
+    if (ISRP1MODEL) {
       if (value == LOW) {
         //printf("Set pin %d >>0x%08x<< to low\n", pin, 1<<pin);
         rio[RP1_RIO_OUT + RP1_CLR_OFFSET] = 1<<pin;
@@ -2363,7 +2383,7 @@ void pwmWrite (int pin, int value)
     usingGpioMemCheck ("pwmWrite") ;
     int channel = gpioToPwmPort[pin];
     int readback = 0x00;
-    if (PI_MODEL_5 == RaspberryPiModel ) {
+    if (piRP1Model()) {
       if (channel>=0 && channel<=3) {
         unsigned int addr = RP1_PWM0_CHAN_START+RP1_PWM0_CHAN_OFFSET*channel+RP1_PWM0_CHAN_DUTY;
         pwm[addr] = value;
@@ -2991,7 +3011,7 @@ int wiringPiUserLevelAccess(void)
   const char* gpiomemModule = gpiomem_BCM;
 
   piBoard();
-  if (PI_MODEL_5 == RaspberryPiModel) {
+  if (piRP1Model()) {
     gpiomemModule = gpiomem_RP1;
   }
 
@@ -3058,7 +3078,7 @@ int wiringPiGlobalMemoryAccess(void)
   unsigned int BaseAddr, PWMAddr;
 
   piBoard();
-  if (PI_MODEL_5 == RaspberryPiModel) {
+  if (piRP1Model()) {
     GetRP1Memory(pciemem_RP1, sizeof(pciemem_RP1));
     gpiomemGlobal = pciemem_RP1;
     MMAP_size = pciemem_RP1_Size;
@@ -3081,7 +3101,7 @@ int wiringPiGlobalMemoryAccess(void)
         fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (GPIO 0x%X,0x%X) failed: %s\n", BaseAddr, MMAP_size, strerror (errno)) ;
     } else {
       munmap(lgpio, MMAP_size);
-      if (PI_MODEL_5 == RaspberryPiModel) {
+      if (piRP1Model()) {
         returnvalue = 2;    // GPIO & PWM accessible (same area, nothing to mmap)
       } else {
         //check PWM area
@@ -3167,7 +3187,7 @@ int wiringPiSetup (void)
 	const char* gpiomemGlobal = gpiomem_global;
   const char* gpiomemModule = gpiomem_BCM;
 
-  if (PI_MODEL_5 == model) {
+  if (piRP1Model()) {
     GetRP1Memory();
     gpiomemGlobal = pciemem_RP1;
     gpiomemModule = gpiomem_RP1;
@@ -3205,7 +3225,7 @@ int wiringPiSetup (void)
     printf ("wiringPi: access to %s succeded %d\n", usingGpioMem ? gpiomemModule : gpiomemGlobal, fd) ;
   }
 //	GPIO:
- if (PI_MODEL_5 != model) {
+ if (!piRP1Model()) {
    //Set the offsets into the memory interface.
 
     GPIO_PADS 	= piGpioBase + 0x00100000 ;
