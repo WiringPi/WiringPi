@@ -1,7 +1,7 @@
 /*
  * wiringPi.h:
  *	Arduino like Wiring library for the Raspberry Pi.
- *	Copyright (c) 2012-2017 Gordon Henderson
+ *	Copyright (c) 2012-2025 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/
@@ -93,35 +93,44 @@
 // Pi model types and version numbers
 //	Intended for the GPIO program Use at your own risk.
 // https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#new-style-revision-codes
+// https://github.com/raspberrypi/documentation/blob/develop/documentation/asciidoc/computers/raspberry-pi/revision-codes.adoc
 
-#define	PI_MODEL_A		 0
-#define	PI_MODEL_B		 1
-#define	PI_MODEL_AP		 2
-#define	PI_MODEL_BP		 3
-#define	PI_MODEL_2		 4
-#define	PI_ALPHA		 5
-#define	PI_MODEL_CM		 6
-#define	PI_MODEL_07		 7
-#define	PI_MODEL_3B		 8
-#define	PI_MODEL_ZERO		 9
-#define	PI_MODEL_CM3		10
-#define	PI_MODEL_ZERO_W		12
-#define	PI_MODEL_3BP 		13
-#define	PI_MODEL_3AP 		14
-#define	PI_MODEL_CM3P 		16
-#define	PI_MODEL_4B 		17
-#define	PI_MODEL_ZERO_2W	18
-#define	PI_MODEL_400		19
-#define	PI_MODEL_CM4		20
-#define	PI_MODEL_CM4S		21
-#define	PI_MODEL_5		  23
+#define	PI_MODEL_A		    0
+#define	PI_MODEL_B		    1
+#define	PI_MODEL_AP		    2
+#define	PI_MODEL_BP		    3
+#define	PI_MODEL_2		    4
+#define	PI_ALPHA		      5
+#define	PI_MODEL_CM		    6
 
-#define	PI_VERSION_1		0
+#define	PI_MODEL_3B		    8
+#define	PI_MODEL_ZERO		  9
+#define	PI_MODEL_CM3		 10
+
+#define	PI_MODEL_ZERO_W	 12
+#define	PI_MODEL_3BP 		 13
+#define	PI_MODEL_3AP 		 14
+
+#define	PI_MODEL_CM3P 	 16
+#define	PI_MODEL_4B 		 17
+#define	PI_MODEL_ZERO_2W 18
+#define	PI_MODEL_400		 19
+#define	PI_MODEL_CM4		 20
+#define	PI_MODEL_CM4S		 21
+
+#define	PI_MODEL_5		   23
+#define	PI_MODEL_CM5	   24
+#define	PI_MODEL_500	   25
+#define	PI_MODEL_CM5L	   26
+
+#define PI_MODELS_MAX    27
+
+#define	PI_VERSION_1		  0
 #define	PI_VERSION_1_1		1
 #define	PI_VERSION_1_2		2
-#define	PI_VERSION_2		3
+#define	PI_VERSION_2		  3
 
-#define	PI_MAKER_SONY		0
+#define	PI_MAKER_SONY		  0
 #define	PI_MAKER_EGOMAN		1
 #define	PI_MAKER_EMBEST		2
 #define	PI_MAKER_UNKNOWN	3
@@ -129,12 +138,11 @@
 #define GPIO_LAYOUT_PI1_REV1 1   //Pi 1 A/B Revision 1, 1.1, CM
 #define GPIO_LAYOUT_DEFAULT  2
 
-extern const char *piModelNames    [24] ;
+extern const char *piModelNames    [PI_MODELS_MAX] ;
 extern const char *piProcessor     [ 5] ;
 extern const char *piRevisionNames [16] ;
 extern const char *piMakerNames    [16] ;
 extern const int   piMemorySize    [ 8] ;
-
 
 //	Intended for the GPIO program Use at your own risk.
 
@@ -271,6 +279,7 @@ extern          int  piGpioLayout        (void) ;
 extern          int  piBoardRev          (void) ;	// Deprecated, but does the same as piGpioLayout
 extern          void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
 extern          int  piBoard40Pin        (void) ;                   // Interface V3.7
+extern          int  piRP1Model          (void) ;                   // Interface V3.14
 extern          int  wpiPinToGpio        (int wpiPin) ;
 extern          int  physPinToGpio       (int physPin) ;
 extern          void setPadDrive         (int group, int value) ;
