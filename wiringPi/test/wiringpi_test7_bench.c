@@ -88,11 +88,18 @@ int main (void) {
       fExpectTimepinMode      = 0.121; //us
       fWriteReadDelayFactor   = 1.86;
       break;
-    case PI_MODEL_5:
-      fExpectTimedigitalWrite = 0.025; //us
-      fExpectTimedigitalRead  = 0.323; //us
-      fExpectTimepinMode      = 0.200; //us
-      fWriteReadDelayFactor   = 3.2;
+    default:
+      if (piRP1Model()) {
+        // So far expect all Pi5 / RP1 hardware has same performance
+        printf("Raspberry Pi with RP1 chip found\n");
+        fExpectTimedigitalWrite = 0.025; //us
+        fExpectTimedigitalRead  = 0.323; //us
+        fExpectTimepinMode      = 0.200; //us
+        fWriteReadDelayFactor   = 3.2;
+      } else {
+        printf("Unknown Raspberry Pi found, exit\n");
+        return(EXIT_FAILURE);
+      }
       break;
   }
   fWriteReadFactor = fExpectTimedigitalRead/fExpectTimedigitalWrite;
@@ -123,7 +130,7 @@ int main (void) {
 	gettimeofday(&t2, NULL);
   double OpTimeRead = ReportElapedTime("digitalRead", 2, fExpectTimedigitalRead, t1, t2);
     
-  if (RaspberryPiModel!=PI_MODEL_5) {
+  if (!piRP1Model()) {
     ToggleValue /= 4;
   } else {
     ToggleValue *= 1.5;
@@ -148,7 +155,7 @@ int main (void) {
 	gettimeofday(&t2, NULL);
   ReportElapedTime("pinMode and digitalWrite", 2, fExpectTimepinMode+fExpectTimedigitalWrite, t1, t2);
 
-  if (RaspberryPiModel!=PI_MODEL_5) {
+  if (!piRP1Model()) {
     ToggleValue *= 1.5;
   } else {
     ToggleValue /= 5;
@@ -168,8 +175,8 @@ int main (void) {
   printf("\n");
   CheckSameFloat("digitalWrite vs. digitalRead factor", OpTimeRead/OpTimeWrite, fWriteReadFactor, 0.3);
   CheckSameFloat("digitalWrite and digitalRead alternating factor", fTimePerOperation/(fExpectTimedigitalWrite+fExpectTimedigitalRead), fWriteReadDelayFactor, 0.2);
-  if (RaspberryPiModel==PI_MODEL_5) {
-    printf("\nRasperry Pi 5:\n");
+  if (piRP1Model()) {
+    printf("\nRasperry Pi with RP1 chip:\n");
     printf("  * digitalRead has very slow speed, much slower then digitalWrite, factor %.1f (typical Pi4 ~1.9)\n", fWriteReadFactor);
     printf("  * Alternating read/write operation has slow speed, factor %.2f (typical Pi4 ~1.86) to single operation time\n", fWriteReadDelayFactor);
   }
