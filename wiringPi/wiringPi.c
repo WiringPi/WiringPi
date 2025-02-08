@@ -3002,6 +3002,12 @@ unsigned long long piMicros64(void) {
 */
 unsigned long pulseIn(int pin, int level, unsigned long timeout) {
   unsigned long startTime = micros();
+  //0. missed pulse start - prevents bad readings
+  while (digitalRead(pin) == level) {
+    if (micros() - startTime > timeout){
+      return 0;
+    }
+  }
   // 1. Wait for pulse to start.
   while (digitalRead(pin) != level) {
       if ((micros() - startTime) > timeout)
