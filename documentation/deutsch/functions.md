@@ -295,6 +295,7 @@ int wiringPiISR(int pin, int edgeMode, void (*function)(unsigned int, long long 
 ```
 
 ``pin``: Der gewünschte Pin (BCM\-, WiringPi\- oder Pin\-Nummer).  
+
 ``edgeMode``: Auslösende Flankenmodus  
  - INT_EDGE_RISING ... Steigende Flanke  
  - INT_EDGE_FALLING ... Fallende Flanke  
@@ -338,14 +339,17 @@ long long int  waitForInterrupt (int pin, int edgeMode, int mS, unsigned long bo
 ```
 
 ``pin``: Der gewünschte Pin (BCM\-, WiringPi\- oder Pin\-Nummer).  
+
 ``edgeMode``: Auslösende Flankenmodus  
  - INT_EDGE_RISING ... Steigende Flanke  
  - INT_EDGE_FALLING ... Fallende Flanke  
  - INT_EDGE_BOTH ... Steigende und fallende Flanke  
+ 
 ``mS``: Timeout in Milisekunden.  
  - \-1 warten ohne timeout  
  - 0 wartet nicht  
  - 1...n wartet maximal n mS Millisekunden  
+ 
 ``bouncetime``: Entprellzeit in Microsekunden, 0 schaltet Entprellen ab.  
 
 ``Rückgabewert``:  
