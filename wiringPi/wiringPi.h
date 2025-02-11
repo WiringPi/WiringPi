@@ -289,11 +289,11 @@ extern          void digitalWriteByte2   (int value) ;
 // Interrupts
 //	(Also Pi hardware specific)
 
-extern long long int  waitForInterrupt    (int pin, int mS, int bouncetime) ;
-extern int  wiringPiISR         (int pin, int mode, void (*function)(unsigned int, long long int), int bouncetime) ;
+extern long long int  waitForInterrupt    (int pin, int edgeMode, int mS, unsigned long debounce_period_us) ;
+extern int  wiringPiISR         (int pin, int mode, void (*function)(unsigned int, long long int), unsigned long debounce_period_us) ;
 extern int  wiringPiISRStop     (int pin) ;  //V3.2
 extern int  waitForInterruptClose(int pin) ; //V3.2
-extern int  waitForInterruptInit (int pin, int mode); //v3.2
+//  extern int  waitForInterruptInit (int pin, int mode); //v3.2
 
 // Threads
 

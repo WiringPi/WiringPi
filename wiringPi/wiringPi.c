@@ -56,6 +56,7 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <ctype.h>
 #include <poll.h>
 #include <unistd.h>
@@ -471,12 +472,14 @@ static int isrFds [64] =
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 } ;
 
+
+
 // ISR Data
 static int chipFd = -1;
 static void (*isrFunctions [64])(unsigned int, long long int) ;
 static pthread_t isrThreads[64];
-static int isrMode[64];
-static unsigned long long lastcall[64];
+static int isrMode[64];             // irq on rising/falling edge
+static unsigned long isrDebouncePeriodUs [64];      // 0: debounce is off
 
 // Doing it the Arduino way with lookup tables...
 //	Yes, it's probably more innefficient than all the bit-twidling, but it
@@ -1734,11 +1737,14 @@ void releaseLine(int pin) {
   lineFlags[pin] = 0;
   close(lineFds[pin]);
   lineFds[pin] = -1;
+  isrDebouncePeriodUs[pin] = 0;
 }
 
 int requestLine(int pin, unsigned int lineRequestFlags) {
-  struct gpiohandle_request rq;
-
+   struct gpio_v2_line_request req;
+   struct gpio_v2_line_config config;
+   int ret;
+   
    if (lineFds[pin]>=0) {
     if (lineRequestFlags == lineFlags[pin]) {
       //already requested
@@ -1753,17 +1759,25 @@ int requestLine(int pin, unsigned int lineRequestFlags) {
   if (wiringPiGpioDeviceGetFd()<0) {
     return -1;  // error
   }
-  rq.lineoffsets[0] = pin;
-  rq.lines = 1;
-  rq.flags = lineRequestFlags;
-  int ret = ioctl(chipFd, GPIO_GET_LINEHANDLE_IOCTL, &rq);
-  if (ret || rq.fd<0) {
+  
+  memset(&req, 0, sizeof(req));
+  memset(&config, 0, sizeof(config));
+  config.flags = lineRequestFlags;
+  strcpy(req.consumer, "wiringpi_gpio_req");
+  
+  req.offsets[0] = pin;
+  req.num_lines = 1;
+  req.config = config;
+  
+  ret = ioctl(chipFd, GPIO_V2_GET_LINE_IOCTL, &req);
+  
+  if (ret || req.fd<0) {
     ReportDeviceError("get line handle", pin, "RequestLine", ret);
     return -1;  // error
   }
 
   lineFlags[pin] = lineRequestFlags;
-  lineFds[pin] = rq.fd;
+  lineFds[pin] = req.fd;
   if (wiringPiDebug)
     printf ("requestLine succeeded: pin:%d, flags: %u, fd :%d\n", pin, lineRequestFlags, lineFds[pin]) ;
   return lineFds[pin];
@@ -1863,16 +1877,16 @@ void pinModeFlagsDevice (int pin, int mode, unsigned int flags) {
   if (wiringPiDebug)
       printf ("pinModeFlagsDevice: pin:%d mode:%d, flags: %u\n", pin, mode, flags) ;
 
-  lflag &= ~(GPIOHANDLE_REQUEST_INPUT | GPIOHANDLE_REQUEST_OUTPUT);
+  lflag &= ~(GPIO_V2_LINE_FLAG_INPUT | GPIO_V2_LINE_FLAG_OUTPUT);
   switch(mode) {
     default:
       fprintf(stderr, "pinMode: invalid mode request (only input und output supported)\n");
       return;
     case INPUT:
-      lflag |= GPIOHANDLE_REQUEST_INPUT;
+      lflag |= GPIO_V2_LINE_FLAG_INPUT;
       break;
     case OUTPUT:
-      lflag |= GPIOHANDLE_REQUEST_OUTPUT;
+      lflag |= GPIO_V2_LINE_FLAG_OUTPUT;
       break;
     case PM_OFF:
       pinModeFlagsDevice(pin, INPUT, 0);
@@ -2038,20 +2052,20 @@ void pinMode (int pin, int mode)
  */
 void pullUpDnControlDevice (int pin, int pud) {
   unsigned int flag = lineFlags[pin];
-  unsigned int biasflags = GPIOHANDLE_REQUEST_BIAS_DISABLE | GPIOHANDLE_REQUEST_BIAS_PULL_UP | GPIOHANDLE_REQUEST_BIAS_PULL_DOWN;
+  unsigned int biasflags = GPIO_V2_LINE_FLAG_BIAS_DISABLED | GPIO_V2_LINE_FLAG_BIAS_PULL_UP | GPIO_V2_LINE_FLAG_BIAS_PULL_DOWN;
 
   flag &= ~biasflags;
   switch (pud){
-    case PUD_OFF:  flag |= GPIOHANDLE_REQUEST_BIAS_DISABLE;   break;
-    case PUD_UP:   flag |= GPIOHANDLE_REQUEST_BIAS_PULL_UP;   break;
-    case PUD_DOWN: flag |= GPIOHANDLE_REQUEST_BIAS_PULL_DOWN; break;
+    case PUD_OFF:  flag |= GPIO_V2_LINE_FLAG_BIAS_DISABLED;   break;
+    case PUD_UP:   flag |= GPIO_V2_LINE_FLAG_BIAS_PULL_UP;   break;
+    case PUD_DOWN: flag |= GPIO_V2_LINE_FLAG_BIAS_PULL_DOWN; break;
     default: return ; /* An illegal value */
   }
 
   // reset input/output
-  if (lineFlags[pin] & GPIOHANDLE_REQUEST_OUTPUT) {
+  if (lineFlags[pin] & GPIO_V2_LINE_FLAG_OUTPUT) {
     pinModeFlagsDevice (pin, OUTPUT, flag);
-  } else if(lineFlags[pin] & GPIOHANDLE_REQUEST_INPUT) {
+  } else if(lineFlags[pin] & GPIO_V2_LINE_FLAG_INPUT) {
     pinModeFlagsDevice (pin, INPUT, flag);
   } else {
     lineFlags[pin] = flag; // only store for later
@@ -2135,7 +2149,33 @@ void pullUpDnControl (int pin, int pud)
   }
 }
 
+/*
+ helper functions for gpio_v2_line_values bits 
+*/
+static inline void gpiotools_set_bit(__u64 *b, int n)
+{
+	*b |= _BITULL(n);
+}
 
+static inline void gpiotools_clear_bit(__u64 *b, int n)
+{
+	*b &= ~_BITULL(n);
+}
+
+static inline void gpiotools_assign_bit(__u64 *b, int n, bool value)
+{
+	if (value)
+		gpiotools_set_bit(b, n);
+	else
+		gpiotools_clear_bit(b, n);
+}
+
+static inline int gpiotools_test_bit(__u64 b, int n)
+{
+	return !!(b & _BITULL(n));
+}
+
+//*********************************************
 
 
 /*
@@ -2145,19 +2185,23 @@ void pullUpDnControl (int pin, int pud)
  */
 
 int digitalReadDevice (int pin) {   // INPUT and OUTPUT should work
-
-   if (lineFds[pin]<0) {
+  struct gpio_v2_line_values lv;
+  int ret;
+  
+  if (lineFds[pin]<0) {
     // line not requested - auto request on first read as input
-    pinModeDevice(pin, INPUT);
+     pinModeDevice(pin, INPUT);
   }
+  lv.mask = 0;
+  lv.bits = 0;
   if (lineFds[pin]>=0) {
-    struct gpiohandle_data data;
-    int ret = ioctl(lineFds[pin], GPIOHANDLE_GET_LINE_VALUES_IOCTL, &data);
+    gpiotools_set_bit(&lv.mask, 0); 
+    ret = ioctl(lineFds[pin], GPIO_V2_LINE_GET_VALUES_IOCTL, &lv);
     if (ret) {
       ReportDeviceError("get line values", pin, "digitalRead", ret);
       return LOW;  // error
     }
-    return data.values[0];
+    return gpiotools_test_bit(lv.bits, 0);
   }
   return LOW;  // error , need to request line before
 }
@@ -2239,7 +2283,9 @@ unsigned int digitalRead8 (int pin)
  */
 
 void digitalWriteDevice (int pin, int value) {
-
+  int ret;
+  struct gpio_v2_line_values values;
+  
   if (wiringPiDebug)
     printf ("digitalWriteDevice: ioctl pin:%d value: %d\n", pin, value) ;
 
@@ -2247,21 +2293,24 @@ void digitalWriteDevice (int pin, int value) {
     // line not requested - auto request on first write as output
     pinModeDevice(pin, OUTPUT);
   }
-  if (lineFds[pin]>=0 && (lineFlags[pin] & GPIOHANDLE_REQUEST_OUTPUT)>0) {
-    struct gpiohandle_data data;
-    data.values[0] = value;
-    if (wiringPiDebug)
-      printf ("digitalWriteDevice: ioctl pin:%d cmd: GPIOHANDLE_SET_LINE_VALUES_IOCTL, value: %d\n", pin, value) ;
-    int ret = ioctl(lineFds[pin], GPIOHANDLE_SET_LINE_VALUES_IOCTL, &data);
-    if (ret) {
-      ReportDeviceError("set line values", pin, "digitalWrite", ret);
-      return;  // error
-    }
+  
+  if (lineFds[pin]>=0 && (lineFlags[pin] & GPIO_V2_LINE_FLAG_OUTPUT)>0) {
+    values.mask = 0;
+    values.bits = 0;    
+    gpiotools_set_bit(&values.mask, 0);
+    gpiotools_assign_bit(&values.bits, 0, !!value);
+
+	ret = ioctl(lineFds[pin], GPIO_V2_LINE_SET_VALUES_IOCTL, &values);
+	if (ret == -1) {
+      ReportDeviceError("digitalWriteDevice", pin, "GPIO_V2_LINE_SET_VALUES_IOCTL", ret);
+      return; // error
+	}
   } else {
     fprintf(stderr, "digitalWrite: no output (%d)\n", lineFlags[pin]);
   }
   return; // error
 }
+
 
 void digitalWrite (int pin, int value)
 {
@@ -2560,6 +2609,103 @@ unsigned int digitalReadByte2 (void)
 }
 
 
+
+
+//--------------------------------------------------------------------
+// waitForInteruptInit
+// Prepares waitForInterrupt for edgeMode, and debounce_period_us
+// 
+// returns -1 on error
+// returns 0 on success
+//--------------------------------------------------------------------
+
+int waitForInterruptInit (int pin, int edgeMode, unsigned long debounce_period_us)
+{
+  const char* strmode = "";
+  struct gpio_v2_line_config config;
+  struct gpio_v2_line_request req;
+  int attr, ret;
+  
+  if (wiringPiMode == WPI_MODE_PINS) {
+    pin = pinToGpio [pin] ;
+  } else if (wiringPiMode == WPI_MODE_PHYS) {
+    pin = physToGpio [pin] ;
+  }
+
+  /* open gpio */
+//  sleep(1);
+  if (wiringPiGpioDeviceGetFd()<0) {
+    return -1;
+  }
+  
+  memset(&req, 0, sizeof(req));
+  memset(&config, 0, sizeof(config));
+  
+  /* setup config */
+  config.flags = GPIO_V2_LINE_FLAG_INPUT;
+  switch(edgeMode) {
+    default:
+    case INT_EDGE_SETUP:
+      if (wiringPiDebug) {
+        printf ("wiringPi: waitForInterruptMode mode INT_EDGE_SETUP - exiting\n") ;
+      }
+      return -1;
+    case INT_EDGE_FALLING:
+      config.flags |= GPIO_V2_LINE_FLAG_EDGE_FALLING;
+      strmode = "falling";
+      break;
+    case INT_EDGE_RISING:
+      config.flags |= GPIO_V2_LINE_FLAG_EDGE_RISING;
+      strmode = "rising";
+      break;
+    case INT_EDGE_BOTH:
+      config.flags |= (GPIO_V2_LINE_FLAG_EDGE_FALLING | GPIO_V2_LINE_FLAG_EDGE_RISING);
+      strmode = "both";
+      break;
+  }
+  strcpy(req.consumer, "wiringpi_gpio_irq");
+  
+  if (debounce_period_us) {
+		attr = config.num_attrs;
+		config.num_attrs++;
+        gpiotools_set_bit(&config.attrs[attr].mask, 0);
+		config.attrs[attr].attr.id = GPIO_V2_LINE_ATTR_ID_DEBOUNCE;
+		config.attrs[attr].attr.debounce_period_us = debounce_period_us;
+  }
+  
+  req.num_lines = 1;
+  req.offsets[0] = pin;
+  req.event_buffer_size = 32;
+  req.config = config;
+
+  ret = ioctl(chipFd, GPIO_V2_GET_LINE_IOCTL, &req);
+  if (ret == -1) {
+    ReportDeviceError("GPIO_V2_GET_LINE_IOCTL", pin , strmode, ret);
+    return -1;
+  }
+
+  if (wiringPiDebug) {
+    printf ("wiringPi: GPIO get line %d , mode %s succeded, fd=%d\n", pin, strmode, req.fd) ;
+  }
+ 
+  int fd_line = req.fd;
+  isrFds [pin] = fd_line;
+  isrDebouncePeriodUs[pin] = debounce_period_us; 
+  
+/* set event fd nonbloack read */ 
+  /*
+  int flags = fcntl(fd_line, F_GETFL);
+  flags |= O_NONBLOCK;
+  ret = fcntl(fd_line, F_SETFL, flags);
+  if (ret) {
+    fprintf(stderr, "wiringPi: ERROR: fcntl set nonblock return=%d\n", ret);
+    return -1;
+  }
+*/
+  return 0;
+}
+
+
 /*
  * waitForInterrupt:
  *	Pi Specific.
@@ -2567,25 +2713,124 @@ unsigned int digitalReadByte2 (void)
  *	This is actually done via the /dev/gpiochip interface regardless of
  *	the wiringPi access mode in-use. Maybe sometime it might get a better
  *	way for a bit more efficiency.
- *  Returns timestamp in microseconds, when interrupt happened
+ *  Returns timestamp in microseconds on interrupt
  *********************************************************************************
  */
 
-long long int waitForInterrupt (int pin, int mS, int bouncetime)  // bounctime in milliseconds
+long long int waitForInterrupt (int pin, int edgeMode, int mS, unsigned long debounce_period_us)    // ms < 0 wait infinite, = 0 return immediately, > 0 wait timeout
 {
   long long int ret;
   int fd;
   struct pollfd polls ;
-  struct gpioevent_data evdata;
-  //struct gpio_v2_line_request req2;
-  struct timeval tv_timenow;
-  unsigned long long timenow;
-  int finished = 0;
-  int initial_edge = 1;
+  struct gpio_v2_line_event evdata;
+  
+  if (wiringPiMode == WPI_MODE_PINS)
+    pin = pinToGpio [pin] ;
+  else if (wiringPiMode == WPI_MODE_PHYS)
+    pin = physToGpio [pin] ;
 
-  if (wiringPiDebug) {
-    printf ("waitForInterrupt: mS = %d,  bouncetime = %d\n", mS, bouncetime) ;
+  if (waitForInterruptInit (pin, edgeMode, debounce_period_us ) != 0)
+    return -1 ;
+
+  fd = isrFds[pin];
+  // Setup poll structure
+  polls.fd      = fd;
+  polls.events  = POLLIN | POLLERR ;
+  polls.revents = 0;
+
+  ret = (long long int)poll(&polls, 1, mS);
+  
+  if (ret < 0) {
+    if (wiringPiDebug)  
+      fprintf(stderr, "wiringPi: ERROR: poll returned=%lld\n", ret);
+  } else if (ret == 0) { 
+    if (wiringPiDebug)  
+      fprintf(stderr, "wiringPi: timeout: poll returned=%lld\n", ret);
   }
+  else {
+    if (wiringPiDebug)
+      printf ("wiringPi: IRQ line %d received %lld, fd=%d\n", pin, ret, isrFds[pin]) ;
+    if (polls.revents & POLLIN) {  
+    /* read event data */
+      int readret = read(isrFds [pin], &evdata, sizeof(evdata));
+      if (readret == sizeof(evdata)) {
+        if (wiringPiDebug)
+          printf ("wiringPi: IRQ at PIN: %d, timestamp: %lld\n", evdata.offset, evdata.timestamp_ns) ;
+
+        switch (evdata.id) {
+		  case GPIO_V2_LINE_EVENT_RISING_EDGE:
+            if (wiringPiDebug)
+		      printf("wiringPi: rising edge\n");
+			break;
+		  case GPIO_V2_LINE_EVENT_FALLING_EDGE:
+            if (wiringPiDebug)
+			  printf("wiringPi: falling edge\n");
+			break;
+		  default:
+            if (wiringPiDebug) 
+		      printf("wiringPi: unknown event\n");
+            break;
+		}        
+        ret = evdata.timestamp_ns / 1000LL;    // nanoseconds u64 to microseconds
+      }
+      else {
+        ret = -1;
+      }
+    }
+  }
+  return ret;
+}
+
+
+int waitForInterruptClose (int pin) {
+  if (isrFds[pin]>0) {
+    if (wiringPiDebug) {
+      printf ("wiringPi: waitForInterruptClose close thread 0x%lX\n", (unsigned long)isrThreads[pin]) ;
+    }
+    if (isrThreads[pin] != 0) {
+      if (pthread_cancel(isrThreads[pin]) == 0) {
+        if (wiringPiDebug) {
+          printf ("wiringPi: waitForInterruptClose thread canceled successfuly\n") ;
+        }
+      } else {
+        if (wiringPiDebug) {
+          fprintf (stderr, "wiringPi: waitForInterruptClose could not cancel thread\n");
+        }
+      }
+    }
+    close(isrFds [pin]);
+  }
+  isrFds [pin] = -1;
+  isrFunctions [pin] = NULL;
+  isrDebouncePeriodUs[pin] = 0;
+  
+  /* -not closing so far - other isr may be using it - only close if no other is using - will code later
+  if (chipFd>0) {
+    close(chipFd);
+  }
+  chipFd = -1;
+  */
+  if (wiringPiDebug) {
+    printf ("wiringPi: waitForInterruptClose finished\n") ;
+  }
+  return 0;
+}
+
+
+/*
+ * wfi:
+ *	Pi Specific.
+ *	Wait for Interrupt on a GPIO pin, called from interruptHandler
+ *  Returns timestamp in microseconds on interrupt
+ *********************************************************************************
+ */
+
+long long int wfi(int pin) 
+{
+  long long int ret;
+  int fd;
+  struct pollfd polls ;
+  struct gpio_v2_line_event evdata;
   
   if (wiringPiMode == WPI_MODE_PINS)
     pin = pinToGpio [pin] ;
@@ -2600,149 +2845,48 @@ long long int waitForInterrupt (int pin, int mS, int bouncetime)  // bounctime i
   polls.events  = POLLIN | POLLERR ;
   polls.revents = 0;
 
-  // Wait for it ...
-  while (!finished) {
-    ret = (long long int)poll(&polls, 1, mS);
-    if (ret < 0) {
-      if (wiringPiDebug) {  
-        fprintf(stderr, "wiringPi: ERROR: poll returned=%lld\n", ret);
+  ret = (long long int)poll(&polls, 1, -1);     // no timeout, wait forevver
+  
+  if (ret < 0) {
+    if (wiringPiDebug)  
+      fprintf(stderr, "wiringPi: ERROR: poll returned=%lld\n", ret);
+  } else if (ret == 0) { 
+    if (wiringPiDebug)  
+      fprintf(stderr, "wiringPi: timeout: poll returned=%lld\n", ret);
+  }
+  else {
+    if (wiringPiDebug)
+      printf ("wiringPi: IRQ line %d received %lld, fd=%d\n", pin, ret, isrFds[pin]) ;
+    if (polls.revents & POLLIN) {  
+    /* read event data */
+      int readret = read(isrFds [pin], &evdata, sizeof(evdata));
+      if (readret == sizeof(evdata)) {
+        if (wiringPiDebug)
+          printf ("wiringPi: IRQ at PIN: %d, timestamp: %lld\n", evdata.offset, evdata.timestamp_ns) ;
+
+        switch (evdata.id) {
+		  case GPIO_V2_LINE_EVENT_RISING_EDGE:
+            if (wiringPiDebug)
+		      printf("wiringPi: rising edge\n");
+			break;
+		  case GPIO_V2_LINE_EVENT_FALLING_EDGE:
+            if (wiringPiDebug)
+			  printf("wiringPi: falling edge\n");
+			break;
+		  default:
+            if (wiringPiDebug) 
+		      printf("wiringPi: unknown event\n");
+            break;
+		}        
+        ret = evdata.timestamp_ns / 1000LL;    // nanoseconds u64 to microseconds
       }
-      break;
-    } else if (ret == 0) { 
-      if (wiringPiDebug) {  
-        fprintf(stderr, "wiringPi: timeout: poll returned=%lld\n", ret);
-      }
-      break;    
-    }
-    else {
-      //if (polls.revents & POLLIN)
-      if (wiringPiDebug) {
-        printf ("wiringPi: IRQ line %d received %lld, fd=%d\n", pin, ret, isrFds[pin]) ;
-      }
-      if (initial_edge) {    // first time triggers with current state, so ignore
-        initial_edge = 0;
-      } else {
-      /* read event data */
-        int readret = read(isrFds [pin], &evdata, sizeof(evdata));
-        if (readret == sizeof(evdata)) {
-          if (wiringPiDebug) {
-            printf ("wiringPi: IRQ data id: %d, timestamp: %lld\n", evdata.id, evdata.timestamp) ;
-          }
-//      ret = evdata.id;
-          gettimeofday(&tv_timenow, NULL);
-          timenow = tv_timenow.tv_sec*1E6 + tv_timenow.tv_usec;
-          if (bouncetime == 0 || timenow - lastcall[pin] > (unsigned int)bouncetime*1000 || lastcall[pin] == 0 || lastcall[pin] > timenow) {
-             lastcall[pin] = timenow;
-             finished = 1;
-             ret = evdata.timestamp / 1000LL;    // nanoseconds u64 to microseconds
-          }
-        } else {
-          ret = -1;
-          break;
-        }
+      else {
+        ret = -1;
       }
     }
   }
   return ret;
 }
-
-int waitForInterruptInit (int pin, int mode)
-{
-  const char* strmode = "";
-
-  if (wiringPiMode == WPI_MODE_PINS) {
-    pin = pinToGpio [pin] ;
-  } else if (wiringPiMode == WPI_MODE_PHYS) {
-    pin = physToGpio [pin] ;
-  }
-
-  /* open gpio */
-  sleep(1);
-  if (wiringPiGpioDeviceGetFd()<0) {
-    return -1;
-  }
-
-  struct gpioevent_request req;
-  req.lineoffset = pin;
-  req.handleflags = GPIOHANDLE_REQUEST_INPUT;
-  switch(mode) {
-    default:
-    case INT_EDGE_SETUP:
-      if (wiringPiDebug) {
-        printf ("wiringPi: waitForInterruptMode mode INT_EDGE_SETUP - exiting\n") ;
-      }
-      return -1;
-    case INT_EDGE_FALLING:
-      req.eventflags  = GPIOEVENT_REQUEST_FALLING_EDGE;
-      strmode = "falling";
-      break;
-    case INT_EDGE_RISING:
-      req.eventflags  = GPIOEVENT_REQUEST_RISING_EDGE;
-      strmode = "rising";
-      break;
-    case INT_EDGE_BOTH:
-      req.eventflags  = GPIOEVENT_REQUEST_BOTH_EDGES;
-      strmode = "both";
-      break;
-  }
-  strncpy(req.consumer_label, "wiringpi_gpio_irq", sizeof(req.consumer_label) - 1);
-
-  //later implement GPIO_V2_GET_LINE_IOCTL req2
-  int ret = ioctl(chipFd, GPIO_GET_LINEEVENT_IOCTL, &req);
-  if (ret) {
-    ReportDeviceError("get line event", pin , strmode, ret);
-    return -1;
-  }
-  if (wiringPiDebug) {
-    printf ("wiringPi: GPIO get line %d , mode %s succeded, fd=%d\n", pin, strmode, req.fd) ;
-  }
-
-  /* set event fd nonbloack read */
-  int fd_line = req.fd;
-  isrFds [pin] = fd_line;
-  int flags = fcntl(fd_line, F_GETFL);
-  flags |= O_NONBLOCK;
-  ret = fcntl(fd_line, F_SETFL, flags);
-  if (ret) {
-    fprintf(stderr, "wiringPi: ERROR: fcntl set nonblock return=%d\n", ret);
-    return -1;
-  }
-
-  return 0;
-}
-
-
-int waitForInterruptClose (int pin) {
-  if (isrFds[pin]>0) {
-    if (wiringPiDebug) {
-      printf ("wiringPi: waitForInterruptClose close thread 0x%lX\n", (unsigned long)isrThreads[pin]) ;
-    }
-    if (isrThreads[pin] && pthread_cancel(isrThreads[pin]) == 0) {
-      if (wiringPiDebug) {
-        printf ("wiringPi: waitForInterruptClose thread canceled successfuly\n") ;
-      }
-    } else {
-     if (wiringPiDebug) {
-        fprintf (stderr, "wiringPi: waitForInterruptClose could not cancel thread\n");
-      }
-    }
-    close(isrFds [pin]);
-  }
-  isrFds [pin] = -1;
-  isrFunctions [pin] = NULL;
-  lastcall[pin] = 0;
-  /* -not closing so far - other isr may be using it - only close if no other is using - will code later
-  if (chipFd>0) {
-    close(chipFd);
-  }
-  chipFd = -1;
-  */
-  if (wiringPiDebug) {
-    printf ("wiringPi: waitForInterruptClose finished\n") ;
-  }
-  return 0;
-}
-
 
 int wiringPiISRStop (int pin) {
   return waitForInterruptClose (pin);
@@ -2756,20 +2900,89 @@ int wiringPiISRStop (int pin) {
  *********************************************************************************
  */
 
-static void *interruptHandler (void *arg)
+void *interruptHandler (void *arg)
 {
-  int pin ;
-  int bouncetime;
+  const char* strmode = ""; 
+  int pin, mode ;
+  unsigned long debounce_period_us;
+  struct gpio_v2_line_config config;
+  struct gpio_v2_line_request req;
+  int attr, ret;
+  
+  pin = *(int *)arg;
+  
+/*  pin   = pinPass ; 
+  pinPass = -1 ;
+*/  
+  if (wiringPiGpioDeviceGetFd()<0) {
+    return NULL;
+  }
+    
+  mode = isrMode[pin];
+  debounce_period_us = isrDebouncePeriodUs[pin];
+ 
+  if (wiringPiDebug) {
+    printf ("interruptHandler: GPIO line %d, mode %d, debounce_period_us %lu \n", pin, mode, debounce_period_us) ;
+  } 
+  
+  memset(&req, 0, sizeof(req));
+  memset(&config, 0, sizeof(config));
+  
+  /* setup config */
+  config.flags = GPIO_V2_LINE_FLAG_INPUT;
+  switch(mode) {
+    default:
+    case INT_EDGE_SETUP:
+      if (wiringPiDebug) {
+        printf ("wiringPi: waitForInterruptMode mode INT_EDGE_SETUP - exiting\n") ;
+      }
+      return NULL;
+    case INT_EDGE_FALLING:
+      config.flags |= GPIO_V2_LINE_FLAG_EDGE_FALLING;
+      strmode = "falling";
+      break;
+    case INT_EDGE_RISING:
+      config.flags |= GPIO_V2_LINE_FLAG_EDGE_RISING;
+      strmode = "rising";
+      break;
+    case INT_EDGE_BOTH:
+      config.flags |= (GPIO_V2_LINE_FLAG_EDGE_FALLING | GPIO_V2_LINE_FLAG_EDGE_RISING);
+      strmode = "both";
+      break;
+  }
+  strcpy(req.consumer, "wiringpi_gpio_irq");
+  
+  if (debounce_period_us) {
+		attr = config.num_attrs;
+		config.num_attrs++;
+        gpiotools_set_bit(&config.attrs[attr].mask, 0);
+		config.attrs[attr].attr.id = GPIO_V2_LINE_ATTR_ID_DEBOUNCE;
+		config.attrs[attr].attr.debounce_period_us = debounce_period_us;
+  }
+  
+  req.num_lines = 1;
+  req.offsets[0] = pin;
+  req.config = config;
+
+  ret = ioctl(chipFd, GPIO_V2_GET_LINE_IOCTL, &req);
+  if (ret == -1) {
+    ReportDeviceError("get line event", pin , strmode, ret);
+    return NULL;
+  }
+/*
+  if (wiringPiDebug) {
+    printf ("wiringPi: GPIO get line %d , mode %s succeded, fd=%d\n", pin, strmode, req.fd) ;
+  }
+*/
+  /* set event fd  */
+  int fd_line = req.fd;
+  isrFds [pin] = fd_line;
   
   (void)piHiPri (55) ;	// Only effective if we run as root
 
-  pin   = pinPass ;
-  bouncetime = *(int *)arg;
-  pinPass = -1 ;
-  
   for (;;) {
-    long long int ret = waitForInterrupt(pin, -1, bouncetime);
-    if ( ret> 0) {      // return timestamp in microseconds
+    long long int ret = wfi(pin);       // poll for event and return timestamp
+    if ( ret> 0) {                      // return timestamp in microseconds
       if (wiringPiDebug) {
         printf ("wiringPi: call function\n") ;
       }
@@ -2795,10 +3008,11 @@ static void *interruptHandler (void *arg)
  *	Pi Specific.
  *	Take the details and create an interrupt handler that will do a call-
  *	back to the user supplied function.
+ *  debounce_period_us in microseconds
  *********************************************************************************
  */
 
-int wiringPiISR (int pin, int mode, void (*function)(unsigned int, long long int), int bouncetime)
+int wiringPiISR (int pin, int edgeMode, void (*function)(unsigned int, long long int), unsigned long debounce_period_us)
 {
   const int maxpin = GetMaxPin();
 
@@ -2806,22 +3020,24 @@ int wiringPiISR (int pin, int mode, void (*function)(unsigned int, long long int
     return wiringPiFailure (WPI_FATAL, "wiringPiISR: pin must be 0-%d (%d)\n", maxpin, pin) ;
   if (wiringPiMode == WPI_MODE_UNINITIALISED)
     return wiringPiFailure (WPI_FATAL, "wiringPiISR: wiringPi has not been initialised. Unable to continue.\n") ;
+     
+  if (wiringPiMode == WPI_MODE_PINS) {
+    pin = pinToGpio [pin] ;
+  } else if (wiringPiMode == WPI_MODE_PHYS) {
+    pin = physToGpio [pin] ;
+  }
+  
   if (wiringPiDebug) {
-    printf ("wiringPi: wiringPiISR pin %d, mode %d\n", pin, mode) ;
+    printf ("wiringPi: wiringPiISR pin %d, edgeMode %d\n", pin, edgeMode) ;
   }
   if (isrFunctions [pin]) {
-    printf ("wiringPi: ISR function alread active, ignoring \n") ;
+    printf ("wiringPi: ISR function already active, ignoring \n") ;
   }
 
   isrFunctions [pin] = function ;
-  isrMode[pin] = mode;
-  lastcall[pin] = 0;
-  if(waitForInterruptInit (pin, mode)<0) {
-    if (wiringPiDebug) {
-      fprintf (stderr, "wiringPi: waitForInterruptInit failed\n") ;
-    }
-  }
-
+  isrMode[pin] = edgeMode;
+  isrDebouncePeriodUs[pin] = debounce_period_us;
+  
   if (wiringPiDebug) {
     printf ("wiringPi: mutex in\n") ;
   }
@@ -2830,12 +3046,17 @@ int wiringPiISR (int pin, int mode, void (*function)(unsigned int, long long int
     if (wiringPiDebug) {
       printf("wiringPi: pthread_create before 0x%lX\n", (unsigned long)isrThreads[pin]);
     }
-    if (pthread_create (&isrThreads[pin], NULL, interruptHandler, &bouncetime)==0) {
+    if (pthread_create (&isrThreads[pin], NULL, interruptHandler, &pin)==0) {
       if (wiringPiDebug) {
         printf("wiringPi: pthread_create successed, 0x%lX\n", (unsigned long)isrThreads[pin]);
       }
-      while (pinPass != -1)
-        delay (1) ;
+/*      while (pinPass != -1)
+        delay (1) ; */
+    // wait so that interruptHandler is up und running. 
+    // when interruptHandler is running, the calling function wiringPiISR
+    // must be still alive, otherwise the thread argument &pin points into nirwana,
+    // when it is picked up from interruptHandler.
+      delay (10);
     } else {
       if (wiringPiDebug) {
         printf("wiringPi: pthread_create failed\n");
@@ -3187,12 +3408,12 @@ int wiringPiSetup (void)
 
   /**/ if (piGpioLayout () == GPIO_LAYOUT_PI1_REV1)	// A, B, Rev 1, 1.1
   {
-     pinToGpio =  pinToGpioR1 ;
+    pinToGpio =  pinToGpioR1 ;
     physToGpio = physToGpioR1 ;
   }
   else 					// A2, B2, A+, B+, CM, Pi2, Pi3, Zero, Zero W, Zero 2 W
   {
-     pinToGpio =  pinToGpioR2 ;
+    pinToGpio =  pinToGpioR2 ;
     physToGpio = physToGpioR2 ;
   }
 
@@ -3201,7 +3422,7 @@ int wiringPiSetup (void)
 //	Try /dev/mem. If that fails, then
 //	try /dev/gpiomem. If that fails then game over.
 
-	const char* gpiomemGlobal = gpiomem_global;
+  const char* gpiomemGlobal = gpiomem_global;
   const char* gpiomemModule = gpiomem_BCM;
 
   if (PI_MODEL_5 == model) {
@@ -3242,7 +3463,7 @@ int wiringPiSetup (void)
     printf ("wiringPi: access to %s succeded %d\n", usingGpioMem ? gpiomemModule : gpiomemGlobal, fd) ;
   }
 //	GPIO:
- if (PI_MODEL_5 != model) {
+  if (PI_MODEL_5 != model) {
    //Set the offsets into the memory interface.
 
     GPIO_PADS 	= piGpioBase + 0x00100000 ;

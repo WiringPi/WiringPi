@@ -291,11 +291,11 @@ Registriert eine Interrupt Service Routine (ISR) bzw. Funktion die bei Flankenwe
 
 >>>
 ```C
-int wiringPiISR(int pin, int mode, void (*function)(unsigned int, long long int), int bouncetime);
+int wiringPiISR(int pin, int edgeMode, void (*function)(unsigned int, long long int), unsigned long bouncetime);
 ```
 
 ``pin``: Der gewünschte Pin (BCM\-, WiringPi\- oder Pin\-Nummer).  
-``mode``: Auslösende Flankenmodus  
+``edgeMode``: Auslösende Flankenmodus  
  - INT_EDGE_RISING ... Steigende Flanke  
  - INT_EDGE_FALLING ... Fallende Flanke  
  - INT_EDGE_BOTH ... Steigende und fallende Flanke  
@@ -304,13 +304,13 @@ int wiringPiISR(int pin, int mode, void (*function)(unsigned int, long long int)
  > unsigned int: pin  
  > long long int: Zeitstempel  
  
-``bouncetime``: Entprellzeit in ms, 0 ms schaltet das Entprellen ab   
+``bouncetime``: Entprellzeit in Microsekunden, 0 ms schaltet das Entprellen ab   
 
 ``Rückgabewert``:   
  > 0 ... Erfolgreich  
 <!-- > <>0 ... Fehler, zur Zeit nicht implementiert -->
 
-Beispiel siehe waitForInterruptInit.
+Beispiel siehe waitForInterrupt.  
 
 
 ### wiringPiISRStop
@@ -330,42 +330,29 @@ int wiringPiISRStop (int pin)
 
 ### waitForInterrupt
 
-Wartet auf einen Aufruf der Interrupt Service Routine (ISR) mit Timeout und Entprellzeit in Millisekunden.
-
+Wartet auf einen Aufruf der Interrupt Service Routine (ISR) mit Timeout und Entprellzeit in Mikrosekunden.  
+Blockiert das Programm bis zum Eintreffen der auslösenden Flanke oder bis zum Ablauf des Timeouts.  
 >>>
 ```C
-long long int  waitForInterrupt (int pin, int mS, int bouncetime)
+long long int  waitForInterrupt (int pin, int edgeMode, int mS, unsigned long bouncetime)
 ```
 
 ``pin``: Der gewünschte Pin (BCM\-, WiringPi\- oder Pin\-Nummer).  
+``edgeMode``: Auslösende Flankenmodus  
+ - INT_EDGE_RISING ... Steigende Flanke  
+ - INT_EDGE_FALLING ... Fallende Flanke  
+ - INT_EDGE_BOTH ... Steigende und fallende Flanke  
 ``mS``: Timeout in Milisekunden.  
  - \-1 warten ohne timeout  
  - 0 wartet nicht  
  - 1...n wartet maximal n mS Millisekunden  
-``bouncetime``: Entprellzeit in Millisekunden, 0 schaltet Entprellen ab  
+``bouncetime``: Entprellzeit in Microsekunden, 0 schaltet Entprellen ab.  
 
 ``Rückgabewert``:  
 > \>0 ... Zeitstempel des Interrupt Ereignisses in Mikrosekunden  
 > 0 ... Timeout  
 > \-1 ... GPIO Device Chip nicht erfolgreich geöffnet  
-> \-2 ... ISR wurde nicht registriert (waitForInterruptInit muss aufgerufen werden)  
-
-
-### waitForInterruptInit
-
-Initialisiert die Funktion waitForInterrupt, definiert, welche Flanke den Interrupt erzeugen soll
-
->>>
-```C
-int  waitForInterruptInit (int pin, int mode)
-```
-
-``pin``: Der gewünschte Pin (BCM\-, WiringPi\- oder Pin\-Nummer)  
-``mode``: INT_EDGE_RISING, INT_EDGE_FALLING, INT_EDGE_BOTH   
-
-``Rückgabewert``:  
-> \-1 ... Fehler  
-> 0 ... erfolgreich  
+> \-2 ... ISR wurde nicht registriert  
 
 
 **Beispiel:**
@@ -373,7 +360,7 @@ int  waitForInterruptInit (int pin, int mode)
 ```C  
 /*
  * isr_debounce.c:
- *	Wait for Interrupt test program  WiringPi >=3.13 - ISR method
+ *	Wait for Interrupt test program  WiringPi >=3.14 - ISR method
  *
  *
  */
@@ -382,11 +369,13 @@ int  waitForInterruptInit (int pin, int mode)
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <wiringPi.h>
 
 #include <time.h>
 
-#define BOUNCETIME 300
+#define BOUNCETIME 3000 // microseconds
+#define BOUNCETIME_WFI  300
 #define TIMEOUT    10000
 //*************************************
 // BCM pins
@@ -447,18 +436,9 @@ int main (void)
 
   pinMode(OUTpin, OUTPUT);
   digitalWrite (OUTpin, LOW) ;
-  
-  // test waitForInterrupt
 
-  ret = waitForInterruptInit (IRQpin, INT_EDGE_FALLING);
-  if (ret < 0) {
-    printf("waitForInterruptInit returned error %d\n", ret);
-    pinMode(OUTpin, INPUT);
-    return 0;
-  }
-  
   printf("Testing waitForInterrupt IRQ @ GPIO%d, timeout is %d\n", IRQpin, TIMEOUT);  
-  ret = waitForInterrupt(IRQpin, TIMEOUT, 0);
+  ret = waitForInterrupt(IRQpin, INT_EDGE_FALLING, TIMEOUT, BOUNCETIME_WFI );
   if (ret < 0) {
     printf("waitForInterrupt returned error %lld\n", ret);
     wiringPiISRStop (IRQpin) ;  
@@ -470,11 +450,11 @@ int main (void)
     wiringPiISRStop (IRQpin) ;  
   }   
   else {
-    printf("waitForInterrupt: falling edge fired at %lld microseconds\n\n", ret);     
+    printf("waitForInterrupt: falling edge fired at %lld microseconds\n\n", ret);    
     wiringPiISRStop (IRQpin) ;  
   }
   
-  printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d falling edge and bouncetime %d ms. Toggle LED @ OUTpin on IRQ.\n\n", IRQpin, IRQpin, BOUNCETIME, OUTpin);
+  printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d falling edge and bouncetime %d microseconds. Toggle LED @ OUTpin on IRQ.\n\n", IRQpin, IRQpin, BOUNCETIME, OUTpin);
   printf("To stop program hit return key\n\n");
   
   wiringPiISR (IRQpin, INT_EDGE_FALLING, &wfi, BOUNCETIME) ; 
