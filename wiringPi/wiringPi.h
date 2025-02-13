@@ -319,6 +319,7 @@ extern void         delay             (unsigned int howLong) ;
 extern void         delayMicroseconds (unsigned int howLong) ;
 extern unsigned int millis            (void) ;
 extern unsigned int micros            (void) ;
+extern unsigned long pulseIn          (int pin, int level, unsigned long timeout) ;
 
 extern unsigned long long piMicros64(void);   // Interface V3.7
 
