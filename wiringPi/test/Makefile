@@ -2,8 +2,9 @@ CC = gcc
 CFLAGS = -Wall
 LDFLAGS =
 
+
 # Need BCM19 <-> BCM26, +PWM: BCM12 <-> BCM13, BCM18 <-> BCM17 connected (1kOhm)
-tests = wiringpi_test0_version wiringpi_test1_sysfs wiringpi_test2_sysfs wiringpi_test3_device_wpi wiringpi_test4_device_phys wiringpi_test5_default wiringpi_test6_isr wiringpi_test7_bench wiringpi_test8_pwm wiringpi_test9_pwm
+tests = checktime wiringpi_test0_version wiringpi_test1_sysfs wiringpi_test2_sysfs wiringpi_test3_device_wpi wiringpi_test4_device_phys wiringpi_test5_default wiringpi_test6_isr wiringpi_test7_bench wiringpi_test8_pwm wiringpi_test9_pwm
 
 # Need XO hardware
 xotests = wiringpi_xotest_test1_spi wiringpi_i2c_test1_pcf8574 wiringpi_test8_pwm wiringpi_test9_pwm
@@ -11,7 +12,14 @@ xotests = wiringpi_xotest_test1_spi wiringpi_i2c_test1_pcf8574 wiringpi_test8_pw
 # Need PiFace hardware and BCM23 <-> BCM24 , BCM18 <-> BCM17 connected (1kOhm), and PiFace Out7<->In4, Out6<->In5, R0_NO<->In6, R0_NO<->In7, R_C<-100Ohm->GND
 pifacetests = wiringpi_piface_test1 wiringpi_test8_pwm wiringpi_test9_pwm
 
-all: $(tests) $(xotests) $(pifacetests)
+# Need modifed GC2xHead
+xhead = wiringpi_test10_sensor
+
+
+all: $(tests) $(xotests) $(pifacetests) $(xhead)
+
+checktime:
+	@which time > /dev/null || { echo "error: 'time' not installed, please execute 'sudo apt install time'"; exit 1; }
 
 wiringpi_test0_version:
 	${CC} ${CFLAGS} wiringpi_test0_version.c -o wiringpi_test0_version -lwiringPi
@@ -52,6 +60,8 @@ wiringpi_xotest_test1_spi:
 wiringpi_i2c_test1_pcf8574:
 	${CC} ${CFLAGS} wiringpi_i2c_test1_pcf8574.c -o wiringpi_i2c_test1_pcf8574 -lwiringPi
 
+wiringpi_test10_sensor:
+	${CC} ${CFLAGS} wiringpi_test10_sensor.c -o wiringpi_test10_sensor -lwiringPi
 
 test:
 	@error_state=false ; \
@@ -113,7 +123,24 @@ pifacetest:
 		echo "\n\e[5mPIFACE TEST SUCCESS\e[0m\n"; \
 	fi
 
+xhead:
+	@error_state=false ; \
+	for t in $(xhead) ; do \
+		echo === xhead  unit test: $${t} === ; \
+		time ./$${t} ; \
+		if [ $$? -ne 0 ]; then \
+			error_state=true ; \
+		fi ; \
+		echo  ; echo  ; \
+	done
+	if [ "$$error_state" = true ]; then \
+		echo "\n\e[5mXHEAD TEST FAILED\e[0m\n"; \
+	else \
+		echo "\n\e[5mXHEAD TEST SUCCESS\e[0m\n"; \
+	fi
+
+
 clean:
-	for t in $(tests) $(xotests) $(pifacetests) ; do \
+	for t in $(tests) $(xotests) $(pifacetests) $(xhead) ; do \
 		rm -fv $${t} ; \
 	done
