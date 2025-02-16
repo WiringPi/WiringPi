@@ -144,7 +144,6 @@ struct wiringPiNodeStruct *wiringPiNodes = NULL ;
 
 // maybe faster then piRP1Model
 #define ISRP1MODEL (PI_MODEL_5==RaspberryPiModel || PI_MODEL_CM5==RaspberryPiModel|| PI_MODEL_500==RaspberryPiModel || PI_MODEL_CM5L==RaspberryPiModel)
-
 //RP1 chip (@Pi5) RIO address
 const unsigned int RP1_RIO_OUT = 0x0000;
 const unsigned int RP1_RIO_OE  = (0x0004/4);
