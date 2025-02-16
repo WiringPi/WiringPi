@@ -144,7 +144,6 @@ extern const char *piRevisionNames [16] ;
 extern const char *piMakerNames    [16] ;
 extern const int   piMemorySize    [ 8] ;
 
-
 //	Intended for the GPIO program Use at your own risk.
 
 // Threads
