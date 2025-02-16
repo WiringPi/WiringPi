@@ -75,6 +75,7 @@
 #include <sys/utsname.h>
 #include <linux/gpio.h>
 #include <dirent.h>
+#include <inttypes.h>
 
 #include "softPwm.h"
 #include "softTone.h"
@@ -2800,21 +2801,35 @@ long long int waitForInterrupt (int pin, int edgeMode, int mS, unsigned long deb
   return ret;
 }
 
+/*
+ * waitForInterruptClose:
+ *	wait for thread interruptHandler to be stopped.
+ * close isrFds[pin], reset isrFds[pin], isrFunction[pin] and isrDebouncePeriodUs[pin]
+ *
+ *********************************************************************************
+ */
 
 int waitForInterruptClose (int pin) {
-  if (isrFds[pin]>0) {
-    if (wiringPiDebug) {
-      printf ("wiringPi: waitForInterruptClose close thread 0x%lX\n", (unsigned long)isrThreads[pin]) ;
-    }
+  void *res; 
+  
+  if (isrFds[pin] > 0) {
+    if (wiringPiDebug)
+      printf ("waitForInterruptClose: close thread 0x%lX\n", (unsigned long)isrThreads[pin]) ;
+    
     if (isrThreads[pin] != 0) {
       if (pthread_cancel(isrThreads[pin]) == 0) {
-        if (wiringPiDebug) {
-          printf ("wiringPi: waitForInterruptClose thread canceled successfuly\n") ;
+        pthread_join(isrThreads[pin], &res); 
+        if (res == PTHREAD_CANCELED) {
+            if (wiringPiDebug)
+               printf("waitForInterruptClose: thread was canceled\n");
+        }
+        else {
+            if (wiringPiDebug)
+               printf("waitForInterruptClose: thread was not canceled\n");
         }
       } else {
-        if (wiringPiDebug) {
-          fprintf (stderr, "wiringPi: waitForInterruptClose could not cancel thread\n");
-        }
+        if (wiringPiDebug)
+          printf ("waitForInterruptClose: waitForInterruptClose could not cancel thread\n");
       }
     }
     close(isrFds [pin]);
@@ -2830,86 +2845,22 @@ int waitForInterruptClose (int pin) {
   chipFd = -1;
   */
   if (wiringPiDebug) {
-    printf ("wiringPi: waitForInterruptClose finished\n") ;
+    printf ("waitForInterruptClose: waitForInterruptClose finished\n") ;
   }
   return 0;
 }
 
-
 /*
- * wfi:
- *	Pi Specific.
- *	Wait for Interrupt on a GPIO pin, called from interruptHandler
- *  Returns timestamp in microseconds on interrupt
+ * wiringPiISRStop:
+ *	stop thread interruptHandler 
+ *
  *********************************************************************************
  */
-
-long long int wfi(int pin) 
-{
-  long long int ret;
-  int fd;
-  struct pollfd polls ;
-  struct gpio_v2_line_event evdata;
-  
-  if (wiringPiMode == WPI_MODE_PINS)
-    pin = pinToGpio [pin] ;
-  else if (wiringPiMode == WPI_MODE_PHYS)
-    pin = physToGpio [pin] ;
-
-  if ((fd = isrFds [pin]) == -1)
-    return -2 ;
-
-  // Setup poll structure
-  polls.fd      = fd;
-  polls.events  = POLLIN | POLLERR ;
-  polls.revents = 0;
-
-  ret = (long long int)poll(&polls, 1, -1);     // no timeout, wait forevver
-  
-  if (ret < 0) {
-    if (wiringPiDebug)  
-      fprintf(stderr, "wiringPi: ERROR: poll returned=%lld\n", ret);
-  } else if (ret == 0) { 
-    if (wiringPiDebug)  
-      fprintf(stderr, "wiringPi: timeout: poll returned=%lld\n", ret);
-  }
-  else {
-    if (wiringPiDebug)
-      printf ("wiringPi: IRQ line %d received %lld, fd=%d\n", pin, ret, isrFds[pin]) ;
-    if (polls.revents & POLLIN) {  
-    /* read event data */
-      int readret = read(isrFds [pin], &evdata, sizeof(evdata));
-      if (readret == sizeof(evdata)) {
-        if (wiringPiDebug)
-          printf ("wiringPi: IRQ at PIN: %d, timestamp: %lld\n", evdata.offset, evdata.timestamp_ns) ;
-
-        switch (evdata.id) {
-		  case GPIO_V2_LINE_EVENT_RISING_EDGE:
-            if (wiringPiDebug)
-		      printf("wiringPi: rising edge\n");
-			break;
-		  case GPIO_V2_LINE_EVENT_FALLING_EDGE:
-            if (wiringPiDebug)
-			  printf("wiringPi: falling edge\n");
-			break;
-		  default:
-            if (wiringPiDebug) 
-		      printf("wiringPi: unknown event\n");
-            break;
-		}        
-        ret = evdata.timestamp_ns / 1000LL;    // nanoseconds u64 to microseconds
-      }
-      else {
-        ret = -1;
-      }
-    }
-  }
-  return ret;
-}
 
 int wiringPiISRStop (int pin) {
   return waitForInterruptClose (pin);
 }
+
 
 /*
  * interruptHandler:
@@ -2922,17 +2873,17 @@ int wiringPiISRStop (int pin) {
 void *interruptHandler (void *arg)
 {
   const char* strmode = ""; 
-  int pin, mode ;
+  int pin, mode, ret, fd, attr, i;  
+  unsigned int readret;
   unsigned long debounce_period_us;
+  struct pollfd polls ;  
   struct gpio_v2_line_config config;
   struct gpio_v2_line_request req;
-  int attr, ret;
+  struct gpio_v2_line_event evdat[64];  
+  struct timespec tspec = {0, 1e6};  /* 0.5 ms timeout {0, 5e5} */
   
   pin = *(int *)arg;
-  
-/*  pin   = pinPass ; 
-  pinPass = -1 ;
-*/  
+
   if (wiringPiGpioDeviceGetFd()<0) {
     return NULL;
   }
@@ -2953,7 +2904,7 @@ void *interruptHandler (void *arg)
     default:
     case INT_EDGE_SETUP:
       if (wiringPiDebug) {
-        printf ("wiringPi: waitForInterruptMode mode INT_EDGE_SETUP - exiting\n") ;
+        printf ("interruptHandler: waitForInterruptMode mode INT_EDGE_SETUP - exiting\n") ;
       }
       return NULL;
     case INT_EDGE_FALLING:
@@ -2980,45 +2931,75 @@ void *interruptHandler (void *arg)
   }
   
   req.num_lines = 1;
+  req.event_buffer_size = 45;
   req.offsets[0] = pin;
   req.config = config;
 
   ret = ioctl(chipFd, GPIO_V2_GET_LINE_IOCTL, &req);
   if (ret == -1) {
-    ReportDeviceError("get line event", pin , strmode, ret);
+    ReportDeviceError("interruptHandler: get line event", pin , strmode, ret);
     return NULL;
   }
-/*
-  if (wiringPiDebug) {
-    printf ("wiringPi: GPIO get line %d , mode %s succeded, fd=%d\n", pin, strmode, req.fd) ;
-  }
-*/
+
+  if (wiringPiDebug) 
+    printf ("interruptHandler: GPIO get line %d , mode %s succeded, fd=%d\n", pin, strmode, req.fd) ;
+
   /* set event fd  */
-  int fd_line = req.fd;
-  isrFds [pin] = fd_line;
+  fd = req.fd;
+  isrFds [pin] = fd;
   
   (void)piHiPri (55) ;	// Only effective if we run as root
 
-  for (;;) {
-    long long int ret = wfi(pin);       // poll for event and return timestamp
-    if ( ret> 0) {                      // return timestamp in microseconds
-      if (wiringPiDebug) {
-        printf ("wiringPi: call function\n") ;
-      }
-      if(isrFunctions [pin]) {
-        isrFunctions [pin] ((unsigned int)pin, ret) ;
-      }
-      // wait again - in the past forever - now can be stopped by  waitForInterruptClose
-    } else if( ret< 0) {
-      break; // stop thread!
+  for (;;) {    // check if event data is available, check if interruptHandler thread must be canceled
+
+  // Setup poll structure
+    polls.fd      = fd;
+    polls.events  = POLLIN | POLLPRI;;
+    polls.revents = 0;
+    
+    // get event data, this is also a cancelation point, when pthread_cancel is called
+    ret = ppoll(&polls, 1, &tspec, NULL);     // returns -1 on error, 0 on timeout, >0 number of elements
+  
+    if (ret < 0) {      // we do not reach this point if canceled, ppoll does not return, is Cancellation Point
+        if (wiringPiDebug)  
+            printf("interruptHandler: ERROR: poll returned=%d\n", ret);
+        pthread_exit(NULL); 
+        return NULL;        // never landing here
+    } else if (ret == 0) { 
+//        if (wiringPiDebug)  
+//            printf("interruptHandler: timeout: poll returned=%d\n", ret);
+        continue;
+    }
+    else {
+        if (wiringPiDebug)
+            printf ("interruptHandler: IRQ line %d received %d events, fd=%d\n", pin, ret, isrFds[pin]) ;
+        if (polls.revents & POLLIN) {  
+            /* read event data */
+            readret = read(fd, &evdat, sizeof(evdat));
+            if (readret >= sizeof(evdat[0])) {
+                if (wiringPiDebug)
+                    printf ("interruptHandler: IRQ at PIN: %d, events: %u\n", evdat[0].offset, readret/(unsigned int)sizeof(evdat[0])) ;
+
+                ret = readret/sizeof(evdat[0]);     // number of events read from fd
+                if (wiringPiDebug)
+                    printf ("interruptHandler: call function\n") ;
+                for (i = 0; i < ret; ++i) {
+                    if (isrFunctions [pin]) {
+                        if (wiringPiDebug) 
+                            printf( "interruptHandler: GPIO EVENT at %" PRIu64 " on line %d (%d|%d) \n", (uint64_t)evdat[i].timestamp_ns, evdat[i].offset, evdat[i].line_seqno, evdat[i].seqno);
+                        isrFunctions [pin] ((unsigned int)pin, evdat[i].timestamp_ns/1000LL) ;
+                    }
+                }
+            }
+            else {  // if thread canceled we do not reach this point, read(...) does not return, is Cancellation Point
+                if (wiringPiDebug)
+                    printf ("interruptHandler: reading events from fd received signal, exit thread\n");
+                pthread_exit(NULL);  
+                return NULL; // never landing here
+            }
+        }
     }
   }
-
-  waitForInterruptClose (pin);
-  if (wiringPiDebug) {
-    printf ("wiringPi: interruptHandler finished\n") ;
-  }
-  return NULL ;
 }
 
 
