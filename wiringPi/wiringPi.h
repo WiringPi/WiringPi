@@ -144,6 +144,7 @@ extern const char *piRevisionNames [16] ;
 extern const char *piMakerNames    [16] ;
 extern const int   piMemorySize    [ 8] ;
 
+
 //	Intended for the GPIO program Use at your own risk.
 
 // Threads
@@ -301,7 +302,6 @@ extern          void digitalWriteByte2   (int value) ;
 extern long long int  waitForInterrupt    (int pin, int edgeMode, int mS, unsigned long debounce_period_us) ;   // V3.14 phylax
 extern int  wiringPiISR         (int pin, int mode, void (*function)(unsigned int, long long int), unsigned long debounce_period_us) ;  // v3.14 phylax
 extern int  wiringPiISRStop     (int pin) ;  //V3.2
-extern int  waitForInterruptClose(int pin) ; //V3.2
 
 // Threads
 

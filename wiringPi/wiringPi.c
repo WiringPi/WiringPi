@@ -2782,34 +2782,35 @@ long long int waitForInterrupt (int pin, int edgeMode, int mS, unsigned long deb
 }
 
 /*
- * waitForInterruptClose:
- *	wait for thread interruptHandler to be stopped.
+ * wiringPiISRStop:
+ * stop interruptHandler thread and
+ * wait untill stopped.
  * close isrFds[pin], reset isrFds[pin], isrFunction[pin] and isrDebouncePeriodUs[pin]
  *
  *********************************************************************************
  */
 
-int waitForInterruptClose (int pin) {
+int wiringPiISRStop (int pin) {
   void *res; 
   
   if (isrFds[pin] > 0) {
     if (wiringPiDebug)
-      printf ("waitForInterruptClose: close thread 0x%lX\n", (unsigned long)isrThreads[pin]) ;
+      printf ("wiringPiISRStop: close thread 0x%lX\n", (unsigned long)isrThreads[pin]) ;
     
     if (isrThreads[pin] != 0) {
       if (pthread_cancel(isrThreads[pin]) == 0) {
         pthread_join(isrThreads[pin], &res); 
         if (res == PTHREAD_CANCELED) {
             if (wiringPiDebug)
-               printf("waitForInterruptClose: thread was canceled\n");
+               printf("wiringPiISRStop: thread was canceled\n");
         }
         else {
             if (wiringPiDebug)
-               printf("waitForInterruptClose: thread was not canceled\n");
+               printf("wiringPiISRStop: thread was not canceled\n");
         }
       } else {
         if (wiringPiDebug)
-          printf ("waitForInterruptClose: waitForInterruptClose could not cancel thread\n");
+          printf ("wiringPiISRStop: could not cancel thread\n");
       }
     }
     close(isrFds [pin]);
@@ -2828,17 +2829,6 @@ int waitForInterruptClose (int pin) {
     printf ("waitForInterruptClose: waitForInterruptClose finished\n") ;
   }
   return 0;
-}
-
-/*
- * wiringPiISRStop:
- *	stop thread interruptHandler 
- *
- *********************************************************************************
- */
-
-int wiringPiISRStop (int pin) {
-  return waitForInterruptClose (pin);
 }
 
 
