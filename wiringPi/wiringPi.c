@@ -2993,6 +2993,38 @@ unsigned long long piMicros64(void) {
 }
 
 /*
+ * pulseIn:
+ *  Read a pulse, either high or low pin.  For instance, if value is HIGH, pulseIn()
+ *  waits for the pin to go from LOW to HIGH, starts timing, then waits for the pin
+ *  to go low, then stops timing.  Returns the length of the pulse in microseconds
+ *  or gives up and returns 0 if no complete pulse recieved within timeout.
+ *********************************************************************************
+*/
+unsigned long pulseIn(int pin, int level, unsigned long timeout) {
+  unsigned long startTime = micros();
+  //0. missed pulse start - prevents bad readings
+  while (digitalRead(pin) == level) {
+    if ((micros() - startTime) > timeout){
+      return 0;
+    }
+  }
+  // 1. Wait for pulse to start.
+  while (digitalRead(pin) != level) {
+      if ((micros() - startTime) > timeout)
+          return 0;
+  }
+  unsigned long pulseStart = micros();
+
+  // 2. Wait for pulse to end.
+  while (digitalRead(pin) == level) {
+      if ((micros() - startTime) > timeout)
+          return 0;
+  }
+  unsigned long pulseEnd = micros();
+  return pulseEnd - pulseStart;
+}
+
+/*
  * wiringPiVersion:
  *	Return our current version number
  *********************************************************************************
