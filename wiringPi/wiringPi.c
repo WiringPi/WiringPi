@@ -2630,30 +2630,33 @@ unsigned int digitalReadByte2 (void)
 
 
 
+/*
+ * waitForInterrupt:
+ *	Pi Specific.
+ *	Wait for Interrupt on a GPIO pin.
+ *	This is actually done via the /dev/gpiochip interface regardless of
+ *	the wiringPi access mode in-use. Maybe sometime it might get a better
+ *	way for a bit more efficiency.
+ *  Returns timestamp in microseconds on interrupt
+ *********************************************************************************
+ */
 
-//--------------------------------------------------------------------
-// waitForInteruptInit
-// Prepares waitForInterrupt for edgeMode, and debounce_period_us
-// 
-// returns -1 on error
-// returns 0 on success
-//--------------------------------------------------------------------
-
-int waitForInterruptInit (int pin, int edgeMode, unsigned long debounce_period_us)
+long long int waitForInterrupt (int pin, int edgeMode, int mS, unsigned long debounce_period_us)    // ms < 0 wait infinite, = 0 return immediately, > 0 wait timeout
 {
-  const char* strmode = "";
+  long long int ret;
+  int fd, attr, status, readret;
+  struct pollfd polls ;
+  struct gpio_v2_line_event evdata;
   struct gpio_v2_line_config config;
   struct gpio_v2_line_request req;
-  int attr, ret;
+  const char* strmode = "";
   
-  if (wiringPiMode == WPI_MODE_PINS) {
+  if (wiringPiMode == WPI_MODE_PINS)
     pin = pinToGpio [pin] ;
-  } else if (wiringPiMode == WPI_MODE_PHYS) {
+  else if (wiringPiMode == WPI_MODE_PHYS)
     pin = physToGpio [pin] ;
-  }
 
   /* open gpio */
-//  sleep(1);
   if (wiringPiGpioDeviceGetFd()<0) {
     return -1;
   }
@@ -2663,6 +2666,7 @@ int waitForInterruptInit (int pin, int edgeMode, unsigned long debounce_period_u
   
   /* setup config */
   config.flags = GPIO_V2_LINE_FLAG_INPUT;
+  
   switch(edgeMode) {
     default:
     case INT_EDGE_SETUP:
@@ -2686,11 +2690,11 @@ int waitForInterruptInit (int pin, int edgeMode, unsigned long debounce_period_u
   strcpy(req.consumer, "wiringpi_gpio_irq");
   
   if (debounce_period_us) {
-		attr = config.num_attrs;
-		config.num_attrs++;
-        gpiotools_set_bit(&config.attrs[attr].mask, 0);
-		config.attrs[attr].attr.id = GPIO_V2_LINE_ATTR_ID_DEBOUNCE;
-		config.attrs[attr].attr.debounce_period_us = debounce_period_us;
+	attr = config.num_attrs;
+	config.num_attrs++;
+    gpiotools_set_bit(&config.attrs[attr].mask, 0);
+	config.attrs[attr].attr.id = GPIO_V2_LINE_ATTR_ID_DEBOUNCE;
+	config.attrs[attr].attr.debounce_period_us = debounce_period_us;
   }
   
   req.num_lines = 1;
@@ -2698,9 +2702,9 @@ int waitForInterruptInit (int pin, int edgeMode, unsigned long debounce_period_u
   req.event_buffer_size = 32;
   req.config = config;
 
-  ret = ioctl(chipFd, GPIO_V2_GET_LINE_IOCTL, &req);
-  if (ret == -1) {
-    ReportDeviceError("GPIO_V2_GET_LINE_IOCTL", pin , strmode, ret);
+  status = ioctl(chipFd, GPIO_V2_GET_LINE_IOCTL, &req);
+  if (status == -1) {
+    ReportDeviceError("GPIO_V2_GET_LINE_IOCTL", pin , strmode, status);
     return -1;
   }
 
@@ -2708,54 +2712,24 @@ int waitForInterruptInit (int pin, int edgeMode, unsigned long debounce_period_u
     printf ("wiringPi: GPIO get line %d , mode %s succeded, fd=%d\n", pin, strmode, req.fd) ;
   }
  
-  int fd_line = req.fd;
-  isrFds [pin] = fd_line;
+  fd = req.fd;
+  isrFds [pin] = fd;
   isrDebouncePeriodUs[pin] = debounce_period_us; 
   
 /* set event fd nonbloack read */ 
   /*
-  int flags = fcntl(fd_line, F_GETFL);
+  int flags = fcntl(fd, F_GETFL);
   flags |= O_NONBLOCK;
-  ret = fcntl(fd_line, F_SETFL, flags);
-  if (ret) {
-    fprintf(stderr, "wiringPi: ERROR: fcntl set nonblock return=%d\n", ret);
+  status = fcntl(fd, F_SETFL, flags);
+  if (status) {
+    fprintf(stderr, "wiringPi: ERROR: fcntl set nonblock return=%d\n", status);
     return -1;
   }
 */
-  return 0;
-}
 
-
-/*
- * waitForInterrupt:
- *	Pi Specific.
- *	Wait for Interrupt on a GPIO pin.
- *	This is actually done via the /dev/gpiochip interface regardless of
- *	the wiringPi access mode in-use. Maybe sometime it might get a better
- *	way for a bit more efficiency.
- *  Returns timestamp in microseconds on interrupt
- *********************************************************************************
- */
-
-long long int waitForInterrupt (int pin, int edgeMode, int mS, unsigned long debounce_period_us)    // ms < 0 wait infinite, = 0 return immediately, > 0 wait timeout
-{
-  long long int ret;
-  int fd;
-  struct pollfd polls ;
-  struct gpio_v2_line_event evdata;
-  
-  if (wiringPiMode == WPI_MODE_PINS)
-    pin = pinToGpio [pin] ;
-  else if (wiringPiMode == WPI_MODE_PHYS)
-    pin = physToGpio [pin] ;
-
-  if (waitForInterruptInit (pin, edgeMode, debounce_period_us ) != 0)
-    return -1 ;
-
-  fd = isrFds[pin];
   // Setup poll structure
   polls.fd      = fd;
-  polls.events  = POLLIN | POLLERR ;
+  polls.events  = POLLIN | POLLPRI;
   polls.revents = 0;
 
   ret = (long long int)poll(&polls, 1, mS);
@@ -2772,7 +2746,7 @@ long long int waitForInterrupt (int pin, int edgeMode, int mS, unsigned long deb
       printf ("wiringPi: IRQ line %d received %lld, fd=%d\n", pin, ret, isrFds[pin]) ;
     if (polls.revents & POLLIN) {  
     /* read event data */
-      int readret = read(isrFds [pin], &evdata, sizeof(evdata));
+      readret = read(isrFds [pin], &evdata, sizeof(evdata));
       if (readret == sizeof(evdata)) {
         if (wiringPiDebug)
           printf ("wiringPi: IRQ at PIN: %d, timestamp: %lld\n", evdata.offset, evdata.timestamp_ns) ;
@@ -2797,6 +2771,12 @@ long long int waitForInterrupt (int pin, int edgeMode, int mS, unsigned long deb
         ret = -1;
       }
     }
+  }
+  
+  if (isrFds[pin] > 0) {
+    close(isrFds [pin]);        // release line
+    isrFds [pin] = -1;
+    isrDebouncePeriodUs[pin] = 0;
   }
   return ret;
 }
@@ -2954,7 +2934,7 @@ void *interruptHandler (void *arg)
 
   // Setup poll structure
     polls.fd      = fd;
-    polls.events  = POLLIN | POLLPRI;;
+    polls.events  = POLLIN | POLLPRI;
     polls.revents = 0;
     
     // get event data, this is also a cancelation point, when pthread_cancel is called

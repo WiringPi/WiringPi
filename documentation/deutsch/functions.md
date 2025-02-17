@@ -20,13 +20,13 @@ sudo apt install git
 git clone https://github.com/WiringPi/WiringPi.git
 cd WiringPi
 ./build debian
-mv debian-template/wiringpi-3.13.deb .
+mv debian-template/wiringpi-3.1x.deb .
 ```
 
 **Debian-Paket installieren:**
 
 ```bash
-sudo apt install ./wiringpi-3.13.deb
+sudo apt install ./wiringpi-3.1x.deb
 ```
 
 **Debian-Paket deinstallieren:**
@@ -445,17 +445,14 @@ int main (void)
   ret = waitForInterrupt(IRQpin, INT_EDGE_FALLING, TIMEOUT, BOUNCETIME_WFI );
   if (ret < 0) {
     printf("waitForInterrupt returned error %lld\n", ret);
-    wiringPiISRStop (IRQpin) ;  
     pinMode(OUTpin, INPUT);
     return 0;    
   }
   else if (ret == 0) {
     printf("waitForInterrupt timed out %lld\n\n", ret);
-    wiringPiISRStop (IRQpin) ;  
   }   
   else {
     printf("waitForInterrupt: falling edge fired at %lld microseconds\n\n", ret);    
-    wiringPiISRStop (IRQpin) ;  
   }
   
   printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d falling edge and bouncetime %d microseconds. Toggle LED @ OUTpin on IRQ.\n\n", IRQpin, IRQpin, BOUNCETIME, OUTpin);
