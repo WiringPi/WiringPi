@@ -2850,7 +2850,7 @@ void *interruptHandler (void *arg)
   struct gpio_v2_line_config config;
   struct gpio_v2_line_request req;
   struct gpio_v2_line_event evdat[64];  
-  struct timespec tspec = {0, 1e6};  /* 0.5 ms timeout {0, 5e5} */
+  struct timespec tspec = {0, 5e5};  /* 0.5 ms timeout {0, 1e6} */
   
   pin = *(int *)arg;
 
