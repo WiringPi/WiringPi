@@ -299,8 +299,16 @@ extern          void digitalWriteByte2   (int value) ;
 // Interrupts
 //	(Also Pi hardware specific)
 
-extern long long int  waitForInterrupt    (int pin, int edgeMode, int mS, unsigned long debounce_period_us) ;   // V3.14 phylax
-extern int  wiringPiISR         (int pin, int mode, void (*function)(unsigned int, long long int), unsigned long debounce_period_us) ;  // v3.14 phylax
+// status returned from waitForInterrupt    V3.16
+struct WPIWfiStatus {
+    int status;         // -1: error, 0: timeout, 1: valud values for edge and timeStamp_us
+    unsigned int gpioPin;  // gpio as BCM pin
+    int edge;           // One of INT_EDGE_FALLING or INT_EDGE_RISING	
+    long long int timeStamp_us;     // time stamp in microseconds, when interrupt happened
+};
+
+extern struct WPIWfiStatus  waitForInterrupt    (int pin, int edgeMode, int mS, unsigned long debounce_period_us) ;   // V3.16 phylax
+extern int  wiringPiISR         (int pin, int mode, void (*function)(struct WPIWfiStatus wfiStatus), unsigned long debounce_period_us) ;  // v3.16 phylax
 extern int  wiringPiISRStop     (int pin) ;  //V3.2
 
 // Threads
