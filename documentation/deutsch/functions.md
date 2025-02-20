@@ -1,7 +1,7 @@
 # Dokumentation WiringPi-Bibliothek
 
 Die WiringPi-Bibliothek ermöglicht den Zugriff auf die GPIO-Pins des Raspberry Pi. In dieser Dokumentation finden Sie Informationen zu den verfügbaren Funktionen und deren Verwendung. 
-Seit Version 3 werden nun auch wieder Erweiterungen an der Schnittstelle vorgenommen. Bei Neuimplementierungen sollte man auf die aktuellen bzw. neunen Funktionen setzen.  
+Seit Version 3 werden nun auch wieder Erweiterungen an der Schnittstelle vorgenommen. Bei Neuimplementierungen sollte man auf die aktuellen bzw. neuen Funktionen setzen.  
 Das alte [GPIO Sysfs Interface for Userspace](https://www.kernel.org/doc/Documentation/gpio/sysfs.txt) wird nun nicht mehr unterstützt. 
 
 **ACHTUNG:** Diese Dokumemtation ist noch in Arbeit und somit unvollständig.  
