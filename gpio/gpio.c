@@ -177,7 +177,7 @@ void printgpio(const char* text) {
   }
 }
 
-static void wfi (unsigned int pin, long long int timestamp) { 
+static void wfi (UNU struct WPIWfiStatus wfiStatus) { 
   globalCounter++;
   if(globalCounter>=iterations) {
     printgpio("finished\n");
