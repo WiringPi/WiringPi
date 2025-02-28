@@ -11,7 +11,7 @@ Für Schäden materieller oder immaterieller Art, die durch die Nutzung oder Nic
 ## Installation
 
 Leider steht die WiringPi Library nicht direkt in Raspberry Pi OS zur Verfügung, darum muss sie manuelle installiert weden.
-Entweder man lädt sich ein Debian-Paket herunter oder übersetzt es manuell. 
+Entweder man lädt sich ein Debian-Paket herunter oder erstellt es manuell. 
 
 **Debian-Paket erstellen:**
 
