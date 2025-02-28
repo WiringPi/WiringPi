@@ -345,7 +345,7 @@ int main (void) {
 
 ### waitForInterrupt
 
-Wartet auf einen Aufruf der Interrupt Service Routine (ISR) mit Timeout.
+Wartet auf einen zuvor definierten Interrupt (wiringPiISR) am GPIO Pin. Diese Funktion sollte nicht verwendet werden.
 
 >>>
 ```C
