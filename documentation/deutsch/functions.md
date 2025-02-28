@@ -564,4 +564,37 @@ if (fd>0) {
 
 ## SPI - Bus
 
+Funktionen die mit ``wiringPiSPIx`` beginnen sind neu in der Version 3, mit ihnen kann auch die SPI-Bus Nummer angegeben werden. 
+Dies ist vorallem nützlich für das Compute Module das über mehere SPI-Busse (0-3) verfügt.
+Die alten Funktionen bleiben erhalten beziehen sich allerdings immer auf den SPI Bus 0 der am 40-GPIO Anschluss verfügbar ist.
+
+
+### wiringPiSPISetup
+
+Öffnet den default SPI-Bus am Raspberry Pi und adressiert das angegebene Gerät / Slave.
+
+>>>
+```C
+int wiringPiSPISetup (int channel, int speed)
+```
+
+``channel``: SPI Kanal (0 oder 1).
+``speed``: SPI Taktrate.  
+``Rückgabewert``:  Datei Handle zum SPI-Bus   
+> -1 ... Fehler bzw. EXIT (Programm Beendigung)
+
+**Beispiel**
+>>>
+```C
+const int spiChannel = 1;
+const int spiSpeedInit = 250000; // Hz
+int hSPI;
+
+if ((hSPI = wiringPiSPISetup (spiChannel, spiSpeed)) < 0) {
+    FailAndExitWithErrno("wiringPiSPISetup", hSPI);
+}
+
 ...
+
+wiringPiSPIClose(spiChannel);
+```
