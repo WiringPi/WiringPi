@@ -1,7 +1,7 @@
 # Documentation WiringPi-library
 
-The WiringPi-library enables access to the GPIO pins of the Raspberry PI. In this documentation you will find information about the available functions and their use.
-Since Version 3, extensions have now been carried out again at the interface.In the case of new implementations, you should rely on the current /new functions.
+The WiringPi-library enables access to the GPIO pins of the Raspberry Pi. In this documentation you will find information about the available functions and their use.
+Since Version 3, extensions to the interface have been made again. In the case of new implementations, you should rely on the current / new functions.
 The old [GPIO Sysfs Interface for Userspace](https://www.kernel.org/doc/Documentation/gpio/sysfs.txt) is no longer supported.
 
 **Attention:** This documentation is still in progress and therefore incomplete.
