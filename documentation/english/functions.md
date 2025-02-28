@@ -10,8 +10,8 @@ No liability is generally assumed for damage caused by material or intangible na
 
 ## Installation
 
-Unfortunately, the WiringPi Library is not available directly in Raspberry Pi OS, which is why it has to be installed manually.
-Either you can download a Debian package or translate it manually.
+Unfortunately, the WiringPi Library is not directly available in Raspberry Pi OS, so it must be installed manually. Either download a Debian package or create it manually.
+
 **Create Debian package:**
 
 ```bash
@@ -105,7 +105,7 @@ GPIOs: https://pinout.xyz/pinout/wiringpi
 
 
 **References**  
-Note the different PIN numbers and the I2C0 at Raspberry Pi 1b Rev. 1!
+Note the different pin numbers and the I2C0 at Raspberry Pi 1B Rev. 1!
 
 ## Initialization
 At the beginning, the WiringPi Library must be initialized.
@@ -118,10 +118,10 @@ Outdated functions (no longer use):
 ``wiringPiSetupPhys`` uses physical PIN numbering of the GPIOs and accesses the GPIO register directly.  
 ``wiringPiSetupSys`` uses BCM numbering and calls the new function ``wiringPiSetupGpioDevice`` from version 3.4 to ensure compatibility with new core. In version 2, the virtual file system/SYS/Class/GPIO was used. However, the GPIO's exports had to take place externally before the initialization! The function is outdated and should not be used!
 
-**From Version 3.4:**  
+**Since Version 3.4:**  
 ``wiringPiSetupPinType`` decides whether WiringPi, BCM or physical PIN numbering is now used, based on the parameter pinType. So it combines the first 3 setup functions together.
 ``wiringPiSetupGpioDevice`` is the successor to the ``wiringPiSetupSys`` function and now uses "GPIO Character Device Userspace API" in version 1 (from kernel 5.10). More information can be found at [docs.kernel.org/driver-api/gpio/driver.html](https://docs.kernel.org/driver-api/gpio/driver.html) on the parameter pintype, it is again decided which pin numbering is used.
-With this variant, the GPIO storage (DMA) is not accessed directly, but via a kernel interface that is available with user rights.The disadvantage is the scope of functions and low performance.
+In this variant, there is no direct access to the GPIO memory (DMA) but rather through a kernel interface that is available with user permissions. The disadvantage is the limited functionality and low performance.
 
 <!-- ​​Attention code that uses the nine functions is no longer compatible with the older library version 2! -->
 
@@ -152,11 +152,8 @@ int wiringPiSetupPinType(enum WPIPinType pinType)
 ```  
 
 ``pinType``: Type of PIN numbering...
-
  - `WPI_PIN_BCM` ... BCM-Numbering  
-
  - `WPI_PIN_WPI` ... WiringPi-Numbering  
-
  - `WPI_PIN_PHYS` ... Physical Numbering  
 
 ``Return Value``:  Error status  
@@ -182,20 +179,13 @@ void pinMode(int pin, int mode)
 
 ``Pin``: The desired PIN (BCM, Wiringpi or PIN number).  
 ``Mode``: The desired pin mode...
-
-- `INPUT` ... entrance
-
-- `OUTPUT` ... output
-
+- `INPUT` ... Input
+- `OUTPUT` ... Output
 - `PWM_OUTPUT` ... PWM output (frequency and pulse break ratio can be configured)
-
-- `PWM_MS_OUTPUT` ... PWM output with MS (Mark/Space) (from version 3)
-
-- `PWM_BAL_OUTPUT` ... PWM output with mode balanced) (from version 3)
-
+- `PWM_MS_OUTPUT` ... PWM output with MS (Mark/Space) (since version 3)
+- `PWM_BAL_OUTPUT` ... PWM output with mode balanced) (since version 3)
 - `GPIO_CLOCK` ... Frequency output
-
-- `PM_OFF` ... Approval
+- `PM_OFF` ... Release
 
 **Example:**
 
@@ -204,17 +194,14 @@ pinMode(17, OUTPUT);
 ```
 
 **Support:**  
-`PM_OFF` resets the GPIO (Input) and releases it. PWM is ended.
+`PM_OFF` resets the GPIO (Input) and releases it. PWM is stopped.
 Raspberry Pi 5 does not support the PWM Bal (Balanced) mode. The MS mode is activated at `PWM_OUTPUT`.
 `GPIO_CLOCK` is currently not yet supported in Raspberry Pi 5 (RP1).
 
 **PWM Exit**  
 `PWM_OUTPUT` Activates the specified PWM output with the settings:
-
  - Mode: BAL-Balanced (Pi0-4), MS-Mark/Space (Pi 5)
- 
  - Range: 1024  
- 
  - Divider: 32  
 
 In order to make sure that the output starts without an active frequency, you should execute ``pwmWrite(PWM_GPIO, 0);`` before activating.
@@ -232,9 +219,7 @@ void digitalWrite(int pin, int value)
 
 ``pin``: The desired Pin (BCM-, Wiringpi- or PIN number).  
 ``value``: The logical value...
-
  - `HIGH` ... Value 1 (electrical ~ 3.3 V)  
-
  - `LOW` ... Value 0 (electrical ~0 V / GND)
 
 **Example:**
@@ -254,11 +239,8 @@ void pullUpDnControl (int pin, int pud)
 
 ``pin``: The desired Pin (BCM-, WiringPi-, or Pin-number).  
 ``pud``: The resistance type...
-
  - `PUD_OFF` ... No resistance   
-
  - `PUD_UP` ... Pull-Up resistance (~50 kOhm)
-
  - `PUD_DOWN` ... Pull-Down resistance (~50 kOhm)
 
 **Example:**
@@ -299,7 +281,7 @@ if (value == HIGH)
 
 ### wiringPiISR
 
-Register an Interrupt Service Routine (ISR) or function that is executed when switching edge.
+Registers an Interrupt Service Routine (ISR) / function that is executed on edge detection.
 
 >>>
 ```C
@@ -308,11 +290,8 @@ int wiringPiISR(int pin, int mode, void (*function)(void));
 
 ``pin``: The desired Pin (BCM-, WiringPi-, or Pin-number).  
 ``mode``: Triggering edge mode...
-
  - `INT_EDGE_RISING` ... Rising edge  
-
  - `INT_EDGE_FALLING` ... Falling edge  
-
  - `INT_EDGE_BOTH` ... Rising and falling edge  
 
 ``*function``: Function pointer for ISR  
@@ -367,7 +346,7 @@ int main (void) {
 
 ### waitForInterrupt
 
-Wait for a call to the Interrupt Service Routine (ISR) with timeout.
+Waits for a previously defined interrupt (wiringPiISR) on the GPIO pin. This function should not be used.
 
 >>>
 ```C
@@ -418,9 +397,7 @@ pwmSetMode(int mode);
 ```
 
 ``mode``: PWM Mode
-
  - `PWM_MODE_MS` ... Mark / Space Mode (PWM Fixed Frequency)  
-
  - `PWM_MODE_BAL` ... Balanced Mode (PWM Variable Frequency)
 
 **Support:**  
@@ -431,7 +408,7 @@ Raspberry Pi 5 does not support the balanced mode!
 
 Set the divider for the basic PWM. The base clock is standardized for all Raspberry Pi's to 1900 kHz.
 19200 / divisor / range applies to the calculation of the PWM frequency (m/s mode).
-If ``pinmode(pin, PWM_OUTPUT)`` The value 32 is automatically set for the divider. 
+If ``pinmode(pin, PWM_OUTPUT)`` The value 32 is automatically set for the divider.
 >>>
 ```C
 pwmSetClock(int divisor)
@@ -470,8 +447,7 @@ int main (void) {
 
 ## I2C - Bus
 
-``wiringPiI2CRawWrite`` and ``wiringPiI2CRawRead`` are the new functions of version 3 with which I2C data can now be sent and read.
-The other writing and reading functions use the SMBUS protocol, which is usually used for I2C chips.
+``wiringPiI2CRawWrite`` and ``wiringPiI2CRawRead`` are the new functions in version 3 that now allow direct sending and reading of I2C data. The other write and read functions use the SMBus protocol, which is commonly used with I2C chips.
 
 ### wiringPiI2CSetup
 
@@ -495,7 +471,8 @@ int fd = wiringPiI2CSetup(0x20);
 
 ### wiringPiI2CSetupInterface
 
-Open the specimen I2C bus and address the specified I2C device / slave.
+Opens the specified I2C bus and addresses the specified I2C device / slave.
+
 >>>
 ```C
 wiringPiI2CSetupInterface(const char *device, int devId)
