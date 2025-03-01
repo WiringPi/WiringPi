@@ -582,7 +582,7 @@ int wiringPiSPIxSetupMode(const int number, const int channel, const int speed, 
 ```
 
 ``number``: SPI muber (typically 0, on Compute Module 0-7).  
-``channel``: SPI channel (typically 0 or 1, on Compute Module 0-3.).  
+``channel``: SPI channel (typically 0 or 1, on Compute Module 0-3).  
 ``speed``: SPI clock.  
 ``mode``: SPI mode (https://www.kernel.org/doc/Documentation/spi/spidev).  
 ``Return Value``:  File handle to the SPI bus
@@ -615,7 +615,7 @@ int wiringPiSPIxDataRW (const int number, const int channel, unsigned char *data
 ```
 
 ``number``: SPI muber (typically 0, on Compute Module 0-7).  
-``channel``: SPI channel (typically 0 or 1, on Compute Module 0-3.).  
+``channel``: SPI channel (typically 0 or 1, on Compute Module 0-3).  
 ``data``: Buffer  
 ``len``: Size of ``data`` buffer or data size.  
 ``Return Value``:  Return Value of ``ioctl`` function (https://man7.org/linux/man-pages/man2/ioctl.2.html)  
@@ -656,7 +656,7 @@ int wiringPiSPIxGetFd(const int number, int channel)
 ```
 
 ``number``: SPI muber (typically 0, on Compute Module 0-7).  
-``channel``: SPI channel (typically 0 or 1, on Compute Module 0-3.).  
+``channel``: SPI channel (typically 0 or 1, on Compute Module 0-3).  
 ``Return Value``:  File handle to the SPI bus 
 > -1 ... Invalid or not opened
 
