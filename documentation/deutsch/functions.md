@@ -505,7 +505,7 @@ int wiringPiI2CRawWrite(int fd, const uint8_t *values, uint8_t size)
 
 ``fd``: Datei Handle.  
 ``values``: Quellpuffer.  
-``size``: Anzahl der Bytes die com Quellpuffer geschrieben werden sollen.  
+``size``: Anzahl der Bytes die vom Quellpuffer geschrieben werden sollen.  
 ``Rückgabewert``:  Anzahl der Bytes die geschrieben wurden.
 
 **Beispiel**
@@ -570,7 +570,7 @@ Die alten Funktionen bleiben erhalten beziehen sich allerdings immer auf den SPI
 
 ### wiringPiSPISetup / wiringPiSPISetupMode / wiringPiSPIxSetupMode
 
-Öffnet den default SPI-Bus.
+Öffnet den angegebenen SPI-Bus.
 
 >>>
 ```C
@@ -579,8 +579,8 @@ int wiringPiSPISetup (int channel, int speed, int mode)
 int wiringPiSPIxSetupMode(const int number, const int channel, const int speed, const int mode)
 ```
 
-``number``: SPI Nummer (typisch 0, bei Compute Modul 0-7).
-``channel``: SPI Kanal (typisch 0 oder 1, bei Compute Modul 0-3).
+``number``: SPI Nummer (typisch 0, bei Compute Modul 0-7).  
+``channel``: SPI Kanal (typisch 0 oder 1, bei Compute Modul 0-3).  
 ``speed``: SPI Taktrate.  
 ``mode``: SPI Modus (https://www.kernel.org/doc/Documentation/spi/spidev).  
 ``Rückgabewert``:  Datei Handle zum SPI-Bus  
@@ -612,11 +612,11 @@ int wiringPiSPIDataRW (int channel, unsigned char *data, int len)
 int wiringPiSPIxDataRW (const int number, const int channel, unsigned char *data, const int len)
 ```
 
-``number``: SPI Nummer (typisch 0, bei Compute Modul 0-7).
-``channel``: SPI Kanal (typisch 0 oder 1, bei Compute Modul 0-3).
+``number``: SPI Nummer (typisch 0, bei Compute Modul 0-7).  
+``channel``: SPI Kanal (typisch 0 oder 1, bei Compute Modul 0-3).  
 ``data``: Datenpuffer  
-``len``: Größe des ``data`` Puffes bzw der Daten.  
-``Rückgabewert``:  Rückgabewert des ``ioctl`` Befehls (https://man7.org/linux/man-pages/man2/ioctl.2.html)
+``len``: Größe von ``data`` Puffer bzw. der Daten.  
+``Rückgabewert``:  Rückgabewert des ``ioctl`` Befehls (https://man7.org/linux/man-pages/man2/ioctl.2.html)  
 <0 ... Fehler, siehe ``errno`` für Fehlernummer
 
 **Beispiel**
@@ -630,7 +630,7 @@ if ((hSPI = wiringPiSPIxSetupMode (0, spiChannel, spiSpeed, 0)) < 0) {
     //error
 }
 unsigned char spiData[3];
-int returnvalue
+int returnvalue;
 
 spiData[0] = 0b11010000;
 spiData[1] = 0;
@@ -653,8 +653,8 @@ int wiringPiSPIGetFd(int channel)
 int wiringPiSPIxGetFd(const int number, int channel)
 ```
 
-``number``: SPI Nummer (typisch 0, bei Compute Modul 0-7).
-``channel``: SPI Kanal (typisch 0 oder 1, bei Compute Modul 0-3).
+``number``: SPI Nummer (typisch 0, bei Compute Modul 0-7).  
+``channel``: SPI Kanal (typisch 0 oder 1, bei Compute Modul 0-3).  
 ``Rückgabewert``:  Datei Handle zum SPI-Bus  
 > -1 ... Ungültig bzw. nicht geöffnet 
 
