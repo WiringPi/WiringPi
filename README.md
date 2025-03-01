@@ -83,6 +83,12 @@ pi@wiringdemo:~ $ gpio readall
 ```
 
 
+## Documentation
+
+[German](https://github.com/WiringPi/WiringPi/blob/docu/documentation/deutsch/functions.md)   
+[English](https://github.com/WiringPi/WiringPi/blob/docu/documentation/english/functions.md)   
+
+
 ## Installing
 
 You can either build it yourself or use the prebuilt binaries:
