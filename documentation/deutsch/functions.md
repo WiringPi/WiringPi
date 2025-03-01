@@ -452,7 +452,7 @@ Die anderen Schreib- und Lese-Funktionen verwenden das SMBus-Protokoll, das übl
 
 ### wiringPiI2CSetup
 
-Öffnet den default I2C-Bus am Raspberry Pi und adressiert das angegebene Gerät / Slave.
+Öffnet den default I2C-Bus und adressiert das angegebene Gerät / Slave.
 
 >>>
 ```C
@@ -495,7 +495,6 @@ int fd = wiringPiI2CSetupInterface("/dev/i2c-1", 0x20);
 ...
 
 ### wiringPiI2CRawWrite
-
 
 Schreiben von Daten zu einem I2C-Slave.
 
@@ -565,22 +564,26 @@ if (fd>0) {
 ## SPI - Bus
 
 Funktionen die mit ``wiringPiSPIx`` beginnen sind neu in der Version 3, mit ihnen kann auch die SPI-Bus Nummer angegeben werden. 
-Dies ist vorallem nützlich für das Compute Module das über mehere SPI-Busse (0-3) verfügt.
+Dies ist vorallem nützlich für das Compute Module das über mehere SPI-Busse (0-7) verfügt.
 Die alten Funktionen bleiben erhalten beziehen sich allerdings immer auf den SPI Bus 0 der am 40-GPIO Anschluss verfügbar ist.
 
 
-### wiringPiSPISetup
+### wiringPiSPISetup / wiringPiSPISetupMode / wiringPiSPIxSetupMode
 
-Öffnet den default SPI-Bus am Raspberry Pi und adressiert das angegebene Gerät / Slave.
+Öffnet den default SPI-Bus.
 
 >>>
 ```C
 int wiringPiSPISetup (int channel, int speed)
+int wiringPiSPISetup (int channel, int speed, int mode)
+int wiringPiSPIxSetupMode(const int number, const int channel, const int speed, const int mode)
 ```
 
-``channel``: SPI Kanal (0 oder 1).
+``number``: SPI Nummer (typisch 0, bei Compute Modul 0-7).
+``channel``: SPI Kanal (typisch 0 oder 1, bei Compute Modul 0-3).
 ``speed``: SPI Taktrate.  
-``Rückgabewert``:  Datei Handle zum SPI-Bus   
+``mode``: SPI Modus (https://www.kernel.org/doc/Documentation/spi/spidev).  
+``Rückgabewert``:  Datei Handle zum SPI-Bus  
 > -1 ... Fehler bzw. EXIT (Programm Beendigung)
 
 **Beispiel**
@@ -591,10 +594,82 @@ const int spiSpeedInit = 250000; // Hz
 int hSPI;
 
 if ((hSPI = wiringPiSPISetup (spiChannel, spiSpeed)) < 0) {
-    FailAndExitWithErrno("wiringPiSPISetup", hSPI);
+    //error
 }
 
-...
+//operate SPI
+
+wiringPiSPIClose(spiChannel);
+```
+
+### wiringPiSPIDataRW / wiringPiSPIxDataRW 
+
+Eine synchrone Schreibe- und Leseoperation am geöffneten SPI Bus wird duchgeführt. Dabei werden die gesendetet Daten von dem empfangenen überschrieben. 
+
+>>>
+```C
+int wiringPiSPIDataRW (int channel, unsigned char *data, int len)
+int wiringPiSPIxDataRW (const int number, const int channel, unsigned char *data, const int len)
+```
+
+``number``: SPI Nummer (typisch 0, bei Compute Modul 0-7).
+``channel``: SPI Kanal (typisch 0 oder 1, bei Compute Modul 0-3).
+``data``: Datenpuffer  
+``len``: Größe des ``data`` Puffes bzw der Daten.  
+``Rückgabewert``:  Rückgabewert des ``ioctl`` Befehls (https://man7.org/linux/man-pages/man2/ioctl.2.html)
+<0 ... Fehler, siehe ``errno`` für Fehlernummer
+
+**Beispiel**
+>>>
+```C
+const int spiChannel = 1;
+const int spiSpeedInit = 250000; // Hz
+int hSPI;
+
+if ((hSPI = wiringPiSPIxSetupMode (0, spiChannel, spiSpeed, 0)) < 0) {
+    //error
+}
+unsigned char spiData[3];
+int returnvalue
+
+spiData[0] = 0b11010000;
+spiData[1] = 0;
+spiData[2] = 0;
+returnvalue = wiringPiSPIxDataRW(0, spiChannel, spiData, 3);
+if (returnvalue<=0) {
+  printf("SPI transfer error: %d\n", errno);
+}
+
+wiringPiSPIxClose(0, spiChannel);
+```
+
+### wiringPiSPIGetFd / wiringPiSPIxGetFd
+
+Liefert den Datei Handel zum geöffneten SPI-Bus. Um z.B. eigene SPI-Funktion aufrufen zu können.
+
+>>>
+```C
+int wiringPiSPIGetFd(int channel)
+int wiringPiSPIxGetFd(const int number, int channel)
+```
+
+``number``: SPI Nummer (typisch 0, bei Compute Modul 0-7).
+``channel``: SPI Kanal (typisch 0 oder 1, bei Compute Modul 0-3).
+``Rückgabewert``:  Datei Handle zum SPI-Bus  
+> -1 ... Ungültig bzw. nicht geöffnet 
+
+**Beispiel**
+>>>
+```C
+const int spiChannel = 1;
+const int spiSpeedInit = 250000; // Hz
+int hSPI;
+
+if ((hSPI = wiringPiSPISetup (spiChannel, spiSpeed)) < 0) {
+    //error
+}
+
+int fd_spi = wiringPiSPIGetFd(spiChannel);
 
 wiringPiSPIClose(spiChannel);
 ```
