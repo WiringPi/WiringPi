@@ -24,6 +24,9 @@
 VERSION=$(shell cat ../VERSION)
 DESTDIR?=/usr
 PREFIX?=/local
+LIBDIR=$(DESTDIR)$(PREFIX)/lib
+INCLUDEDIR=$(DESTDIR)$(PREFIX)/include
+PKGCONFIGDIR = /usr/share/pkgconfig
 
 LDCONFIG?=ldconfig
 
@@ -93,17 +96,25 @@ tags:	$(SRC)
 	$Q echo [ctags]
 	$Q ctags $(SRC)
 
+wiringPi.pc: wiringPi.pc.in
+	sed -e 's|@prefix@|$(DESTDIR)$(PREFIX)|g' \
+	-e 's|@libdir@|$(LIBDIR)|g' \
+	-e 's|@includedir@|$(INCLUDEDIR)|g' \
+	-e 's|@VERSION@|$(VERSION)|g' \
+	$< > $@
 
 .PHONY:	install
-install:	$(DYNAMIC)
+install:	$(DYNAMIC) wiringPi.pc
 	$Q echo "[Install Headers]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/include
-	$Q install -m 0644 $(HEADERS)					$(DESTDIR)$(PREFIX)/include
+	$Q install -m 0755 -d		  $(INCLUDEDIR)
+	$Q install -m 0644 $(HEADERS) $(INCLUDEDIR)
 	$Q echo "[Install Dynamic Lib]"
-	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/lib
-	$Q install -m 0755 libwiringPi.so.$(VERSION)			$(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION)
-	$Q ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION)	$(DESTDIR)/lib/libwiringPi.so
+	$Q install -m 0755 -d						  $(LIBDIR)
+	$Q install -m 0755 libwiringPi.so.$(VERSION)  $(LIBDIR)/libwiringPi.so.$(VERSION)
+	$Q ln -sf $(LIBDIR)/libwiringPi.so.$(VERSION) $(DESTDIR)/lib/libwiringPi.so
 	$Q $(LDCONFIG)
+	$Q echo "[Install pkg-config configuration]"
+	$Q install -m 0644 wiringPi.pc $(PKGCONFIGDIR)/wiringPi.pc
 
 .PHONY: check-deb-destdir
 check-deb-destdir:
@@ -112,22 +123,25 @@ ifndef DEB_DESTDIR
 endif
 
 .PHONY:	install-deb
-install-deb:	$(DYNAMIC) check-deb-destdir
+install-deb:	$(DYNAMIC) check-deb-destdir wiringPi.pc
 	$Q echo "[Install Headers: deb]"
-	$Q install -m 0755 -d							$(DEB_DESTDIR)/usr/include
-	$Q install -m 0644 $(HEADERS)						$(DEB_DESTDIR)/usr/include
+	$Q install -m 0755 -d		  $(DEB_DESTDIR)/usr/include
+	$Q install -m 0644 $(HEADERS) $(DEB_DESTDIR)/usr/include
 	$Q echo "[Install Dynamic Lib: deb]"
-	install -m 0755 -d							$(DEB_DESTDIR)/usr/lib
+	install -m 0755 -d							            $(DEB_DESTDIR)/usr/lib
 	install -m 0755 libwiringPi.so.$(VERSION)				$(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION)
 	ln -sf $(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION)	$(DEB_DESTDIR)/usr/lib/libwiringPi.so
+	$Q echo "[Install pkg-config configuration: deb]"
+	$Q install -m 0755 -d          $(DEB_DESTDIR)$(PKGCONFIGDIR)
+	$Q install -m 0644 wiringPi.pc $(DEB_DESTDIR)$(PKGCONFIGDIR)/wiringPi.pc
 
 .PHONY:	uninstall
 uninstall:
 	$Q echo "[UnInstall]"
-	$Q cd $(DESTDIR)$(PREFIX)/include/ && rm -f $(HEADERS)
-	$Q cd $(DESTDIR)$(PREFIX)/lib/     && rm -f libwiringPi.*
+	$Q cd $(INCLUDEDIR)   && rm -f $(HEADERS)
+	$Q cd $(LIBDIR)       && rm -f libwiringPi.*
+	$Q cd $(PKGCONFIGDIR) && rm -f wiringPi.pc
 	$Q $(LDCONFIG)
-
 
 .PHONY:	depend
 depend:
