@@ -567,4 +567,111 @@ else {
 
 ## SPI - Bus
 
-...
+Functions that start with  ``wiringPiSPIx`` are new since version 3, allowing the SPI bus number to be specified. This is especially useful for the Compute Module, which has multiple SPI buses (0-7). The old functions remain available, but they always refer to SPI bus 0, which is available on the 40 pin GPIO connector.
+
+
+### wiringPiSPISetup / wiringPiSPISetupMode / wiringPiSPIxSetupMode
+
+Opens the specified SPI bus.
+
+>>>
+```C
+int wiringPiSPISetup (int channel, int speed)
+int wiringPiSPISetup (int channel, int speed, int mode)
+int wiringPiSPIxSetupMode(const int number, const int channel, const int speed, const int mode)
+```
+
+``number``: SPI muber (typically 0, on Compute Module 0-7).  
+``channel``: SPI channel (typically 0 or 1, on Compute Module 0-3.).  
+``speed``: SPI clock.  
+``mode``: SPI mode (https://www.kernel.org/doc/Documentation/spi/spidev).  
+``Return Value``:  File handle to the SPI bus
+> -1 ... Error or EXIT (Programm termination)
+
+**Example**
+>>>
+```C
+const int spiChannel = 1;
+const int spiSpeedInit = 250000; // Hz
+int hSPI;
+
+if ((hSPI = wiringPiSPISetup (spiChannel, spiSpeed)) < 0) {
+    //error
+}
+
+//operate SPI
+
+wiringPiSPIClose(spiChannel);
+```
+
+### wiringPiSPIDataRW / wiringPiSPIxDataRW 
+
+A synchronous fullduplex write and read operation is performed on the opened SPI bus. In the process, the sent data is overwritten by the received data.
+
+>>>
+```C
+int wiringPiSPIDataRW (int channel, unsigned char *data, int len)
+int wiringPiSPIxDataRW (const int number, const int channel, unsigned char *data, const int len)
+```
+
+``number``: SPI muber (typically 0, on Compute Module 0-7).  
+``channel``: SPI channel (typically 0 or 1, on Compute Module 0-3.).  
+``data``: Buffer  
+``len``: Size of ``data`` buffer or data size.  
+``Return Value``:  Return Value of ``ioctl`` function (https://man7.org/linux/man-pages/man2/ioctl.2.html)  
+<0 ... Error, see ``errno`` for error number.
+
+**Example**
+>>>
+```C
+const int spiChannel = 1;
+const int spiSpeedInit = 250000; // Hz
+int hSPI;
+
+if ((hSPI = wiringPiSPIxSetupMode (0, spiChannel, spiSpeed, 0)) < 0) {
+    //error
+}
+unsigned char spiData[3];
+int returnvalue;
+
+spiData[0] = 0b11010000;
+spiData[1] = 0;
+spiData[2] = 0;
+returnvalue = wiringPiSPIxDataRW(0, spiChannel, spiData, 3);
+if (returnvalue<=0) {
+  printf("SPI transfer error: %d\n", errno);
+}
+
+wiringPiSPIxClose(0, spiChannel);
+```
+
+### wiringPiSPIGetFd / wiringPiSPIxGetFd
+
+Returns the file handle to the opened SPI bus.
+
+>>>
+```C
+int wiringPiSPIGetFd(int channel)
+int wiringPiSPIxGetFd(const int number, int channel)
+```
+
+``number``: SPI muber (typically 0, on Compute Module 0-7).  
+``channel``: SPI channel (typically 0 or 1, on Compute Module 0-3.).  
+``Return Value``:  File handle to the SPI bus 
+> -1 ... Invalid or not opened
+
+**Example**
+>>>
+```C
+const int spiChannel = 1;
+const int spiSpeedInit = 250000; // Hz
+int hSPI;
+
+if ((hSPI = wiringPiSPISetup (spiChannel, spiSpeed)) < 0) {
+    //error
+}
+
+int fd_spi = wiringPiSPIGetFd(spiChannel);
+
+wiringPiSPIClose(spiChannel);
+```
