@@ -85,8 +85,8 @@ pi@wiringdemo:~ $ gpio readall
 
 ## Documentation
 
-[German](https://github.com/WiringPi/WiringPi/blob/docu/documentation/deutsch/functions.md)   
-[English](https://github.com/WiringPi/WiringPi/blob/docu/documentation/english/functions.md)   
+[German](https://github.com/WiringPi/WiringPi/blob/documentation/deutsch/functions.md)   
+[English](https://github.com/WiringPi/WiringPi/blob/documentation/english/functions.md)   
 
 
 ## Installing
