@@ -41,15 +41,10 @@
 #include <piFace.h>
 
 #include "../version.h"
+#include "readall.h"
 
 extern int wiringPiDebug ;
 int gpioDebug ;
-
-// External functions I can't be bothered creating a separate .h file for:
-
-extern void doReadall    (void) ;
-extern void doAllReadall (void) ;
-extern void doQmode      (int argc, char *argv []) ;
 
 #ifndef TRUE
 #  define	TRUE	(1==1)
