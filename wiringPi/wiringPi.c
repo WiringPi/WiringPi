@@ -2878,6 +2878,46 @@ void delay (unsigned int howLong)
   nanosleep (&sleeper, &dummy) ;
 }
 
+/*
+ * delayMilliseconds:
+ *	Wait for some number of milliseconds
+ *********************************************************************************
+ */
+void delayMilliseconds (unsigned int time_ms) {
+  struct timespec sleeper, t_remained ;
+  int interup_cnt = 0 ; // sleep interruption counter
+
+  sleeper.tv_sec  = (time_t)(time_ms / 1000) ;
+  // '1000 * 1000' is easier to read vs. '1000000'
+  sleeper.tv_nsec = (long)(time_ms % 1000) * 1000 * 1000 ;
+
+  // 'nanosleep' can be interrupted by a signal or an error.
+  // If the interruption is due to a signal, resume sleeping.
+  // If it's due to an error, print the error and exit the
+  // function.
+  //
+  // 'interup_cnt' is used to detect frequent interruptions,
+  // which might indicate that something unusual is happening.
+  // If this occurs, print an error message and resume sleeping.
+
+  while (nanosleep (&sleeper, &t_remained) == -1) {
+    interup_cnt++;
+
+    if (errno != 0) {
+      perror (strerror (errno));
+      return;
+    }
+
+    sleeper.tv_sec  = t_remained.tv_sec;
+    sleeper.tv_nsec = t_remained.tv_nsec;
+
+    if( interup_cnt == 128 ) {
+      perror ("nanosleep(...) has been frequently interrupted") ;
+    }
+  }
+
+  return ;
+}
 
 /*
  * delayMicroseconds:
