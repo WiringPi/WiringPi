@@ -3136,7 +3136,7 @@ const long ns_us  = 1000l;        // 1e3 nanoseconds per microsecond
  *********************************************************************************
  */
 
-void delay (unsigned int howLong_ms) {
+void delayNew(unsigned int howLong_ms) {
   if (howLong_ms != 0) {
     delayHelper(howLong_ms / ms_sec, (howLong_ms % ms_sec) * ns_ms);
   }
