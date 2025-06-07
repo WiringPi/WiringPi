@@ -41,7 +41,7 @@
 
 static void myPinMode (struct wiringPiNodeStruct *node, int pin, int mode)
 {
-  /**/ if (mode == OUTPUT)
+  if      (mode == OUTPUT)
     serialPutchar (node->fd, 'o') ;       // Input
   else if (mode == PWM_OUTPUT)
     serialPutchar (node->fd, 'p') ;       // PWM
@@ -66,7 +66,7 @@ static void myPullUpDnControl (struct wiringPiNodeStruct *node, int pin, int mod
   serialPutchar (node->fd, 'i' ) ;
   serialPutchar (node->fd, pin - node->pinBase) ;
 
-  /**/ if (mode == PUD_UP)
+  if      (mode == PUD_UP)
   {
     serialPutchar (node->fd, '1') ;
     serialPutchar (node->fd, pin - node->pinBase) ;

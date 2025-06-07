@@ -165,7 +165,7 @@ void softServoWrite (int servoPin, int value)
 
   servoPin &= 63 ;
 
-  /**/ if (value < -250)
+  if      (value < -250)
     value = -250 ;
   else if (value > 1250)
     value = 1250 ;

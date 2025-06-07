@@ -92,7 +92,6 @@ void runRemoteCommands (int fd)
 	break ;
 
       case DRCN_DIGITAL_WRITE8:
-	//digitalWrite8 (pin, cmd.data) ;
 	if (send (fd, &cmd, sizeof (cmd), 0) != sizeof (cmd))
 	  return ;
 	break ;
@@ -104,7 +103,6 @@ void runRemoteCommands (int fd)
 	break ;
 
       case DRCN_DIGITAL_READ8:
-	//cmd.data = digitalRead8 (pin) ;
 	if (send (fd, &cmd, sizeof (cmd), 0) != sizeof (cmd))
 	  return ;
 	break ;

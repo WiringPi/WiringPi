@@ -164,7 +164,7 @@ static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
 
   bmp180ReadTempPress (node->fd) ;
 
-  /**/ if (chan == 0)	// Read Temperature
+  if      (chan == 0)	// Read Temperature
     return cTemp ;
   else if (chan == 1)	// Pressure
     return cPress ;

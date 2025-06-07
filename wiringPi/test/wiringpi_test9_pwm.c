@@ -135,7 +135,7 @@ int main (void) {
       pinMode(PWM, PWM_OUTPUT);  //Mode BAL, pwmr=1024, pwmc=32
       printf("pwmc 4.8kHz\n");
       pwmSetClock(2000);
-      delay(250);
+      delay(1000);
 
       printf("Register ISR@%d\n", PWM);
     // INT_EDGE_BOTH, INT_EDGE_FALLING, INT_EDGE_RISING only one ISR per input

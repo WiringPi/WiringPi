@@ -183,7 +183,7 @@ static void readallPhys (int physPin)
     printf (" |      |  ") ;
   else
   {
-    /**/ if (wpMode == WPI_MODE_GPIO)
+    if      (wpMode == WPI_MODE_GPIO)
       pin = physPinToGpio (physPin) ;
     else if (wpMode == WPI_MODE_PHYS)
       pin = physPin ;
@@ -206,7 +206,7 @@ static void readallPhys (int physPin)
     printf (" |   |     ") ;
   else
   {
-    /**/ if (wpMode == WPI_MODE_GPIO)
+    if      (wpMode == WPI_MODE_GPIO)
       pin = physPinToGpio (physPin) ;
     else if (wpMode == WPI_MODE_PHYS)
       pin = physPin ;
@@ -380,7 +380,7 @@ void doReadall (void)
 
   piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
 
-  /**/ if ((model == PI_MODEL_A) || (model == PI_MODEL_B))
+  if      ((model == PI_MODEL_A) || (model == PI_MODEL_B))
     abReadall (model, rev) ;
   else if ((model == PI_MODEL_BP) || (model == PI_MODEL_AP) ||
 	(model == PI_MODEL_2)    ||

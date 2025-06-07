@@ -91,7 +91,7 @@ PI_THREAD (displayDigits)
       for (segment = 0 ; segment < 7 ; ++segment)
       {
 	d = toupper (display [digit]) ;
-	/**/ if ((d >= '0') && (d <= '9'))	// Digit
+	if      ((d >= '0') && (d <= '9'))	// Digit
 	  index = d - '0' ;
 	else if ((d >= 'A') && (d <= 'F'))	// Hex
 	  index = d - 'A' + 10 ;

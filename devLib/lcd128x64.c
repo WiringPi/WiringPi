@@ -370,7 +370,7 @@ void lcd128x64rectangle (int x1, int y1, int x2, int y2, int colour, int filled)
 
   if (filled)
   {
-    /**/ if (x1 == x2)
+    if      (x1 == x2)
       lcd128x64line (x1, y1, x2, y2, colour) ;
     else if (x1 < x2)
       for (x = x1 ; x <= x2 ; ++x)

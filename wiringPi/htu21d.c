@@ -59,7 +59,7 @@ static int myAnalogRead (struct wiringPiNodeStruct *node, int pin)
   double   fTemp, fHumid ;
   int      cTemp, cHumid ;
 
-  /**/ if (chan == 0)	// Read Temperature
+  if (chan == 0)  // Read Temperature
   {
 
 // Send read temperature command:

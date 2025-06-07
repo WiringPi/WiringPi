@@ -108,10 +108,8 @@ void softPwmWrite (int pin, int value)
 {
   if (pin < MAX_PINS)
   {
-    /**/ if (value < 0)
-      value = 0 ;
-    else if (value > range [pin])
-      value = range [pin] ;
+    if      (value < 0)           { value = 0 ; }
+    else if (value > range [pin]) { value = range [pin] ; }
 
     marks [pin] = value ;
   }

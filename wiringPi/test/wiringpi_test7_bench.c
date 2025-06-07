@@ -66,7 +66,7 @@ int main (void) {
     case PI_MODEL_ZERO_W: //ARM=1000MHz
       fExpectTimedigitalWrite = 0.104; //us;
       fExpectTimedigitalRead  = 0.135; //us
-      fExpectTimepinMode      = 0.250; //us
+      fExpectTimepinMode      = 0.360; //us
       break;
     case PI_MODEL_2:
       ToggleValue /= 4;

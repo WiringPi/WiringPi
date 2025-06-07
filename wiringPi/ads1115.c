@@ -252,7 +252,7 @@ static void myAnalogWrite (struct wiringPiNodeStruct *node, int pin, int data)
 
   reg = chan + 2 ;
 
-  /**/ if (data < -32767)
+  if      (data < -32767)
     ndata = -32767 ;
   else if (data > 32767)
     ndata = 32767 ;

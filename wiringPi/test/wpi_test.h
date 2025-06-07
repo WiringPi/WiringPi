@@ -94,6 +94,15 @@ void CheckNotSame(const char* msg, int value, int expect) {
     }
 }
 
+void CheckBetween(const char* msg, int value, int min, int max) {
+    if (value>=min && value<=max) {
+        printf("%39s (% 3d< % 3d <% 3d) -> %spassed%s\n", msg, min, value, max, COLORGRN, COLORDEF);
+    } else {
+        printf("%39s (% 3d< % 3d <% 3d) -> %sfailed%s\n", msg, min, value, max, COLORRED, COLORDEF);
+        globalError=1;
+    }
+}
+
 
 void CheckSameFloat(const char* msg, float value, float expect, float epsilon) {
     if (fabs(value-expect)<epsilon) {
@@ -104,8 +113,19 @@ void CheckSameFloat(const char* msg, float value, float expect, float epsilon) {
     }
 }
 
+
 void CheckSameFloatX(const char* msg, float value, float expect) {
   return CheckSameFloat(msg, value, expect, 0.08f);
+}
+
+
+void CheckBetweenDouble(const char* msg, double value, double min, double max) {
+    if (value>=min && value<=max) {
+        printf("%39s (%g< %g <%g) -> %spassed%s\n", msg, min, value, max, COLORGRN, COLORDEF);
+    } else {
+        printf("%39s (%g< %g <%g) -> %sfailed%s\n", msg, min, value, max, COLORRED, COLORDEF);
+        globalError=1;
+    }
 }
 
 void CheckSameDouble(const char* msg, double value, double expect, double epsilon) {
