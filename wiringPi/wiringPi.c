@@ -58,6 +58,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <limits.h>
 #include <poll.h>
 #include <unistd.h>
 #include <errno.h>
@@ -434,7 +435,7 @@ const int piMemorySize [8] =
 
 // Time for easy calculations
 
-static uint64_t epochMilli, epochMicro ;
+static uint64_t epochMilli, epochMicro, epochNano ;
 
 // Misc
 
@@ -3118,36 +3119,55 @@ int wiringPiISR2(int pin, int edgeMode, void (*function)(struct WPIWfiStatus wfi
   return wiringPiISRInternal(pin, edgeMode, function, NULL, debounce_period_us, userdata);
 }
 
-/*
- * initialiseEpoch:
- *	Initialise our start-of-time variable to be the current unix
- *	time in milliseconds and microseconds.
- *********************************************************************************
- */
+// Helper functions
+static inline void delayHelper(unsigned long howLong_s, unsigned long howLong_ns);
+static inline void delayHelperHard(struct timespec tsEnd, struct timespec tsNow);
 
-static void initialiseEpoch (void)
-{
-#ifdef	OLD_WAY
-  struct timeval tv ;
-
-  gettimeofday (&tv, NULL) ;
-  epochMilli = (uint64_t)tv.tv_sec * (uint64_t)1000    + (uint64_t)(tv.tv_usec / 1000) ;
-  epochMicro = (uint64_t)tv.tv_sec * (uint64_t)1000000 + (uint64_t)(tv.tv_usec) ;
-#else
-  struct timespec ts ;
-
-  clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
-  epochMilli = (uint64_t)ts.tv_sec * (uint64_t)1000    + (uint64_t)(ts.tv_nsec / 1000000L) ;
-  epochMicro = (uint64_t)ts.tv_sec * (uint64_t)1000000 + (uint64_t)(ts.tv_nsec /    1000L) ;
-#endif
-}
-
+// Unit conversion ratios (for readability)
+const long ms_sec = 1000l;        // 1e3 milliseconds per second
+const long us_sec = 1000000l;     // 1e6 microseconds per second
+const long ns_sec = 1000000000l;  // 1e9 nanoseconds per second
+const long ns_ms  = 1000000l;     // 1e6 nanoseconds per millisecond
+const long ns_us  = 1000l;        // 1e3 nanoseconds per microsecond
 
 /*
  * delay:
- *	Wait for some number of milliseconds
+ *  Wait for some number of milliseconds
  *********************************************************************************
  */
+
+void delayNew(unsigned int howLong_ms) {
+  if (howLong_ms != 0) {
+    delayHelper(howLong_ms / ms_sec, (howLong_ms % ms_sec) * ns_ms);
+  }
+}
+
+/*
+ * delayMicroseconds:
+ *  Wait for some number of microseconds
+ *********************************************************************************
+ */
+
+void delayMicroseconds (unsigned int howLong_us) {
+  if (howLong_us != 0) {
+    delayHelper(howLong_us / us_sec, (howLong_us % us_sec) * ns_us);
+  }
+}
+
+__attribute__((deprecated("Use delayMicroseconds() instead."), alias("delayMicroseconds")))
+void delayMicrosecondsHard (unsigned int howLong_us);
+
+/*
+ * delayNanoseconds:
+ *  Wait for some number of nanoseconds
+ *********************************************************************************
+ */
+
+void delayNanoseconds (unsigned int howLong_ns) {
+  if (howLong_ns != 0) {
+    delayHelper(howLong_ns / ns_sec, howLong_ns % ns_sec);
+  }
+}
 
 void delay (unsigned int ms)
 {
@@ -3159,24 +3179,50 @@ void delay (unsigned int ms)
   nanosleep (&sleeper, &dummy) ;
 }
 
-
 /*
- * delayMicroseconds:
- *	This is somewhat intersting. It seems that on the Pi, a single call
- *	to nanosleep takes some 80 to 130 microseconds anyway, so while
- *	obeying the standards (may take longer), it's not always what we
- *	want!
+ * delayHelper:
+ *  Internal helper function for delays - not externally accessible.
+ *********************************************************************************
+ *  This is somewhat intersting. It seems that on the Pi, a single call
+ *  to nanosleep takes some 80 to 130 microseconds anyway, so while
+ *  obeying the standards (may take longer), it's not always what we
+ *  want!
  *
- *	So what I'll do now is if the delay is less than 100uS we'll do it
- *	in a hard loop, watching a built-in counter on the ARM chip. This is
- *	somewhat sub-optimal in that it uses 100% CPU, something not an issue
- *	in a microcontroller, but under a multi-tasking, multi-user OS, it's
- *	wastefull, however we've no real choice )-:
- *
- *      Plan B: It seems all might not be well with that plan, so changing it
- *      to use gettimeofday () and poll on that instead...
+ *  So what I'll do now is if the delay is less than 100uS we'll do it
+ *  in a hard loop, comparing the current time against the scheduled end.
+ *  This is somewhat sub-optimal in that it uses 100% CPU, something not an
+ *  issue in a microcontroller, but under a multi-tasking, multi-user OS, it's
+ *  wasteful, however we've no real choice )-:
  *********************************************************************************
  */
+
+static inline void delayHelper(unsigned long howLong_s, unsigned long howLong_ns) {
+  struct timespec tsNow, tsEnd;
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tsEnd);
+
+  tsEnd.tv_sec += howLong_s + ((tsEnd.tv_nsec + howLong_ns) / ns_sec);
+  tsEnd.tv_nsec = (tsEnd.tv_nsec + howLong_ns) % ns_sec;
+
+  if (howLong_s == 0 && howLong_ns < 100*ns_us) { // if delay is less than 100 us
+    delayHelperHard(tsEnd, tsNow);
+    return;
+  }
+
+  // Using TIMER_ABSTIME flag allows for an absolute future time to be set.
+  while (clock_nanosleep(CLOCK_MONOTONIC_RAW, TIMER_ABSTIME, &tsEnd, NULL)) {
+
+    // If interrupted, check if less than 100 microseconds remain
+    clock_gettime(CLOCK_MONOTONIC_RAW, &tsNow);
+    if (((tsEnd.tv_sec - tsNow.tv_sec) * ns_sec + (tsEnd.tv_nsec - tsNow.tv_nsec)) < 100*ns_us) { // if time remaining is less than 100 us
+      delayHelperHard(tsEnd, tsNow);
+      return;
+    }
+
+    // Otherwise, repeat clock_nanosleep until return code is 0.
+  }
+}
+
 
 void delayMicrosecondsHard (unsigned int us)
 {
@@ -3190,6 +3236,7 @@ void delayMicrosecondsHard (unsigned int us)
   while (timercmp (&tNow, &tEnd, <))
     gettimeofday (&tNow, NULL) ;
 }
+
 
 void delayMicroseconds (unsigned int us)
 {
@@ -3209,30 +3256,52 @@ void delayMicroseconds (unsigned int us)
   }
 }
 
-
 /*
- * millis:
- *	Return a number of milliseconds as an unsigned int.
- *	Wraps at 49 days.
+ * delayHelperHard:
+ *  Internal helper function for delays - not externally accessible.
+ *  Uses a hard loop to wait until the system clock is past the
+ *  scheduled end time.
+ *  Appears to be precice to around ~25 ns (via limited testing on a Pi 5).
  *********************************************************************************
  */
 
-unsigned int millis (void)
-{
-  uint64_t now ;
+static inline void delayHelperHard(struct timespec tsEnd, struct timespec tsNow) {
+  do {
+    clock_gettime(CLOCK_MONOTONIC_RAW, &tsNow);
+  } while ((tsNow.tv_nsec < tsEnd.tv_nsec && tsNow.tv_sec <= tsEnd.tv_sec) || tsNow.tv_sec < tsEnd.tv_sec);
+}
 
-#ifdef	OLD_WAY
-  struct timeval tv ;
 
-  gettimeofday (&tv, NULL) ;
-  now  = (uint64_t)tv.tv_sec * (uint64_t)1000 + (uint64_t)(tv.tv_usec / 1000) ;
+/*
+ * initialiseEpoch:
+ *  Initialise our start-of-time variables to be the current unix
+ *  time in milliseconds, microseconds, and nanoseconds respectively.
+ *  Called automatically by wiringPiSetup().
+ *********************************************************************************
+ */
 
-#else
-  struct  timespec ts ;
+static void initialiseEpoch (void) {
+  struct timespec ts ;
 
   clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
-  now  = (uint64_t)ts.tv_sec * (uint64_t)1000 + (uint64_t)(ts.tv_nsec / 1000000L) ;
-#endif
+  epochMilli = (uint64_t)ts.tv_sec * (uint64_t)ms_sec + (uint64_t)(ts.tv_nsec / ms_sec) ;
+  epochMicro = (uint64_t)ts.tv_sec * (uint64_t)us_sec + (uint64_t)(ts.tv_nsec / ms_sec) ;
+  epochNano  = (uint64_t)ts.tv_sec * (uint64_t)ns_sec + (uint64_t)(ts.tv_nsec) ;
+}
+
+
+/*
+ * millis:
+ *  Return a number of milliseconds as an unsigned int.
+ *  Wraps (via overflow) after ~49 days.
+ *********************************************************************************
+ */
+
+unsigned int millis (void) {
+  struct timespec ts ;
+
+  clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
+  uint64_t now = (uint64_t)ts.tv_sec * (uint64_t)ms_sec + (uint64_t)(ts.tv_nsec / ns_ms) ;
 
   return (uint32_t)(now - epochMilli) ;
 }
@@ -3240,38 +3309,69 @@ unsigned int millis (void)
 
 /*
  * micros:
- *	Return a number of microseconds as an unsigned int.
- *	Wraps after 71 minutes.
+ *  Return a number of microseconds as an unsigned int.
+ *  Wraps (via overflow) after ~71 minutes.
  *********************************************************************************
  */
 
-unsigned int micros (void)
-{
-  uint64_t now ;
-#ifdef	OLD_WAY
-  struct timeval tv ;
-
-  gettimeofday (&tv, NULL) ;
-  now  = (uint64_t)tv.tv_sec * (uint64_t)1000000 + (uint64_t)tv.tv_usec ;
-#else
-  struct  timespec ts ;
+unsigned int micros (void) {
+  struct timespec ts ;
 
   clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
-  now  = (uint64_t)ts.tv_sec * (uint64_t)1000000 + (uint64_t)(ts.tv_nsec / 1000) ;
-#endif
-
+  uint64_t now  = (uint64_t)ts.tv_sec * (uint64_t)us_sec + (uint64_t)(ts.tv_nsec / ns_us) ;
 
   return (uint32_t)(now - epochMicro) ;
 }
 
 
+/*
+ * nanos:
+ *  Return a number of nanoseconds as an unsigned int.
+ *  Wraps (via overflow) after ~4.29 seconds.
+ *********************************************************************************
+ */
+
+unsigned int nanos (void) {
+  struct timespec ts ;
+
+  clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
+  uint64_t now  = (uint64_t)ts.tv_sec * (uint64_t)ns_sec + (uint64_t)(ts.tv_nsec) ;
+
+  return (uint32_t)(now - epochNano) ;
+}
+
+/*
+ * piMicros64:
+ *  Return a number of microseconds as an unsigned long long int.
+ *  Wraps (via overflow) after ~584 thousand years 64-bit hardware.
+ *********************************************************************************
+ */
+
 unsigned long long piMicros64(void) {
   struct  timespec ts;
 
   clock_gettime (CLOCK_MONOTONIC_RAW, &ts) ;
-  uint64_t now  = (uint64_t)ts.tv_sec * (uint64_t)1000000 + (uint64_t)(ts.tv_nsec / 1000) ;
+  uint64_t now  = (uint64_t)ts.tv_sec * (uint64_t)us_sec + (uint64_t)(ts.tv_nsec / ns_us) ;
+
   return (now - epochMicro) ;
 }
+
+/*
+ * piNanos64:
+ *  Return a number of nanoseconds as an unsigned long long int.
+ *  Wraps (via overflow) after ~584 years on 64-bit hardware.
+ *********************************************************************************
+ */
+
+unsigned long long piNanos64(void) {
+  struct  timespec ts;
+
+  clock_gettime (CLOCK_MONOTONIC_RAW, &ts);
+  uint64_t now  = (uint64_t)ts.tv_sec * (uint64_t)ns_sec + (uint64_t)(ts.tv_nsec);
+
+  return (now - epochNano);
+}
+
 
 /*
  * wiringPiVersion:
@@ -3313,7 +3413,8 @@ int CheckPCIeFileContent(const char* pcieaddress, const char* filename, const ch
       if (wiringPiDebug) { printf("  %s", buffer); }
       if (strstr(buffer, content) != NULL) {
         Found = 1;
-        if (wiringPiDebug) { printf("    >> correct\n"); }
+        if (wiringPiDebug) { printf("    
+                                    correct\n"); }
       } else {
         if (wiringPiDebug) { printf("    >> wrong\n"); }
       }
