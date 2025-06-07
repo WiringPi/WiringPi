@@ -320,32 +320,12 @@ extern int piHiPri (const int pri) ;
 
 // Extras from arduino land
 
+extern void         delay             (unsigned int ms) ;
+extern void         delayMicroseconds (unsigned int us) ;
+extern unsigned int millis            (void) ;
+extern unsigned int micros            (void) ;
 
-// Delay functions: sleep until the specified interval has expired.
-
-// Wait for some number of milliseconds
-extern void delay (unsigned int ms);
-// Wait for some number of microseconds
-extern void delayMicroseconds (unsigned int us);
-// Wait for some number of nanoseconds
-extern void delayNanoseconds (unsigned int howLong_ns);
-
-// Clock functions: return the time since wiringPiSetup() was called.
-
-// Returns the elapsed time in milliseconds. Wraps after ~49 days.
-extern unsigned int millis (void);
-// Returns the elapsed time in microseconds. Wraps after ~71 minutes.
-extern unsigned int micros (void);
-// Returns the elapsed time in nanoseconds. Wraps after ~4.29 seconds.
-extern unsigned int nanos  (void);
-
-// Interface V3.7 64-bit clock functions: return the time since wiringPiSetup() was called.
-
-// Returns the elapsed time in microseconds. Wraps after ~584 thousand years on 64-bit hardware.
-extern unsigned long long piMicros64(void);
-// Returns the elapsed time in nanoseconds. Wraps after ~584 years on 64-bit hardware.
-extern unsigned long long piNanos64(void);
-
+extern unsigned long long piMicros64(void);   // Interface V3.7
 
 #ifdef __cplusplus
 }
