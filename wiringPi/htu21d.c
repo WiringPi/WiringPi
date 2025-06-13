@@ -25,6 +25,7 @@
 
 #include <unistd.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -40,7 +41,7 @@
 
 int checksum (UNU uint8_t data [4])
 {
-  return TRUE ;
+  return true ;
 }
 
 
@@ -127,7 +128,7 @@ int htu21dSetup (const int pinBase)
   int status ;
 
   if ((fd = wiringPiI2CSetup (I2C_ADDRESS)) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, 2) ;
 
@@ -138,7 +139,7 @@ int htu21dSetup (const int pinBase)
 
   data = 0xFE ;
   if (write (fd, &data, 1) != 1)
-    return FALSE ;
+    return false ;
 
   delay (15) ;
 
@@ -146,5 +147,5 @@ int htu21dSetup (const int pinBase)
 
   status = wiringPiI2CReadReg8 (fd, 0xE7) ;
 
-  return (status == 0x02) ? TRUE : FALSE ;
+  return (status == 0x02) ? true : false ;
 }

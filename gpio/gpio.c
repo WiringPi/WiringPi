@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
 #include <string.h>
@@ -50,11 +51,6 @@ int gpioDebug ;
 extern void doReadall    (void) ;
 extern void doAllReadall (void) ;
 extern void doQmode      (int argc, char *argv []) ;
-
-#ifndef TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(1==2)
-#endif
 
 #define	PI_USB_POWER_CONTROL	38
 #define	I2CDETECT		"i2cdetect"
@@ -992,12 +988,12 @@ int main (int argc, char *argv [])
   if (getenv ("WIRINGPI_DEBUG") != NULL)
   {
     printf ("gpio: wiringPi debug mode enabled\n") ;
-    wiringPiDebug = TRUE ;
+    wiringPiDebug = true ;
   }
   if (getenv ("GPIO_DEBUG") != NULL)
   {
     printf ("gpio: gpio debug mode enabled\n") ;
-    gpioDebug = TRUE ;
+    gpioDebug = true ;
   }
 
   if (argc == 1)
@@ -1159,7 +1155,7 @@ int main (int argc, char *argv [])
       exit (EXIT_FAILURE) ;
     }
 
-    if (!loadWPiExtension (argv [0], argv [2], TRUE))
+    if (!loadWPiExtension (argv [0], argv [2], true))
     {
       fprintf (stderr, "%s: Extension load failed: %s\n", argv [0], strerror (errno)) ;
       exit (EXIT_FAILURE) ;
@@ -1209,8 +1205,8 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "i2cd"     ) == 0) doI2Cdetect  (argv [0]) ;
   else if (strcasecmp (argv [1], "reset"    ) == 0) doReset      (argv [0]) ;
   else if (strcasecmp (argv [1], "wb"       ) == 0) doWriteByte  (argc, argv) ;
-  else if (strcasecmp (argv [1], "rbx"      ) == 0) doReadByte   (argc, argv, TRUE) ;
-  else if (strcasecmp (argv [1], "rbd"      ) == 0) doReadByte   (argc, argv, FALSE) ;
+  else if (strcasecmp (argv [1], "rbx"      ) == 0) doReadByte   (argc, argv, true) ;
+  else if (strcasecmp (argv [1], "rbd"      ) == 0) doReadByte   (argc, argv, false) ;
   else if (strcasecmp (argv [1], "clock"    ) == 0) doClock      (argc, argv) ;
   else if (strcasecmp (argv [1], "wfis"     ) == 0) doWfi2       (argc, argv) ;
   else if (strcasecmp (argv [1], "wfi"      ) == 0) doWfi        (argc, argv) ;

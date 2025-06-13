@@ -55,6 +55,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
@@ -252,8 +253,8 @@ static volatile unsigned int GPIO_RIO ;
 #define	PAGE_SIZE		(4*1024)
 #define	BLOCK_SIZE		(4*1024)
 
-static unsigned int usingGpioMem    = FALSE ;
-static          int wiringPiSetuped = FALSE ;
+static unsigned int usingGpioMem    = false ;
+static          int wiringPiSetuped = false ;
 
 // PWM
 //	Word offsets into the PWM control region
@@ -448,12 +449,12 @@ static int RaspberryPiLayout = -1;
 
 // Debugging & Return codes
 
-int wiringPiDebug       = FALSE ;
-int wiringPiReturnCodes = FALSE ;
+int wiringPiDebug       = false ;
+int wiringPiReturnCodes = false ;
 
 // Use /dev/gpiomem ?
 
-int wiringPiTryGpioMem  = FALSE ;
+int wiringPiTryGpioMem  = false ;
 
 enum WPIFlag {
   WPI_FLAG_INPUT    = 0x04,
@@ -3120,7 +3121,7 @@ int wiringPiISR2(int pin, int edgeMode, void (*function)(struct WPIWfiStatus wfi
 }
 
 // Helper functions
-static inline void delayHelper(unsigned long howLong_s, unsigned long howLong_ns);
+static inline void delayHelper(unsigned long sec, unsigned long nsec);
 static inline void delayHelperHard(struct timespec tsEnd, struct timespec tsNow);
 
 // Unit conversion ratios (for readability)
@@ -3136,9 +3137,9 @@ const long ns_us  = 1000l;        // 1e3 nanoseconds per microsecond
  *********************************************************************************
  */
 
-void delay (unsigned int ms) {
-  if (ms != 0) {
-    delayHelper(ms / ms_sec, (ms % ms_sec) * ns_ms);
+void delay (unsigned int msec) {
+  if (msec != 0) {
+    delayHelper(msec / ms_sec, (msec % ms_sec) * ns_ms);
   }
 }
 
@@ -3148,15 +3149,15 @@ void delay (unsigned int ms) {
  *********************************************************************************
  */
 
-void delayMicroseconds (unsigned int us) {
-  if (us != 0) {
-    delayHelper(us / us_sec, (us % us_sec) * ns_us);
+void delayMicroseconds (unsigned int usec) {
+  if (usec != 0) {
+    delayHelper(usec / us_sec, (usec % us_sec) * ns_us);
   }
 }
 
 
 __attribute__((deprecated("Use delayMicroseconds() instead."), alias("delayMicroseconds")))
-void delayMicrosecondsHard (unsigned int howLong_us);
+void delayMicrosecondsHard (unsigned int usec);
 
 
 /*
@@ -3165,9 +3166,9 @@ void delayMicrosecondsHard (unsigned int howLong_us);
  *********************************************************************************
  */
 
-void delayNanoseconds (unsigned int ns) {
-  if (ns != 0) {
-    delayHelper(ns / ns_sec, ns % ns_sec);
+void delayNanoseconds (unsigned int nsec) {
+  if (nsec != 0) {
+    delayHelper(nsec / ns_sec, nsec % ns_sec);
   }
 }
 
@@ -3188,15 +3189,15 @@ void delayNanoseconds (unsigned int ns) {
  *********************************************************************************
  */
 
-static inline void delayHelper(unsigned long howLong_s, unsigned long howLong_ns) {
+static inline void delayHelper(unsigned long sec, unsigned long nsec) {
   struct timespec tsNow, tsEnd;
 
   clock_gettime(CLOCK_MONOTONIC_RAW, &tsEnd);
 
-  tsEnd.tv_sec += howLong_s + ((tsEnd.tv_nsec + howLong_ns) / ns_sec);
-  tsEnd.tv_nsec = (tsEnd.tv_nsec + howLong_ns) % ns_sec;
+  tsEnd.tv_sec += sec + ((tsEnd.tv_nsec + nsec) / ns_sec);
+  tsEnd.tv_nsec = (tsEnd.tv_nsec + nsec) % ns_sec;
 
-  if (howLong_s == 0 && howLong_ns < 100*ns_us) { // if delay is less than 100 us
+  if (sec == 0 && nsec < 100*ns_us) { // if delay is less than 100 us
     delayHelperHard(tsEnd, tsNow);
     return;
   }
@@ -3232,24 +3233,24 @@ static inline void delayHelperHard(struct timespec tsEnd, struct timespec tsNow)
 
 /// OLD TIME FUNCTIONS ///
 
-void delayOld(unsigned int ms)
-{
+__attribute__((deprecated("Use delay() instead.")))
+void delayOld(unsigned int msec) {
   struct timespec sleeper, dummy ;
 
-  sleeper.tv_sec  = (time_t)(ms / 1000) ;
-  sleeper.tv_nsec = (long)(ms % 1000) * 1000000 ;
+  sleeper.tv_sec  = (time_t)(msec / 1000) ;
+  sleeper.tv_nsec = (long)(msec % 1000) * 1000000 ;
 
   nanosleep (&sleeper, &dummy) ;
 }
 
 
-void delayMicrosecondsHardOld(unsigned int us)
-{
+__attribute__((deprecated("Use delayHelperHard() instead.")))
+void delayMicrosecondsHardOld(unsigned int usec) {
   struct timeval tNow, tLong, tEnd ;
 
   gettimeofday (&tNow, NULL) ;
-  tLong.tv_sec  = us / 1000000 ;
-  tLong.tv_usec = us % 1000000 ;
+  tLong.tv_sec  = usec / 1000000 ;
+  tLong.tv_usec = usec % 1000000 ;
   timeradd (&tNow, &tLong, &tEnd) ;
 
   while (timercmp (&tNow, &tEnd, <))
@@ -3257,16 +3258,16 @@ void delayMicrosecondsHardOld(unsigned int us)
 }
 
 
-void delayMicrosecondsOld(unsigned int us)
-{
+__attribute__((deprecated("Use delayMicroseconds() instead.")))
+void delayMicrosecondsOld(unsigned int usec) {
   struct timespec sleeper ;
-  unsigned int uSecs = us % 1000000 ;
-  unsigned int wSecs = us / 1000000 ;
+  unsigned int uSecs = usec % 1000000 ;
+  unsigned int wSecs = usec / 1000000 ;
 
-  if      (us ==   0)
+  if      (usec ==   0)
     return ;
-  else if (us  < 100)
-    delayMicrosecondsHardOld(us) ;
+  else if (usec  < 100)
+    delayMicrosecondsHardOld(usec) ;
   else
   {
     sleeper.tv_sec  = wSecs ;
@@ -3525,13 +3526,13 @@ int wiringPiSetup (void)
   if (wiringPiSetuped)
     return 0 ;
 
-  wiringPiSetuped = TRUE ;
+  wiringPiSetuped = true ;
 
   if (getenv (ENV_DEBUG) != NULL)
-    wiringPiDebug = TRUE ;
+    wiringPiDebug = true ;
 
   if (getenv (ENV_CODES) != NULL)
-    wiringPiReturnCodes = TRUE ;
+    wiringPiReturnCodes = true ;
 
   if (wiringPiDebug)
     printf ("wiringPi: wiringPiSetup called\n") ;
@@ -3587,7 +3588,7 @@ int wiringPiSetup (void)
     gpioToPwmPort[19] = 3;
   }
 
-  usingGpioMem = FALSE;
+  usingGpioMem = false;
   if (gpiomemGlobal==NULL || (fd = open (gpiomemGlobal, O_RDWR | O_SYNC | O_CLOEXEC)) < 0)
   {
     if (wiringPiDebug) {
@@ -3596,7 +3597,7 @@ int wiringPiSetup (void)
     if (gpiomemModule && (fd = open (gpiomemModule, O_RDWR | O_SYNC | O_CLOEXEC) ) >= 0)	// We're using gpiomem
     {
       piGpioBase   = 0 ;
-      usingGpioMem = TRUE ;
+      usingGpioMem = true ;
     }
     else
       return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: Unable to open %s or %s: %s.\n"
@@ -3780,15 +3781,15 @@ int wiringPiSetupGpioDevice (enum WPIPinType pinType) {
     printf ("wiringPi: wiringPiSetupGpioDevice(%d) called\n", (int)pinType) ;
   }
   if (getenv (ENV_DEBUG) != NULL)
-    wiringPiDebug = TRUE ;
+    wiringPiDebug = true ;
 
   if (getenv (ENV_CODES) != NULL)
-    wiringPiReturnCodes = TRUE ;
+    wiringPiReturnCodes = true ;
 
   if (wiringPiGpioDeviceGetFd()<0) {
     return -1;
   }
-  wiringPiSetuped = TRUE ;
+  wiringPiSetuped = true ;
 
   if (piGpioLayout () == GPIO_LAYOUT_PI1_REV1){
     pinToGpio  = pinToGpioR1 ;
@@ -3811,7 +3812,7 @@ int wiringPiSetupGpioDevice (enum WPIPinType pinType) {
       wiringPiMode = WPI_MODE_GPIO_DEVICE_PHYS;
       break;
     default:
-      wiringPiSetuped = FALSE;
+      wiringPiSetuped = false;
       return -1;
   }
 

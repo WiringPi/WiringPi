@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -342,12 +343,12 @@ int drcSetupNet (const int pinBase, const int numPins, const char *ipAddress, co
   struct wiringPiNodeStruct *node ;
 
   if ((fd = _drcSetupNet (ipAddress, port, password)) < 0)
-    return FALSE ;
+    return false ;
 
   len = sizeof (struct drcNetComStruct) ;
 
   if (setsockopt (fd, SOL_SOCKET, SO_RCVLOWAT, (void *)&len, sizeof (len)) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, numPins) ;
 
@@ -361,5 +362,5 @@ int drcSetupNet (const int pinBase, const int numPins, const char *ipAddress, co
   node->digitalWrite     = myDigitalWrite ;
   node->pwmWrite         = myPwmWrite ;
 
-  return TRUE ;
+  return true ;
 }

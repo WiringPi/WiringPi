@@ -24,13 +24,14 @@
 #ifndef	__WIRING_PI_H__
 #define	__WIRING_PI_H__
 
-// C doesn't have true/false by default and I can never remember which
-//	way round they are, so ...
-//	(and yes, I know about stdbool.h but I like capitals for these and I'm old)
+#include <stdbool.h>
 
-#ifndef	TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(!TRUE)
+// macros retained for old code compatibility, we now use stdbool.h
+#ifndef TRUE
+  #define TRUE true
+#endif
+#ifndef FALSE
+  #define FALSE false
 #endif
 
 // GCC warning suppressor
@@ -323,15 +324,18 @@ extern int piHiPri (const int pri) ;
 // Delay functions: sleep until the specified interval has expired.
 
 // Wait for some number of milliseconds
-extern void delay (unsigned int ms);
+extern void delay (unsigned int msec);
 // Wait for some number of microseconds
-extern void delayMicroseconds (unsigned int us);
+extern void delayMicroseconds (unsigned int usec);
 // Wait for some number of nanoseconds
-extern void delayNanoseconds (unsigned int ns);
+extern void delayNanoseconds (unsigned int nsec);
 
-extern void delayOld(unsigned int ms);
-extern void delayMicrosecondsOld(unsigned int us);
-extern void delayNanosecondsOld(unsigned int ns);
+// Old version of delay, retained for compatibility
+__attribute__((__deprecated__("Use delay() instead.")))
+extern void delayOld(unsigned int msec);
+// Old version of delayMicroseconds, retained for compatibility
+__attribute__((__deprecated__("Use delayMicroseconds() instead.")))
+extern void delayMicrosecondsOld(unsigned int usec);
 
 // Clock functions: return the time since wiringPiSetup() was called.
 

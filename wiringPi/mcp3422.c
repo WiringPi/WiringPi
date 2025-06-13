@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
@@ -117,7 +118,7 @@ int mcp3422Setup (int pinBase, int i2cAddress, int sampleRate, int gain)
   struct wiringPiNodeStruct *node ;
 
   if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, 4) ;
 
@@ -126,5 +127,5 @@ int mcp3422Setup (int pinBase, int i2cAddress, int sampleRate, int gain)
   node->data1      = gain ;
   node->analogRead = myAnalogRead ;
 
-  return TRUE ;
+  return true ;
 }

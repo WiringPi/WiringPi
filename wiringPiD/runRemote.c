@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
@@ -40,7 +41,7 @@
 
 
 
-int noLocalPins = FALSE ;
+int noLocalPins = false ;
 
 
 void runRemoteCommands (int fd)

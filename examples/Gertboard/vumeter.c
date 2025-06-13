@@ -18,15 +18,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <sys/time.h>
 
 #include <wiringPi.h>
 #include <gertboard.h>
-
-#ifndef	TRUE
-#define	TRUE	(1==1)
-#define	FALSE	(!TRUE)
-#endif
 
 #define	B_SIZE	1000
 #define	S_SIZE	 128

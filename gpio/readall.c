@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
 #include <string.h>
@@ -36,11 +37,6 @@
 #include <wiringPi.h>
 
 extern int wpMode ;
-
-#ifndef TRUE
-#  define       TRUE    (1==1)
-#  define       FALSE   (1==2)
-#endif
 
 /*
  * doReadallExternal:

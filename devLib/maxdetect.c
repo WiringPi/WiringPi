@@ -24,17 +24,13 @@
 
 #include <sys/time.h>
 #include <stdio.h>
+#include <stdbool.h>
 //#include <stdlib.h>
 //#include <unistd.h>
 
 #include <wiringPi.h>
 
 #include "maxdetect.h"
-
-#ifndef	TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(1==2)
-#endif
 
 
 /*
@@ -58,7 +54,7 @@ static int maxDetectLowHighWait (const int pin)
   {
     gettimeofday (&now, NULL) ;
     if (timercmp (&now, &timeUp, >))
-      return FALSE ;
+      return false ;
   }
 
 // Wait for it to go HIGH
@@ -72,10 +68,10 @@ static int maxDetectLowHighWait (const int pin)
   {
     gettimeofday (&now, NULL) ;
     if (timercmp (&now, &timeUp, >))
-      return FALSE ;
+      return false ;
   }
 
-  return TRUE ;
+  return true ;
 }
 
 
@@ -110,7 +106,7 @@ static unsigned int maxDetectClockByte (const int pin)
 /*
  * maxDetectRead:
  *	Read in and return the 4 data bytes from the MaxDetect sensor.
- *	Return TRUE/FALSE depending on the checksum validity
+ *	Return true/false depending on the checksum validity
  *********************************************************************************
  */
 
@@ -136,7 +132,7 @@ int maxDetectRead (const int pin, unsigned char buffer [4])
 // Now wait for sensor to pull pin low
 
   if (!maxDetectLowHighWait (pin))
-    return FALSE ;
+    return false ;
 
 // and read in 5 bytes (40 bits)
 
@@ -165,7 +161,7 @@ int maxDetectRead (const int pin, unsigned char buffer [4])
 // reading is probably bogus.
 
   if ((took.tv_sec != 0) || (took.tv_usec > 16000))
-    return FALSE ;
+    return false ;
 
   return checksum == localBuf [4] ;
 }
@@ -196,7 +192,7 @@ int readRHT03 (const int pin, int *temp, int *rh)
   {
     *rh   = lastRh ;
     *temp = lastTemp ;
-    return TRUE ;
+    return true ;
   }
 
 // Set timeout for next read
@@ -214,7 +210,7 @@ int readRHT03 (const int pin, int *temp, int *rh)
     result = maxDetectRead (pin, buffer) ;
 
   if (!result)
-    return FALSE ;
+    return false ;
 
   *rh   = (buffer [0] * 256 + buffer [1]) ;
   *temp = (buffer [2] * 256 + buffer [3]) ;
@@ -229,10 +225,10 @@ int readRHT03 (const int pin, int *temp, int *rh)
 //	(which does seem to happen - no realtime here)
 
   if ((*rh > 999) || (*temp > 800) || (*temp < -400))
-    return FALSE ;
+    return false ;
 
   lastRh   = *rh ;
   lastTemp = *temp ;
 
-  return TRUE ;
+  return true ;
 }
