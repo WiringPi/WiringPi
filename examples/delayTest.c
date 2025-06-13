@@ -3,7 +3,7 @@
  *	Just a little test program I'm using to experiment with
  *	various timings and latency, etc.
  *
- * Copyright (c) 2012-2013 Gordon Henderson.
+ * Copyright (c) 2012-2013 Gordon Henderson, 2025 Contributors
  ***********************************************************************
  * This file is part of wiringPi:
  *      https://github.com/WiringPi/WiringPi
@@ -23,17 +23,18 @@
  ***********************************************************************
  */
 
+ // compile: gcc -Wall delayTest.c -o delayTest -lwiringPi
+
 #include <stdio.h>
 #include <unistd.h>
-
+#include <wiringPi.h>
 #include <sys/time.h>
 
 #define	CYCLES	1000
 
 int main()
 {
-  int x ;
-  struct timeval t1, t2, t3 ;
+  struct timeval tStart, tStop, tDuration ;
   int t ;
   int max, min ;
   int del ;
@@ -43,57 +44,56 @@ int main()
 
 // Baseline test
 
-  gettimeofday (&t1, NULL) ;
-  gettimeofday (&t2, NULL) ;
+  gettimeofday (&tStart, NULL) ;
+  gettimeofday (&tStop, NULL) ;
 
-  t = t2.tv_usec - t1.tv_usec ;
-  printf ("Baseline test: %d\n", t);
-
-  for (del = 1 ; del < 200 ; ++del)
+  t = tStop.tv_usec - tStart.tv_usec ;
+  printf ("Baseline test (no sleep took): %d usec\n", t);
+  printf ("Start delayTest (delayMicroseconds) 1-200 usec with %d iteration:\n", CYCLES);
+  for (del = 1 ; del <= 200 ; ++del)
   {
     underRuns = overRuns = exactRuns = total = 0 ;
     descheds = 0 ;
     max =   0 ;
     min = 999 ;
 
-    for (x = 0 ; x < CYCLES ; ++x)
+    for (int iter = 0 ; iter < CYCLES ; ++iter)
     {
       for (;;)				// Repeat this if we get a delay over 999uS
       {					// -> High probability Linux has deschedulled us
-	gettimeofday (&t1, NULL) ;
-	  usleep (del) ;
-//          delayMicroseconds (del) ;
-	gettimeofday (&t2, NULL) ;
+        gettimeofday (&tStart, NULL) ;
+	      //usleep (del) ;
+        delayMicroseconds (del) ;
+	      gettimeofday (&tStop, NULL) ;
+	      timersub (&tStop, &tStart, &tDuration) ;
+	      t = tDuration.tv_usec ;
 
-	timersub (&t2, &t1, &t3) ;
-
-	t = t3.tv_usec ;
-
-	if (t > 999)
-	{
-	  ++descheds ;
-	  continue ;
-	}
-	else
-	  break ;
+	      if (t > 999)
+	      {
+	        ++descheds ;
+	        continue ;
+	      }
+	      else
+	        break ;
       }
 
       if (t == del)
-	++exactRuns ;
+	      ++exactRuns ;
       else if (t < del)
-	++underRuns ;
+	      ++underRuns ;
       else if (t > del)
-	++overRuns ;
+	      ++overRuns ;
 
       if (t > max)
         max = t ;
       else if (t < min)
-	min = t ;
+	      min = t ;
 
       total += t ;
     }
-    printf ("Delay: %3d. Min: %3d, Max: %3d, Unders: %3d, Overs: %3d, Exacts: %3d, Average: %3d,  Descheds: %2d\n",
-	del, min, max, underRuns, overRuns, exactRuns, total / CYCLES,  descheds) ;
+    int aver = total / CYCLES;
+    printf ("Delay: %3d usec. Min: %3d, Max: %3d, Unders: %3d%%, Overs: %3d%%, Exacts: %3d%%, Average: %3d (abs dev: %2d) ,  Descheds: %2d\n",
+	   del, min-del, max-del, underRuns*100/CYCLES, overRuns*100/CYCLES, exactRuns*100/CYCLES, aver, aver-del,  descheds) ;
     fflush (stdout) ;
     usleep (1000) ;
   }
