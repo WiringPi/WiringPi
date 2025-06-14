@@ -3122,6 +3122,7 @@ int wiringPiISR2(int pin, int edgeMode, void (*function)(struct WPIWfiStatus wfi
 
 // Helper functions
 static inline void delayHelper(unsigned long sec, unsigned long nsec);
+static inline void delayHelperNI(unsigned long sec, unsigned long nsec);
 static inline void delayHelperHard(struct timespec tsEnd, struct timespec tsNow);
 
 // Unit conversion ratios (for readability)
@@ -3133,7 +3134,7 @@ const long ns_us  = 1000l;        // 1e3 nanoseconds per microsecond
 
 /*
  * delay:
- *  Wait for some number of milliseconds
+ *  Wait for some number of milliseconds, unless an interrupt signal is recieved.
  *********************************************************************************
  */
 
@@ -3143,9 +3144,25 @@ void delay (unsigned int msec) {
   }
 }
 
+
+/*
+ * delayNI:
+ *  Wait for some number of milliseconds. Can be cut short by a system interrupt.
+ *  Returns zero if sleep was not interrupted, otherwise, returns EINTR if an interrupt handler was triggered.
+ *********************************************************************************
+ */
+
+void delayNI (unsigned int msec) {
+  if (msec != 0) {
+    delayHelperNI(msec / ms_sec, (msec % ms_sec) * ns_ms);
+  }
+}
+
+
 /*
  * delayMicroseconds:
- *  Wait for some number of microseconds
+ *  Wait for some number of microseconds, unless an interrupt signal is recieved. 
+ *  Interrupts are ignored for durations shorter than 100 microseconds.
  *********************************************************************************
  */
 
@@ -3156,13 +3173,28 @@ void delayMicroseconds (unsigned int usec) {
 }
 
 
+/*
+ * delayMicrosecondsNI:
+ *  Wait for some number of microseconds; likely to overshoot on very short intervals. Can be cut short by a system interrupt.
+ *  Returns zero if sleep was not interrupted, otherwise, returns EINTR if an interrupt handler was triggered.
+ *********************************************************************************
+ */
+
+void delayMicrosecondsNI (unsigned int usec) {
+  if (usec != 0) {
+    delayHelperNI(usec / us_sec, (usec % us_sec) * ns_us);
+  }
+}
+
+
 __attribute__((deprecated("Use delayMicroseconds() instead."), alias("delayMicroseconds")))
 void delayMicrosecondsHard (unsigned int usec);
 
 
 /*
  * delayNanoseconds:
- *  Wait for some number of nanoseconds
+ *  Wait for some number of nanoseconds, unless an interrupt signal is recieved.
+ *  Interrupts are ignored for durations shorter than 100,000 nanoseconds.
  *********************************************************************************
  */
 
@@ -3171,6 +3203,21 @@ void delayNanoseconds (unsigned int nsec) {
     delayHelper(nsec / ns_sec, nsec % ns_sec);
   }
 }
+
+
+/*
+ * delayNanosecondsInterruptable:
+ *  Wait for some number of nanoseconds; likely to overshoot on very short intervals. Can be cut short by a system interrupt.
+ *  Returns zero if sleep was not interrupted, otherwise, returns EINTR if an interrupt handler was triggered.
+ *********************************************************************************
+ */
+
+void delayNanosecondsNI (unsigned int nsec) {
+  if (nsec != 0) {
+    delayHelperNI(nsec / ns_sec, nsec % ns_sec);
+  }
+}
+
 
 /*
  * delayHelper:
@@ -3200,6 +3247,42 @@ static inline void delayHelper(unsigned long sec, unsigned long nsec) {
   if (sec == 0 && nsec < 100*ns_us) { // if delay is less than 100 us
     delayHelperHard(tsEnd, tsNow);
     return;
+  } else {
+    // Using TIMER_ABSTIME flag allows for an absolute future time to be set.
+    clock_nanosleep(CLOCK_MONOTONIC_RAW, TIMER_ABSTIME, &tsEnd, NULL);
+    return;
+  }
+}
+
+
+/*
+ * delayHelperNI:
+ *  Internal helper function for delays - not externally accessible.
+ *********************************************************************************
+ *  This is somewhat intersting. It seems that on the Pi, a single call
+ *  to nanosleep takes some 80 to 130 microseconds anyway, so while
+ *  obeying the standards (may take longer), it's not always what we
+ *  want!
+ *
+ *  So what I'll do now is if the delay is less than 100uS we'll do it
+ *  in a hard loop, comparing the current time against the scheduled end.
+ *  This is somewhat sub-optimal in that it uses 100% CPU, something not an
+ *  issue in a microcontroller, but under a multi-tasking, multi-user OS, it's
+ *  wasteful, however we've no real choice )-:
+ *********************************************************************************
+ */
+
+static inline void delayHelperNI(unsigned long sec, unsigned long nsec) {
+  struct timespec tsNow, tsEnd;
+
+  clock_gettime(CLOCK_MONOTONIC_RAW, &tsEnd);
+
+  tsEnd.tv_sec += sec + ((tsEnd.tv_nsec + nsec) / ns_sec);
+  tsEnd.tv_nsec = (tsEnd.tv_nsec + nsec) % ns_sec;
+
+  if (sec == 0 && nsec < 100*ns_us) { // if delay is less than 100 us
+    delayHelperHard(tsEnd, tsNow);
+    return;
   }
 
   // Using TIMER_ABSTIME flag allows for an absolute future time to be set.
@@ -3216,6 +3299,7 @@ static inline void delayHelper(unsigned long sec, unsigned long nsec) {
   }
 }
 
+
 /*
  * delayHelperHard:
  *  Internal helper function for delays - not externally accessible.
@@ -3226,14 +3310,14 @@ static inline void delayHelper(unsigned long sec, unsigned long nsec) {
  */
 
 static inline void delayHelperHard(struct timespec tsEnd, struct timespec tsNow) {
-  do {
+  do {  // check time until tsNow is past tsEnd.
     clock_gettime(CLOCK_MONOTONIC_RAW, &tsNow);
   } while ((tsNow.tv_nsec < tsEnd.tv_nsec && tsNow.tv_sec <= tsEnd.tv_sec) || tsNow.tv_sec < tsEnd.tv_sec);
 }
 
 /// OLD TIME FUNCTIONS ///
 
-__attribute__((deprecated("Use delay() instead.")))
+__attribute__((deprecated("Use delayInterruptable() instead.")))
 void delayOld(unsigned int msec) {
   struct timespec sleeper, dummy ;
 

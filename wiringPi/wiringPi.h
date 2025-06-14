@@ -322,13 +322,24 @@ extern int piHiPri (const int pri) ;
 // Extras from arduino land
 
 // Delay functions: sleep until the specified interval has expired.
+// Sleep will *not* resume if an interrupt signal is received from the system.
 
-// Wait for some number of milliseconds
+// Wait for some number of milliseconds, unless an interrupt signal is recieved.
 extern void delay (unsigned int msec);
-// Wait for some number of microseconds
+// Wait for some number of microseconds, unless an interrupt signal is recieved. Interrupts are ignored for durations shorter than 100 microseconds.
 extern void delayMicroseconds (unsigned int usec);
-// Wait for some number of nanoseconds
+// Wait for some number of nanoseconds, unless an interrupt signal is recieved. Interrupts are ignored for durations shorter than 100,000 nanoseconds.
 extern void delayNanoseconds (unsigned int nsec);
+
+// Non-interruptable delay functions: sleep until the specified interval has expired.
+// Sleep will resume if an interrupt signal is received from the system after the appropriate interrupt handler has been called.
+
+// Wait for some number of milliseconds.
+extern void delayNI (unsigned int msec);
+// Wait for some number of microseconds.
+extern void delayMicrosecondsNI (unsigned int usec);
+// Wait for some number of nanoseconds.
+extern void delayNanosecondsNI (unsigned int nsec);
 
 // Old version of delay, retained for compatibility
 __attribute__((__deprecated__("Use delay() instead.")))

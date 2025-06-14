@@ -899,26 +899,52 @@ wiringPiSPIClose(spiChannel);
 
 ### `delay()` / `delayMicroseconds()` / `delayNanoseconds()`
 
-Resume execution only after the specified amount of time has elapsed.
+Resume execution after the specified amount of time has elapsed. However, if an interrupt signal is recieved from the system, sleep will not resume.
 
 >>>
 ```C
-// Wait for some number of milliseconds
-void delay (unsigned int howLong_ms);
+// Wait for some number of milliseconds, unless an interrupt signal is recieved.
+extern void delay (unsigned int msec);
 
-// Wait for some number of microseconds
-void delayMicroseconds (unsigned int howLong_us);
+// Wait for some number of microseconds, unless an interrupt signal is recieved. Interrupts are ignored for durations shorter than 100 microseconds.
+extern void delayMicroseconds (unsigned int usec);
 
-// Wait for some number of nanoseconds
-void delayNanoseconds (unsigned int howLong_ns);
+// Wait for some number of nanoseconds, unless an interrupt signal is recieved. Interrupts are ignored for durations shorter than 100,000 nanoseconds.
+extern void delayNanoseconds (unsigned int nsec);
 ```
 
-``howLong_ms``: Length of time (in milliseconds) to delay.  
-``howLong_us``: Length of time (in microseconds) to delay.  
-``howLong_ns``: Length of time (in nanoseconds) to delay.  
+``msec``: Length of time (in milliseconds) to delay.
+``usec``: Length of time (in microseconds) to delay.
+``nsec``: Length of time (in nanoseconds) to delay.
 
 **Note**:  
-Internal implementation uses `clock_nanosleep()`, which which guarantees only that execution will resume *after* the specified amount of time has elapsed *at minimum*. There is no guarantee on the maximum length of the delay; however, any overshoot is unlikely to be longer than several microseconds in most cases, which should not be an issue except for very short delays.  
+Internal implementation uses `clock_nanosleep()`, which which guarantees only that execution will resume *after* the specified amount of time has elapsed *at minimum*. There is no guarantee on the maximum length of the delay; however, any overshoot is unlikely to be longer than several microseconds in most cases, which should not be an issue except for very short delays.
+As such, for delays under 100 microseconds an alternate method is used which generally limits overshoot to several tens of nanoseconds at the cost of occupying the CPU core at 100%.
+
+### `delayNI()` / `delayMicrosecondsNI()` / `delayNanosecondsNI()`
+
+Non-interruptable versions of the `delay()` function family.
+
+Resume execution after the specified amount of time has elapsed. Sleep will resume if an interrupt signal is received from the system after the appropriate interrupt handler has been called.
+
+>>>
+```C
+// Wait for some number of milliseconds.
+extern void delayNI (unsigned int msec);
+
+// Wait for some number of microseconds.
+extern void delayMicrosecondsNI (unsigned int usec);
+
+// Wait for some number of nanoseconds.
+extern void delayNanosecondsNI (unsigned int nsec);
+```
+
+``msec``: Length of time (in milliseconds) to delay.
+``usec``: Length of time (in microseconds) to delay.
+``nsec``: Length of time (in nanoseconds) to delay.
+
+**Note**:  
+Internal implementation uses `clock_nanosleep()`, which which guarantees only that execution will resume *after* the specified amount of time has elapsed *at minimum*. There is no guarantee on the maximum length of the delay; however, any overshoot is unlikely to be longer than several microseconds in most cases, which should not be an issue except for very short delays.
 As such, for delays under 100 microseconds an alternate method is used which generally limits overshoot to several tens of nanoseconds at the cost of occupying the CPU core at 100%.
 
 ### `millis()` / `micros()` / `nanos()`
