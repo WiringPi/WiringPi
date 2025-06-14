@@ -1505,35 +1505,41 @@ void pwmSetMode (int mode)
  *********************************************************************************
  */
 
-void pwmSetRange (unsigned int range)
-{
-  if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
-  {
+void pwmSetRange (unsigned int range) {
+
+  if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO)) {
+
     /* would be possible on ms mode but not on bal, deactivated, use pwmc modify instead
     if (piGpioBase == GPIO_PERI_BASE_2711) {
       range = (OSC_FREQ_BCM2711*range)/OSC_FREQ_DEFAULT;
     }
     */
+
     if (!pwm) {
-      fprintf(stderr, "wiringPi: pwmSetRange but no pwm memory available, ignoring\n");
+      fprintf(stderr, "wiringPi: pwmSetRange called but no pwm memory available, ignoring\n");
       return;
     }
+
     int readback = 0x00;
+
     if (piRP1Model()) {
       pwm[RP1_PWM0_CHAN0_RANGE] = range;
       pwm[RP1_PWM0_CHAN1_RANGE] = range;
       pwm[RP1_PWM0_CHAN2_RANGE] = range;
       pwm[RP1_PWM0_CHAN3_RANGE] = range;
       readback = pwm[RP1_PWM0_CHAN0_RANGE];
-     } else {
-     *(pwm + PWM0_RANGE) = range ; delayMicroseconds (10) ;
-     *(pwm + PWM1_RANGE) = range ; delayMicroseconds (10) ;
-     readback = *(pwm + PWM0_RANGE);
+    } else {
+      *(pwm + PWM0_RANGE) = range ; delayMicroseconds (10) ;
+      *(pwm + PWM1_RANGE) = range ; delayMicroseconds (10) ;
+      readback = *(pwm + PWM0_RANGE);
     }
+
     if (wiringPiDebug) {
       printf ("PWM range: %u. Current register: 0x%08X\n", range, readback);
     }
+
   }
+
 }
 
 
