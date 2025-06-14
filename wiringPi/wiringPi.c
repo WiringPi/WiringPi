@@ -179,18 +179,19 @@ const unsigned int RP1_PAD_IC_DEFAULT_FROM9 = 0x96; //pull-down, Schmitt
 const unsigned int RP1_PAD_DRIVE_MASK   = 0x00000030;
 const unsigned int RP1_INV_PAD_DRIVE_MASK = ~(RP1_PAD_DRIVE_MASK);
 
-const unsigned int RP1_PWM0_GLOBAL_CTRL = 0;
-const unsigned int RP1_PWM0_FIFO_CTRL   = 1;
-const unsigned int RP1_PWM0_COMMON_RANGE= 2;
-const unsigned int RP1_PWM0_COMMON_DUTY = 3;
-const unsigned int RP1_PWM0_DUTY_FIFO   = 4;
-const unsigned int RP1_PWM0_CHAN_START  = 5;
+const unsigned int RP1_PWM0_GLOBAL_CTRL  = 0;
+const unsigned int RP1_PWM0_FIFO_CTRL    = 1;
+const unsigned int RP1_PWM0_COMMON_RANGE = 2;
+const unsigned int RP1_PWM0_COMMON_DUTY  = 3;
+const unsigned int RP1_PWM0_DUTY_FIFO    = 4;
+const unsigned int RP1_PWM0_CHAN_START   = 5;
+
 //offset channel
-const unsigned int RP1_PWM0_CHAN_CTRL  = 0;
-const unsigned int RP1_PWM0_CHAN_RANGE = 1;
-const unsigned int RP1_PWM0_CHAN_PHASE = 2;
-const unsigned int RP1_PWM0_CHAN_DUTY  = 3;
-const unsigned int RP1_PWM0_CHAN_OFFSET= 4;
+const unsigned int RP1_PWM0_CHAN_CTRL   = 0;
+const unsigned int RP1_PWM0_CHAN_RANGE  = 1;
+const unsigned int RP1_PWM0_CHAN_PHASE  = 2;
+const unsigned int RP1_PWM0_CHAN_DUTY   = 3;
+const unsigned int RP1_PWM0_CHAN_OFFSET = 4;
 
 const unsigned int RP1_PWM0_CHAN0_RANGE = RP1_PWM0_CHAN_START+RP1_PWM0_CHAN_OFFSET*0+RP1_PWM0_CHAN_RANGE;
 const unsigned int RP1_PWM0_CHAN1_RANGE = RP1_PWM0_CHAN_START+RP1_PWM0_CHAN_OFFSET*1+RP1_PWM0_CHAN_RANGE;
