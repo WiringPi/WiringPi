@@ -1545,6 +1545,59 @@ void pwmSetRange (unsigned int range) {
 
 
 /*
+ * pwmSetRangeChannel:
+ *	Set the PWM range register. We set both range registers to the same
+ *	value. If you want different in your own code, then write your own.
+ *********************************************************************************
+ */
+
+void pwmSetRangeChannel (unsigned int range, unsigned int channel) {
+
+  if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO)) {
+
+    if (!pwm) {
+      fprintf(stderr, "wiringPi: pwmSetRangeChannel called but no pwm memory available, ignoring\n");
+      return;
+    }
+
+    int readback = 0x00;
+
+    if (piRP1Model()) {
+
+      if (channel > 3) {
+        fprintf(stderr, "wiringPi: pwmSetRangeChannel channel invalid, ignoring\n");
+        return;
+      }
+
+      pwm[RP1_PWM0_CHAN0_RANGE] = range;
+      pwm[RP1_PWM0_CHAN1_RANGE] = range;
+      pwm[RP1_PWM0_CHAN2_RANGE] = range;
+      pwm[RP1_PWM0_CHAN3_RANGE] = range;
+      readback = pwm[RP1_PWM0_CHAN0_RANGE];
+
+    } else {
+
+      if (channel > 1) {
+        fprintf(stderr, "wiringPi: pwmSetRangeChannel channel invalid, ignoring\n");
+        return;
+      }
+
+      pwm[PWM0_RANGE] = range ; delayMicroseconds (10) ;
+      pwm[PWM1_RANGE] = range ; delayMicroseconds (10) ;
+      readback = pwm[PWM0_RANGE] ;
+
+    }
+
+    if (wiringPiDebug) {
+      printf ("PWM range: %u. Current register: 0x%08X\n", range, readback);
+    }
+
+  }
+
+}
+
+
+/*
  * pwmSetClock:
  *	Set/Change the PWM clock. Originally my code, but changed
  *	(for the better!) by Chris Hall, <chris@kchall.plus.com>
