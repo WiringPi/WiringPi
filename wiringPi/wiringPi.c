@@ -1536,7 +1536,7 @@ void pwmSetRange (unsigned int range) {
     }
 
     if (wiringPiDebug) {
-      printf ("PWM range: %u. Current register: 0x%08X\n", range, readback);
+      fprintf (stderr, "PWM range: %u. Current register: 0x%08X\n", range, readback);
     }
 
   }
@@ -1589,7 +1589,7 @@ void pwmSetRangeChannel (unsigned int range, unsigned int channel) {
     }
 
     if (wiringPiDebug) {
-      printf ("PWM range: %u. Current register: 0x%08X\n", range, readback);
+      fprintf(stderr, "PWM range: %u. Current register: 0x%08X\n", range, readback);
     }
 
   }
