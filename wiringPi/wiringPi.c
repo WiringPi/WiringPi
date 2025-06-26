@@ -1507,7 +1507,7 @@ void pwmSetRange (unsigned int range) {
     */
 
     if (!pwm) {
-      fprintf(stderr, "wiringPi: pwmSetRange called but no pwm memory available, ignoring\n");
+      fputs("wiringPi: pwmSetRange called but no pwm memory available, ignoring\n", stderr);
       return;
     }
 
@@ -1546,7 +1546,7 @@ void pwmSetRangeChannel (unsigned int range, unsigned int channel) {
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO)) {
 
     if (!pwm) {
-      fprintf(stderr, "wiringPi: pwmSetRangeChannel called but no pwm memory available, ignoring\n");
+      fputs("wiringPi: pwmSetRangeChannel called but no pwm memory available, ignoring\n", stderr);
       return;
     }
 
@@ -1555,7 +1555,7 @@ void pwmSetRangeChannel (unsigned int range, unsigned int channel) {
     if (piRP1Model()) {
 
       if (channel > 3) {
-        fprintf(stderr, "wiringPi: pwmSetRangeChannel channel invalid, ignoring\n");
+        fputs("wiringPi: pwmSetRangeChannel channel invalid, ignoring\n", stderr);
         return;
       }
 
@@ -1568,7 +1568,7 @@ void pwmSetRangeChannel (unsigned int range, unsigned int channel) {
     } else {
 
       if (channel > 1) {
-        fprintf(stderr, "wiringPi: pwmSetRangeChannel channel invalid, ignoring\n");
+        fputs("wiringPi: pwmSetRangeChannel channel invalid, ignoring\n", stderr);
         return;
       }
 
