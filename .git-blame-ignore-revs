@@ -1,0 +1,13 @@
+### WiringPi: .git-blame-ignore-revs
+###
+### This file contains SHAs of formatting-only / whitespace-only commits so that they do not mask actual changes in `git blame`.
+### Before submitting a PR with a formatting / whitespace commit, please update this file with the SHAs of those commits each on their own line.
+###
+### By default, the options `--ignore-revs-file .git-blame-ignore-revs` must be passed to command-line `git blame` in order to reference this file.
+### Alternatively, run this command to always ignore commits in `git blame` in your local repository:
+### git config set --local blame.ignoreRevsFile .git-blame-ignore-revs
+###
+
+# Remove trailing whitespace
+e099fd114e04d24510d1f52fcd773860885f043e
+
