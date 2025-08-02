@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.12)
 project(WiringPiLib)
 
+# Set C standard version
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_EXTENSIONS ON)
+
 # Read version from version.h
 file(READ "${CMAKE_CURRENT_SOURCE_DIR}/version.h" WIRINGPI_VERSION)
 string(REGEX REPLACE ".*VERSION \"([0-9]+.[0-9]+)\".*" "\\1" WIRINGPI_VERSION "${WIRINGPI_VERSION}")
