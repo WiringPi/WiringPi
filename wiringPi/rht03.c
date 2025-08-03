@@ -25,6 +25,7 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <time.h>
 
 #include "wiringPi.h"
@@ -51,7 +52,7 @@ static int maxDetectLowHighWait (const int pin)
   {
     gettimeofday (&now, NULL) ;
     if (timercmp (&now, &timeUp, >))
-      return FALSE ;
+      return false ;
   }
 
 // Wait for it to go HIGH
@@ -65,10 +66,10 @@ static int maxDetectLowHighWait (const int pin)
   {
     gettimeofday (&now, NULL) ;
     if (timercmp (&now, &timeUp, >))
-      return FALSE ;
+      return false ;
   }
 
-  return TRUE ;
+  return true ;
 }
 
 
@@ -103,7 +104,7 @@ static unsigned int maxDetectClockByte (const int pin)
 /*
  * maxDetectRead:
  *	Read in and return the 4 data bytes from the MaxDetect sensor.
- *	Return TRUE/FALSE depending on the checksum validity
+ *	Return true/false depending on the checksum validity
  *********************************************************************************
  */
 
@@ -129,7 +130,7 @@ static int maxDetectRead (const int pin, unsigned char buffer [4])
 // Now wait for sensor to pull pin low
 
   if (!maxDetectLowHighWait (pin))
-    return FALSE ;
+    return false ;
 
 // and read in 5 bytes (40 bits)
 
@@ -158,7 +159,7 @@ static int maxDetectRead (const int pin, unsigned char buffer [4])
 // reading is probably bogus.
 
   if ((took.tv_sec != 0) || (took.tv_usec > 16000))
-    return FALSE ;
+    return false ;
 
   return checksum == localBuf [4] ;
 }
@@ -181,7 +182,7 @@ static int myReadRHT03 (const int pin, int *temp, int *rh)
   result = maxDetectRead (pin, buffer) ;
 
   if (!result)
-    return FALSE ;
+    return false ;
 
   *rh   = (buffer [0] * 256 + buffer [1]) ;
   *temp = (buffer [2] * 256 + buffer [3]) ;
@@ -196,9 +197,9 @@ static int myReadRHT03 (const int pin, int *temp, int *rh)
 //	(which does seem to happen - no realtime here)
 
   if ((*rh > 999) || (*temp > 800) || (*temp < -400))
-    return FALSE ;
+    return false ;
 
-  return TRUE ;
+  return true ;
 }
 
 
@@ -239,7 +240,7 @@ int rht03Setup (const int pinBase, const int piPin)
   struct wiringPiNodeStruct *node ;
 
   if ((piPin & PI_GPIO_MASK) != 0)	// Must be an on-board pin
-    return FALSE ;
+    return false ;
   
 // 2 pins - temperature and humidity
 
@@ -248,5 +249,5 @@ int rht03Setup (const int pinBase, const int piPin)
   node->fd         = piPin ;
   node->analogRead = myAnalogRead ;
 
-  return TRUE ;
+  return true ;
 }

@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
 #include <string.h>
@@ -36,11 +37,6 @@
 #include <wiringPi.h>
 
 extern int wpMode ;
-
-#ifndef TRUE
-#  define       TRUE    (1==1)
-#  define       FALSE   (1==2)
-#endif
 
 /*
  * doReadallExternal:
@@ -183,7 +179,7 @@ static void readallPhys (int physPin)
     printf (" |      |  ") ;
   else
   {
-    /**/ if (wpMode == WPI_MODE_GPIO)
+    if      (wpMode == WPI_MODE_GPIO)
       pin = physPinToGpio (physPin) ;
     else if (wpMode == WPI_MODE_PHYS)
       pin = physPin ;
@@ -206,7 +202,7 @@ static void readallPhys (int physPin)
     printf (" |   |     ") ;
   else
   {
-    /**/ if (wpMode == WPI_MODE_GPIO)
+    if      (wpMode == WPI_MODE_GPIO)
       pin = physPinToGpio (physPin) ;
     else if (wpMode == WPI_MODE_PHYS)
       pin = physPin ;
@@ -303,35 +299,44 @@ void abReadall (int model, int rev)
  *	Read all the pins on the model A+ or the B+ or actually, all 40-pin Pi's
  *********************************************************************************
  */
+const char piModelNamesShort[PI_MODELS_MAX][11] =
+{
+  "---Pi A---",	//  0
+  "---Pi B---",	//  1
+  "---Pi A+--",	//  2
+  "---Pi B+--",	//  3
+  "---Pi 2---",	//  4
+  "---Alpha--",	//  5
+  "----CM----",	//  6
+  "",	// 07
+  "---Pi 3B--",	//  8
+  "-Pi Zero--",	//  9
+  "---CM3----",	// 10
+  "",	// 11
+  "-Pi ZeroW-",	// 12
+  "---Pi 3B+-",	// 13
+  "---Pi 3A+-",	// 14
+  "",	// 15
+  "---CM3+---",	// 16
+  "---Pi 4B--",	// 17
+  "Pi Zero 2W",	// 18
+  "--Pi 400--",	// 19
+  "---CM4----",	// 20
+  "---CM4S---",	// 21
+  "",	// 22
+  "---Pi 5---",	// 23
+  "---CM5----",	// 24
+  "--Pi 500--",	// 25
+  "---CM5L---",	// 24
+} ;
 
 static void plus2header (int model)
 {
-  /**/ if (model == PI_MODEL_AP)
-    printf (" +-----+-----+---------+------+---+---Pi A+--+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_BP)
-    printf (" +-----+-----+---------+------+---+---Pi B+--+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_ZERO)
-    printf (" +-----+-----+---------+------+---+-Pi Zero--+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_ZERO_W)
-    printf (" +-----+-----+---------+------+---+-Pi ZeroW-+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_ZERO_2W)
-    printf (" +-----+-----+---------+------+---+Pi Zero 2W+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_2)
-    printf (" +-----+-----+---------+------+---+---Pi 2---+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_3B)
-    printf (" +-----+-----+---------+------+---+---Pi 3B--+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_3BP)
-    printf (" +-----+-----+---------+------+---+---Pi 3B+-+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_3AP)
-    printf (" +-----+-----+---------+------+---+---Pi 3A+-+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_4B)
-    printf (" +-----+-----+---------+------+---+---Pi 4B--+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_400)
-    printf (" +-----+-----+---------+------+---+---Pi 400-+---+------+---------+-----+-----+\n") ;
-  else if (model == PI_MODEL_5)
-    printf (" +-----+-----+---------+------+---+---Pi 5---+---+------+---------+-----+-----+\n") ;    
-  else
-    printf (" +-----+-----+---------+------+---+---Pi ?---+---+------+---------+-----+-----+\n") ;
+  if (model<PI_MODELS_MAX && piModelNamesShort[model][0]!='\0') {
+    printf (" +-----+-----+---------+------+---+%s+---+------+---------+-----+-----+\n", piModelNamesShort[model]);
+  } else {
+    printf (" +-----+-----+---------+------+---+---- ? ---+---+------+---------+-----+-----+\n");
+  }
 }
 
 
@@ -371,17 +376,17 @@ void doReadall (void)
 
   piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
 
-  /**/ if ((model == PI_MODEL_A) || (model == PI_MODEL_B))
+  if      ((model == PI_MODEL_A) || (model == PI_MODEL_B))
     abReadall (model, rev) ;
   else if ((model == PI_MODEL_BP) || (model == PI_MODEL_AP) ||
 	(model == PI_MODEL_2)    ||
 	(model == PI_MODEL_3AP)  ||
 	(model == PI_MODEL_3B)   || (model == PI_MODEL_3BP) ||
-	(model == PI_MODEL_4B)   || (model == PI_MODEL_400) || (model == PI_MODEL_CM4) ||
+	(model == PI_MODEL_4B)   || (model == PI_MODEL_400) || (model == PI_MODEL_CM4) || (model == PI_MODEL_CM4S) ||
 	(model == PI_MODEL_ZERO) || (model == PI_MODEL_ZERO_W) || (model == PI_MODEL_ZERO_2W) ||
-  (model == PI_MODEL_5)  )
+  (model == PI_MODEL_5)    || (model == PI_MODEL_500) || (model == PI_MODEL_CM5) || (model == PI_MODEL_CM5L) )
     piPlusReadall (model) ;
-  else if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3) || (model == PI_MODEL_CM3P) )
+  else if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3) || (model == PI_MODEL_CM3P) )  //could be Compute Module 1/3/3+ IO Board 120 GPIO pins, legacy code
     allReadall () ;
   else
     printf ("Oops - unable to determine board type... model: %d\n", model) ;

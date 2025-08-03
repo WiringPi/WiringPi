@@ -41,6 +41,7 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 
@@ -80,24 +81,24 @@ int pseudoPinsSetup(const int pinBase)
     node = wiringPiNewNode(pinBase, PSEUDO_PINS);
     if (node == NULL) {
       fprintf(stderr, "Error creating new wiringPi node");
-      return FALSE;
+      return false;
     }
 
     node->fd = shm_open(SHARED_NAME, O_CREAT | O_RDWR, 0666);
     if (node->fd < 0) {
       perror("Error opening shared memory");
-      return FALSE;
+      return false;
     }
 
     if (ftruncate(node->fd, PSEUDO_PINS * sizeof(int)) < 0) {
       perror("Error resizing shared memory");
-      return FALSE;
+      return false;
     }
 
     ptr = mmap(NULL, PSEUDO_PINS * sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED, node->fd, 0);
     if (ptr == MAP_FAILED) {
       perror("Error mapping shared memory");
-      return FALSE;
+      return false;
     }
 
     node->data0 = (unsigned int)(uintptr_t)ptr;
@@ -105,5 +106,5 @@ int pseudoPinsSetup(const int pinBase)
     node->analogRead = myAnalogRead;
     node->analogWrite = myAnalogWrite;
 
-    return TRUE;
+    return true;
 }

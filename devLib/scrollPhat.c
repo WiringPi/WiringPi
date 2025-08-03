@@ -210,19 +210,21 @@ void scrollPhatRectangle (int x1, int y1, int x2, int y2, int colour, int filled
 {
   register int x ;
 
-  if (filled)
-  {
-    /**/ if (x1 == x2)
+  if (filled) {
+    if (x1 == x2) {
       scrollPhatLine (x1, y1, x2, y2, colour) ;
-    else if (x1 < x2)
-      for (x = x1 ; x <= x2 ; ++x)
-	scrollPhatLine (x, y1, x, y2, colour) ;
-    else
-      for (x = x2 ; x <= x1 ; ++x)
-	scrollPhatLine (x, y1, x, y2, colour) ;
-  }
-  else
-  {
+    }
+    else if (x1 < x2) {
+      for (x = x1 ; x <= x2 ; ++x) {
+        scrollPhatLine (x, y1, x, y2, colour) ;
+      }
+    }
+    else {
+      for (x = x2 ; x <= x1 ; ++x) {
+        scrollPhatLine (x, y1, x, y2, colour) ;
+      }
+    }
+  } else {
     scrollPhatLine   (x1, y1, x2, y1, colour) ;
     scrollPhatLineTo (x2, y2, colour) ;
     scrollPhatLineTo (x1, y2, colour) ;

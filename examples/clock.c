@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
@@ -44,11 +45,6 @@
 
 #include <wiringPi.h>
 #include <lcd128x64.h>
-
-#ifndef	TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(1==2)
-#endif
 
 double clockRadius ;
 double thickness, barLen ;
@@ -130,15 +126,15 @@ void drawClockFace (void)
   double d, px1, py1, px2, py2 ;
 
   lcd128x64clear (0) ;
-  lcd128x64circle (0,0, clockRadius, 1, TRUE) ;
-  lcd128x64circle (0,0, clockRadius - thickness, 0, TRUE) ;
+  lcd128x64circle (0,0, clockRadius, 1, true) ;
+  lcd128x64circle (0,0, clockRadius - thickness, 0, true) ;
 
 // The four big indicators for 12,15,30 and 45
 
-  lcd128x64rectangle (- 3,  clockRadius - barLen, 3,  clockRadius,     1, TRUE) ;	// 12
-  lcd128x64rectangle (clockRadius - barLen, 3,  clockRadius, -3, 1, TRUE) ;	// 3
-  lcd128x64rectangle (- 3, -clockRadius + barLen, 3, -clockRadius, 1, TRUE) ;	// 6
-  lcd128x64rectangle (-clockRadius + barLen, 3, -clockRadius, -3, 1, TRUE) ;	// 9
+  lcd128x64rectangle (- 3,  clockRadius - barLen, 3,  clockRadius,     1, true) ;	// 12
+  lcd128x64rectangle (clockRadius - barLen, 3,  clockRadius, -3, 1, true) ;	// 3
+  lcd128x64rectangle (- 3, -clockRadius + barLen, 3, -clockRadius, 1, true) ;	// 6
+  lcd128x64rectangle (-clockRadius + barLen, 3, -clockRadius, -3, 1, true) ;	// 9
 
 
 // Smaller 5 and 1 minute ticks

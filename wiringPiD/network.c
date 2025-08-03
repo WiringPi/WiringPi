@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdarg.h>
@@ -35,9 +36,6 @@
 #include <crypt.h>
 
 #include "network.h"
-
-#define	TRUE	(1==1)
-#define	FALSE	(!TRUE)
 
 // Local data
 

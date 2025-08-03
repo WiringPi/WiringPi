@@ -1,7 +1,9 @@
 # WiringPi Library
+
 Welcome to the WiringPi Library, the highly performant GPIO access library for Raspberry Pi boards. This library is written in C and is designed to provide fast and efficient control of the GPIO pins by directly accessing the hardware registers using DMA. 
 
-**Key Features:** 
+**Key Features:**  
+
 - **Support:** WiringPi supports all Raspberry Pi Boards including Pi 5 ( :construction: On the Pi 5, only the GCLK functionality is currently not supported due to missing documentation of the RP1 chip).
 - **High Performance:** By directly accessing the hardware registers, WiringPi ensures minimal latency and maximum performance for your GPIO operations.
 - **Wide Adoption:** WiringPi is widely used in numerous projects, making it a reliable choice for your Raspberry Pi GPIO needs.
@@ -50,9 +52,23 @@ cd examples
 make <example-name | really-all>
 ```
 
+To use WiringPi in a project with CMake, the following snippet is all that is required provided that WiringPi is installed.
+
+```CMake
+add_executable(example
+    # project sources...
+)
+
+target_link_libraries(
+    example
+
+    PRIVATE wiringPi
+)
+```
+
 The tool `gpio` can be used to set single pins as well as get the state of everything at once:
 
-```
+```none
 pi@wiringdemo:~ $ gpio readall
  +-----+-----+---------+------+---+---Pi 3B--+---+------+---------+-----+-----+
  | BCM | wPi |   Name  | Mode | V | Physical | V | Mode | Name    | wPi | BCM |
@@ -82,6 +98,10 @@ pi@wiringdemo:~ $ gpio readall
  +-----+-----+---------+------+---+---Pi 3B--+---+------+---------+-----+-----+
 ```
 
+## Documentation
+
+[German](./documentation/deutsch/functions.md)  
+[English](./documentation/english/functions.md)
 
 ## Installing
 
@@ -99,42 +119,42 @@ cd WiringPi
 
 # build the package
 ./build debian
-mv debian-template/wiringpi-3.0-1.deb .
+mv debian-template/wiringpi-3.x.deb .
 
 # install it
-sudo apt install ./wiringpi-3.0-1.deb
+sudo apt install ./wiringpi-3.x.deb
 ```
-
 
 ### Prebuilt Binaries
 
 Grab the latest release from [here](https://github.com/WiringPi/WiringPi/releases).
 
-
 Unzip/use the portable prebuilt verison:
 
 ```sh
 # unzip the archive
-tar -xfv wiringpi_3.0.tar.gz
+tar -xfv wiringpi_3.x.tar.gz
 ```
 
 Install the debian package:
 
 ```sh
 # install a dpkg
-sudo apt install ./wiringpi-3.0-1.deb
+sudo apt install ./wiringpi-3.x.deb
 ```
-
 
 ## Ports
 
-wiringPi has been wrapped for multiple languages:
+wiringPi has been wrapped for multiple languages: 
 
-* Node - https://github.com/WiringPi/WiringPi-Node
-* Perl - https://github.com/WiringPi/WiringPi-Perl
-* PHP - https://github.com/WiringPi/WiringPi-PHP
-* Python - https://github.com/WiringPi/WiringPi-Python
-* Ruby - https://github.com/WiringPi/WiringPi-Ruby
+NOTE: these wrappers are _not_ updated and maintained in sync with WiringPi version 3+,
+therefore we cannot guarantee functionality or provide support for a specific implementation.
+
+- Node - [https://github.com/WiringPi/WiringPi-Node](https://github.com/WiringPi/WiringPi-Node)
+- Perl - [https://github.com/WiringPi/WiringPi-Perl](https://github.com/WiringPi/WiringPi-Perl)
+- PHP - [https://github.com/WiringPi/WiringPi-PHP](https://github.com/WiringPi/WiringPi-PHP)
+- Python - [https://github.com/WiringPi/WiringPi-Python](https://github.com/WiringPi/WiringPi-Python)
+- Ruby - [https://github.com/WiringPi/WiringPi-Ruby](https://github.com/WiringPi/WiringPi-Ruby)
 
 ## Support
 
@@ -150,9 +170,9 @@ Please don't email GC2 for reporting issues, you might [contact us](mailto:wirin
 
 This repository is the continuation of 'Gordon's wiringPi 2.5' which has been [deprecated](https://web.archive.org/web/20220405225008/http://wiringpi.com/wiringpi-deprecated/), a while ago.
 
-* The last "old wiringPi" source of Gordon's release can be found at the
+- The last "old wiringPi" source of Gordon's release can be found at the
   [`final_source_2.50`](https://github.com/WiringPi/WiringPi/tree/final_official_2.50) tag.
-* The default `master` branch contains code that has been written since version 2.5
+- The default `master` branch contains code that has been written since version 2.5
   to provide support for newer hardware as well as new features.
 
 :information_source:️ Since 2024, [GC2](https://github.com/GrazerComputerClub) has taken over maintenance of the project, supporting new OS versions as well as current hardware generations. We are dedicated to keeping the arguably best-performing GPIO Library for Raspberry Pi running smoothly. We strive to do our best, but please note that this is a community effort, and we cannot provide any guarantees or take responsibility for implementing specific features you may need.

@@ -100,7 +100,7 @@ int main (void) {
     int pwmr;
     int pwm;
 
-    if (RaspberryPiModel!=PI_MODEL_5) {
+    if (!piRP1Model()) {
       pwmSetMode(PWM_MODE_BAL);
       pwmc  = 1000;
       pwmr  = 1024;
@@ -133,7 +133,7 @@ int main (void) {
     delay(1000);
     MeasureAndCheckFreq("PMW off", 0.0);
 
-    if (RaspberryPiModel!=PI_MODEL_5) {
+    if (!piRP1Model()) {
       pwmc  = 800;
       pwmr  = 2048;
       pwm   =  768;

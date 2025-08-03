@@ -2,14 +2,13 @@
 // Compile: gcc -Wall wiringpi_xotest_test1_spi.c -o wiringpi_xotest_test1_spi -lwiringPi
 
 #include <unistd.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <signal.h>
 #include <time.h>
 #include "wpi_test.h"
 #include <wiringPiSPI.h>
 
-#define TRUE                (1==1)
-#define FALSE               (!TRUE)
 #define CHAN_CONFIG_SINGLE  8
 #define CHAN_CONFIG_DIFF    0
 

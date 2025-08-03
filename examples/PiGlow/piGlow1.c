@@ -25,17 +25,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <poll.h>
 
 #include <wiringPi.h>
 #include <piGlow.h>
 
 #define	PIGLOW_BASE	533
-
-#ifndef	TRUE
-#  define TRUE  (1==1)
-#  define FALSE (!TRUE)
-#endif
 
 
 /*

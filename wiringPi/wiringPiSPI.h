@@ -1,7 +1,7 @@
 /*
  * wiringPiSPI.h:
  *	Simplified SPI access routines
- *	Copyright (c) 2012-2024 Gordon Henderson and contributors
+ *	Copyright (c) 2012-2025 Gordon Henderson and contributors
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/

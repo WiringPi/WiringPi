@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "wiringPi.h"
 
@@ -105,5 +106,5 @@ int sr595Setup (const int pinBase, const int numPins,
   pinMode (clockPin, OUTPUT) ;
   pinMode (latchPin, OUTPUT) ;
 
-  return TRUE ;
+  return true ;
 }

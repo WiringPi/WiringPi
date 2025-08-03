@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
 #include <string.h>
@@ -51,11 +52,6 @@ extern void doReadall    (void) ;
 extern void doAllReadall (void) ;
 extern void doQmode      (int argc, char *argv []) ;
 
-#ifndef TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(1==2)
-#endif
-
 #define	PI_USB_POWER_CONTROL	38
 #define	I2CDETECT		"i2cdetect"
 #define	MODPROBE		"modprobe"
@@ -66,23 +62,27 @@ int wpMode ;
 char *usage = "Usage: gpio -v\n"
               "       gpio -h\n"
               "       gpio [-g|-1] ...\n"
+              "         where -g: pin numbering according to readall BCM column\n"
+              "         where -1: pin numbering according to readall Physical column\n"
+              "         when omitted: pin numbering according to readall wPi column\n"
               "       gpio [-d] ...\n"
               "       [-x extension:params] [[ -x ...]] ...\n"
               "       gpio [-p] <read/write/wb> ...\n"
               "       gpio <mode/read/write/aread/awritewb/pwm/pwmTone/clock> ...\n"
               "       gpio <toggle/blink> <pin>\n"
-	      "       gpio readall\n"
-	      "       gpio wfi <pin> <mode>\n"
-	      "       gpio drive <group> <value>\n"
-	      "       gpio pwm-bal/pwm-ms \n"
-	      "       gpio pwmr <range> \n"
-	      "       gpio pwmc <divider> \n"
-	      "       gpio i2cd/i2cdetect\n"
-	      "       gpio rbx/rbd\n"
-	      "       gpio wb <value>\n"
-	      "       gpio usbp high/low\n"
-	      "       gpio gbr <channel>\n"
-	      "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
+              "       gpio readall\n"
+              "       gpio wfi <pin> <mode>\n"
+              "         where <mode> can be: rising, falling, both\n"
+              "       gpio drive <group> <value>\n"
+              "       gpio pwm-bal/pwm-ms \n"
+              "       gpio pwmr <range> \n"
+              "       gpio pwmc <divider> \n"
+              "       gpio i2cd/i2cdetect\n"
+              "       gpio rbx/rbd\n"
+              "       gpio wb <value>\n"
+              "       gpio usbp high/low\n"
+              "       gpio gbr <channel>\n"
+              "       gpio gbw <channel> <value>" ;	// No trailing newline needed here.
 
 
 #ifdef	NOT_FOR_NOW
@@ -161,7 +161,7 @@ void LOAD_DEPRECATED(const char *progName) {
  *********************************************************************************
  */
 
-static volatile int iterations ;
+static volatile int globalIterations ;
 static volatile int globalCounter ;
 
 void printgpioflush(const char* text) {
@@ -177,59 +177,133 @@ void printgpio(const char* text) {
   }
 }
 
-static void wfi (void) { 
+static void wfi (void) {
   globalCounter++;
-  if(globalCounter>=iterations) {
+  if(globalCounter>=globalIterations) {
     printgpio("finished\n");
-    exit (0) ; 
+    exit(0);
   } else {
     printgpioflush("I");
   }
 }
 
-void doWfi (int argc, char *argv [])
-{
-  int pin, mode;
-  int timeoutSec = 2147483647;
 
-  iterations = 1;
+static void wfi2(struct WPIWfiStatus wfiStatus, void* userdata) {
+  (void)wfiStatus;
+  (void)userdata;
+  globalCounter++;
+  if (globalCounter>=globalIterations) {
+    switch(wfiStatus.edge) {
+      case INT_EDGE_FALLING:
+        printgpio("finished falling\n");
+        break;
+      case INT_EDGE_RISING:
+        printgpio("finished rising\n");
+        break;
+      default:
+        printgpio("finished\n");
+        break;
+    }
+    exit(wfiStatus.edge);
+  } else {
+    printgpioflush("I");
+  }
+}
+
+
+int get_wfi_edge(const char* arg_cmd, const char* arg_mode, int exitcode) {
+    if (strcasecmp (arg_mode, "rising")  == 0) {
+    return INT_EDGE_RISING ;
+  } else if (strcasecmp (arg_mode, "falling") == 0) {
+    return INT_EDGE_FALLING ;
+  } else if (strcasecmp (arg_mode, "both")    == 0) {
+    return INT_EDGE_BOTH ;
+  } else {
+    fprintf (stderr, "%s: wfi: Invalid mode: %s. Should be rising, falling or both\n", arg_cmd, arg_mode) ;
+    exit(exitcode);
+  }
+}
+
+
+void doWfiInternal(const char* cmd, int pin, int mode, int interations, int timeoutSec, int debounce) {
+
+  globalIterations = interations;
   globalCounter = 0;
-  if (argc != 4 && argc != 5 && argc != 6)
-  {
-    fprintf (stderr, "Usage: %s wfi pin mode [interations] [timeout sec.]\n", argv [0]) ;
-    exit (1) ;
-  }
-
-  pin  = atoi (argv [2]) ;
-
-  /**/ if (strcasecmp (argv [3], "rising")  == 0) mode = INT_EDGE_RISING ;
-  else if (strcasecmp (argv [3], "falling") == 0) mode = INT_EDGE_FALLING ;
-  else if (strcasecmp (argv [3], "both")    == 0) mode = INT_EDGE_BOTH ;
-  else
-  {
-    fprintf (stderr, "%s: wfi: Invalid mode: %s. Should be rising, falling or both\n", argv [1], argv [3]) ;
-    exit (1) ;
-  }
-  if (argc>=5) {
-    iterations = atoi(argv [4]);
-  }
-  if (argc>=6) {
-    timeoutSec = atoi(argv [5]);
-  }
-
-  if (wiringPiISR (pin, mode, &wfi) < 0)
-  {
-    fprintf (stderr, "%s: wfi: Unable to setup ISR: %s\n", argv [1], strerror (errno)) ;
-    exit (1) ;
+  if (debounce>=0) {
+    // V2 function
+    if (wiringPiISR2(pin, mode, &wfi2, debounce, NULL) < 0) {
+      fprintf (stderr, "%s: Unable to setup ISR2: %s\n", cmd, strerror (errno));
+      exit(1);
+    }
+  } else {
+    // classic function
+    if (wiringPiISR(pin, mode, &wfi) < 0) {
+      fprintf (stderr, "%s: Unable to setup ISR: %s\n", cmd, strerror (errno));
+      exit(1);
+    }
   }
 
   printgpio("wait for interrupt function call\n");
   for (int Sec=0; Sec<timeoutSec; ++Sec) {
     printgpioflush(".");
-    delay (999);
+    delay(999);
   }
   printgpio("\nstopping wait for interrupt\n");
-  wiringPiISRStop (pin); 
+  wiringPiISRStop(pin);
+}
+
+
+void doWfi(int argc, char *argv [])
+{
+  int pin, mode, interations=1;
+  int timeoutSec = 2147483647;
+
+  if (argc != 4 && argc != 5 && argc != 6) {
+    fprintf (stderr, "Usage: %s wfi pin mode [interations] [timeout sec.]\n", argv [0]) ;
+    exit(1);
+  }
+
+  pin  = atoi (argv[2]) ;
+  mode = get_wfi_edge(argv[1], argv[3], 1);
+  if (argc>=5) {
+    interations = atoi(argv[4]);
+  }
+  if (argc>=6) {
+    timeoutSec = atoi(argv[5]);
+  }
+
+  doWfiInternal(argv[1], pin, mode, interations, timeoutSec, -1);
+}
+
+
+void doWfi2(int argc, char *argv [])
+{
+  int pin, mode, interations=1, debounce=50000;
+  int timeoutSec = 2147483647;
+
+  if (argc != 4 && argc != 5 && argc != 6 && argc != 7) {
+    fprintf (stderr, "Usage: %s wfis pin mode [debounce period microsec.] [interations] [timeout sec.]\n", argv [0]);
+    exit(-2);
+  }
+
+  pin  = atoi (argv[2]) ;
+  mode = get_wfi_edge(argv[1], argv[3], -1);
+  if (argc>=5) {
+    debounce = atoi(argv[4]);
+  }
+  if (argc>=6) {
+    interations = atoi(argv[5]);
+  }
+  if (argc>=7) {
+    timeoutSec = atoi(argv[6]);
+  }
+  if (timeoutSec<0 || interations<0 || debounce<0) {
+    fprintf (stderr, " invalid parameter\n");
+    exit(-2);
+  }
+
+  doWfiInternal(argv[1], pin, mode, interations, timeoutSec, debounce);
+  exit(-1); // timeout
 }
 
 
@@ -292,7 +366,7 @@ void doMode (int argc, char *argv [])
 
   mode = argv [3] ;
 
-  /**/ if (strcasecmp (mode, "in")      == 0) pinMode         (pin, INPUT) ;
+  if      (strcasecmp (mode, "in")      == 0) pinMode         (pin, INPUT) ;
   else if (strcasecmp (mode, "input")   == 0) pinMode         (pin, INPUT) ;
   else if (strcasecmp (mode, "out")     == 0) pinMode         (pin, OUTPUT) ;
   else if (strcasecmp (mode, "output")  == 0) pinMode         (pin, OUTPUT) ;
@@ -524,14 +598,14 @@ static void doWrite (int argc, char *argv [])
 
   pin = atoi (argv [2]) ;
 
-  /**/ if ((strcasecmp (argv [3], "up") == 0) || (strcasecmp (argv [3], "on") == 0))
+  if      ((strcasecmp (argv [3], "up") == 0) || (strcasecmp (argv [3], "on") == 0))
     val = 1 ;
   else if ((strcasecmp (argv [3], "down") == 0) || (strcasecmp (argv [3], "off") == 0))
     val = 0 ;
   else
     val = atoi (argv [3]) ;
 
-  /**/ if (val == 0)
+  if (val == 0)
     digitalWrite (pin, LOW) ;
   else
     digitalWrite (pin, HIGH) ;
@@ -896,6 +970,10 @@ static void doVersion (char *argv [])
 
 }
 
+static void doIs40Pin ()
+{
+  exit(piBoard40Pin() ? EXIT_SUCCESS : EXIT_FAILURE);
+}
 
 /*
  * main:
@@ -910,12 +988,12 @@ int main (int argc, char *argv [])
   if (getenv ("WIRINGPI_DEBUG") != NULL)
   {
     printf ("gpio: wiringPi debug mode enabled\n") ;
-    wiringPiDebug = TRUE ;
+    wiringPiDebug = true ;
   }
   if (getenv ("GPIO_DEBUG") != NULL)
   {
     printf ("gpio: gpio debug mode enabled\n") ;
-    gpioDebug = TRUE ;
+    gpioDebug = true ;
   }
 
   if (argc == 1)
@@ -981,7 +1059,7 @@ int main (int argc, char *argv [])
 
 // Initial test for /sys/class/gpio operations:  --> deprecated, empty but still there
 
-  /**/ if (strcasecmp (argv [1], "exports"    ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
+  if      (strcasecmp (argv [1], "exports"    ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
   else if (strcasecmp (argv [1], "export"     ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
   else if (strcasecmp (argv [1], "edge"       ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
   else if (strcasecmp (argv [1], "unexport"   ) == 0)	{ SYSFS_DEPRECATED(argv[0]);	return 0 ; }
@@ -1012,7 +1090,7 @@ int main (int argc, char *argv [])
 
 // Check for -g argument
 
-  /**/ if (strcasecmp (argv [1], "-g") == 0)
+  if (strcasecmp (argv [1], "-g") == 0)
   {
     wiringPiSetupGpio () ;
 
@@ -1077,7 +1155,7 @@ int main (int argc, char *argv [])
       exit (EXIT_FAILURE) ;
     }
 
-    if (!loadWPiExtension (argv [0], argv [2], TRUE))
+    if (!loadWPiExtension (argv [0], argv [2], true))
     {
       fprintf (stderr, "%s: Extension load failed: %s\n", argv [0], strerror (errno)) ;
       exit (EXIT_FAILURE) ;
@@ -1098,7 +1176,7 @@ int main (int argc, char *argv [])
 
 // Core wiringPi functions
 
-  /**/ if (strcasecmp (argv [1], "mode"   ) == 0) doMode      (argc, argv) ;
+  if      (strcasecmp (argv [1], "mode"   ) == 0) doMode      (argc, argv) ;
   else if (strcasecmp (argv [1], "read"   ) == 0) doRead      (argc, argv) ;
   else if (strcasecmp (argv [1], "write"  ) == 0) doWrite     (argc, argv) ;
   else if (strcasecmp (argv [1], "pwm"    ) == 0) doPwm       (argc, argv) ;
@@ -1127,10 +1205,12 @@ int main (int argc, char *argv [])
   else if (strcasecmp (argv [1], "i2cd"     ) == 0) doI2Cdetect  (argv [0]) ;
   else if (strcasecmp (argv [1], "reset"    ) == 0) doReset      (argv [0]) ;
   else if (strcasecmp (argv [1], "wb"       ) == 0) doWriteByte  (argc, argv) ;
-  else if (strcasecmp (argv [1], "rbx"      ) == 0) doReadByte   (argc, argv, TRUE) ;
-  else if (strcasecmp (argv [1], "rbd"      ) == 0) doReadByte   (argc, argv, FALSE) ;
+  else if (strcasecmp (argv [1], "rbx"      ) == 0) doReadByte   (argc, argv, true) ;
+  else if (strcasecmp (argv [1], "rbd"      ) == 0) doReadByte   (argc, argv, false) ;
   else if (strcasecmp (argv [1], "clock"    ) == 0) doClock      (argc, argv) ;
+  else if (strcasecmp (argv [1], "wfis"     ) == 0) doWfi2       (argc, argv) ;
   else if (strcasecmp (argv [1], "wfi"      ) == 0) doWfi        (argc, argv) ;
+  else if (strcasecmp (argv [1], "is40pin"  ) == 0) doIs40Pin    () ;
   else
   {
     fprintf (stderr, "%s: Unknown command: %s.\n", argv [0], argv [1]) ;

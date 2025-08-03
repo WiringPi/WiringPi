@@ -1,7 +1,7 @@
 /*
  * wiringPiSPI.c:
  *	Simplified SPI access routines
- *	Copyright (c) 2012-2015 Gordon Henderson
+ *	Copyright (c) 2012-2025 Gordon Henderson and contributors
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/
@@ -194,6 +194,11 @@ int wiringPiSPISetupMode (int channel, int speed, int mode) {
  *	Open the SPI device, and set it up, etc. in the default MODE 0
  *********************************************************************************
  */
+
+int wiringPiSPIxSetup (const int number, const int channel, const int speed) {
+  return wiringPiSPIxSetupMode(number, channel, speed, 0) ;
+}
+
 
 int wiringPiSPISetup (int channel, int speed) {
   return wiringPiSPIxSetupMode(0, channel, speed, 0) ;

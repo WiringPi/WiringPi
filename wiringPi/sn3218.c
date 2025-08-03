@@ -22,6 +22,8 @@
  ***********************************************************************
  */
 
+#include <stdbool.h>
+
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
 
@@ -55,7 +57,7 @@ int sn3218Setup (const int pinBase)
   struct wiringPiNodeStruct *node ;
 
   if ((fd = wiringPiI2CSetup (0x54)) < 0)
-    return FALSE ;
+    return false ;
 
 // Setup the chip - initialise all 18 LEDs to off
 
@@ -71,5 +73,5 @@ int sn3218Setup (const int pinBase)
   node->fd          = fd ;
   node->analogWrite = myAnalogWrite ;
 
-  return TRUE ;
+  return true ;
 }

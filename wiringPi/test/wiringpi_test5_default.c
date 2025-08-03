@@ -30,7 +30,7 @@ void SetAndCheckMode(int pin, int mode) {
 		case PM_OFF:
 			pinMode(pin, PM_OFF);
 			AltGpio = getPinModeAlt(pin);
-			CheckSame("Pin mode off(input)", AltGpio, (PI_MODEL_5 == RaspberryPiModel) ?  WPI_NONE : WPI_ALT_INPUT);
+			CheckSame("Pin mode off(input)", AltGpio, (piRP1Model()) ?  WPI_NONE : WPI_ALT_INPUT);
 			break;
 		default:
 			pinMode(pin, mode);
@@ -53,8 +53,8 @@ int main (void) {
 	int rev, mem, maker, overVolted;
 	piBoardId(&RaspberryPiModel, &rev, &mem, &maker, &overVolted);
 	CheckNotSame("Model: ", RaspberryPiModel, -1);
-	if (PI_MODEL_5 == RaspberryPiModel) {
-		printf("Raspberry Pi 5 with RP1 found\n");
+	if (piRP1Model()) {
+		printf("Raspberry Pi with RP1 chip found\n");
 	} else {
 		printf("Raspberry Pi with BCM GPIO found (not Pi 5)\n");
 	}
@@ -66,7 +66,7 @@ int main (void) {
 
 	enum WPIPinAlt AltGpio = WPI_ALT_UNKNOWN;
 	AltGpio = getPinModeAlt(23);
-	CheckSame("Pin mode default", AltGpio, PI_MODEL_5 == RaspberryPiModel ? WPI_NONE : WPI_ALT_INPUT);
+	CheckSame("Pin mode default", AltGpio, piRP1Model() ? WPI_NONE : WPI_ALT_INPUT);
 
 	SetAndCheckMode(GPIOIN, INPUT);
 	SetAndCheckMode(GPIO, OUTPUT);

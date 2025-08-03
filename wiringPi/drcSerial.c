@@ -23,6 +23,7 @@
  */
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <time.h>
 #include <string.h>
 #include <errno.h>
@@ -41,7 +42,7 @@
 
 static void myPinMode (struct wiringPiNodeStruct *node, int pin, int mode)
 {
-  /**/ if (mode == OUTPUT)
+  if      (mode == OUTPUT)
     serialPutchar (node->fd, 'o') ;       // Input
   else if (mode == PWM_OUTPUT)
     serialPutchar (node->fd, 'p') ;       // PWM
@@ -66,7 +67,7 @@ static void myPullUpDnControl (struct wiringPiNodeStruct *node, int pin, int mod
   serialPutchar (node->fd, 'i' ) ;
   serialPutchar (node->fd, pin - node->pinBase) ;
 
-  /**/ if (mode == PUD_UP)
+  if      (mode == PUD_UP)
   {
     serialPutchar (node->fd, '1') ;
     serialPutchar (node->fd, pin - node->pinBase) ;
@@ -151,7 +152,7 @@ int drcSetupSerial (const int pinBase, const int numPins, const char *device, co
   struct wiringPiNodeStruct *node ;
 
   if ((fd = serialOpen (device, baud)) < 0)
-    return FALSE ;
+    return false ;
 
   delay (10) ;	// May need longer if it's an Uno that reboots on the open...
 
@@ -160,7 +161,7 @@ int drcSetupSerial (const int pinBase, const int numPins, const char *device, co
   while (serialDataAvail (fd))
     (void)serialGetchar (fd) ;
 
-  ok = FALSE ;
+  ok = false ;
   for (tries = 1 ; (tries < 5) && (!ok) ; ++tries)
   {
     serialPutchar (fd, '@') ;		// Ping
@@ -170,7 +171,7 @@ int drcSetupSerial (const int pinBase, const int numPins, const char *device, co
       {
         if (serialGetchar (fd) == '@')
         {
-          ok = TRUE ;
+          ok = true ;
           break ;
         }
       }
@@ -179,7 +180,7 @@ int drcSetupSerial (const int pinBase, const int numPins, const char *device, co
   if (!ok)
   {
     serialClose (fd) ;
-    return FALSE ;
+    return false ;
   }
 
   node = wiringPiNewNode (pinBase, numPins) ;
@@ -192,5 +193,5 @@ int drcSetupSerial (const int pinBase, const int numPins, const char *device, co
   node->digitalWrite    = myDigitalWrite ;
   node->pwmWrite        = myPwmWrite ;
 
-  return TRUE ;
+  return true ;
 }

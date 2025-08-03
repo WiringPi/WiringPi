@@ -1,7 +1,7 @@
 /*
  * wiringPi.h:
  *	Arduino like Wiring library for the Raspberry Pi.
- *	Copyright (c) 2012-2017 Gordon Henderson
+ *	Copyright (c) 2012-2025 Gordon Henderson
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/
@@ -24,13 +24,14 @@
 #ifndef	__WIRING_PI_H__
 #define	__WIRING_PI_H__
 
-// C doesn't have true/false by default and I can never remember which
-//	way round they are, so ...
-//	(and yes, I know about stdbool.h but I like capitals for these and I'm old)
+#include <stdbool.h>
 
-#ifndef	TRUE
-#  define	TRUE	(1==1)
-#  define	FALSE	(!TRUE)
+// macros retained for old code compatibility, we now use stdbool.h
+#ifndef TRUE
+  #define TRUE true
+#endif
+#ifndef FALSE
+  #define FALSE false
 #endif
 
 // GCC warning suppressor
@@ -93,35 +94,44 @@
 // Pi model types and version numbers
 //	Intended for the GPIO program Use at your own risk.
 // https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#new-style-revision-codes
+// https://github.com/raspberrypi/documentation/blob/develop/documentation/asciidoc/computers/raspberry-pi/revision-codes.adoc
 
-#define	PI_MODEL_A		 0
-#define	PI_MODEL_B		 1
-#define	PI_MODEL_AP		 2
-#define	PI_MODEL_BP		 3
-#define	PI_MODEL_2		 4
-#define	PI_ALPHA		 5
-#define	PI_MODEL_CM		 6
-#define	PI_MODEL_07		 7
-#define	PI_MODEL_3B		 8
-#define	PI_MODEL_ZERO		 9
-#define	PI_MODEL_CM3		10
-#define	PI_MODEL_ZERO_W		12
-#define	PI_MODEL_3BP 		13
-#define	PI_MODEL_3AP 		14
-#define	PI_MODEL_CM3P 		16
-#define	PI_MODEL_4B 		17
-#define	PI_MODEL_ZERO_2W	18
-#define	PI_MODEL_400		19
-#define	PI_MODEL_CM4		20
-#define	PI_MODEL_CM4S		21
-#define	PI_MODEL_5		  23
+#define	PI_MODEL_A		    0
+#define	PI_MODEL_B		    1
+#define	PI_MODEL_AP		    2
+#define	PI_MODEL_BP		    3
+#define	PI_MODEL_2		    4
+#define	PI_ALPHA		      5
+#define	PI_MODEL_CM		    6
 
-#define	PI_VERSION_1		0
+#define	PI_MODEL_3B		    8
+#define	PI_MODEL_ZERO		  9
+#define	PI_MODEL_CM3		 10
+
+#define	PI_MODEL_ZERO_W	 12
+#define	PI_MODEL_3BP 		 13
+#define	PI_MODEL_3AP 		 14
+
+#define	PI_MODEL_CM3P 	 16
+#define	PI_MODEL_4B 		 17
+#define	PI_MODEL_ZERO_2W 18
+#define	PI_MODEL_400		 19
+#define	PI_MODEL_CM4		 20
+#define	PI_MODEL_CM4S		 21
+
+#define	PI_MODEL_5		   23
+#define	PI_MODEL_CM5	   24
+#define	PI_MODEL_500	   25
+#define	PI_MODEL_CM5L	   26
+
+#define PI_MODELS_MAX    27
+
+#define	PI_VERSION_1		  0
 #define	PI_VERSION_1_1		1
 #define	PI_VERSION_1_2		2
-#define	PI_VERSION_2		3
+#define	PI_VERSION_2		  3
 
-#define	PI_MAKER_SONY		0
+#define	PI_MAKER_SONY		  0
 #define	PI_MAKER_EGOMAN		1
 #define	PI_MAKER_EMBEST		2
 #define	PI_MAKER_UNKNOWN	3
@@ -129,7 +139,7 @@
 #define GPIO_LAYOUT_PI1_REV1 1   //Pi 1 A/B Revision 1, 1.1, CM
 #define GPIO_LAYOUT_DEFAULT  2
 
-extern const char *piModelNames    [24] ;
+extern const char *piModelNames    [PI_MODELS_MAX] ;
 extern const char *piProcessor     [ 5] ;
 extern const char *piRevisionNames [16] ;
 extern const char *piMakerNames    [16] ;
@@ -167,15 +177,13 @@ struct wiringPiNodeStruct
   unsigned int data2 ;	//  ditto
   unsigned int data3 ;	//  ditto
 
-           void   (*pinMode)          (struct wiringPiNodeStruct *node, int pin, int mode) ;
-           void   (*pullUpDnControl)  (struct wiringPiNodeStruct *node, int pin, int mode) ;
-           int    (*digitalRead)      (struct wiringPiNodeStruct *node, int pin) ;
-//unsigned int    (*digitalRead8)     (struct wiringPiNodeStruct *node, int pin) ;
-           void   (*digitalWrite)     (struct wiringPiNodeStruct *node, int pin, int value) ;
-//         void   (*digitalWrite8)    (struct wiringPiNodeStruct *node, int pin, int value) ;
-           void   (*pwmWrite)         (struct wiringPiNodeStruct *node, int pin, int value) ;
-           int    (*analogRead)       (struct wiringPiNodeStruct *node, int pin) ;
-           void   (*analogWrite)      (struct wiringPiNodeStruct *node, int pin, int value) ;
+  void (*pinMode)         (struct wiringPiNodeStruct *node, int pin, int mode) ;
+  void (*pullUpDnControl) (struct wiringPiNodeStruct *node, int pin, int mode) ;
+  int  (*digitalRead)     (struct wiringPiNodeStruct *node, int pin) ;
+  void (*digitalWrite)    (struct wiringPiNodeStruct *node, int pin, int value) ;
+  void (*pwmWrite)        (struct wiringPiNodeStruct *node, int pin, int value) ;
+  int  (*analogRead)      (struct wiringPiNodeStruct *node, int pin) ;
+  void (*analogWrite)     (struct wiringPiNodeStruct *node, int pin, int value) ;
 
   struct wiringPiNodeStruct *next ;
 } ;
@@ -246,18 +254,16 @@ enum WPIPinAlt {
 };
 
 
-extern          int  wiringPiGpioDeviceGetFd();               //Interface V3.3
-extern          void pinModeAlt          (int pin, int mode) ;
-extern          enum WPIPinAlt getPinModeAlt       (int pin) ;  // Interface V3.5, same as getAlt but wie enum
-extern          void pinMode             (int pin, int mode) ;
-extern          void pullUpDnControl     (int pin, int pud) ;
-extern          int  digitalRead         (int pin) ;
-extern          void digitalWrite        (int pin, int value) ;
-extern unsigned int  digitalRead8        (int pin) ;
-extern          void digitalWrite8       (int pin, int value) ;
-extern          void pwmWrite            (int pin, int value) ;
-extern          int  analogRead          (int pin) ;
-extern          void analogWrite         (int pin, int value) ;
+extern int  wiringPiGpioDeviceGetFd();               //Interface V3.3
+extern void pinModeAlt          (int pin, int mode) ;
+extern enum WPIPinAlt getPinModeAlt       (int pin) ;  // Interface V3.5, same as getAlt but wie enum
+extern void pinMode             (int pin, int mode) ;
+extern void pullUpDnControl     (int pin, int pud) ;
+extern int  digitalRead         (int pin) ;
+extern void digitalWrite        (int pin, int value) ;
+extern void pwmWrite            (int pin, int value) ;
+extern int  analogRead          (int pin) ;
+extern void analogWrite         (int pin, int value) ;
 
 // PiFace specifics
 //	(Deprecated)
@@ -271,8 +277,9 @@ extern          int  piGpioLayout        (void) ;
 extern          int  piBoardRev          (void) ;	// Deprecated, but does the same as piGpioLayout
 extern          void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
 extern          int  piBoard40Pin        (void) ;                   // Interface V3.7
-extern          int  wpiPinToGpio        (int wpiPin) ;
-extern          int  physPinToGpio       (int physPin) ;
+extern          int  piRP1Model          (void) ;                   // Interface V3.14
+extern          int  wpiPinToGpio        (int wpiPin) ;   // please don't use outside 0-63 and on RP1
+extern          int  physPinToGpio       (int physPin) ;  // please don't use outside 0-63 and on RP1
 extern          void setPadDrive         (int group, int value) ;
 extern          void setPadDrivePin      (int pin, int value);     // Interface V3.0
 extern          int  getAlt              (int pin) ;
@@ -287,12 +294,20 @@ extern          void digitalWriteByte    (int value) ;
 extern          void digitalWriteByte2   (int value) ;
 
 // Interrupts
-//	(Also Pi hardware specific)
+// status returned from waitForInterruptV2    V3.16
+struct WPIWfiStatus {
+    int statusOK;               // -1: error (return of 'poll' command), 0: timeout, 1: irq processed, next data values are valid if needed
+    unsigned int pinBCM;        // gpio as BCM pin
+    int edge;                   // INT_EDGE_FALLING or INT_EDGE_RISING
+    long long int timeStamp_us; // time stamp in microseconds
+};
 
-extern int  waitForInterrupt    (int pin, int mS) ;
+//extern int  waitForInterrupt    (int pin, int ms);  unknown if still working, disabled for V3.16, please contact developer via github
 extern int  wiringPiISR         (int pin, int mode, void (*function)(void)) ;
+extern struct WPIWfiStatus  waitForInterrupt2(int pin, int edgeMode, int ms, unsigned long debounce_period_us) ;   // V3.16
+extern int  wiringPiISR2       (int pin, int edgeMode, void (*function)(struct WPIWfiStatus wfiStatus, void* userdata), unsigned long debounce_period_us, void* userdata) ;  // V3.16
 extern int  wiringPiISRStop     (int pin) ;  //V3.2
-extern int  waitForInterruptClose(int pin) ; //V3.2
+extern int  waitForInterruptClose(int pin) ; //V3.2 legacy use wiringPiISRStop
 
 // Threads
 
@@ -306,8 +321,8 @@ extern int piHiPri (const int pri) ;
 
 // Extras from arduino land
 
-extern void         delay             (unsigned int howLong) ;
-extern void         delayMicroseconds (unsigned int howLong) ;
+extern void         delay             (unsigned int ms) ;
+extern void         delayMicroseconds (unsigned int us) ;
 extern unsigned int millis            (void) ;
 extern unsigned int micros            (void) ;
 

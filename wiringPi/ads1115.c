@@ -35,6 +35,7 @@
 #include <byteswap.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <wiringPi.h>
 #include <wiringPiI2C.h>
@@ -252,7 +253,7 @@ static void myAnalogWrite (struct wiringPiNodeStruct *node, int pin, int data)
 
   reg = chan + 2 ;
 
-  /**/ if (data < -32767)
+  if      (data < -32767)
     ndata = -32767 ;
   else if (data > 32767)
     ndata = 32767 ;
@@ -278,7 +279,7 @@ int ads1115Setup (const int pinBase, int i2cAddr)
   int fd ;
 
   if ((fd = wiringPiI2CSetup (i2cAddr)) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, 8) ;
 
@@ -289,5 +290,5 @@ int ads1115Setup (const int pinBase, int i2cAddr)
   node->analogWrite  = myAnalogWrite ;
   node->digitalWrite = myDigitalWrite ;
 
-  return TRUE ;
+  return true ;
 }

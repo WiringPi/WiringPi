@@ -205,7 +205,7 @@ int main (int argc, char *argv [])
 
   if (argc == 2)
   {
-    /**/ if (strcmp (argv [1], "-slc") == 0)
+    if      (strcmp (argv [1], "-slc") == 0)
       return setLinuxClock () ;
     else if (strcmp (argv [1], "-sdsc") == 0)
       return setDSclock () ;
