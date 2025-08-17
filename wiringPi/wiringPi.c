@@ -1501,8 +1501,7 @@ void pwmSetMode (int mode)
 
 /*
  * pwmSetRange:
- *	Set the PWM range register. We set both range registers to the same
- *	value. If you want different in your own code, then write your own.
+ *	Set the PWM range register for all channels.
  *********************************************************************************
  */
 
@@ -1551,8 +1550,7 @@ void pwmSetRange (unsigned int range) {
 
 /*
  * pwmSetRangeChannel:
- *	Set the PWM range register. We set both range registers to the same
- *	value. If you want different in your own code, then write your own.
+ *	Set the PWM range register for only the specified channel.
  *********************************************************************************
  */
 
@@ -1572,7 +1570,7 @@ void pwmSetRangeChannel (unsigned int range, unsigned int channel) {
         return;
       }
 
-      const unsigned int RP1_PWM0_RANGE_CHAN[4] = {
+      const unsigned int RP1_PWM0_RANGE_CHAN[4] = { // Temporary stand-in before merging #392
         RP1_PWM0_CHAN0_RANGE,
         RP1_PWM0_CHAN1_RANGE,
         RP1_PWM0_CHAN2_RANGE,
