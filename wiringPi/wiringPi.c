@@ -1573,24 +1573,31 @@ void pwmSetRangeChannel (unsigned int range, unsigned int channel) {
         return;
       }
 
-      pwm[RP1_PWM0_CHAN0_RANGE] = range;
-      pwm[RP1_PWM0_CHAN1_RANGE] = range;
-      pwm[RP1_PWM0_CHAN2_RANGE] = range;
-      pwm[RP1_PWM0_CHAN3_RANGE] = range;
-      readback = pwm[RP1_PWM0_CHAN0_RANGE];
+      const unsigned int RP1_PWM0_RANGE_CHAN[4] = {
+        RP1_PWM0_CHAN0_RANGE,
+        RP1_PWM0_CHAN1_RANGE,
+        RP1_PWM0_CHAN2_RANGE,
+        RP1_PWM0_CHAN3_RANGE
+      };
 
-    } else {
+      pwm[RP1_PWM0_RANGE_CHAN[channel]] = range;
+      readback = pwm[RP1_PWM0_RANGE_CHAN[channel]];
+
+    } else {  // BCM2711 Model
 
       if (channel > 1) {
         fputs("wiringPi: pwmSetRangeChannel channel invalid, ignoring\n", stderr);
         return;
       }
 
-      pwm[PWM0_RANGE] = range;
+      const unsigned int BCM2711_PWM0_RANGE_CHAN[2] = {
+        PWM0_RANGE,
+        PWM1_RANGE
+      };
+
+      pwm[BCM2711_PWM0_RANGE_CHAN[channel]] = range;
       delayMicroseconds(10);
-      pwm[PWM1_RANGE] = range;
-      delayMicroseconds(10);
-      readback = pwm[PWM0_RANGE];
+      readback = pwm[BCM2711_PWM0_RANGE_CHAN[channel]];
 
     }
 
