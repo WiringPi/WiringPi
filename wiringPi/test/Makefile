@@ -1,15 +1,19 @@
+SHELL := /bin/bash
+
 CC = gcc
 CFLAGS = -Wall
 LDFLAGS =
 
+pwmtests = wiringpi_test0_version wiringpi_test8_pwm wiringpi_test81_pwm
+
 # Need BCM19 <-> BCM26, +PWM: BCM12 <-> BCM13, BCM18 <-> BCM17 connected (1kOhm)
-tests = wiringpi_test0_version wiringpi_test1_sysfs wiringpi_test2_sysfs wiringpi_test3_device_wpi wiringpi_test4_device_phys wiringpi_test5_default wiringpi_test6_isr wiringpi_test61_isr2 wiringpi_test62_isr_wpin wiringpi_test11_pulseIn wiringpi_test7_bench wiringpi_test8_pwm wiringpi_test9_pwm
+tests = wiringpi_test0_version wiringpi_test1_sysfs wiringpi_test2_sysfs wiringpi_test3_device_wpi wiringpi_test4_device_phys wiringpi_test5_default wiringpi_test6_isr wiringpi_test61_isr2 wiringpi_test62_isr_wpin wiringpi_test7_bench wiringpi_test8_pwm wiringpi_test81_pwm wiringpi_test82_pwm
 
 # Need XO hardware
-xotests = wiringpi_xotest_test1_spi wiringpi_i2c_test1_pcf8574 wiringpi_test8_pwm wiringpi_test9_pwm
+xotests = wiringpi_xotest_test1_spi wiringpi_i2c_test1_pcf8574 wiringpi_test8_pwm wiringpi_test81_pwm wiringpi_test82_pwm
 
 # Need PiFace hardware and BCM23 <-> BCM24 , BCM18 <-> BCM17 connected (1kOhm), and PiFace Out7<->In4, Out6<->In5, R0_NO<->In6, R0_NO<->In7, R_C<-100Ohm->GND
-pifacetests = wiringpi_piface_test1 wiringpi_test8_pwm wiringpi_test9_pwm
+pifacetests = wiringpi_piface_test1 wiringpi_test8_pwm wiringpi_test81_pwm wiringpi_test82_pwm
 
 all: $(tests) $(xotests) $(pifacetests) .gitignore
 
@@ -49,8 +53,11 @@ wiringpi_test7_bench:
 wiringpi_test8_pwm:
 	${CC} ${CFLAGS} wiringpi_test8_pwm.c -o wiringpi_test8_pwm -lwiringPi
 
-wiringpi_test9_pwm:
-	${CC} ${CFLAGS} wiringpi_test9_pwm.c -o wiringpi_test9_pwm -lwiringPi
+wiringpi_test81_pwm:
+	${CC} ${CFLAGS} wiringpi_test81_pwm.c -o wiringpi_test81_pwm -lwiringPi
+
+wiringpi_test82_pwm:
+	${CC} ${CFLAGS} wiringpi_test82_pwm.c -o wiringpi_test82_pwm -lwiringPi
 
 wiringpi_piface_test1:
 	${CC} ${CFLAGS} wiringpi_piface_test1.c -o wiringpi_piface_test1 -lwiringPi -lwiringPiDev
@@ -61,12 +68,31 @@ wiringpi_xotest_test1_spi:
 wiringpi_i2c_test1_pcf8574:
 	${CC} ${CFLAGS} wiringpi_i2c_test1_pcf8574.c -o wiringpi_i2c_test1_pcf8574 -lwiringPi
 
+pwmtest:
+	@error_state=false ; \
+	for t in $(pwmtests) ; do \
+		echo === unit test: $${t} === ; \
+		if [[ $${t} = *_pwm ]]; then \
+			time sudo ./$${t} ; \
+		else \
+			time ./$${t} ; \
+		fi ; \
+		if [ $$? -ne 0 ]; then \
+		  error_state=true ; \
+		fi ; \
+		echo  ; echo  ; \
+	done ; \
+	if [ "$$error_state" = true ]; then \
+		echo "\n\e[5mPWM SHORT TEST FAILED\e[0m\n"; \
+	else \
+		echo "\n\e[5mPWM SHORT TEST SUCCESS\e[0m\n"; \
+	fi
 
 test:
 	@error_state=false ; \
 	for t in $(tests) ; do \
 		echo === unit test: $${t} === ; \
-		if [ $${t} = *"8_pwm" ] || [ $${t} = *"9_pwm" ]; then \
+		if [[ $${t} = *_pwm ]]; then \
 			time sudo ./$${t} ; \
 		else \
 			time ./$${t} ; \
@@ -86,7 +112,7 @@ xotest:
 	@error_state=false ; \
 	for t in $(tests) $(xotests)  ; do \
 		echo === XO unit test: $${t} === ; \
-		if [ $${t} = *"8_pwm" ] || [ $${t} = *"9_pwm" ]; then \
+		if [[ $${t} = *_pwm ]]; then \
 			time sudo ./$${t} ; \
 		else \
 			time ./$${t} ; \
@@ -106,7 +132,7 @@ pifacetest:
 	@error_state=false ; \
 	for t in $(tests) $(pifacetests)  ; do \
 		echo === PiFace unit test: $${t} === ; \
-		if [ $${t} = *"8_pwm" ] || [ $${t} = *"9_pwm" ]; then \
+		if [[ $${t} = *_pwm ]]; then \
 			time sudo ./$${t} ; \
 		else \
 			time ./$${t} ; \

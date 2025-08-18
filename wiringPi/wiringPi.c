@@ -1527,7 +1527,8 @@ void pwmSetRange (unsigned int range) {
       pwm[RP1_PWM0_CHAN3_RANGE] = range;
 
       if (wiringPiDebug) {
-        fprintf (stderr, "PWM range: %u. Current registers: 0x%08X, 0x%08X, 0x%08X, 0x%08X\n", range, pwm[RP1_PWM0_CHAN0_RANGE], pwm[RP1_PWM0_CHAN1_RANGE], pwm[RP1_PWM0_CHAN2_RANGE], pwm[RP1_PWM0_CHAN3_RANGE]);
+        printf("PWM range: %u. Current registers[ch. 0-3]: 0x%08X, 0x%08X, 0x%08X, 0x%08X\n", range, 
+          pwm[RP1_PWM0_CHAN0_RANGE], pwm[RP1_PWM0_CHAN1_RANGE], pwm[RP1_PWM0_CHAN2_RANGE], pwm[RP1_PWM0_CHAN3_RANGE]);
       }
 
     } else {
@@ -1538,7 +1539,7 @@ void pwmSetRange (unsigned int range) {
       delayMicroseconds (10);
 
       if (wiringPiDebug) {
-        fprintf (stderr, "PWM range: %u. Current registers: 0x%08X, 0x%08X\n", range, pwm[PWM0_RANGE], pwm[PWM1_RANGE]);
+        printf("PWM range: %u. Current registers[ch. 0-1]: 0x%08X, 0x%08X\n", range, pwm[PWM0_RANGE], pwm[PWM1_RANGE]);
       }
 
     }
@@ -1549,24 +1550,24 @@ void pwmSetRange (unsigned int range) {
 
 
 /*
- * pwmSetRangeChannel:
+ * pwmSetChannelRange:
  *	Set the PWM range register for only the specified channel.
  *********************************************************************************
  */
 
-void pwmSetRangeChannel (unsigned int range, unsigned int channel) {
+void pwmSetChannelRange (unsigned int channel, unsigned int range) {
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO)) {
 
     if (!pwm) {
-      fputs("wiringPi: pwmSetRangeChannel called but no pwm memory available, ignoring\n", stderr);
+      fputs("wiringPi: pwmSetChannelRange called but no pwm memory available, ignoring\n", stderr);
       return;
     }
 
     if (piRP1Model()) {
 
       if (channel > 3) {
-        fputs("wiringPi: pwmSetRangeChannel channel invalid, ignoring\n", stderr);
+        fputs("wiringPi: pwmSetChannelRange channel invalid, ignoring\n", stderr);
         return;
       }
 
@@ -1580,32 +1581,81 @@ void pwmSetRangeChannel (unsigned int range, unsigned int channel) {
       pwm[RP1_PWM0_RANGE_CHAN[channel]] = range;
 
       if (wiringPiDebug) {
-        fprintf (stderr, "PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, pwm[RP1_PWM0_RANGE_CHAN[channel]]);
+        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, pwm[RP1_PWM0_RANGE_CHAN[channel]]);
       }
 
-    } else {  // BCM2711 Model
+    } else {  // BCM Model
 
       if (channel > 1) {
-        fputs("wiringPi: pwmSetRangeChannel channel invalid, ignoring\n", stderr);
+        fputs("wiringPi: pwmSetChannelRange channel invalid, ignoring\n", stderr);
         return;
       }
 
-      const unsigned int BCM2711_PWM0_RANGE_CHAN[2] = {
+      const unsigned int BCM_PWM0_RANGE_CHAN[2] = {
         PWM0_RANGE,
         PWM1_RANGE
       };
 
-      pwm[BCM2711_PWM0_RANGE_CHAN[channel]] = range;
+      pwm[BCM_PWM0_RANGE_CHAN[channel]] = range;
       delayMicroseconds(10);
 
       if (wiringPiDebug) {
-        fprintf (stderr, "PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, pwm[BCM2711_PWM0_RANGE_CHAN[channel]]);
+        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, pwm[BCM_PWM0_RANGE_CHAN[channel]]);
       }
 
     }
 
   }
 
+}
+
+
+/*
+ * pwmSetPinRange:
+ *	Set the PWM range register for only the specified pin.
+ *********************************************************************************
+ */
+
+void pwmSetPinRange(int pin, unsigned int range)  {
+  
+  if (!ToBCMPin(&pin)) {
+    return;
+  }
+  if (piRP1Model()) {
+    switch(pin) {
+      case 12:
+        pwmSetChannelRange(0, range);
+        break;
+      case 13:
+        pwmSetChannelRange(1, range);
+        break;
+      case 18:
+      case 14:
+        pwmSetChannelRange(2, range);
+        break;
+      case 19:
+      case 15:
+        pwmSetChannelRange(3, range);
+        break;
+      default:
+        fputs("wiringPi: pwmSetPinRange pin invalid (RP1), ignoring\n", stderr);
+        break;
+    }
+  } else {
+    switch(pin) {
+      case 18:
+      case 12:
+        pwmSetChannelRange(0, range);
+        break;
+      case 19:
+      case 13:
+        pwmSetChannelRange(1, range);
+        break;
+     default:
+        fputs("wiringPi: pwmSetPinRange pin invalid (BCM), ignoring\n", stderr);
+        break;
+    }
+  }
 }
 
 

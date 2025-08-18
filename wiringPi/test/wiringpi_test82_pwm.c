@@ -1,5 +1,5 @@
 // WiringPi test program: PWM test
-// Compile: gcc -Wall wiringpi_test9_pwm.c -o wiringpi_test9_pwm -lwiringPi
+// Compile: gcc -Wall wiringpi_test82_pwm.c -o wiringpi_test82_pwm -lwiringPi
 
 #include "wpi_test.h"
 #include <string.h>
@@ -65,7 +65,7 @@ int main (void) {
 
     wiringPiVersion(&major, &minor);
 
-    printf("WiringPi GPIO test program 9\n");
+    printf("WiringPi PWM test program 8.2 (BAL & MS Mode different frequencys)\n");
     printf("PWM/ISR test (WiringPi %d.%d)\n", major, minor);
 
     wiringPiSetupGpio() ;
