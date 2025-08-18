@@ -129,14 +129,14 @@ int main (void) {
     pwmWrite(PWM[1], 0);
     pinMode(PWM[0], PWM_OUTPUT);  //Mode BAL, pwmr=1024, pwmc=32
     pinMode(PWM[1], PWM_OUTPUT);  
-    delay(250);
+    delay(10);
     double duty_fact[2] = { 0.0, 0.0 };
     double freq[2] = { 0.0, 0.0 };
     MeasureAndCheckFreq("PMW Pi0-4:BAL/Pi5:MS without change", freq);
 
     printf("Keep pwm 0%% and set mode MS\n");
     pwmSetMode(PWM_MODE_MS);
-    delay(250);
+    delay(10);
     MeasureAndCheckFreq("PWM MS without change", freq);
 
     int pwmc = 10;
@@ -150,15 +150,16 @@ int main (void) {
     duty_fact[1] = (double)pwm/(double)pwmr[1];
     printf("\n==> set mode MS, ch0, pwmc=%d, pwmr=%d, pwm=%d, duty=%g%%\n", pwmc, pwmr[0], pwm, duty_fact[0]*100);
     printf("==> set mode MS, ch1, pwmc=%d, pwmr=%d, pwm=%d, duty=%g%%\n", pwmc, pwmr[1], pwm, duty_fact[1]*100);
+    delay(10);
 
     pwmSetClock(pwmc);
     pwmSetChannelRange(PWMCH[0], pwmr[0]);
     pwmSetChannelRange(PWMCH[1], pwmr[1]);
     pwmWrite(PWM[0], pwm);
     pwmWrite(PWM[1], pwm);
-    delay(250);
     freq[0] = 19200.0/(double)pwmc/(double)pwmr[0];
     freq[1] = 19200.0/(double)pwmc/(double)pwmr[1];
+    delay(10);
     MeasureAndCheckFreq("PWM pwmSetChannelRange", freq);
 
     pwmr[0] *= 2;
@@ -195,7 +196,7 @@ int main (void) {
     pinMode(PWM[0], PM_OFF);
     printf("set PWM@GPIO%d (output) off\n", PWM[1]);
     pinMode(PWM[1], PM_OFF);
-    delay(1000);
+    delay(250);
     MeasureAndCheckFreq("PMW off", freq);
 
     printf("set PWM0 CLK off @ Pi5\n");
