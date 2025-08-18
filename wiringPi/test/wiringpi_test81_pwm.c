@@ -80,7 +80,7 @@ void MeasureAndCheckFreq(const char* msg, double expect_freq[2]) {
 int main (void) {
 
     int major, minor;
-    int PWM[2], FREQIN[2];
+    int PWM[2], FREQIN[2], PWMCH[2];
   
 
     wiringPiVersion(&major, &minor);
@@ -98,6 +98,13 @@ int main (void) {
     FREQIN[0] = 17;
     PWM[1] = 19;
     FREQIN[1] = 26;
+    if (piRP1Model()) {
+      PWMCH[0] = 2; //Pin 18 use channel 2
+      PWMCH[1] = 3; //Pin 19 use channel 3
+    } else {
+      PWMCH[0] = 0; //Pin 18 use channel 0
+      PWMCH[1] = 1; //Pin 19 use channel 1
+    }
 
     printf("Register PWM channel 0 ISR@%d\n", PWM[0]);
     // INT_EDGE_BOTH, INT_EDGE_FALLING, INT_EDGE_RISING only one ISR per input
@@ -145,8 +152,8 @@ int main (void) {
     printf("==> set mode MS, ch1, pwmc=%d, pwmr=%d, pwm=%d, duty=%g%%\n", pwmc, pwmr[1], pwm, duty_fact[1]*100);
 
     pwmSetClock(pwmc);
-    pwmSetChannelRange(2, pwmr[0]); //pwm0
-    pwmSetChannelRange(3, pwmr[1]); //pwm1
+    pwmSetChannelRange(PWMCH[0], pwmr[0]);
+    pwmSetChannelRange(PWMCH[1], pwmr[1]);
     pwmWrite(PWM[0], pwm);
     pwmWrite(PWM[1], pwm);
     delay(250);
@@ -156,8 +163,8 @@ int main (void) {
 
     pwmr[0] *= 2;
     pwmr[1] *= 2;
-    pwmSetChannelRange(2, pwmr[0]); //pwm0
-    pwmSetChannelRange(3, pwmr[1]); //pwm1
+    pwmSetChannelRange(PWMCH[0], pwmr[0]);
+    pwmSetChannelRange(PWMCH[1], pwmr[1]);
     freq[0] = 19200.0/(double)pwmc/(double)pwmr[0];
     freq[1] = 19200.0/(double)pwmc/(double)pwmr[1];
     delay(10);
