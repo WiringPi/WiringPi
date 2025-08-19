@@ -77,6 +77,14 @@ void MeasureAndCheckFreq(const char* msg, double expect_freq[2]) {
 }
 
 
+void CalcFreq(double* freq, int pwmc, int* pwmr) {
+  freq[0] = 19200.0/(double)pwmc/(double)pwmr[0];
+  if (piBoard40Pin()) {
+    freq[1] = 19200.0/(double)pwmc/(double)pwmr[1];
+  }
+}
+
+
 int main (void) {
 
     int major, minor;
@@ -157,8 +165,7 @@ int main (void) {
     pwmSetChannelRange(PWMCH[1], pwmr[1]);
     pwmWrite(PWM[0], pwm);
     pwmWrite(PWM[1], pwm);
-    freq[0] = 19200.0/(double)pwmc/(double)pwmr[0];
-    freq[1] = 19200.0/(double)pwmc/(double)pwmr[1];
+    CalcFreq(freq, pwmc, pwmr);
     delay(10);
     MeasureAndCheckFreq("PWM pwmSetChannelRange", freq);
 
@@ -166,8 +173,7 @@ int main (void) {
     pwmr[1] *= 2;
     pwmSetChannelRange(PWMCH[0], pwmr[0]);
     pwmSetChannelRange(PWMCH[1], pwmr[1]);
-    freq[0] = 19200.0/(double)pwmc/(double)pwmr[0];
-    freq[1] = 19200.0/(double)pwmc/(double)pwmr[1];
+    CalcFreq(freq, pwmc, pwmr);
     delay(10);
     MeasureAndCheckFreq("PWM pwmSetChannelRange", freq);
 
@@ -175,8 +181,7 @@ int main (void) {
     pwmr[1] *= 2;
     pwmSetPinRange(PWM[0], pwmr[0]);
     pwmSetPinRange(PWM[1], pwmr[1]);
-    freq[0] = 19200.0/(double)pwmc/(double)pwmr[0];
-    freq[1] = 19200.0/(double)pwmc/(double)pwmr[1];
+    CalcFreq(freq, pwmc, pwmr);
     delay(10);
     MeasureAndCheckFreq("PWM pwmSetPinRange", freq);
 
@@ -184,8 +189,7 @@ int main (void) {
     pwmr[1] *= 2;
     pwmSetPinRange(PWM[0], pwmr[0]);
     pwmSetPinRange(PWM[1], pwmr[1]);
-    freq[0] = 19200.0/(double)pwmc/(double)pwmr[0];
-    freq[1] = 19200.0/(double)pwmc/(double)pwmr[1];
+    CalcFreq(freq, pwmc, pwmr);
     delay(10);
     MeasureAndCheckFreq("PWM pwmSetPinRange", freq);
 
