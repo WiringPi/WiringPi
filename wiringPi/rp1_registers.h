@@ -479,5 +479,119 @@ struct [[gnu::packed]] RP1_GPIO_PADS_BANK {
     };
   } GPIO[28];
 };
+struct [[gnu::packed]] RP1_PWM_BANK {
+
+  union RP1_PWM_GLOBAL_CTRL {             // GLOBAL_CTRL
+    volatile uint32_t GLOBAL_CTRL_register;
+    struct {                              // GLOBAL_CTRL bitfields
+      volatile uint32_t CHAN0_EN   : 1;   // Channel 0 Enable
+      volatile uint32_t CHAN1_EN   : 1;   // Channel 1 Enable
+      volatile uint32_t CHAN2_EN   : 1;   // Channel 2 Enable
+      volatile uint32_t CHAN3_EN   : 1;   // Channel 3 Enable
+      volatile uint32_t            : 27;  // Reserved
+      volatile uint32_t SET_UPDATE : 1;   // Settings Update Trigger
+    };
+  } GLOBAL_CTRL;
+
+  union RP1_PWM_FIFO_CTRL {  // FIFO_CTRL
+    volatile uint32_t FIFO_CTRL_register;
+    struct {                 // FIFO_CTRL bitfields
+      volatile const uint32_t LEVEL      : 5;
+      volatile uint32_t       FLUSH      : 1;
+      volatile const uint32_t FLUSH_DONE : 1;
+      volatile uint32_t                  : 4;
+      volatile uint32_t THRESHOLD        : 5;
+      volatile uint32_t DWELL_TIME       : 5;
+      volatile uint32_t                  : 10;
+      volatile uint32_t DREQ_EN          : 1;
+    };
+  } FIFO_CTRL;
+
+  volatile uint32_t COMMON_RANGE;
+  volatile uint32_t COMMON_DUTY;
+  volatile uint32_t DUTY_FIFO;
+
+  struct RP1_PWM_CHAN {
+    union {
+      volatile uint32_t CTRL_register;
+      struct {                                 // CHANx_CTRL bitfields
+        volatile uint32_t MODE          : 3;   // PWM generation mode
+        volatile uint32_t INVERT        : 1;   //
+        volatile uint32_t BIND          : 1;   // Bind Channel to the common_range and common_duty/duty_fifo registers
+        volatile uint32_t USEFIFO       : 1;   //
+        volatile uint32_t SDM           : 1;   //
+        volatile uint32_t DITHER        : 1;   //
+        volatile uint32_t FIFO_POP_MASK : 1;   //
+        volatile uint32_t               : 3;   //
+        volatile uint32_t SDM_BANDWIDTH : 4;   //
+        volatile uint32_t SDM_BIAS      : 16;  //
+      };
+    };
+    volatile uint32_t RANGE;
+    volatile uint32_t PHASE;
+    volatile uint32_t DUTY;
+  } CHAN[4];
+
+  union RP1_PWM_INTR {  // INTR : Raw Interrupts
+    volatile uint32_t INTR_register;
+    struct {
+      volatile uint32_t       FIFO_UNDERFLOW : 1;
+      volatile uint32_t       FIFO_OVERFLOW  : 1;
+      const volatile uint32_t FIFO_EMPTY     : 1;
+      const volatile uint32_t FIFO_FULL      : 1;
+      const volatile uint32_t DREQ_ACTIVE    : 1;
+      volatile uint32_t       CHAN0_RELOAD   : 1;
+      volatile uint32_t       CHAN1_RELOAD   : 1;
+      volatile uint32_t       CHAN2_RELOAD   : 1;
+      volatile uint32_t       CHAN3_RELOAD   : 1;
+    };
+  } INTR;
+
+  union RP1_PWM_INTE {  // INTE : Interrupt Enable
+    volatile uint32_t INTE_register;
+    struct {
+      volatile uint32_t FIFO_UNDERFLOW : 1;
+      volatile uint32_t FIFO_OVERFLOW  : 1;
+      volatile uint32_t FIFO_EMPTY     : 1;
+      volatile uint32_t FIFO_FULL      : 1;
+      volatile uint32_t DREQ_ACTIVE    : 1;
+      volatile uint32_t CHAN0_RELOAD   : 1;
+      volatile uint32_t CHAN1_RELOAD   : 1;
+      volatile uint32_t CHAN2_RELOAD   : 1;
+      volatile uint32_t CHAN3_RELOAD   : 1;
+    };
+  } INTE;
+
+  union RP1_PWM_INTF {  // INTF : Interrupt Force
+    volatile uint32_t INTF_register;
+    struct {
+      volatile uint32_t FIFO_UNDERFLOW : 1;
+      volatile uint32_t FIFO_OVERFLOW  : 1;
+      volatile uint32_t FIFO_EMPTY     : 1;
+      volatile uint32_t FIFO_FULL      : 1;
+      volatile uint32_t DREQ_ACTIVE    : 1;
+      volatile uint32_t CHAN0_RELOAD   : 1;
+      volatile uint32_t CHAN1_RELOAD   : 1;
+      volatile uint32_t CHAN2_RELOAD   : 1;
+      volatile uint32_t CHAN3_RELOAD   : 1;
+    };
+  } INTF;
+
+  union RP1_PWM_INTS {  // INTS : Interrupt status after masking & forcing
+    const volatile uint32_t INTS_register;
+    struct {
+      const volatile uint32_t FIFO_UNDERFLOW : 1;
+      const volatile uint32_t FIFO_OVERFLOW  : 1;
+      const volatile uint32_t FIFO_EMPTY     : 1;
+      const volatile uint32_t FIFO_FULL      : 1;
+      const volatile uint32_t DREQ_ACTIVE    : 1;
+      const volatile uint32_t CHAN0_RELOAD   : 1;
+      const volatile uint32_t CHAN1_RELOAD   : 1;
+      const volatile uint32_t CHAN2_RELOAD   : 1;
+      const volatile uint32_t CHAN3_RELOAD   : 1;
+    };
+  } INTS;
+
+};
 
 #endif  // __WIRINGPI_BCM_REGISTERS_H__
