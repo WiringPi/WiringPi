@@ -82,6 +82,7 @@
 #include "softTone.h"
 
 #include "wiringPi.h"
+#include "rp1_registers.h"
 #include "../version.h"
 #include "wiringPiLegacy.h"
 
