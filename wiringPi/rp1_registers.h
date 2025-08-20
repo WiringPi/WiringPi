@@ -28,5 +28,431 @@
 
 #include <stdint.h>
 
+struct [[gnu::packed]] RP1_GPIO_IO_BANK {
+  struct RP1_GPIO_IO_CHAN {
+    union {                                               // CHANx_STATUS
+      const volatile uint32_t STATUS_reg;                 // CHANx_STATUS register
+      struct {                                            // CHANx_STATUS bitfields
+        const volatile uint32_t                     : 8;  // Reserved
+        const volatile uint32_t OUTFROMPERI         : 1;  // Output signal from selected peripheral, before register overide is applied
+        const volatile uint32_t OUTTOPAD            : 1;  // Output signal to pad after register overide is applied
+        const volatile uint32_t                     : 2;  // Reserved
+        const volatile uint32_t OEFROMPERI          : 1;  // Output enable from selected peripheral, before register overide is applied
+        const volatile uint32_t OETOPAD             : 1;  // Output enable to pad after register overide is applied
+        const volatile uint32_t                     : 2;  // Reserved
+        const volatile uint32_t INISDIRECT          : 1;  // Input signal from pad, goes directly to the selected peripheral without filtering or override
+        const volatile uint32_t INFROMPAD           : 1;  // Input signal from pad, before filtering and override are applied
+        const volatile uint32_t INFILTERED          : 1;  // Input signal from pad, after filtering is applied but before override, not valid if inisdirect=1
+        const volatile uint32_t INTOPERI            : 1;  // Input signal to peripheral, after filtering and override are applied, not valid if inisdirect=1
+        const volatile uint32_t EVENT_EDGE_LOW      : 1;  // Input pin has seen falling edge. Clear with ctrl_irqreset
+        const volatile uint32_t EVENT_EDGE_HIGH     : 1;  // Input pin has seen rising edge. Clear with ctrl_irqreset
+        const volatile uint32_t EVENT_LEVEL_LOW     : 1;  // Input pin is Low
+        const volatile uint32_t EVENT_LEVEL_HIGH    : 1;  // Input pin is high
+        const volatile uint32_t EVENT_F_EDGE_LOW    : 1;  // Input pin has seen a filtered falling edge. Clear with ctrl_irqreset
+        const volatile uint32_t EVENT_F_EDGE_HIGH   : 1;  // Input pin has seen a filtered rising edge. Clear with ctrl_irqreset
+        const volatile uint32_t EVENT_DB_LEVEL_LOW  : 1;  // Debounced input pin is low
+        const volatile uint32_t EVENT_DB_LEVEL_HIGH : 1;  // Debounced input pin is high
+        const volatile uint32_t IRQCOMBINED         : 1;  // Interrupt to processors, after masking
+        const volatile uint32_t IRQTOPROC           : 1;  // Interrupt to processors, after mask and override is applied
+        const volatile uint32_t                     : 2;  // Reserved
+      };
+    } STATUS;
+
+    union {                                           // CHANx_CTRL
+      volatile uint32_t CTRL_reg;                     // CHANx_CTRL register
+      struct {                                        // CHANx_CTRL bitfields
+        volatile uint32_t FUNCSEL : 5;                // Function select. 31 == NULL. See GPIO function table for available functions.
+        volatile uint32_t F_M     : 7;                // Filter/debounce time constant M
+        volatile enum RP1_GPIO_CHAN_CTRL_OUTOVER : uint32_t {
+          OUTOVER_FUNCSEL         = 0x0,              //    Drive output from peripheral signal selected by funcsel
+          OUTOVER_INVERSE_FUNCSEL = 0x1,              //    Drive output from inverse of peripheral signal selected by funcsel
+          OUTOVER_LOW             = 0x2,              //    Drive output low
+          OUTOVER_HIGH            = 0x3               //    Drive output high
+        } OUTOVER : 2;                                // OUTOVER - Output Override
+        volatile enum RP1_GPIO_CHAN_CTRL_OEOVER : uint32_t {
+          OEOVER_FUNCSEL        = 0x0,                //    Drive output enable from peripheral signal selected by funcsel
+          OEOVER_INVERT_FUNCSEL = 0x1,                //    Drive output enable from inverse of peripheral signal selected by funcsel
+          OEOVER_DISABLE        = 0x2,                //    Disable output
+          OEOVER_ENABLE         = 0x3                 //    Enable output
+        } OEOVER : 2;                                 // OEOVER - Output Enable Override
+        volatile enum RP1_GPIO_CHAN_CTRL_INOVER : uint32_t {
+          INOVER_DEFAULT    = 0x0,                    //    Don’t invert the peripheral input
+          INOVER_INVERT     = 0x1,                    //    Invert the peripheral input
+          INOVER_DRIVE_LOW  = 0x2,                    //    Drive peripheral input low
+          INOVER_DRIVE_HIGH = 0x3                     //    Drive peripheral input high
+        } INOVER                                : 2;  // INOVER - Input Override
+        volatile uint32_t                       : 2;  // Reserved
+        volatile uint32_t IRQMASK_EDGE_LOW      : 1;  // Masks the edge low interrupt into the interrupt output
+        volatile uint32_t IRQMASK_EDGE_HIGH     : 1;  // Masks the edge high interrupt into the interrupt output
+        volatile uint32_t IRQMASK_LEVEL_LOW     : 1;  // Masks the level low interrupt into the interrupt output
+        volatile uint32_t IRQMASK_LEVEL_HIGH    : 1;  // Masks the level high interrupt into the interrupt output
+        volatile uint32_t IRQMASK_F_EDGE_LOW    : 1;  // Masks the filtered edge low interrupt into the interrupt output
+        volatile uint32_t IRQMASK_F_EDGE_HIGH   : 1;  // Masks the filtered edge high interrupt into the interrupt output
+        volatile uint32_t IRQMASK_DB_LEVEL_LOW  : 1;  // Masks the debounced level low interrupt into the interrupt output
+        volatile uint32_t IRQMASK_DB_LEVEL_HIGH : 1;  // Masks the debounced level high interrupt into the interrupt output
+        volatile uint32_t IRQRESET              : 1;  // Reset the interrupt edge detector
+        volatile uint32_t                       : 1;  // Reserved
+        volatile enum RP1_GPIO_CHAN_CTRL_IRQOVER : uint32_t {
+          IRQOVER_DEFAULT    = 0x0,                   //    Don’t invert the interrupt
+          IRQOVER_INVERT     = 0x1,                   //    Invert the input
+          IRQOVER_DRIVE_LOW  = 0x2,                   //    Drive interrupt low
+          IRQOVER_DRIVE_HIGH = 0x3                    //    Drive interrupt high
+        } IRQOVER : 2;                                // IRQOVER - Interrupt Override
+      };
+    } CTRL;
+  } GPIO[28];
+
+  union RP1_GPIO_IO_INTR {  // INTR : Raw Interrupts
+    const volatile uint32_t INTR_register;
+    struct {
+      const volatile uint32_t GPIO0  : 1;
+      const volatile uint32_t GPIO1  : 1;
+      const volatile uint32_t GPIO2  : 1;
+      const volatile uint32_t GPIO3  : 1;
+      const volatile uint32_t GPIO4  : 1;
+      const volatile uint32_t GPIO5  : 1;
+      const volatile uint32_t GPIO6  : 1;
+      const volatile uint32_t GPIO7  : 1;
+      const volatile uint32_t GPIO8  : 1;
+      const volatile uint32_t GPIO9  : 1;
+      const volatile uint32_t GPIO10 : 1;
+      const volatile uint32_t GPIO11 : 1;
+      const volatile uint32_t GPIO12 : 1;
+      const volatile uint32_t GPIO13 : 1;
+      const volatile uint32_t GPIO14 : 1;
+      const volatile uint32_t GPIO15 : 1;
+      const volatile uint32_t GPIO16 : 1;
+      const volatile uint32_t GPIO17 : 1;
+      const volatile uint32_t GPIO18 : 1;
+      const volatile uint32_t GPIO19 : 1;
+      const volatile uint32_t GPIO20 : 1;
+      const volatile uint32_t GPIO21 : 1;
+      const volatile uint32_t GPIO22 : 1;
+      const volatile uint32_t GPIO23 : 1;
+      const volatile uint32_t GPIO24 : 1;
+      const volatile uint32_t GPIO25 : 1;
+      const volatile uint32_t GPIO26 : 1;
+      const volatile uint32_t GPIO27 : 1;
+      const volatile uint32_t        : 5;  // Reserved
+    };
+  } INTR;
+
+  union RP1_GPIO_IO_PROC0_INTE {  // PROC0_INTE : Interrupt Enable for proc0
+    volatile uint32_t PROC0_INTE_register;
+    struct {
+      volatile uint32_t GPIO0  : 1;
+      volatile uint32_t GPIO1  : 1;
+      volatile uint32_t GPIO2  : 1;
+      volatile uint32_t GPIO3  : 1;
+      volatile uint32_t GPIO4  : 1;
+      volatile uint32_t GPIO5  : 1;
+      volatile uint32_t GPIO6  : 1;
+      volatile uint32_t GPIO7  : 1;
+      volatile uint32_t GPIO8  : 1;
+      volatile uint32_t GPIO9  : 1;
+      volatile uint32_t GPIO10 : 1;
+      volatile uint32_t GPIO11 : 1;
+      volatile uint32_t GPIO12 : 1;
+      volatile uint32_t GPIO13 : 1;
+      volatile uint32_t GPIO14 : 1;
+      volatile uint32_t GPIO15 : 1;
+      volatile uint32_t GPIO16 : 1;
+      volatile uint32_t GPIO17 : 1;
+      volatile uint32_t GPIO18 : 1;
+      volatile uint32_t GPIO19 : 1;
+      volatile uint32_t GPIO20 : 1;
+      volatile uint32_t GPIO21 : 1;
+      volatile uint32_t GPIO22 : 1;
+      volatile uint32_t GPIO23 : 1;
+      volatile uint32_t GPIO24 : 1;
+      volatile uint32_t GPIO25 : 1;
+      volatile uint32_t GPIO26 : 1;
+      volatile uint32_t GPIO27 : 1;
+      volatile uint32_t        : 5;  // Reserved
+    };
+  } PROC0_INTE;
+
+  union RP1_GPIO_IO_PROC0_INTF {  // PROC0_INTF : Interrupt Force for proc0
+    volatile uint32_t PROC0_INTF_register;
+    struct {
+      volatile uint32_t GPIO0  : 1;
+      volatile uint32_t GPIO1  : 1;
+      volatile uint32_t GPIO2  : 1;
+      volatile uint32_t GPIO3  : 1;
+      volatile uint32_t GPIO4  : 1;
+      volatile uint32_t GPIO5  : 1;
+      volatile uint32_t GPIO6  : 1;
+      volatile uint32_t GPIO7  : 1;
+      volatile uint32_t GPIO8  : 1;
+      volatile uint32_t GPIO9  : 1;
+      volatile uint32_t GPIO10 : 1;
+      volatile uint32_t GPIO11 : 1;
+      volatile uint32_t GPIO12 : 1;
+      volatile uint32_t GPIO13 : 1;
+      volatile uint32_t GPIO14 : 1;
+      volatile uint32_t GPIO15 : 1;
+      volatile uint32_t GPIO16 : 1;
+      volatile uint32_t GPIO17 : 1;
+      volatile uint32_t GPIO18 : 1;
+      volatile uint32_t GPIO19 : 1;
+      volatile uint32_t GPIO20 : 1;
+      volatile uint32_t GPIO21 : 1;
+      volatile uint32_t GPIO22 : 1;
+      volatile uint32_t GPIO23 : 1;
+      volatile uint32_t GPIO24 : 1;
+      volatile uint32_t GPIO25 : 1;
+      volatile uint32_t GPIO26 : 1;
+      volatile uint32_t GPIO27 : 1;
+      volatile uint32_t        : 5;  // Reserved
+    };
+  } PROC0_INTF;
+
+  union RP1_GPIO_IO_PROC0_INTS {  // PROC0_INTs : Interrupt status after masking & forcing for proc0
+    const volatile uint32_t PROC0_INTS_register;
+    struct {
+      const volatile uint32_t GPIO0  : 1;
+      const volatile uint32_t GPIO1  : 1;
+      const volatile uint32_t GPIO2  : 1;
+      const volatile uint32_t GPIO3  : 1;
+      const volatile uint32_t GPIO4  : 1;
+      const volatile uint32_t GPIO5  : 1;
+      const volatile uint32_t GPIO6  : 1;
+      const volatile uint32_t GPIO7  : 1;
+      const volatile uint32_t GPIO8  : 1;
+      const volatile uint32_t GPIO9  : 1;
+      const volatile uint32_t GPIO10 : 1;
+      const volatile uint32_t GPIO11 : 1;
+      const volatile uint32_t GPIO12 : 1;
+      const volatile uint32_t GPIO13 : 1;
+      const volatile uint32_t GPIO14 : 1;
+      const volatile uint32_t GPIO15 : 1;
+      const volatile uint32_t GPIO16 : 1;
+      const volatile uint32_t GPIO17 : 1;
+      const volatile uint32_t GPIO18 : 1;
+      const volatile uint32_t GPIO19 : 1;
+      const volatile uint32_t GPIO20 : 1;
+      const volatile uint32_t GPIO21 : 1;
+      const volatile uint32_t GPIO22 : 1;
+      const volatile uint32_t GPIO23 : 1;
+      const volatile uint32_t GPIO24 : 1;
+      const volatile uint32_t GPIO25 : 1;
+      const volatile uint32_t GPIO26 : 1;
+      const volatile uint32_t GPIO27 : 1;
+      const volatile uint32_t        : 5;  // Reserved
+    };
+  } PROC0_INTS;
+
+  union RP1_GPIO_IO_PROC1_INTE {  // PROC1_INTE : Interrupt Enable for PROC1
+    volatile uint32_t PROC1_INTE_register;
+    struct {
+      volatile uint32_t GPIO0  : 1;
+      volatile uint32_t GPIO1  : 1;
+      volatile uint32_t GPIO2  : 1;
+      volatile uint32_t GPIO3  : 1;
+      volatile uint32_t GPIO4  : 1;
+      volatile uint32_t GPIO5  : 1;
+      volatile uint32_t GPIO6  : 1;
+      volatile uint32_t GPIO7  : 1;
+      volatile uint32_t GPIO8  : 1;
+      volatile uint32_t GPIO9  : 1;
+      volatile uint32_t GPIO10 : 1;
+      volatile uint32_t GPIO11 : 1;
+      volatile uint32_t GPIO12 : 1;
+      volatile uint32_t GPIO13 : 1;
+      volatile uint32_t GPIO14 : 1;
+      volatile uint32_t GPIO15 : 1;
+      volatile uint32_t GPIO16 : 1;
+      volatile uint32_t GPIO17 : 1;
+      volatile uint32_t GPIO18 : 1;
+      volatile uint32_t GPIO19 : 1;
+      volatile uint32_t GPIO20 : 1;
+      volatile uint32_t GPIO21 : 1;
+      volatile uint32_t GPIO22 : 1;
+      volatile uint32_t GPIO23 : 1;
+      volatile uint32_t GPIO24 : 1;
+      volatile uint32_t GPIO25 : 1;
+      volatile uint32_t GPIO26 : 1;
+      volatile uint32_t GPIO27 : 1;
+      volatile uint32_t        : 5;  // Reserved
+    };
+  } PROC1_INTE;
+
+  union RP1_GPIO_IO_PROC1_INTF {  // PROC1_INTF : Interrupt Force for PROC1
+    volatile uint32_t PROC1_INTF_register;
+    struct {
+      volatile uint32_t GPIO0  : 1;
+      volatile uint32_t GPIO1  : 1;
+      volatile uint32_t GPIO2  : 1;
+      volatile uint32_t GPIO3  : 1;
+      volatile uint32_t GPIO4  : 1;
+      volatile uint32_t GPIO5  : 1;
+      volatile uint32_t GPIO6  : 1;
+      volatile uint32_t GPIO7  : 1;
+      volatile uint32_t GPIO8  : 1;
+      volatile uint32_t GPIO9  : 1;
+      volatile uint32_t GPIO10 : 1;
+      volatile uint32_t GPIO11 : 1;
+      volatile uint32_t GPIO12 : 1;
+      volatile uint32_t GPIO13 : 1;
+      volatile uint32_t GPIO14 : 1;
+      volatile uint32_t GPIO15 : 1;
+      volatile uint32_t GPIO16 : 1;
+      volatile uint32_t GPIO17 : 1;
+      volatile uint32_t GPIO18 : 1;
+      volatile uint32_t GPIO19 : 1;
+      volatile uint32_t GPIO20 : 1;
+      volatile uint32_t GPIO21 : 1;
+      volatile uint32_t GPIO22 : 1;
+      volatile uint32_t GPIO23 : 1;
+      volatile uint32_t GPIO24 : 1;
+      volatile uint32_t GPIO25 : 1;
+      volatile uint32_t GPIO26 : 1;
+      volatile uint32_t GPIO27 : 1;
+      volatile uint32_t        : 5;  // Reserved
+    };
+  } PROC1_INTF;
+
+  union RP1_GPIO_IO_PROC1_INTS {  // PROC1_INTs : Interrupt status after masking & forcing for PROC1
+    const volatile uint32_t PROC1_INTS_register;
+    struct {
+      const volatile uint32_t GPIO0  : 1;
+      const volatile uint32_t GPIO1  : 1;
+      const volatile uint32_t GPIO2  : 1;
+      const volatile uint32_t GPIO3  : 1;
+      const volatile uint32_t GPIO4  : 1;
+      const volatile uint32_t GPIO5  : 1;
+      const volatile uint32_t GPIO6  : 1;
+      const volatile uint32_t GPIO7  : 1;
+      const volatile uint32_t GPIO8  : 1;
+      const volatile uint32_t GPIO9  : 1;
+      const volatile uint32_t GPIO10 : 1;
+      const volatile uint32_t GPIO11 : 1;
+      const volatile uint32_t GPIO12 : 1;
+      const volatile uint32_t GPIO13 : 1;
+      const volatile uint32_t GPIO14 : 1;
+      const volatile uint32_t GPIO15 : 1;
+      const volatile uint32_t GPIO16 : 1;
+      const volatile uint32_t GPIO17 : 1;
+      const volatile uint32_t GPIO18 : 1;
+      const volatile uint32_t GPIO19 : 1;
+      const volatile uint32_t GPIO20 : 1;
+      const volatile uint32_t GPIO21 : 1;
+      const volatile uint32_t GPIO22 : 1;
+      const volatile uint32_t GPIO23 : 1;
+      const volatile uint32_t GPIO24 : 1;
+      const volatile uint32_t GPIO25 : 1;
+      const volatile uint32_t GPIO26 : 1;
+      const volatile uint32_t GPIO27 : 1;
+      const volatile uint32_t        : 5;  // Reserved
+    };
+  } PROC1_INTS;
+
+
+    union RP1_GPIO_IO_PCIE_INTE {  // PCIE_INTE : Interrupt Enable for PCIE
+    volatile uint32_t PCIE_INTE_register;
+    struct {
+      volatile uint32_t GPIO0  : 1;
+      volatile uint32_t GPIO1  : 1;
+      volatile uint32_t GPIO2  : 1;
+      volatile uint32_t GPIO3  : 1;
+      volatile uint32_t GPIO4  : 1;
+      volatile uint32_t GPIO5  : 1;
+      volatile uint32_t GPIO6  : 1;
+      volatile uint32_t GPIO7  : 1;
+      volatile uint32_t GPIO8  : 1;
+      volatile uint32_t GPIO9  : 1;
+      volatile uint32_t GPIO10 : 1;
+      volatile uint32_t GPIO11 : 1;
+      volatile uint32_t GPIO12 : 1;
+      volatile uint32_t GPIO13 : 1;
+      volatile uint32_t GPIO14 : 1;
+      volatile uint32_t GPIO15 : 1;
+      volatile uint32_t GPIO16 : 1;
+      volatile uint32_t GPIO17 : 1;
+      volatile uint32_t GPIO18 : 1;
+      volatile uint32_t GPIO19 : 1;
+      volatile uint32_t GPIO20 : 1;
+      volatile uint32_t GPIO21 : 1;
+      volatile uint32_t GPIO22 : 1;
+      volatile uint32_t GPIO23 : 1;
+      volatile uint32_t GPIO24 : 1;
+      volatile uint32_t GPIO25 : 1;
+      volatile uint32_t GPIO26 : 1;
+      volatile uint32_t GPIO27 : 1;
+      volatile uint32_t        : 5;  // Reserved
+    };
+  } PCIE_INTE;
+
+  union RP1_GPIO_IO_PCIE_INTF {  // PCIE_INTF : Interrupt Force for PCIE
+    volatile uint32_t PCIE_INTF_register;
+    struct {
+      volatile uint32_t GPIO0  : 1;
+      volatile uint32_t GPIO1  : 1;
+      volatile uint32_t GPIO2  : 1;
+      volatile uint32_t GPIO3  : 1;
+      volatile uint32_t GPIO4  : 1;
+      volatile uint32_t GPIO5  : 1;
+      volatile uint32_t GPIO6  : 1;
+      volatile uint32_t GPIO7  : 1;
+      volatile uint32_t GPIO8  : 1;
+      volatile uint32_t GPIO9  : 1;
+      volatile uint32_t GPIO10 : 1;
+      volatile uint32_t GPIO11 : 1;
+      volatile uint32_t GPIO12 : 1;
+      volatile uint32_t GPIO13 : 1;
+      volatile uint32_t GPIO14 : 1;
+      volatile uint32_t GPIO15 : 1;
+      volatile uint32_t GPIO16 : 1;
+      volatile uint32_t GPIO17 : 1;
+      volatile uint32_t GPIO18 : 1;
+      volatile uint32_t GPIO19 : 1;
+      volatile uint32_t GPIO20 : 1;
+      volatile uint32_t GPIO21 : 1;
+      volatile uint32_t GPIO22 : 1;
+      volatile uint32_t GPIO23 : 1;
+      volatile uint32_t GPIO24 : 1;
+      volatile uint32_t GPIO25 : 1;
+      volatile uint32_t GPIO26 : 1;
+      volatile uint32_t GPIO27 : 1;
+      volatile uint32_t        : 5;  // Reserved
+    };
+  } PCIE_INTF;
+
+  union RP1_GPIO_IO_PCIE_INTS {  // PCIE_INTs : Interrupt status after masking & forcing for PCIE
+    const volatile uint32_t PCIE_INTS_register;
+    struct {
+      const volatile uint32_t GPIO0  : 1;
+      const volatile uint32_t GPIO1  : 1;
+      const volatile uint32_t GPIO2  : 1;
+      const volatile uint32_t GPIO3  : 1;
+      const volatile uint32_t GPIO4  : 1;
+      const volatile uint32_t GPIO5  : 1;
+      const volatile uint32_t GPIO6  : 1;
+      const volatile uint32_t GPIO7  : 1;
+      const volatile uint32_t GPIO8  : 1;
+      const volatile uint32_t GPIO9  : 1;
+      const volatile uint32_t GPIO10 : 1;
+      const volatile uint32_t GPIO11 : 1;
+      const volatile uint32_t GPIO12 : 1;
+      const volatile uint32_t GPIO13 : 1;
+      const volatile uint32_t GPIO14 : 1;
+      const volatile uint32_t GPIO15 : 1;
+      const volatile uint32_t GPIO16 : 1;
+      const volatile uint32_t GPIO17 : 1;
+      const volatile uint32_t GPIO18 : 1;
+      const volatile uint32_t GPIO19 : 1;
+      const volatile uint32_t GPIO20 : 1;
+      const volatile uint32_t GPIO21 : 1;
+      const volatile uint32_t GPIO22 : 1;
+      const volatile uint32_t GPIO23 : 1;
+      const volatile uint32_t GPIO24 : 1;
+      const volatile uint32_t GPIO25 : 1;
+      const volatile uint32_t GPIO26 : 1;
+      const volatile uint32_t GPIO27 : 1;
+      const volatile uint32_t        : 5;  // Reserved
+    };
+  } PCIE_INTS;
+};
+
 
 #endif  // __WIRINGPI_BCM_REGISTERS_H__
