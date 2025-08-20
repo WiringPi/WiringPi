@@ -454,5 +454,30 @@ struct [[gnu::packed]] RP1_GPIO_IO_BANK {
   } PCIE_INTS;
 };
 
+struct [[gnu::packed]] RP1_GPIO_PADS_BANK {
+  volatile enum RP1_GPIO_PADS_VOLTAGE_SELECT : uint32_t {
+    RP1_GPIO_PADS_VOLTAGE_3v3 = 0,
+    RP1_GPIO_PADS_VOLTAGE_1v8 = 1
+  } VOLTAGE_SELECT;
+
+  union RP1_GPIO_PADS_CHAN {
+    volatile uint32_t CTRL_register;   // GPIOx_CTRL register
+    struct {                           // GPIOx_CTRL bitfields
+      volatile uint32_t SLEWFAST : 1;  // Slew rate control. 1 = Fast, 0 = Slow
+      volatile uint32_t SCHMITT  : 1;  // Enable schmitt trigger
+      volatile uint32_t PDE      : 1;  // Pull down enable
+      volatile uint32_t PUE      : 1;  // Pull up enable
+      volatile enum RP1_GPIO_PADS_DRIVE : uint32_t {
+        DRIVE_2mA,
+        DRIVE_4mA,
+        DRIVE_8mA,
+        DRIVE_12mA
+      } DRIVE              : 2;   // Drive strength
+      volatile uint32_t IE : 1;   // Input enable
+      volatile uint32_t OD : 1;   // Output disable
+      volatile uint32_t    : 24;  // Reserved
+    };
+  } GPIO[28];
+};
 
 #endif  // __WIRINGPI_BCM_REGISTERS_H__
