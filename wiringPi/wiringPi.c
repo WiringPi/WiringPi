@@ -84,6 +84,7 @@
 
 #include "wiringPi.h"
 #include "rp1_registers.h"
+#include "bcm_registers.h"
 #include "../version.h"
 #include "wiringPiLegacy.h"
 

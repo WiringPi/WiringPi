@@ -1,0 +1,31 @@
+/*
+ * bcm_registers.h:
+ *  Private header defining data structures used to interface directly
+ *  with memory on BCM2711-based Raspberry Pi GPIO hardware.
+ *  Copyright (c) 2025 Grazer Computer Club and contributors
+ ***********************************************************************
+ * This file is part of wiringPi:
+ *    https://github.com/WiringPi/WiringPi
+ *
+ *    wiringPi is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU Lesser General Public License as
+ *    published by the Free Software Foundation, either version 3 of the
+ *    License, or (at your option) any later version.
+ *
+ *    wiringPi is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU Lesser General Public License for more details.
+ *
+ *    You should have received a copy of the GNU Lesser General Public
+ *    License along with wiringPi.
+ *    If not, see <http://www.gnu.org/licenses/>.
+ ***********************************************************************
+ */
+
+#ifndef __WIRINGPI_BCM_REGISTERS_H__
+#define __WIRINGPI_BCM_REGISTERS_H__
+
+#include <stdint.h>
+
+#endif // __WIRINGPI_BCM_REGISTERS_H__
