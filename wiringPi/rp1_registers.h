@@ -2,7 +2,6 @@
  * rp1_registers.h:
  *  Private header defining data structures used to interface directly
  *  with memory on RP1 Raspberry Pi GPIO hardware.
- *  Copyright (c) 2025 Grazer Computer Club and contributors
  ***********************************************************************
  * This file is part of wiringPi:
  *    https://github.com/WiringPi/WiringPi
