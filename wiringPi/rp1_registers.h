@@ -28,7 +28,7 @@
 
 #include <stdint.h>
 
-struct [[gnu::packed]] RP1_GPIO_IO_BANK {
+typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
   struct RP1_GPIO_IO_CHAN {
     union {                                               // CHANx_STATUS
       const volatile uint32_t STATUS_reg;                 // CHANx_STATUS register
@@ -452,9 +452,9 @@ struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       const volatile uint32_t        : 5;  // Reserved
     };
   } PCIE_INTS;
-};
+} RP1_GPIO_IO_BANK;
 
-struct [[gnu::packed]] RP1_GPIO_PADS_BANK {
+typedef struct [[gnu::packed]] RP1_GPIO_PADS_BANK {
   volatile enum RP1_GPIO_PADS_VOLTAGE_SELECT : uint32_t {
     RP1_GPIO_PADS_VOLTAGE_3v3 = 0,
     RP1_GPIO_PADS_VOLTAGE_1v8 = 1
@@ -478,8 +478,9 @@ struct [[gnu::packed]] RP1_GPIO_PADS_BANK {
       volatile uint32_t    : 24;  // Reserved
     };
   } GPIO[28];
-};
-struct [[gnu::packed]] RP1_PWM_BANK {
+} RP1_GPIO_PADS_BANK;
+
+typedef struct [[gnu::packed]] RP1_PWM_BANK {
 
   union RP1_PWM_GLOBAL_CTRL {             // GLOBAL_CTRL
     volatile uint32_t GLOBAL_CTRL_register;
@@ -592,6 +593,6 @@ struct [[gnu::packed]] RP1_PWM_BANK {
     };
   } INTS;
 
-};
+} RP1_PWM_BANK;
 
 #endif  // __WIRINGPI_BCM_REGISTERS_H__
