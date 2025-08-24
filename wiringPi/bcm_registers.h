@@ -22,9 +22,9 @@
  ***********************************************************************
  */
 
-#ifndef __WIRINGPI_BCM_REGISTERS_H__
-#define __WIRINGPI_BCM_REGISTERS_H__
+#ifndef WIRINGPI_BCM_REGISTERS_H
+#define WIRINGPI_BCM_REGISTERS_H
 
 #include <stdint.h>
 
-#endif // __WIRINGPI_BCM_REGISTERS_H__
+#endif // WIRINGPI_BCM_REGISTERS_H
