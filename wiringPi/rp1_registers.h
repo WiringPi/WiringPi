@@ -22,8 +22,8 @@
  ***********************************************************************
  */
 
-#ifndef __WIRINGPI_RP1_REGISTERS_H__
-#define __WIRINGPI_RP1_REGISTERS_H__
+#ifndef WIRINGPI_RP1_REGISTERS_H
+#define WIRINGPI_RP1_REGISTERS_H
 
 #include <stdint.h>
 
@@ -594,4 +594,4 @@ typedef struct [[gnu::packed]] RP1_PWM_BANK {
 
 } RP1_PWM_BANK;
 
-#endif  // __WIRINGPI_BCM_REGISTERS_H__
+#endif  // WIRINGPI_BCM_REGISTERS_H
