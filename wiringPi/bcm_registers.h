@@ -1,7 +1,9 @@
 /*
  * bcm_registers.h:
  *  Private header defining data structures used to interface directly
- *  with memory on BCM2711-based Raspberry Pi GPIO hardware.
+ *  with memory on Broadcom-based Raspberry Pi GPIO hardware.
+ *  For reference, refer to the BCM2711 Arm Peripherals documentation:
+ *    https://datasheets.raspberrypi.com/bcm2711/bcm2711-peripherals.pdf
  ***********************************************************************
  * This file is part of wiringPi:
  *    https://github.com/WiringPi/WiringPi
