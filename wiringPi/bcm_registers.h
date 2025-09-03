@@ -36,7 +36,7 @@ typedef struct [[gnu::packed]] BCM_PWM_BANK {
   //    Structure members have been named using the WiringPi convention, but the Broadcom names are listed
   //    in parentheses in the comments.
 
-  union BCM_CTRL_REGISTER { // CTL : PWM Control
+  union BCM_PWM_CTRL_REGISTER { // CTL : PWM Control
     volatile uint32_t CTRL_register;  // Full register
     struct { // CTL bitfields
       volatile uint32_t CHAN0_ENABLE    : 1;  // Channel 0 Enable (PWEN1)
