@@ -28,6 +28,12 @@
 #define WIRINGPI_BCM_REGISTERS_H
 
 #include <stdint.h>
+#include <stddef.h>
+#include <assert.h>
+
+#define CHECK_OFFSET(struct_type, member, offset) static_assert(offsetof(struct_type, member) == offset, "Invalid offset for member " #member " of structure " #struct_type ". Should match " #offset ".");
+
+
 
 typedef struct [[gnu::packed]] BCM_PWM_BANK {
 
@@ -118,5 +124,22 @@ typedef struct [[gnu::packed]] BCM_PWM_BANK {
   };
 
 } BCM_PWM_BANK;
+
+CHECK_OFFSET(BCM_PWM_BANK, CTRL,          0x00);
+CHECK_OFFSET(BCM_PWM_BANK, CTRL.CHAN[0],  0x00);
+CHECK_OFFSET(BCM_PWM_BANK, CTRL.CHAN[1],  0x01);
+CHECK_OFFSET(BCM_PWM_BANK, STATUS,        0x04);
+CHECK_OFFSET(BCM_PWM_BANK, DMA_CONF,      0x08);
+CHECK_OFFSET(BCM_PWM_BANK, CHAN0_RANGE,   0x10);
+CHECK_OFFSET(BCM_PWM_BANK, CHAN0_DATA,    0x14);
+CHECK_OFFSET(BCM_PWM_BANK, CHAN[0].RANGE, 0x10);
+CHECK_OFFSET(BCM_PWM_BANK, CHAN[0].DATA,  0x14);
+CHECK_OFFSET(BCM_PWM_BANK, FIFO_IN,       0x18);
+CHECK_OFFSET(BCM_PWM_BANK, CHAN1_RANGE,   0x20);
+CHECK_OFFSET(BCM_PWM_BANK, CHAN1_DATA,    0x24);
+CHECK_OFFSET(BCM_PWM_BANK, CHAN[1].RANGE, 0x20);
+CHECK_OFFSET(BCM_PWM_BANK, CHAN[1].DATA,  0x24);
+
+#undef CHECK_OFFSET
 
 #endif // WIRINGPI_BCM_REGISTERS_H

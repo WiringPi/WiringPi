@@ -28,6 +28,10 @@
 #define WIRINGPI_RP1_REGISTERS_H
 
 #include <stdint.h>
+#include <stddef.h>
+#include <assert.h>
+
+#define CHECK_OFFSET(struct_type, member, offset) static_assert(offsetof(struct_type, member) == offset, "Invalid offset for member " #member " of structure " #struct_type ". Should match " #offset ".");
 
 typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
 
@@ -106,7 +110,6 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
   } GPIO[28];
 
   union RP1_GPIO_IO_INTR {  // INTR : Raw Interrupts; Offset 0x100
-
     const volatile uint32_t INTR_register;
     struct {
       const volatile uint32_t GPIO0  : 1;
@@ -458,6 +461,23 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
 
 } RP1_GPIO_IO_BANK;
 
+CHECK_OFFSET(RP1_GPIO_IO_BANK, GPIO[0].STATUS,  0x000);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, GPIO[0].CTRL,    0x004);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, GPIO[1].STATUS,  0x008);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, GPIO[1].CTRL,    0x00C);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, GPIO[27].STATUS, 0x0D8);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, GPIO[27].CTRL,   0x0DC);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, INTR,            0x100);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, PROC0_INTE,      0x104);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, PROC0_INTF,      0x108);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, PROC0_INTS,      0x10C);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, PROC1_INTE,      0x110);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, PROC1_INTF,      0x114);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, PROC1_INTS,      0x118);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, PCIE_INTE,       0x11C);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, PCIE_INTF,       0x120);
+CHECK_OFFSET(RP1_GPIO_IO_BANK, PCIE_INTS,       0x124);
+
 typedef struct [[gnu::packed]] RP1_GPIO_PADS_BANK {
 
   volatile enum RP1_GPIO_PADS_VOLTAGE_SELECT : uint32_t {  // Voltage select. Per bank control
@@ -486,6 +506,10 @@ typedef struct [[gnu::packed]] RP1_GPIO_PADS_BANK {
 
 } RP1_GPIO_PADS_BANK;
 
+CHECK_OFFSET(RP1_GPIO_PADS_BANK, VOLTAGE_SELECT,  0x00);
+CHECK_OFFSET(RP1_GPIO_PADS_BANK, GPIO[0],         0x04);
+CHECK_OFFSET(RP1_GPIO_PADS_BANK, GPIO[27],        0x70);
+
 typedef struct [[gnu::packed]] RP1_PWM_BANK {
 
   union RP1_PWM_GLOBAL_CTRL {  // GLOBAL_CTRL
@@ -497,6 +521,13 @@ typedef struct [[gnu::packed]] RP1_PWM_BANK {
       volatile uint32_t CHAN3_EN   : 1;   // Channel 3 Enable
       volatile uint32_t            : 27;  // Reserved
       volatile uint32_t SET_UPDATE : 1;   // Settings Update Trigger
+                                          // To prevent mis-sampling of multi-bit bus signals in the PWM clock domain,
+                                          // this bit should be used to trigger a settings update. This ensures that
+                                          // all PWM channel settings update on the same PWM clock cycle.
+                                          // Write 1 to trigger a settings update to the block. Self clears to 0.
+                                          // This bit affects the chan*_en bits, chan*_phase, chan*_ctrl and common_range registers.
+                                          // Writes to the *_duty and *_range registers have an integral update strobe and writes take effect on
+                                          // the next counter overflow of the respective PWM channel.
     };
   } GLOBAL_CTRL;
 
@@ -618,5 +649,33 @@ typedef struct [[gnu::packed]] RP1_PWM_BANK {
   } INTS;
 
 } RP1_PWM_BANK;
+
+CHECK_OFFSET(RP1_PWM_BANK, GLOBAL_CTRL,           0x00);
+CHECK_OFFSET(RP1_PWM_BANK, FIFO_CTRL,             0x04);
+CHECK_OFFSET(RP1_PWM_BANK, COMMON_RANGE,          0x08);
+CHECK_OFFSET(RP1_PWM_BANK, COMMON_DUTY,           0x0C);
+CHECK_OFFSET(RP1_PWM_BANK, DUTY_FIFO,             0x10);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[0].CTRL_register, 0x14);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[0].RANGE,         0x18);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[0].PHASE,         0x1C);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[0].DUTY,          0x20);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[1].CTRL_register, 0x24);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[1].RANGE,         0x28);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[1].PHASE,         0x2C);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[1].DUTY,          0x30);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[2].CTRL_register, 0x34);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[2].RANGE,         0x38);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[2].PHASE,         0x3C);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[2].DUTY,          0x40);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[3].CTRL_register, 0x44);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[3].RANGE,         0x48);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[3].PHASE,         0x4C);
+CHECK_OFFSET(RP1_PWM_BANK, CHAN[3].DUTY,          0x50);
+CHECK_OFFSET(RP1_PWM_BANK, INTR,                  0x54);
+CHECK_OFFSET(RP1_PWM_BANK, INTE,                  0x58);
+CHECK_OFFSET(RP1_PWM_BANK, INTF,                  0x5C);
+CHECK_OFFSET(RP1_PWM_BANK, INTS,                  0x60);
+
+#undef CHECK_OFFSET
 
 #endif  // WIRINGPI_BCM_REGISTERS_H
