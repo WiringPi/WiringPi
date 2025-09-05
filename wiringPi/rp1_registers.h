@@ -30,10 +30,12 @@
 #include <stdint.h>
 
 typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
-  struct RP1_GPIO_IO_CHAN {
-    union {                                               // CHANx_STATUS
-      const volatile uint32_t STATUS_register;            // CHANx_STATUS register
-      struct {                                            // CHANx_STATUS bitfields
+
+  struct RP1_GPIO_IO_CHAN {  // Offset 0x00, Array of 28 by 0x08
+
+    union {  // CHANx_STATUS; Offset 0x00 + x * 0x08
+      const volatile uint32_t STATUS_register;
+      struct {
         const volatile uint32_t                     : 8;  // Reserved
         const volatile uint32_t OUTFROMPERI         : 1;  // Output signal from selected peripheral, before register overide is applied
         const volatile uint32_t OUTTOPAD            : 1;  // Output signal to pad after register overide is applied
@@ -59,51 +61,52 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       };
     } STATUS;
 
-    union {                                           // CHANx_CTRL
-      volatile uint32_t CTRL_register;                // CHANx_CTRL register
-      struct {                                        // CHANx_CTRL bitfields
-        volatile uint32_t FUNCSEL : 5;                // Function select. 31 == NULL. See GPIO function table for available functions.
-        volatile uint32_t F_M     : 7;                // Filter/debounce time constant M
-        volatile enum RP1_GPIO_CHAN_CTRL_OUTOVER : uint32_t {
-          OUTOVER_FUNCSEL         = 0x0,              //    Drive output from peripheral signal selected by funcsel
-          OUTOVER_INVERSE_FUNCSEL = 0x1,              //    Drive output from inverse of peripheral signal selected by funcsel
-          OUTOVER_LOW             = 0x2,              //    Drive output low
-          OUTOVER_HIGH            = 0x3               //    Drive output high
-        } OUTOVER : 2;                                // OUTOVER - Output Override
-        volatile enum RP1_GPIO_CHAN_CTRL_OEOVER : uint32_t {
-          OEOVER_FUNCSEL        = 0x0,                //    Drive output enable from peripheral signal selected by funcsel
-          OEOVER_INVERT_FUNCSEL = 0x1,                //    Drive output enable from inverse of peripheral signal selected by funcsel
-          OEOVER_DISABLE        = 0x2,                //    Disable output
-          OEOVER_ENABLE         = 0x3                 //    Enable output
-        } OEOVER : 2;                                 // OEOVER - Output Enable Override
-        volatile enum RP1_GPIO_CHAN_CTRL_INOVER : uint32_t {
-          INOVER_DEFAULT    = 0x0,                    //    Don’t invert the peripheral input
-          INOVER_INVERT     = 0x1,                    //    Invert the peripheral input
-          INOVER_DRIVE_LOW  = 0x2,                    //    Drive peripheral input low
-          INOVER_DRIVE_HIGH = 0x3                     //    Drive peripheral input high
-        } INOVER                                : 2;  // INOVER - Input Override
-        volatile uint32_t                       : 2;  // Reserved
-        volatile uint32_t IRQMASK_EDGE_LOW      : 1;  // Masks the edge low interrupt into the interrupt output
-        volatile uint32_t IRQMASK_EDGE_HIGH     : 1;  // Masks the edge high interrupt into the interrupt output
-        volatile uint32_t IRQMASK_LEVEL_LOW     : 1;  // Masks the level low interrupt into the interrupt output
-        volatile uint32_t IRQMASK_LEVEL_HIGH    : 1;  // Masks the level high interrupt into the interrupt output
-        volatile uint32_t IRQMASK_F_EDGE_LOW    : 1;  // Masks the filtered edge low interrupt into the interrupt output
-        volatile uint32_t IRQMASK_F_EDGE_HIGH   : 1;  // Masks the filtered edge high interrupt into the interrupt output
-        volatile uint32_t IRQMASK_DB_LEVEL_LOW  : 1;  // Masks the debounced level low interrupt into the interrupt output
-        volatile uint32_t IRQMASK_DB_LEVEL_HIGH : 1;  // Masks the debounced level high interrupt into the interrupt output
-        volatile uint32_t IRQRESET              : 1;  // Reset the interrupt edge detector
-        volatile uint32_t                       : 1;  // Reserved
-        volatile enum RP1_GPIO_CHAN_CTRL_IRQOVER : uint32_t {
-          IRQOVER_DEFAULT    = 0x0,                   //    Don’t invert the interrupt
-          IRQOVER_INVERT     = 0x1,                   //    Invert the input
-          IRQOVER_DRIVE_LOW  = 0x2,                   //    Drive interrupt low
-          IRQOVER_DRIVE_HIGH = 0x3                    //    Drive interrupt high
-        } IRQOVER : 2;                                // IRQOVER - Interrupt Override
+    union {  // CHANx_CTRL; Offset 0x04 + 0x08 * x
+      volatile uint32_t CTRL_register;
+      struct {
+        volatile uint32_t FUNCSEL : 5;                         // Function select. 31 == NULL. See GPIO function table for available functions.
+        volatile uint32_t F_M     : 7;                         // Filter/debounce time constant M
+        volatile enum RP1_GPIO_CHAN_CTRL_OUTOVER : uint32_t {  // OUTOVER - Output Override
+          OUTOVER_FUNCSEL         = 0x0,                       //  Drive output from peripheral signal selected by funcsel
+          OUTOVER_INVERSE_FUNCSEL = 0x1,                       //  Drive output from inverse of peripheral signal selected by funcsel
+          OUTOVER_LOW             = 0x2,                       //  Drive output low
+          OUTOVER_HIGH            = 0x3                        //  Drive output high
+        } OUTOVER : 2;
+        volatile enum RP1_GPIO_CHAN_CTRL_OEOVER : uint32_t {  // OEOVER - Output Enable Override
+          OEOVER_FUNCSEL        = 0x0,                        //  Drive output enable from peripheral signal selected by funcsel
+          OEOVER_INVERT_FUNCSEL = 0x1,                        //  Drive output enable from inverse of peripheral signal selected by funcsel
+          OEOVER_DISABLE        = 0x2,                        //  Disable output
+          OEOVER_ENABLE         = 0x3                         //  Enable output
+        } OEOVER : 2;
+        volatile enum RP1_GPIO_CHAN_CTRL_INOVER : uint32_t {  // INOVER - Input Override
+          RP1_GPIO_CHAN_CTRL_INOVER_DEFAULT    = 0x0,         //  Don’t invert the peripheral input
+          RP1_GPIO_CHAN_CTRL_INOVER_INVERT     = 0x1,         //  Invert the peripheral input
+          RP1_GPIO_CHAN_CTRL_INOVER_DRIVE_LOW  = 0x2,         //  Drive peripheral input low
+          RP1_GPIO_CHAN_CTRL_INOVER_DRIVE_HIGH = 0x3          //  Drive peripheral input high
+        } INOVER                                : 2;
+        volatile uint32_t                       : 2;           // Reserved
+        volatile uint32_t IRQMASK_EDGE_LOW      : 1;           // Masks the edge low interrupt into the interrupt output
+        volatile uint32_t IRQMASK_EDGE_HIGH     : 1;           // Masks the edge high interrupt into the interrupt output
+        volatile uint32_t IRQMASK_LEVEL_LOW     : 1;           // Masks the level low interrupt into the interrupt output
+        volatile uint32_t IRQMASK_LEVEL_HIGH    : 1;           // Masks the level high interrupt into the interrupt output
+        volatile uint32_t IRQMASK_F_EDGE_LOW    : 1;           // Masks the filtered edge low interrupt into the interrupt output
+        volatile uint32_t IRQMASK_F_EDGE_HIGH   : 1;           // Masks the filtered edge high interrupt into the interrupt output
+        volatile uint32_t IRQMASK_DB_LEVEL_LOW  : 1;           // Masks the debounced level low interrupt into the interrupt output
+        volatile uint32_t IRQMASK_DB_LEVEL_HIGH : 1;           // Masks the debounced level high interrupt into the interrupt output
+        volatile uint32_t IRQRESET              : 1;           // Reset the interrupt edge detector
+        volatile uint32_t                       : 1;           // Reserved
+        volatile enum RP1_GPIO_CHAN_CTRL_IRQOVER : uint32_t {  // IRQOVER - Interrupt Override
+          RP1_GPIO_CHAN_CTRL_IRQOVER_DEFAULT    = 0x0,         //  Don’t invert the interrupt
+          RP1_GPIO_CHAN_CTRL_IRQOVER_INVERT     = 0x1,         //  Invert the input
+          RP1_GPIO_CHAN_CTRL_IRQOVER_DRIVE_LOW  = 0x2,         //  Drive interrupt low
+          RP1_GPIO_CHAN_CTRL_IRQOVER_DRIVE_HIGH = 0x3          //  Drive interrupt high
+        } IRQOVER : 2;
       };
     } CTRL;
   } GPIO[28];
 
-  union RP1_GPIO_IO_INTR {  // INTR : Raw Interrupts
+  union RP1_GPIO_IO_INTR {  // INTR : Raw Interrupts; Offset 0x100
+
     const volatile uint32_t INTR_register;
     struct {
       const volatile uint32_t GPIO0  : 1;
@@ -138,7 +141,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     };
   } INTR;
 
-  union RP1_GPIO_IO_PROC0_INTE {  // PROC0_INTE : Interrupt Enable for proc0
+  union RP1_GPIO_IO_PROC0_INTE {  // PROC0_INTE : Interrupt Enable for proc0; Offset 0x104
     volatile uint32_t PROC0_INTE_register;
     struct {
       volatile uint32_t GPIO0  : 1;
@@ -173,7 +176,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     };
   } PROC0_INTE;
 
-  union RP1_GPIO_IO_PROC0_INTF {  // PROC0_INTF : Interrupt Force for proc0
+  union RP1_GPIO_IO_PROC0_INTF {  // PROC0_INTF : Interrupt Force for proc0; Offset 0x108
     volatile uint32_t PROC0_INTF_register;
     struct {
       volatile uint32_t GPIO0  : 1;
@@ -208,7 +211,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     };
   } PROC0_INTF;
 
-  union RP1_GPIO_IO_PROC0_INTS {  // PROC0_INTs : Interrupt status after masking & forcing for proc0
+  union RP1_GPIO_IO_PROC0_INTS {  // PROC0_INTs : Interrupt status after masking & forcing for proc0; Offset 0x10C
     const volatile uint32_t PROC0_INTS_register;
     struct {
       const volatile uint32_t GPIO0  : 1;
@@ -243,7 +246,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     };
   } PROC0_INTS;
 
-  union RP1_GPIO_IO_PROC1_INTE {  // PROC1_INTE : Interrupt Enable for PROC1
+  union RP1_GPIO_IO_PROC1_INTE {  // PROC1_INTE : Interrupt Enable for PROC1; Offset 0x110
     volatile uint32_t PROC1_INTE_register;
     struct {
       volatile uint32_t GPIO0  : 1;
@@ -278,7 +281,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     };
   } PROC1_INTE;
 
-  union RP1_GPIO_IO_PROC1_INTF {  // PROC1_INTF : Interrupt Force for PROC1
+  union RP1_GPIO_IO_PROC1_INTF {  // PROC1_INTF : Interrupt Force for PROC1; Offset 0x114
     volatile uint32_t PROC1_INTF_register;
     struct {
       volatile uint32_t GPIO0  : 1;
@@ -313,7 +316,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     };
   } PROC1_INTF;
 
-  union RP1_GPIO_IO_PROC1_INTS {  // PROC1_INTs : Interrupt status after masking & forcing for PROC1
+  union RP1_GPIO_IO_PROC1_INTS {  // PROC1_INTs : Interrupt status after masking & forcing for PROC1; Offset 0x118
     const volatile uint32_t PROC1_INTS_register;
     struct {
       const volatile uint32_t GPIO0  : 1;
@@ -348,8 +351,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     };
   } PROC1_INTS;
 
-
-    union RP1_GPIO_IO_PCIE_INTE {  // PCIE_INTE : Interrupt Enable for PCIE
+  union RP1_GPIO_IO_PCIE_INTE {  // PCIE_INTE : Interrupt Enable for PCIE; Offset 0x11C
     volatile uint32_t PCIE_INTE_register;
     struct {
       volatile uint32_t GPIO0  : 1;
@@ -384,7 +386,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     };
   } PCIE_INTE;
 
-  union RP1_GPIO_IO_PCIE_INTF {  // PCIE_INTF : Interrupt Force for PCIE
+  union RP1_GPIO_IO_PCIE_INTF {  // PCIE_INTF : Interrupt Force for PCIE; Offset 0x120
     volatile uint32_t PCIE_INTF_register;
     struct {
       volatile uint32_t GPIO0  : 1;
@@ -419,7 +421,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     };
   } PCIE_INTF;
 
-  union RP1_GPIO_IO_PCIE_INTS {  // PCIE_INTs : Interrupt status after masking & forcing for PCIE
+  union RP1_GPIO_IO_PCIE_INTS {  // PCIE_INTs : Interrupt status after masking & forcing for PCIE; Offset 0x124
     const volatile uint32_t PCIE_INTS_register;
     struct {
       const volatile uint32_t GPIO0  : 1;
@@ -453,37 +455,40 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       const volatile uint32_t        : 5;  // Reserved
     };
   } PCIE_INTS;
+
 } RP1_GPIO_IO_BANK;
 
 typedef struct [[gnu::packed]] RP1_GPIO_PADS_BANK {
-  volatile enum RP1_GPIO_PADS_VOLTAGE_SELECT : uint32_t {
+
+  volatile enum RP1_GPIO_PADS_VOLTAGE_SELECT : uint32_t {  // Voltage select. Per bank control
     RP1_GPIO_PADS_VOLTAGE_3v3 = 0,
     RP1_GPIO_PADS_VOLTAGE_1v8 = 1
   } VOLTAGE_SELECT;
 
   union RP1_GPIO_PADS_CHAN {
-    volatile uint32_t CTRL_register;   // GPIOx_CTRL register
-    struct {                           // GPIOx_CTRL bitfields
-      volatile uint32_t SLEWFAST : 1;  // Slew rate control. 1 = Fast, 0 = Slow
-      volatile uint32_t SCHMITT  : 1;  // Enable schmitt trigger
-      volatile uint32_t PDE      : 1;  // Pull down enable
-      volatile uint32_t PUE      : 1;  // Pull up enable
-      volatile enum RP1_GPIO_PADS_DRIVE : uint32_t {
-        DRIVE_2mA,
-        DRIVE_4mA,
-        DRIVE_8mA,
-        DRIVE_12mA
-      } DRIVE              : 2;   // Drive strength
+    volatile uint32_t CTRL_register;                  // GPIOx_CTRL register
+    struct {                                          // GPIOx_CTRL bitfields
+      volatile uint32_t SLEWFAST : 1;                 // Slew rate control. 1 = Fast, 0 = Slow
+      volatile uint32_t SCHMITT  : 1;                 // Enable schmitt trigger
+      volatile uint32_t PDE      : 1;                 // Pull down enable
+      volatile uint32_t PUE      : 1;                 // Pull up enable
+      volatile enum RP1_GPIO_PADS_DRIVE : uint32_t {  // Drive strength
+        RP1_GPIO_PADS_DRIVE_2mA,
+        RP1_GPIO_PADS_DRIVE_4mA,
+        RP1_GPIO_PADS_DRIVE_8mA,
+        RP1_GPIO_PADS_DRIVE_12mA
+      } DRIVE              : 2;
       volatile uint32_t IE : 1;   // Input enable
       volatile uint32_t OD : 1;   // Output disable
       volatile uint32_t    : 24;  // Reserved
     };
   } GPIO[28];
+
 } RP1_GPIO_PADS_BANK;
 
 typedef struct [[gnu::packed]] RP1_PWM_BANK {
 
-  union RP1_PWM_GLOBAL_CTRL {             // GLOBAL_CTRL
+  union RP1_PWM_GLOBAL_CTRL {  // GLOBAL_CTRL
     volatile uint32_t GLOBAL_CTRL_register;
     struct {                              // GLOBAL_CTRL bitfields
       volatile uint32_t CHAN0_EN   : 1;   // Channel 0 Enable
@@ -497,41 +502,59 @@ typedef struct [[gnu::packed]] RP1_PWM_BANK {
 
   union RP1_PWM_FIFO_CTRL {  // FIFO_CTRL
     volatile uint32_t FIFO_CTRL_register;
-    struct {                 // FIFO_CTRL bitfields
-      volatile const uint32_t LEVEL      : 5;
-      volatile uint32_t       FLUSH      : 1;
-      volatile const uint32_t FLUSH_DONE : 1;
-      volatile uint32_t                  : 4;
-      volatile uint32_t THRESHOLD        : 5;
-      volatile uint32_t DWELL_TIME       : 5;
-      volatile uint32_t                  : 10;
-      volatile uint32_t DREQ_EN          : 1;
+    struct {
+      volatile const uint32_t LEVEL      : 5;   // Number of available words in the FIFO
+      volatile uint32_t       FLUSH      : 1;   // Assert to flush FIFO
+      volatile const uint32_t FLUSH_DONE : 1;   // FIFO flush completed in the PWM clock domain
+      volatile uint32_t                  : 4;   // Reserved
+      volatile uint32_t THRESHOLD        : 5;   // Threshold for the comparator. DREQ is asserted when level <= threshold.
+      volatile uint32_t DWELL_TIME       : 5;   // Delay in number of bus cycles before successive DREQs are generated. Used to account for system bus latency in write data arriving at the FIFO.
+      volatile uint32_t                  : 10;  // Reserved
+      volatile uint32_t DREQ_EN          : 1;   // 1: Generate DMA request signals to the DMA controller.
+                                                // 0: Don’t generate request signals - the dreq_active interrupt is unaffected.
     };
   } FIFO_CTRL;
 
-  volatile uint32_t COMMON_RANGE;
-  volatile uint32_t COMMON_DUTY;
-  volatile uint32_t DUTY_FIFO;
+  volatile uint32_t COMMON_RANGE;  // Counter range register for channels that are set to use channel binding
+  volatile uint32_t COMMON_DUTY;   // Counter compare register for channels that are set to use channel binding and are not set to use the common FIFO
+  volatile uint32_t DUTY_FIFO;     // 32-bit interface to a 128-bit backed duty cycle FIFO.
+                                   // In round-robin fashion, 32-bit writes to this address are sequentially packed
+                                   // as 32*n-bit words that are pushed into the duty cycle FIFO. N varies as per the
+                                   // number of enabled channels set to use the FIFO. A distributor checks which channels
+                                   // are enabled and using the FIFO, and writes the 32-bit words accordingly.
 
   struct RP1_PWM_CHAN {
-    union {
+    union {  // CHANx_CTRL
       volatile uint32_t CTRL_register;
-      struct {                                 // CHANx_CTRL bitfields
-        volatile uint32_t MODE          : 3;   // PWM generation mode
-        volatile uint32_t INVERT        : 1;   //
-        volatile uint32_t BIND          : 1;   // Bind Channel to the common_range and common_duty/duty_fifo registers
-        volatile uint32_t USEFIFO       : 1;   //
-        volatile uint32_t SDM           : 1;   //
-        volatile uint32_t DITHER        : 1;   //
-        volatile uint32_t FIFO_POP_MASK : 1;   //
-        volatile uint32_t               : 3;   //
-        volatile uint32_t SDM_BANDWIDTH : 4;   //
-        volatile uint32_t SDM_BIAS      : 16;  //
+      struct {
+        volatile enum RP1_PWM_CHAN_MODE : uint32_t {  // PWM generation mode
+          RP1_PWM_CHAN_MODE_ZERO      = 0x00,         //  Generates 0
+          RP1_PWM_CHAN_MODE_TRAILING  = 0x01,         //  Trailing-edge mark-space PWM modulation
+          RP1_PWM_CHAN_MODE_PHASE     = 0x02,         //  Phase-correct mark-space PWM modulation
+          RP1_PWM_CHAN_MODE_DENSITY   = 0x03,         //  Pulse-density encoded output
+          RP1_PWM_CHAN_MODE_MSB       = 0x04,         //  MSB Serialiser output
+          RP1_PWM_CHAN_MODE_MODERATED = 0x05,         //  Pulse position modulated output - a single high-pulse is transmitted per cycle
+          RP1_PWM_CHAN_MODE_LEADING   = 0x06,         //  Leading-edge mark-space PWM modulation
+          RP1_PWM_CHAN_MODE_LSB       = 0x07          //  LSB Serialiser output
+        } MODE                    : 3;
+        volatile uint32_t INVERT  : 1;         // Invert the output bit
+        volatile uint32_t BIND    : 1;         // Bind Channel to the common_range and common_duty/duty_fifo registers
+        volatile uint32_t USEFIFO : 1;         // Use duty_fifo instead of common_duty/chan_duty. Note: setting bind=0 and usefifo=1 will lead to unpredictable operation.
+        volatile uint32_t SDM     : 1;         // Use sigma-delta noise shaping modulator. In conjunction with sdm_bitwidth,
+                                               // treat the duty cycle as a 16-bit signed truncation of the 32- bit duty cycle value and quantise
+                                               // to (sdm_bitwidth+1)-bits. The resulting quantisation noise is filtered using a 2nd-order loop.
+        volatile uint32_t DITHER        : 1;   // When SDM mode is used, add a 1-bit LSB dither inside the noise shaping loop to suppress idle tones.
+        volatile uint32_t FIFO_POP_MASK : 1;   // Counter overflow events generate FIFO pop events.
+        volatile uint32_t               : 3;   // Reserved
+        volatile uint32_t SDM_BITWIDTH  : 4;   // Quantise the 16-bit input to a (sdm_bitwidth+1)-bit output. 0 → 1-bit output.
+        volatile uint32_t SDM_BIAS      : 16;  // Unsigned offset to be added to the output PWM code generated by the sigma-delta modulator.
       };
     };
-    volatile uint32_t RANGE;
-    volatile uint32_t PHASE;
-    volatile uint32_t DUTY;
+    volatile uint32_t RANGE;  // Channel counter range.
+    volatile uint32_t PHASE;  // Channel counter phase offset register.
+                              // This register preloads the internal counter such that phase offsets between
+                              // channels can be introduced. Do not set higher than the respective range register.
+    volatile uint32_t DUTY;   // Channel counter compare register.d
   } CHAN[4];
 
   union RP1_PWM_INTR {  // INTR : Raw Interrupts
