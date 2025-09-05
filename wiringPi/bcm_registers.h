@@ -36,9 +36,9 @@ typedef struct [[gnu::packed]] BCM_PWM_BANK {
   //    Structure members have been named using the WiringPi convention, but the Broadcom names are listed
   //    in parentheses in the comments.
 
-  union BCM_PWM_CTRL_REGISTER { // CTL : PWM Control
-    volatile uint32_t CTRL_register;  // Full register
-    struct { // CTL bitfields
+  union BCM_PWM_CTRL_REGISTER { // CTL : PWM Control; Offset 0x00
+    volatile uint32_t CTRL_register;
+    struct {
       volatile uint32_t CHAN0_ENABLE    : 1;  // Channel 0 Enable (PWEN1)
       volatile uint32_t CHAN0_MODE      : 1;  // Channel 0 Mode (MODE1)
       volatile uint32_t CHAN0_REPEAT    : 1;  // Channel 0 Repeat Last Data (RPTL1)
@@ -69,8 +69,8 @@ typedef struct [[gnu::packed]] BCM_PWM_BANK {
     } CHAN[2];
   } CTRL;
 
-  union BCM_PWM_STATUS_REGISTER { // PWM Status (STA)
-    volatile uint32_t STATUS_register; // Full register
+  union BCM_PWM_STATUS_REGISTER { // PWM Status (STA); Offset 0x04
+    volatile uint32_t STATUS_register;
     struct {
       const volatile uint32_t ERR_FULL    : 1;  // FIFO Full Flag (FULL1)
       const volatile uint32_t ERR_EMPTY   : 1;  // FIFO Empty Flag (EMPT1)
@@ -87,9 +87,9 @@ typedef struct [[gnu::packed]] BCM_PWM_BANK {
 
   union {
     struct { // Individually named registers
-      union BCM_PWM_DMA_CONF { // PWM DMA Configuration (DMAC)
-        volatile uint32_t DMA_CONF_register; // Full Register
-        struct { // BCM_PWM_DMAC bitfields
+      union BCM_PWM_DMA_CONF { // PWM DMA Configuration (DMAC); Offset 0x08
+        volatile uint32_t DMA_CONF_register;
+        struct {
           volatile uint32_t DREQ    : 8;  // DMA Threshold for DREQ signal
           volatile uint32_t PANIC   : 8;  // DMA Threshold for PANIC signal
           volatile uint32_t         : 15; // Reserved
@@ -97,11 +97,11 @@ typedef struct [[gnu::packed]] BCM_PWM_BANK {
         };
       } DMA_CONF;
 
-      volatile uint32_t CHAN0_RANGE;  // Channel 0 Range (RNG1)
-      volatile uint32_t CHAN0_DATA;   // Channel 0 Data (DAT1)
-      volatile uint32_t FIFO_IN;      // Channel FIFO Input (FIF1)
-      volatile uint32_t CHAN1_RANGE;  // Channel 1 Range (RNG2)
-      volatile uint32_t CHAN1_DATA;   // Channel 1 Data (DAT2)
+      volatile uint32_t CHAN0_RANGE;  // Channel 0 Range (RNG1); Offset 0x10
+      volatile uint32_t CHAN0_DATA;   // Channel 0 Data (DAT1); Offset 0x14
+      volatile uint32_t FIFO_IN;      // Channel FIFO Input (FIF1); Offset 0x18
+      volatile uint32_t CHAN1_RANGE;  // Channel 1 Range (RNG2); Offset 0x20
+      volatile uint32_t CHAN1_DATA;   // Channel 1 Data (DAT2); Offset 0x24
 
     };
 
@@ -109,8 +109,8 @@ typedef struct [[gnu::packed]] BCM_PWM_BANK {
 
       struct BCM_PWM_CHAN {
         volatile uint32_t : 32;   // Padding (Overlaps with DMA_CONF / FIFO_IN)
-        volatile uint32_t RANGE;  // Channel Range (RNG1/2)
-        volatile uint32_t DATA;   // Channel Data (DAT1/2)
+        volatile uint32_t RANGE;  // Channel Range (RNG1/2); Offset 0x10/0x20
+        volatile uint32_t DATA;   // Channel Data (DAT1/2); Offset 0x14/0x24
       } CHAN[2];
 
     };
