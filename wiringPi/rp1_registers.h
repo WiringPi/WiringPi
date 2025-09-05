@@ -140,7 +140,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       const volatile uint32_t GPIO25 : 1;
       const volatile uint32_t GPIO26 : 1;
       const volatile uint32_t GPIO27 : 1;
-      const volatile uint32_t        : 5;  // Reserved
+      const volatile uint32_t        : 4;  // Reserved
     };
   } INTR;
 
@@ -175,7 +175,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       volatile uint32_t GPIO25 : 1;
       volatile uint32_t GPIO26 : 1;
       volatile uint32_t GPIO27 : 1;
-      volatile uint32_t        : 5;  // Reserved
+      volatile uint32_t        : 4;  // Reserved
     };
   } PROC0_INTE;
 
@@ -210,7 +210,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       volatile uint32_t GPIO25 : 1;
       volatile uint32_t GPIO26 : 1;
       volatile uint32_t GPIO27 : 1;
-      volatile uint32_t        : 5;  // Reserved
+      volatile uint32_t        : 4;  // Reserved
     };
   } PROC0_INTF;
 
@@ -245,7 +245,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       const volatile uint32_t GPIO25 : 1;
       const volatile uint32_t GPIO26 : 1;
       const volatile uint32_t GPIO27 : 1;
-      const volatile uint32_t        : 5;  // Reserved
+      const volatile uint32_t        : 4;  // Reserved
     };
   } PROC0_INTS;
 
@@ -280,7 +280,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       volatile uint32_t GPIO25 : 1;
       volatile uint32_t GPIO26 : 1;
       volatile uint32_t GPIO27 : 1;
-      volatile uint32_t        : 5;  // Reserved
+      volatile uint32_t        : 4;  // Reserved
     };
   } PROC1_INTE;
 
@@ -315,7 +315,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       volatile uint32_t GPIO25 : 1;
       volatile uint32_t GPIO26 : 1;
       volatile uint32_t GPIO27 : 1;
-      volatile uint32_t        : 5;  // Reserved
+      volatile uint32_t        : 4;  // Reserved
     };
   } PROC1_INTF;
 
@@ -350,7 +350,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       const volatile uint32_t GPIO25 : 1;
       const volatile uint32_t GPIO26 : 1;
       const volatile uint32_t GPIO27 : 1;
-      const volatile uint32_t        : 5;  // Reserved
+      const volatile uint32_t        : 4;  // Reserved
     };
   } PROC1_INTS;
 
@@ -385,7 +385,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       volatile uint32_t GPIO25 : 1;
       volatile uint32_t GPIO26 : 1;
       volatile uint32_t GPIO27 : 1;
-      volatile uint32_t        : 5;  // Reserved
+      volatile uint32_t        : 4;  // Reserved
     };
   } PCIE_INTE;
 
@@ -420,7 +420,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       volatile uint32_t GPIO25 : 1;
       volatile uint32_t GPIO26 : 1;
       volatile uint32_t GPIO27 : 1;
-      volatile uint32_t        : 5;  // Reserved
+      volatile uint32_t        : 4;  // Reserved
     };
   } PCIE_INTF;
 
@@ -455,7 +455,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
       const volatile uint32_t GPIO25 : 1;
       const volatile uint32_t GPIO26 : 1;
       const volatile uint32_t GPIO27 : 1;
-      const volatile uint32_t        : 5;  // Reserved
+      const volatile uint32_t        : 4;  // Reserved
     };
   } PCIE_INTS;
 
