@@ -32,7 +32,7 @@
 typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
   struct RP1_GPIO_IO_CHAN {
     union {                                               // CHANx_STATUS
-      const volatile uint32_t STATUS_reg;                 // CHANx_STATUS register
+      const volatile uint32_t STATUS_register;            // CHANx_STATUS register
       struct {                                            // CHANx_STATUS bitfields
         const volatile uint32_t                     : 8;  // Reserved
         const volatile uint32_t OUTFROMPERI         : 1;  // Output signal from selected peripheral, before register overide is applied
@@ -60,7 +60,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     } STATUS;
 
     union {                                           // CHANx_CTRL
-      volatile uint32_t CTRL_reg;                     // CHANx_CTRL register
+      volatile uint32_t CTRL_register;                // CHANx_CTRL register
       struct {                                        // CHANx_CTRL bitfields
         volatile uint32_t FUNCSEL : 5;                // Function select. 31 == NULL. See GPIO function table for available functions.
         volatile uint32_t F_M     : 7;                // Filter/debounce time constant M
