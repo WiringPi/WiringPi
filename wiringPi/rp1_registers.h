@@ -109,6 +109,15 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     } CTRL;
   } GPIO[28];
 
+  volatile uint32_t : 32;  // Reserved: Padding; Offset 0x0E0
+  volatile uint32_t : 32;  // Reserved: Padding; Offset 0x0E4
+  volatile uint32_t : 32;  // Reserved: Padding; Offset 0x0E8
+  volatile uint32_t : 32;  // Reserved: Padding; Offset 0x0EC
+  volatile uint32_t : 32;  // Reserved: Padding; Offset 0x0F0
+  volatile uint32_t : 32;  // Reserved: Padding; Offset 0x0F4
+  volatile uint32_t : 32;  // Reserved: Padding; Offset 0x0F8
+  volatile uint32_t : 32;  // Reserved: Padding; Offset 0x0FC
+
   union RP1_GPIO_IO_INTR {  // INTR : Raw Interrupts; Offset 0x100
     const volatile uint32_t INTR_register;
     struct {
