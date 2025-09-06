@@ -319,6 +319,11 @@ static volatile unsigned int *timer ;
 static volatile unsigned int *timerIrqRaw ;
 static volatile unsigned int *rio ;
 
+// Defines for hardware memory struct access
+
+#define PWM_BCM (*((BCM_PWM_BANK*)pwm))
+#define PWM_RP1 (*((RP1_PWM_BANK*)pwm))
+
 // Export variables for the hardware pointers
 
 volatile unsigned int *_wiringPiBase ;
@@ -1514,25 +1519,25 @@ void pwmSetRange (unsigned int range) {
     }
 
     if (piRP1Model()) {
-      pwm[RP1_PWM0_CHAN0_RANGE] = range;
-      pwm[RP1_PWM0_CHAN1_RANGE] = range;
-      pwm[RP1_PWM0_CHAN2_RANGE] = range;
-      pwm[RP1_PWM0_CHAN3_RANGE] = range;
+      PWM_RP1.CHAN[0].RANGE = range;
+      PWM_RP1.CHAN[1].RANGE = range;
+      PWM_RP1.CHAN[2].RANGE = range;
+      PWM_RP1.CHAN[3].RANGE = range;
 
       if (wiringPiDebug) {
         printf("PWM range: %u. Current registers[ch. 0-3]: 0x%08X, 0x%08X, 0x%08X, 0x%08X\n", range,
-          pwm[RP1_PWM0_CHAN0_RANGE], pwm[RP1_PWM0_CHAN1_RANGE], pwm[RP1_PWM0_CHAN2_RANGE], pwm[RP1_PWM0_CHAN3_RANGE]);
+          PWM_RP1.CHAN[0].RANGE, PWM_RP1.CHAN[1].RANGE, PWM_RP1.CHAN[2].RANGE, PWM_RP1.CHAN[3].RANGE);
       }
 
     } else {
 
-      pwm[PWM0_RANGE] = range;
+      PWM_BCM.CHAN[0].RANGE = range;
       delayMicroseconds (10);
-      pwm[PWM1_RANGE] = range;
+      PWM_BCM.CHAN[1].RANGE = range;
       delayMicroseconds (10);
 
       if (wiringPiDebug) {
-        printf("PWM range: %u. Current registers[ch. 0-1]: 0x%08X, 0x%08X\n", range, pwm[PWM0_RANGE], pwm[PWM1_RANGE]);
+        printf("PWM range: %u. Current registers[ch. 0-1]: 0x%08X, 0x%08X\n", range, PWM_BCM.CHAN[0].RANGE, PWM_BCM.CHAN[1].RANGE);
       }
 
     }
@@ -1564,17 +1569,10 @@ void pwmSetChannelRange (unsigned int channel, unsigned int range) {
         return;
       }
 
-      const unsigned int RP1_PWM0_RANGE_CHAN[4] = { // Temporary stand-in before merging #392
-        RP1_PWM0_CHAN0_RANGE,
-        RP1_PWM0_CHAN1_RANGE,
-        RP1_PWM0_CHAN2_RANGE,
-        RP1_PWM0_CHAN3_RANGE
-      };
-
-      pwm[RP1_PWM0_RANGE_CHAN[channel]] = range;
+    PWM_RP1.CHAN[channel].RANGE = range;
 
       if (wiringPiDebug) {
-        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, pwm[RP1_PWM0_RANGE_CHAN[channel]]);
+        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, PWM_RP1.CHAN[channel].RANGE);
       }
 
     } else {  // BCM Model
@@ -1584,16 +1582,11 @@ void pwmSetChannelRange (unsigned int channel, unsigned int range) {
         return;
       }
 
-      const unsigned int BCM_PWM0_RANGE_CHAN[2] = {
-        PWM0_RANGE,
-        PWM1_RANGE
-      };
-
-      pwm[BCM_PWM0_RANGE_CHAN[channel]] = range;
+      PWM_BCM.CHAN[channel].RANGE = range;
       delayMicroseconds(10);
 
       if (wiringPiDebug) {
-        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, pwm[BCM_PWM0_RANGE_CHAN[channel]]);
+        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, PWM_BCM.CHAN[channel].RANGE);
       }
 
     }
