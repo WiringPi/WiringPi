@@ -1520,7 +1520,7 @@ void pwmSetRange (unsigned int range) {
       pwm[RP1_PWM0_CHAN3_RANGE] = range;
 
       if (wiringPiDebug) {
-        printf("PWM range: %u. Current registers[ch. 0-3]: 0x%08X, 0x%08X, 0x%08X, 0x%08X\n", range, 
+        printf("PWM range: %u. Current registers[ch. 0-3]: 0x%08X, 0x%08X, 0x%08X, 0x%08X\n", range,
           pwm[RP1_PWM0_CHAN0_RANGE], pwm[RP1_PWM0_CHAN1_RANGE], pwm[RP1_PWM0_CHAN2_RANGE], pwm[RP1_PWM0_CHAN3_RANGE]);
       }
 
@@ -1610,7 +1610,7 @@ void pwmSetChannelRange (unsigned int channel, unsigned int range) {
  */
 
 void pwmSetPinRange(int pin, unsigned int range)  {
-  
+
   if (!ToBCMPin(&pin)) {
     return;
   }
