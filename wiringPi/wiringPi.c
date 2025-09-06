@@ -124,27 +124,28 @@ struct wiringPiNodeStruct *wiringPiNodes = NULL ;
 //	X / 10 + ((X % 10) * 3)
 
 // Port function select bits
+enum WPI_FSEL {
+  FSEL_INPT = 0b000,  // 0
+  FSEL_OUTP = 0b001,  // 1
+  FSEL_ALT0 = 0b100,  // 4
+  FSEL_ALT1 = 0b101,  // 5
+  FSEL_ALT2 = 0b110,  // 6
+  FSEL_ALT3 = 0b111,  // 7
+  FSEL_ALT4 = 0b011,  // 3
+  FSEL_ALT5 = 0b010,  // 2
 
-#define	FSEL_INPT		0b000 //0
-#define	FSEL_OUTP		0b001 //1
-#define	FSEL_ALT0		0b100 //4
-#define	FSEL_ALT1		0b101 //5
-#define	FSEL_ALT2		0b110 //6
-#define	FSEL_ALT3		0b111 //7
-#define	FSEL_ALT4		0b011 //3
-#define	FSEL_ALT5		0b010 //2
-//RP1 defines
-#define	FSEL_ALT6		8
-#define	FSEL_ALT7		9
-#define	FSEL_ALT8		10
-#define	FSEL_ALT9		11
+  // RP1 defines
+  FSEL_ALT6 = 8,
+  FSEL_ALT7 = 9,
+  FSEL_ALT8 = 10,
+  FSEL_ALT9 = 11,
 
-
-//RP1 chip (@Pi5) - 3.1.1. Function select
-#define RP1_FSEL_ALT0			0x00
-#define RP1_FSEL_GPIO			0x05  //SYS_RIO
-#define RP1_FSEL_NONE			0x09
-#define RP1_FSEL_NONE_HW	0x1f  //default, mask
+  // RP1 chip (@Pi5) - 3.1.1. Function select
+  RP1_FSEL_ALT0    = 0x00,
+  RP1_FSEL_GPIO    = 0x05,  // SYS_RIO
+  RP1_FSEL_NONE    = 0x09,
+  RP1_FSEL_NONE_HW = 0x1f  // default, mask
+};
 
 // maybe faster then piRP1Model
 #define ISRP1MODEL (PI_MODEL_5==RaspberryPiModel || PI_MODEL_CM5==RaspberryPiModel|| PI_MODEL_500==RaspberryPiModel || PI_MODEL_CM5L==RaspberryPiModel)
