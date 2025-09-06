@@ -4,7 +4,7 @@
  *	Copyright (c) 2012–2019 Gordon Henderson; 2019–2026 Contributors
  ***********************************************************************
  * This file is part of wiringPi:
- *	https://github.com/WiringPi/WiringPi/
+ *  https://github.com/WiringPi/WiringPi/
  *
  *    wiringPi is free software: you can redistribute it and/or modify
  *    it under the terms of the GNU Lesser General Public License as published by
@@ -21,8 +21,8 @@
  ***********************************************************************
  */
 
-#ifndef	__WIRING_PI_H__
-#define	__WIRING_PI_H__
+#ifndef __WIRING_PI_H__
+#define __WIRING_PI_H__
 
 #include <stdbool.h>
 
@@ -36,12 +36,12 @@
 
 // GCC warning suppressor
 
-#define	UNU	__attribute__((unused))
+#define UNU __attribute__((unused))
 
 // Mask for the bottom 64 pins which belong to the Raspberry Pi
-//	The others are available for the other devices
+//  The others are available for the other devices
 
-#define	PI_GPIO_MASK	(0xFFFFFFC0)
+#define PI_GPIO_MASK (0xFFFFFFC0)
 
 // Handy defines
 
@@ -100,7 +100,7 @@ enum WPI_INTERRUPT_LEVEL {
 };
 
 // Pi model types and version numbers
-//	Intended for the GPIO program Use at your own risk.
+//  Intended for the GPIO program Use at your own risk.
 // https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#new-style-revision-codes
 // https://github.com/raspberrypi/documentation/blob/develop/documentation/asciidoc/computers/raspberry-pi/revision-codes.adoc
 
@@ -155,18 +155,18 @@ enum GPIO_LAYOUT {
   GPIO_LAYOUT_DEFAULT  = 2
 };
 
-extern const char *piModelNames    [PI_MODELS_MAX] ;
+extern const char *piModelNames    [PI_MODELS_MAX];
 extern const char *piProcessor     [ 5] ;
 extern const char *piRevisionNames [16] ;
 extern const char *piMakerNames    [16] ;
 extern const int   piMemorySize    [ 8] ;
 
 
-//	Intended for the GPIO program Use at your own risk.
+//  Intended for the GPIO program Use at your own risk.
 
 // Threads
 
-#define	PI_THREAD(X)	void *X (UNU void *dummy)
+#define PI_THREAD(X) void *X(UNU void *dummy)
 
 // Failure modes
 
@@ -176,23 +176,22 @@ enum WPI_FAILURE_MODE {
 };
 
 // wiringPiNodeStruct:
-//	This describes additional device nodes in the extended wiringPi
-//	2.0 scheme of things.
-//	It's a simple linked list for now, but will hopefully migrate to
-//	a binary tree for efficiency reasons - but then again, the chances
-//	of more than 1 or 2 devices being added are fairly slim, so who
-//	knows....
+//  This describes additional device nodes in the extended wiringPi
+//  2.0 scheme of things.
+//  It's a simple linked list for now, but will hopefully migrate to
+//  a binary tree for efficiency reasons - but then again, the chances
+//  of more than 1 or 2 devices being added are fairly slim, so who
+//  knows....
 
-struct wiringPiNodeStruct
-{
-  int     pinBase ;
-  int     pinMax ;
+struct wiringPiNodeStruct {
+  int pinBase;
+  int pinMax;
 
-  int          fd ;	// Node specific
-  unsigned int data0 ;	//  ditto
-  unsigned int data1 ;	//  ditto
-  unsigned int data2 ;	//  ditto
-  unsigned int data3 ;	//  ditto
+  int          fd;     // Node specific
+  unsigned int data0;  //  ditto
+  unsigned int data1;  //  ditto
+  unsigned int data2;  //  ditto
+  unsigned int data3;  //  ditto
 
   void (*pinMode)         (struct wiringPiNodeStruct *node, int pin, int mode) ;
   void (*pullUpDnControl) (struct wiringPiNodeStruct *node, int pin, int mode) ;
@@ -202,24 +201,23 @@ struct wiringPiNodeStruct
   int  (*analogRead)      (struct wiringPiNodeStruct *node, int pin) ;
   void (*analogWrite)     (struct wiringPiNodeStruct *node, int pin, int value) ;
 
-  struct wiringPiNodeStruct *next ;
-} ;
+  struct wiringPiNodeStruct *next;
+};
 
-extern struct wiringPiNodeStruct *wiringPiNodes ;
+extern struct wiringPiNodeStruct *wiringPiNodes;
 
 // Export variables for the hardware pointers
 
-extern volatile unsigned int *_wiringPiGpio ;
-extern volatile unsigned int *_wiringPiPwm ;
-extern volatile unsigned int *_wiringPiClk ;
-extern volatile unsigned int *_wiringPiPads ;
-extern volatile unsigned int *_wiringPiTimer ;
-extern volatile unsigned int *_wiringPiTimerIrqRaw ;
-
+extern volatile unsigned int *_wiringPiGpio;
+extern volatile unsigned int *_wiringPiPwm;
+extern volatile unsigned int *_wiringPiClk;
+extern volatile unsigned int *_wiringPiPads;
+extern volatile unsigned int *_wiringPiTimer;
+extern volatile unsigned int *_wiringPiTimerIrqRaw;
 
 // Function prototypes
-//	c++ wrappers thanks to a comment by Nick Lott
-//	(and others on the Raspberry Pi forums)
+//  c++ wrappers thanks to a comment by Nick Lott
+//  (and others on the Raspberry Pi forums)
 
 #ifdef __cplusplus
 extern "C" {
@@ -242,7 +240,7 @@ enum WPIPinType {
   WPI_PIN_PHYS,
 };
 
-extern void wiringPiVersion	(int *major, int *minor) ;
+extern void wiringPiVersion (int *major, int *minor) ;
 extern int  wiringPiGlobalMemoryAccess(void);                 //Interface V3.3
 extern int  wiringPiUserLevelAccess (void) ;
 extern int  wiringPiSetup       (void) ;
@@ -255,7 +253,7 @@ extern int  wiringPiSetupGpioDevice(enum WPIPinType pinType); //Interface V3.3
 
 enum WPIPinAlt {
   WPI_ALT_UNKNOWN = -1,
-  WPI_ALT_INPUT = 0,
+  WPI_ALT_INPUT   = 0,
   WPI_ALT_OUTPUT,
   WPI_ALT5,
   WPI_ALT4,
@@ -283,34 +281,34 @@ extern int  analogRead          (int pin) ;
 extern void analogWrite         (int pin, int value) ;
 
 // PiFace specifics
-//	(Deprecated)
+//  (Deprecated)
 
-extern int  wiringPiSetupPiFace (void) ;
-extern int  wiringPiSetupPiFaceForGpioProg (void) ;	// Don't use this - for gpio program only
+extern int wiringPiSetupPiFace(void);
+extern int wiringPiSetupPiFaceForGpioProg(void);  // Don't use this - for gpio program only
 
 // On-Board Raspberry Pi hardware specific stuff
 
-extern          int  piGpioLayout        (void) ;
-extern          int  piBoardRev          (void) ;	// Deprecated, but does the same as piGpioLayout
-extern          void piBoardId           (int *model, int *rev, int *mem, int *maker, int *overVolted) ;
-extern          int  piBoard40Pin        (void) ;                   // Interface V3.7
-extern          int  piRP1Model          (void) ;                   // Interface V3.14
-extern          int  wpiPinToGpio        (int wpiPin) ;   // please don't use outside 0-63 and on RP1
-extern          int  physPinToGpio       (int physPin) ;  // please don't use outside 0-63 and on RP1
-extern          void setPadDrive         (int group, int value) ;
-extern          void setPadDrivePin      (int pin, int value);     // Interface V3.0
-extern          int  getAlt              (int pin) ;
-extern          void pwmToneWrite        (int pin, int freq) ;
-extern          void pwmSetMode          (int mode) ;
-extern          void pwmSetRange         (unsigned int range) ;
-extern          void pwmSetChannelRange  (unsigned int channel, unsigned int range) ;
-extern          void pwmSetPinRange      (int pin, unsigned int range) ;
-extern          void pwmSetClock         (int divisor) ;
-extern          void gpioClockSet        (int pin, int freq) ;
-extern unsigned int  digitalReadByte     (void) ;
-extern unsigned int  digitalReadByte2    (void) ;
-extern          void digitalWriteByte    (int value) ;
-extern          void digitalWriteByte2   (int value) ;
+extern int          piGpioLayout(void);
+extern int          piBoardRev(void);  // Deprecated, but does the same as piGpioLayout
+extern void         piBoardId(int *model, int *rev, int *mem, int *maker, int *overVolted);
+extern int          piBoard40Pin(void);          // Interface V3.7
+extern int          piRP1Model(void);            // Interface V3.14
+extern int          wpiPinToGpio(int wpiPin);    // please don't use outside 0-63 and on RP1
+extern int          physPinToGpio(int physPin);  // please don't use outside 0-63 and on RP1
+extern void         setPadDrive(int group, int value);
+extern void         setPadDrivePin(int pin, int value);  // Interface V3.0
+extern int          getAlt(int pin);
+extern void         pwmToneWrite(int pin, int freq);
+extern void         pwmSetMode(int mode);
+extern void         pwmSetRange(unsigned int range);
+extern void         pwmSetChannelRange(unsigned int channel, unsigned int range);
+extern void         pwmSetPinRange(int pin, unsigned int range);
+extern void         pwmSetClock(int divisor);
+extern void         gpioClockSet(int pin, int freq);
+extern unsigned int digitalReadByte(void);
+extern unsigned int digitalReadByte2(void);
+extern void         digitalWriteByte(int value);
+extern void         digitalWriteByte2(int value);
 
 // Interrupts
 // status returned from waitForInterruptV2    V3.16
