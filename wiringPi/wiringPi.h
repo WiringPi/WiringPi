@@ -46,98 +46,114 @@
 // Handy defines
 
 // wiringPi modes
+enum WPI_MODE {
+  WPI_MODE_PINS             = 0,
+  WPI_MODE_GPIO             = 1,
+  WPI_MODE_GPIO_SYS         = 2,  // deprecated since 3.2
+  WPI_MODE_PHYS             = 3,
+  WPI_MODE_PIFACE           = 4,
+  WPI_MODE_GPIO_DEVICE_BCM  = 5,  // BCM pin numbers like WPI_MODE_GPIO
+  WPI_MODE_GPIO_DEVICE_WPI  = 6,  // WiringPi pin numbers like WPI_MODE_PINS
+  WPI_MODE_GPIO_DEVICE_PHYS = 7,  // Physic pin numbers like WPI_MODE_PHYS
 
-#define	WPI_MODE_PINS		          0
-#define	WPI_MODE_GPIO		          1
-#define	WPI_MODE_GPIO_SYS	        2  // deprecated since 3.2
-#define	WPI_MODE_PHYS		          3
-#define	WPI_MODE_PIFACE		        4
-#define	WPI_MODE_GPIO_DEVICE_BCM  5  // BCM pin numbers like WPI_MODE_GPIO
-#define	WPI_MODE_GPIO_DEVICE_WPI  6  // WiringPi pin numbers like WPI_MODE_PINS
-#define	WPI_MODE_GPIO_DEVICE_PHYS 7  // Physic pin numbers like WPI_MODE_PHYS
-#define	WPI_MODE_UNINITIALISED -1
+  WPI_MODE_UNINITIALISED    = -1,
+};
 
 // Pin modes
+enum WPI_PIN_MODE {
+  INPUT            = 0,
+  OUTPUT           = 1,
+  PWM_OUTPUT       = 2,
+  PWM_MS_OUTPUT    = 8,
+  PWM_BAL_OUTPUT   = 9,
+  GPIO_CLOCK       = 3,
+  SOFT_PWM_OUTPUT  = 4,
+  SOFT_TONE_OUTPUT = 5,
+  PWM_TONE_OUTPUT  = 6,
+  PM_OFF           = 7  // to input / release line
+};
 
-#define	INPUT			         0
-#define	OUTPUT			       1
-#define	PWM_OUTPUT		     2
-#define	PWM_MS_OUTPUT	     8
-#define	PWM_BAL_OUTPUT     9
-#define	GPIO_CLOCK		     3
-#define	SOFT_PWM_OUTPUT		 4
-#define	SOFT_TONE_OUTPUT	 5
-#define	PWM_TONE_OUTPUT		 6
-#define	PM_OFF		         7   // to input / release line
-
-#define	LOW			 0
-#define	HIGH			 1
+enum WPI_PIN_LEVEL {
+  LOW  = 0,
+  HIGH = 1
+};
 
 // Pull up/down/none
-
-#define	PUD_OFF			 0
-#define	PUD_DOWN		 1
-#define	PUD_UP			 2
+enum WPI_PUD_MODE {
+  PUD_OFF  = 0,
+  PUD_DOWN = 1,
+  PUD_UP   = 2
+};
 
 // PWM
-
-#define	PWM_MODE_MS		0
-#define	PWM_MODE_BAL		1
+enum WPI_PWM_MODE {
+  PWM_MODE_MS  = 0,
+  PWM_MODE_BAL = 1
+};
 
 // Interrupt levels
-
-#define	INT_EDGE_SETUP		0
-#define	INT_EDGE_FALLING	1
-#define	INT_EDGE_RISING		2
-#define	INT_EDGE_BOTH		3
+enum WPI_INTERRUPT_LEVEL {
+  INT_EDGE_SETUP   = 0,
+  INT_EDGE_FALLING = 1,
+  INT_EDGE_RISING  = 2,
+  INT_EDGE_BOTH    = 3
+};
 
 // Pi model types and version numbers
 //	Intended for the GPIO program Use at your own risk.
 // https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#new-style-revision-codes
 // https://github.com/raspberrypi/documentation/blob/develop/documentation/asciidoc/computers/raspberry-pi/revision-codes.adoc
 
-#define	PI_MODEL_A		    0
-#define	PI_MODEL_B		    1
-#define	PI_MODEL_AP		    2
-#define	PI_MODEL_BP		    3
-#define	PI_MODEL_2		    4
-#define	PI_ALPHA		      5
-#define	PI_MODEL_CM		    6
+enum PI_MODEL {
+  PI_MODEL_A       = 0,
+  PI_MODEL_B       = 1,
+  PI_MODEL_AP      = 2,
+  PI_MODEL_BP      = 3,
+  PI_MODEL_2       = 4,
+  PI_ALPHA         = 5,
+  PI_MODEL_CM      = 6,
 
-#define	PI_MODEL_3B		    8
-#define	PI_MODEL_ZERO		  9
-#define	PI_MODEL_CM3		 10
+  PI_MODEL_3B      = 8,
+  PI_MODEL_ZERO    = 9,
+  PI_MODEL_CM3     = 10,
 
-#define	PI_MODEL_ZERO_W	 12
-#define	PI_MODEL_3BP 		 13
-#define	PI_MODEL_3AP 		 14
+  PI_MODEL_ZERO_W  = 12,
+  PI_MODEL_3BP     = 13,
+  PI_MODEL_3AP     = 14,
 
-#define	PI_MODEL_CM3P 	 16
-#define	PI_MODEL_4B 		 17
-#define	PI_MODEL_ZERO_2W 18
-#define	PI_MODEL_400		 19
-#define	PI_MODEL_CM4		 20
-#define	PI_MODEL_CM4S		 21
+  PI_MODEL_CM3P    = 16,
+  PI_MODEL_4B      = 17,
+  PI_MODEL_ZERO_2W = 18,
+  PI_MODEL_400     = 19,
+  PI_MODEL_CM4     = 20,
+  PI_MODEL_CM4S    = 21,
 
-#define	PI_MODEL_5		   23
-#define	PI_MODEL_CM5	   24
-#define	PI_MODEL_500	   25
-#define	PI_MODEL_CM5L	   26
+  PI_MODEL_5       = 23,
+  PI_MODEL_CM5     = 24,
+  PI_MODEL_500     = 25,
+  PI_MODEL_CM5L    = 26
+};
 
-#define PI_MODELS_MAX    27
+#define PI_MODELS_MAX 27
 
-#define	PI_VERSION_1		  0
-#define	PI_VERSION_1_1		1
-#define	PI_VERSION_1_2		2
-#define	PI_VERSION_2		  3
+enum PI_VERSION {
+  PI_VERSION_1   = 0,
+  PI_VERSION_1_1 = 1,
+  PI_VERSION_1_2 = 2,
+  PI_VERSION_2   = 3
+};
 
-#define	PI_MAKER_SONY		  0
-#define	PI_MAKER_EGOMAN		1
-#define	PI_MAKER_EMBEST		2
-#define	PI_MAKER_UNKNOWN	3
+enum PI_MAKER {
+  PI_MAKER_SONY    = 0,
+  PI_MAKER_EGOMAN  = 1,
+  PI_MAKER_EMBEST  = 2,
+  PI_MAKER_UNKNOWN = 3
+};
 
-#define GPIO_LAYOUT_PI1_REV1 1   //Pi 1 A/B Revision 1, 1.1, CM
-#define GPIO_LAYOUT_DEFAULT  2
+enum GPIO_LAYOUT {
+  GPIO_LAYOUT_PI1_REV1 = 1,  // Pi 1 A/B Revision 1, 1.1, CM
+  GPIO_LAYOUT_DEFAULT  = 2
+};
 
 extern const char *piModelNames    [PI_MODELS_MAX] ;
 extern const char *piProcessor     [ 5] ;
@@ -154,9 +170,10 @@ extern const int   piMemorySize    [ 8] ;
 
 // Failure modes
 
-#define	WPI_FATAL	(1==1)
-#define	WPI_ALMOST	(1==2)
-
+enum WPI_FAILURE_MODE {
+  WPI_FATAL  = true,
+  WPI_ALMOST = false
+};
 
 // wiringPiNodeStruct:
 //	This describes additional device nodes in the extended wiringPi
