@@ -52,6 +52,7 @@
 //		Change maxPins to numPins to more accurately reflect purpose
 
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -1529,17 +1530,30 @@ void pwmSetRange (unsigned int range) {
     }
 
     if (piRP1Model()) {
-      PWM_RP1.CHAN[0].RANGE = range;
-      PWM_RP1.CHAN[1].RANGE = range;
-      PWM_RP1.CHAN[2].RANGE = range;
-      PWM_RP1.CHAN[3].RANGE = range;
+
+      for (unsigned int channel = 0; channel < 4; ++channel) {
+
+        if (PWM_RP1.CHAN[channel].BIND) {
+
+          if (wiringPiDebug) {
+            printf("PWM channel %u bound to COMMON_RANGE and COMMON_DUTY. Setting CHAN[%u].DUTY to COMMON_DUTY and unbinding.\n", channel, channel);
+          }
+
+          PWM_RP1.CHAN[channel].DUTY = PWM_RP1.COMMON_DUTY;
+          PWM_RP1.CHAN[channel].BIND = false;
+
+        }
+
+        PWM_RP1.CHAN[channel].RANGE = range;
+
+      }
 
       if (wiringPiDebug) {
         printf("PWM range: %u. Current registers[ch. 0-3]: 0x%08X, 0x%08X, 0x%08X, 0x%08X\n", range,
           PWM_RP1.CHAN[0].RANGE, PWM_RP1.CHAN[1].RANGE, PWM_RP1.CHAN[2].RANGE, PWM_RP1.CHAN[3].RANGE);
       }
 
-    } else {
+    } else { // BCM Model
 
       PWM_BCM.CHAN[0].RANGE = range;
       delayMicroseconds (10);
@@ -1579,7 +1593,18 @@ void pwmSetChannelRange (unsigned int channel, unsigned int range) {
         return;
       }
 
-    PWM_RP1.CHAN[channel].RANGE = range;
+      if (PWM_RP1.CHAN[channel].BIND) {
+
+        if (wiringPiDebug) {
+          printf("PWM channel %u bound to COMMON_RANGE and COMMON_DUTY. Setting CHAN[%u].DUTY to COMMON_DUTY and unbinding.\n", channel, channel);
+        }
+
+        PWM_RP1.CHAN[channel].DUTY = PWM_RP1.COMMON_DUTY;
+        PWM_RP1.CHAN[channel].BIND = false;
+
+      }
+
+      PWM_RP1.CHAN[channel].RANGE = range;
 
       if (wiringPiDebug) {
         printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, PWM_RP1.CHAN[channel].RANGE);
