@@ -239,7 +239,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     };
   } PROC0_INTF;
 
-  union RP1_GPIO_IO_PROC0_INTS {  // PROC0_INTs : Interrupt status after masking & forcing for proc0; Offset 0x10C
+  union RP1_GPIO_IO_PROC0_INTS {  // PROC0_INTS : Interrupt status after masking & forcing for proc0; Offset 0x10C
     const volatile uint32_t PROC0_INTS_register;
     struct {
       const volatile uint32_t GPIO0  : 1;
