@@ -27,6 +27,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 #include <wiringPi.h>
 #include <ds1302.h>
@@ -133,8 +135,9 @@ static int ramTest (void)
 static int setLinuxClock (void)
 {
   char dateTime [20] ;
-  char command [64] ;
   int  clock [8] ;
+  pid_t pid ;
+  int status ;
 
 
   printf ("Setting the Linux Clock from the DS1302... ") ; fflush (stdout) ;
@@ -152,8 +155,26 @@ static int setLinuxClock (void)
 	bcdToD (clock [RTC_YEAR],  masks [RTC_YEAR]),
 	bcdToD (clock [RTC_SECS],  masks [RTC_SECS])) ;
 
-  sprintf (command, "/bin/date %s", dateTime) ;
-  system (command) ;
+  // Use fork/exec instead of system() to prevent command injection
+  pid = fork () ;
+  if (pid == -1)
+  {
+    perror ("fork") ;
+    return -1 ;
+  }
+  else if (pid == 0)
+  {
+    // Child process
+    char *args[] = {"/bin/date", dateTime, NULL} ;
+    execv ("/bin/date", args) ;
+    perror ("execv") ;
+    exit (1) ;
+  }
+  else
+  {
+    // Parent process - wait for child
+    waitpid (pid, &status, 0) ;
+  }
 
   return 0 ;
 }
