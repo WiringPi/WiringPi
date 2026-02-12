@@ -42,6 +42,7 @@ extern int wiringPiI2CRawWrite       (int fd, const uint8_t *values, uint8_t siz
 
 extern int wiringPiI2CSetupInterface (const char *device, int devId) ;
 extern int wiringPiI2CSetup          (const int devId) ;
+extern int wiringPiI2CClose          (int fd) ;
 
 #ifdef __cplusplus
 }

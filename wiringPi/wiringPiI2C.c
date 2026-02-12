@@ -267,3 +267,15 @@ int wiringPiI2CSetup (const int devId)
 
   return wiringPiI2CSetupInterface (device, devId) ;
 }
+
+
+/*
+ * wiringPiI2CClose:
+ *	Close the I2C device
+ *********************************************************************************
+ */
+
+int wiringPiI2CClose (int fd)
+{
+  return close (fd) ;
+}
