@@ -37,18 +37,27 @@ jobs:
           export CC=arm-linux-gnueabihf-gcc
           export AR=arm-linux-gnueabihf-ar
           export STRIP=arm-linux-gnueabihf-strip
+          export CFLAGS="-v"
+          export LDFLAGS="-v"
+
+          echo "=== COMPILER SEARCH DIRS ==="
+          $CC -print-search-dirs
 
           echo "Building wiringPi..."
           cd wiringPi
-          make -j$(nproc)
+          make -j$(nproc) V=1
 
           echo "Building devLib..."
           cd ../devLib
-          make -j$(nproc) INCLUDE='-I. -I../wiringPi' LDFLAGS='-L../debian-template/wiringPi/usr/lib'
+          make -j$(nproc) V=1 \
+            INCLUDE='-I. -I../wiringPi' \
+            LDFLAGS='-L../debian-template/wiringPi/usr/lib'
 
           echo "Building gpio..."
           cd ../gpio
-          make -j$(nproc) INCLUDE='-I. -I../wiringPi -I../devLib' LDFLAGS='-L../debian-template/wiringPi/usr/lib'
+          make -j$(nproc) V=1 \
+            INCLUDE='-I. -I../wiringPi -I../devLib' \
+            LDFLAGS='-L../debian-template/wiringPi/usr/lib'
 
       - name: Build Debian package
         run: |
