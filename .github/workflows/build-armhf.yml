@@ -3,7 +3,7 @@ name: Build ARMHF (Bookworm + Debian Package)
 on:
   push:
     branches:
-      - ci/crossbuild
+      - crossbuild
   pull_request:
 
 jobs:
