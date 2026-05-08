@@ -25,11 +25,12 @@ jobs:
             build-essential \
             gcc-arm-linux-gnueabihf libc6-dev-armhf-cross \
             crossbuild-essential-armhf \
-            libxcrypt-dev:armhf \
             pkg-config \
             fakeroot \
             dpkg-dev \
-            gettext
+            gettext \
+            libxcrypt-dev \
+            libxcrypt1:armhf
 
       - name: Build wiringPi (ARMHF)
         run: |
