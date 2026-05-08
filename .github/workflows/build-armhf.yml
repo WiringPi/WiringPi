@@ -29,8 +29,8 @@ jobs:
             fakeroot \
             dpkg-dev \
             gettext \
-            libxcrypt-dev \
-            libxcrypt1:armhf
+            libcrypt-dev \
+            libcrypt1:armhf
 
       - name: Build wiringPi (ARMHF)
         run: |
