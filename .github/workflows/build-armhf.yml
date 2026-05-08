@@ -48,7 +48,7 @@ jobs:
 
           echo "Building gpio..."
           cd ../gpio
-          make -j$(nproc) INCLUDE='-I. -I../wiringPi'
+          make -j$(nproc) INCLUDE='-I. -I../wiringPi -I../devLib'
 
       - name: Build Debian package
         run: |
