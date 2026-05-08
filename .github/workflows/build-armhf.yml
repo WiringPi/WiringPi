@@ -29,7 +29,7 @@ jobs:
             fakeroot \
             dpkg-dev \
             gettext \
-            libcrypt-dev \
+            libcrypt-dev:armhf \
             libcrypt1:armhf
 
       - name: Build wiringPi (ARMHF)
