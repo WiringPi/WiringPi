@@ -44,11 +44,11 @@ jobs:
 
           echo "Building devLib..."
           cd ../devLib
-          make -j$(nproc)
+          make -j$(nproc) INCLUDE='-I. -I../wiringPi'
 
           echo "Building gpio..."
           cd ../gpio
-          make -j$(nproc)
+          make -j$(nproc) INCLUDE='-I. -I../wiringPi'
 
       - name: Build Debian package
         run: |
