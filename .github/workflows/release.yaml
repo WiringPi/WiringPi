@@ -1,0 +1,95 @@
+name: Release WiringPi (ARMHF + ARM64)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: debian:bookworm
+
+    strategy:
+      matrix:
+        arch: [armhf, arm64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install toolchain & packaging tools
+        run: |
+          dpkg --add-architecture armhf
+          dpkg --add-architecture arm64
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            crossbuild-essential-armhf \
+            crossbuild-essential-arm64 \
+            gcc-arm-linux-gnueabihf libc6-dev-armhf-cross \
+            gcc-aarch64-linux-gnu libc6-dev-arm64-cross \
+            pkg-config \
+            fakeroot \
+            dpkg-dev \
+            gettext \
+            libcrypt-dev:${{ matrix.arch }} \
+            libcrypt1:${{ matrix.arch }}
+
+      - name: Build WiringPi (${{ matrix.arch }})
+        run: |
+          if [ "${{ matrix.arch }}" = "armhf" ]; then
+            export CC=arm-linux-gnueabihf-gcc
+            export AR=arm-linux-gnueabihf-ar
+            export STRIP=arm-linux-gnueabihf-strip
+          else
+            export CC=aarch64-linux-gnu-gcc
+            export AR=aarch64-linux-gnu-ar
+            export STRIP=aarch64-linux-gnu-strip
+          fi
+
+          vMaj=$(cut -d. -f1 VERSION)
+          vMin=$(cut -d. -f2 VERSION)
+          export VERSION="$vMaj.$vMin"
+          export ARCH="${{ matrix.arch }}"
+
+          here=$(pwd)
+          deb_destdir="${here}/debian-template/wiringPi-${{ matrix.arch }}"
+
+          cd debian-template/wiringPi
+          envsubst < control_template > DEBIAN/control
+          rm -rf usr
+
+          cd "$here/wiringPi"
+          make install-deb V=1 \
+            DEB_DESTDIR="${deb_destdir}"
+
+          cd "$here/devLib"
+          make install-deb V=1 \
+            INCLUDE='-I. -I../wiringPi' \
+            DEB_DESTDIR="${deb_destdir}"
+
+          cd "$here/gpio"
+          make install-deb V=1 \
+            INCLUDE='-I../wiringPi -I../devLib' \
+            LDFLAGS='' \
+            LIBS="../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt" \
+            DEB_DESTDIR="${deb_destdir}"
+
+          cd "$here/debian-template"
+          fakeroot dpkg-deb --build wiringPi-${{ matrix.arch }}
+          dpkg-name -o wiringPi-${{ matrix.arch }}.deb
+
+      - name: Generate SHA256 checksum
+        run: |
+          cd debian-template
+          sha256sum wiringPi-${{ matrix.arch }}*.deb > SHA256SUMS-${{ matrix.arch }}
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            debian-template/wiringPi-${{ matrix.arch }}*.deb
+            debian-template/SHA256SUMS-${{ matrix.arch }}
