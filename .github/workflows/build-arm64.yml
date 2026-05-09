@@ -23,8 +23,8 @@ jobs:
           apt-get update
           apt-get install -y \
             build-essential \
+            gcc-aarch64-linux-gnu libc6-dev-arm64-cross \
             crossbuild-essential-arm64 \
-            libxcrypt-dev:arm64 \
             pkg-config \
             fakeroot \
             dpkg-dev \
@@ -58,6 +58,7 @@ jobs:
           make -j$(nproc) V=1 \
             INCLUDE='-I. -I../wiringPi -I../devLib' 
             LDFLAGS='-L../debian-template/wiringPi/usr/lib'
+            LIBS='../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt'
 
       - name: Build Debian package
         run: |
