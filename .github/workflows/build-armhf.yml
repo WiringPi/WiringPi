@@ -47,17 +47,11 @@ jobs:
           cd wiringPi
           make -j$(nproc) V=1
 
-          echo "=== search wiringPi library ==="
-          find . -type f -name "*.so" -print
-
           echo "Building devLib..."
           cd ../devLib
           make -j$(nproc) V=1 \
             INCLUDE='-I. -I../wiringPi' \
             LDFLAGS='-L../debian-template/wiringPi/usr/lib'
-
-          echo "=== search devLib library ==="
-          find . -type f -name "*.so" -print
 
           echo "Building gpio..."
           cd ../gpio
