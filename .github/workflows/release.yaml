@@ -92,12 +92,11 @@ jobs:
         run: |
           ls -R
           cd debian-template
-          ebfile=$(ls wiringpi_*_${{ matrix.arch }}.deb)
-          sha256sum "$debfile" > "SHA256SUMS-${{ matrix.arch }}"
+          sha256sum "wiringpi_*_${{ matrix.arch }}.deb" > "SHA256SUMS-${{ matrix.arch }}"
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            debian-template/wiringPi_*_${{ matrix.arch }}.deb
+            debian-template/wiringpi_*_${{ matrix.arch }}.deb
             debian-template/SHA256SUMS-${{ matrix.arch }}
