@@ -90,6 +90,7 @@ jobs:
 
       - name: Generate SHA256 checksum
         run: |
+          ls -R
           cd debian-template
           ebfile=$(ls wiringpi_*_${{ matrix.arch }}.deb)
           sha256sum "$debfile" > "SHA256SUMS-${{ matrix.arch }}"
