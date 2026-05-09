@@ -86,6 +86,7 @@ jobs:
           cd "$here/debian-template"
           fakeroot dpkg-deb --build wiringPi-${{ matrix.arch }}
           dpkg-name -o wiringPi-${{ matrix.arch }}.deb
+          ls -R
 
       - name: Generate SHA256 checksum
         run: |
