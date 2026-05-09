@@ -61,7 +61,7 @@ jobs:
           mkdir -p "${deb_destdir}/DEBIAN"
           cp -v ${here}/debian-template/wiringPi/control_template "${deb_destdir}/"
           cp -v ${here}/debian-template/wiringPi/DEBIAN/postinst "${deb_destdir}/DEBIAN/"
-          cp -v ${here}/debian-template/wiringPi/DEBIAN/prerm "${deb_destdir}/DEBIAN/"
+          cp -v ${here}/debian-template/wiringPi/DEBIAN/postrm "${deb_destdir}/DEBIAN/"
           cd "${deb_destdir}"
           envsubst < control_template > DEBIAN/control
           rm -f control_template
