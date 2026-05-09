@@ -59,12 +59,13 @@ jobs:
           deb_destdir="${here}/debian-template/wiringPi-${{ matrix.arch }}"
           rm -rf "${deb_destdir}"
           mkdir -p "${deb_destdir}/DEBIAN"
-          cp -v debian-template/wiringpi/control_template "${deb_destdir}/" 2>/dev/null || true
-          cp -v debian-template/wiringpi/DEBIAN/postinst "${deb_destdir}/DEBIAN/" 2>/dev/null || true
-          cp -v debian-template/wiringpi/DEBIAN/prerm "${deb_destdir}/DEBIAN/" 2>/dev/null || true
+          cp -v ${here}/debian-template/wiringpi/control_template "${deb_destdir}/"
+          cp -v ${here}/debian-template/wiringpi/DEBIAN/postinst "${deb_destdir}/DEBIAN/"
+          cp -v ${here}/debian-template/wiringpi/DEBIAN/prerm "${deb_destdir}/DEBIAN/"
           cd "${deb_destdir}"
           envsubst < control_template > DEBIAN/control
           rm -f control_template
+          rm -rf usr
 
           cd "$here/wiringPi"
           make install-deb V=1 \
