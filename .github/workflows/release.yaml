@@ -90,9 +90,11 @@ jobs:
 
       - name: Generate SHA256 checksum
         run: |
-          ls -R
           cd debian-template
-          sha256sum "wiringpi_*_${{ matrix.arch }}.deb" > "SHA256SUMS-${{ matrix.arch }}"
+          ls -R
+          debfile=$(ls -1 wiringpi_*_${{ matrix.arch }}.deb | head -n 1)
+          echo "file: $debfile"
+          sha256sum "$debfile" > "SHA256SUMS-${{ matrix.arch }}"
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
