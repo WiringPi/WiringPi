@@ -57,8 +57,9 @@ jobs:
 
           here=$(pwd)
           deb_destdir="${here}/debian-template/wiringPi-${{ matrix.arch }}"
-
-          cd debian-template/wiringPi-${{ matrix.arch }}
+          mkdir -p "${deb_destdir}/DEBIAN"
+          cp debian-template/control_template "${deb_destdir}/DEBIAN/"
+          cd "${deb_destdir}"
           envsubst < control_template > DEBIAN/control
           rm -rf usr
 
