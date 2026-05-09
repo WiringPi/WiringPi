@@ -107,3 +107,14 @@ jobs:
         with:
           name: wiringPi-armhf-deb
           path: debian-template/*.deb
+
+      - name: Generate SHA256 checksum
+        run: |
+          cd debian-template
+          sha256sum *.deb > SHA256SUMS
+
+      - name: Upload SHA256 checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: wiringPi-armhf-sha256
+          path: debian-template/SHA256SUMS
