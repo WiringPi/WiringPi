@@ -56,8 +56,8 @@ jobs:
           echo "Building gpio..."
           cd ../gpio
           make -j$(nproc) V=1 \
-            INCLUDE='-I. -I../wiringPi -I../devLib' 
-            LDFLAGS='-L../debian-template/wiringPi/usr/lib'
+            INCLUDE='-I. -I../wiringPi -I../devLib' \
+            LDFLAGS='-L../debian-template/wiringPi/usr/lib' \
             LIBS='../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt'
 
       - name: Build Debian package
