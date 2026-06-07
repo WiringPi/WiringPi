@@ -3,7 +3,7 @@ CFLAGS = -Wall
 LDFLAGS =
 
 # Need BCM19 <-> BCM26, +PWM: BCM12 <-> BCM13, BCM18 <-> BCM17 connected (1kOhm)
-tests = wiringpi_test0_version wiringpi_test1_sysfs wiringpi_test2_sysfs wiringpi_test3_device_wpi wiringpi_test4_device_phys wiringpi_test5_default wiringpi_test6_isr wiringpi_test61_isr2 wiringpi_test62_isr_wpin wiringpi_test7_bench wiringpi_test8_pwm wiringpi_test9_pwm
+tests = wiringpi_test0_version wiringpi_test1_sysfs wiringpi_test2_sysfs wiringpi_test3_device_wpi wiringpi_test4_device_phys wiringpi_test5_default wiringpi_test6_isr wiringpi_test61_isr2 wiringpi_test62_isr_wpin wiringpi_test11_pulseIn wiringpi_test7_bench wiringpi_test8_pwm wiringpi_test9_pwm
 
 # Need XO hardware
 xotests = wiringpi_xotest_test1_spi wiringpi_i2c_test1_pcf8574 wiringpi_test8_pwm wiringpi_test9_pwm
@@ -39,6 +39,9 @@ wiringpi_test61_isr2:
 
 wiringpi_test62_isr_wpin:
 	${CC} ${CFLAGS} wiringpi_test62_isr_wpin.c -o wiringpi_test62_isr_wpin -lwiringPi
+
+wiringpi_test11_pulseIn:
+	${CC} ${CFLAGS} wiringpi_test11_pulseIn.c -o wiringpi_test11_pulseIn -lwiringPi
 
 wiringpi_test7_bench:
 	${CC} ${CFLAGS} wiringpi_test7_bench.c -o wiringpi_test7_bench -lwiringPi

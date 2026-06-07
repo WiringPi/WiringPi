@@ -77,6 +77,7 @@
 #include <linux/gpio.h>
 #include <dirent.h>
 #include <inttypes.h>
+#include <stdatomic.h>
 
 #include "softPwm.h"
 #include "softTone.h"
@@ -488,7 +489,14 @@ static int isrFds [64] =
   -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 } ;
 
-
+#define MAX_EDGE_EVENTS 3
+typedef struct {
+   atomic_ullong count;
+   atomic_int    edge[MAX_EDGE_EVENTS];
+   atomic_ullong timestamp[MAX_EDGE_EVENTS];
+   atomic_ullong LowPulse;
+   atomic_ullong HighPulse;
+} edge_event_state_t;
 
 // ISR Data
 static int chipFd = -1;
@@ -498,6 +506,8 @@ static void (*isrFunctions [64])(void) ;
 static pthread_t isrThreads[64];
 static int isrEdgeMode[64];             // irq on rising/falling edge
 static unsigned long isrDebouncePeriodUs[64];      // 0: debounce is off
+static edge_event_state_t edgeEventState[64];
+
 
 // Doing it the Arduino way with lookup tables...
 //	Yes, it's probably more innefficient than all the bit-twidling, but it
@@ -2625,6 +2635,31 @@ unsigned int digitalReadByte2 (void)
 }
 
 
+unsigned long long pulseIn64(int pin, int level, unsigned long long timeout_us) {
+
+  wiringPiISR2(pin, INT_EDGE_BOTH, NULL, 0, NULL);
+
+  unsigned long long Pulse_ns = 0;
+  unsigned long long start_time = piMicros64();
+  while (true) {
+    Pulse_ns = level==HIGH ? edgeEventState[pin].HighPulse : edgeEventState[pin].LowPulse;
+    if (Pulse_ns>0) {
+      break;
+    }
+    if (piMicros64() - start_time > timeout_us) {
+      if (wiringPiDebug) printf("pulseIn timeout\n");
+      Pulse_ns = 0;
+      break;
+    }
+    delay(10);
+  }
+
+  if (wiringPiDebug) printf("pulseIn: HighPulse %llu, LowPulse %llu\n", edgeEventState[pin].HighPulse,  edgeEventState[pin].LowPulse);
+  wiringPiISRStop(pin);
+
+  return Pulse_ns; // Micro seconds
+}
+
 
 /*
  * waitForInterrupt2:
@@ -3008,28 +3043,53 @@ static void *interruptHandlerV2(void *arg)
 
                 ret = readret/sizeof(evdat[0]);     // number of events read from fd
                 for (i = 0; i < ret; ++i) {
-                    if (isrFunctionsV2[pin]) {
-                        if (wiringPiDebug)
-                            printf( "interruptHandlerV2: GPIO EVENT at %llu on line %u (%u|%u) \n", evdat[i].timestamp_ns, evdat[i].offset, evdat[i].line_seqno, evdat[i].seqno);
+                  int edge;
+                  switch (evdat[i].id) {
+                    case GPIO_V2_LINE_EVENT_RISING_EDGE:
+                        edge = INT_EDGE_RISING;
+                        if (wiringPiDebug) printf("waitForInterrupt2: rising edge\n");
+                        break;
+                    case GPIO_V2_LINE_EVENT_FALLING_EDGE:
+                        edge = INT_EDGE_FALLING;
+                        if (wiringPiDebug) printf("waitForInterrupt2: falling edge\n");
+                        break;
+                    default:
+                        edge = INT_EDGE_SETUP;        // edge = 0
+                        if (wiringPiDebug) printf("waitForInterrupt2: unknown event\n");
+                        break;
+                  }
+                  if (wiringPiDebug)
+                    printf( "interruptHandlerV2: GPIO EVENT at %llu on line %u (%u|%u)\n", evdat[i].timestamp_ns, evdat[i].offset, evdat[i].line_seqno, evdat[i].seqno);
+
+                  if (edgeEventState[pin].count<3) {
+                      if (wiringPiDebug) printf( "interruptHandlerV2: store event=%llu, edge=%d \n", edgeEventState[pin].count+1, edge);
+                      edgeEventState[pin].edge[edgeEventState[pin].count] = edge;
+                      edgeEventState[pin].timestamp[edgeEventState[pin].count] =  evdat[i].timestamp_ns;
+                      if (edgeEventState[pin].count==1) {
+                        if (edgeEventState[pin].edge[0]==INT_EDGE_FALLING && edgeEventState[pin].edge[1]==INT_EDGE_RISING) {
+                          if (wiringPiDebug) printf("pulse 1 low falling -> raising");
+                          edgeEventState[pin].LowPulse = edgeEventState[pin].timestamp[1] - edgeEventState[pin].timestamp[0];
+
+                        } else if (edgeEventState[pin].edge[0]==INT_EDGE_RISING && edgeEventState[pin].edge[1]==INT_EDGE_FALLING) {
+                          if (wiringPiDebug) printf("pulse 1 low raising -> falling");
+                          edgeEventState[pin].HighPulse = edgeEventState[pin].timestamp[1] - edgeEventState[pin].timestamp[0];
+                        }
+                      } else if (edgeEventState[pin].count==2) {
+                        if (edgeEventState[pin].edge[1]==INT_EDGE_RISING && edgeEventState[pin].edge[2]==INT_EDGE_FALLING) {
+                          if (wiringPiDebug) printf("pulse 2 low raising -> falling");
+                          edgeEventState[pin].HighPulse = edgeEventState[pin].timestamp[2] - edgeEventState[pin].timestamp[1];
+                        } else if (edgeEventState[pin].edge[1]==INT_EDGE_FALLING && edgeEventState[pin].edge[2]==INT_EDGE_RISING) {
+                          if (wiringPiDebug) printf("pulse 2 low falling -> raising");
+                          edgeEventState[pin].LowPulse = edgeEventState[pin].timestamp[2] - edgeEventState[pin].timestamp[1];
+                        }
+                      }
+                  }
+                  ++edgeEventState[pin].count;
+
+                  if (isrFunctionsV2[pin]) {
                         wfiStatus.statusOK = 1;
                         wfiStatus.pinBCM = pin;
-                        switch (evdat[i].id) {
-                            case GPIO_V2_LINE_EVENT_RISING_EDGE:
-                                wfiStatus.edge = INT_EDGE_RISING;
-                                if (wiringPiDebug)
-                                    printf("waitForInterrupt2: rising edge\n");
-                                break;
-                            case GPIO_V2_LINE_EVENT_FALLING_EDGE:
-                                wfiStatus.edge = INT_EDGE_FALLING;
-                                if (wiringPiDebug)
-                                    printf("waitForInterrupt2: falling edge\n");
-                                break;
-                            default:
-                                wfiStatus.edge = INT_EDGE_SETUP;        // edge = 0
-                                if (wiringPiDebug)
-                                    printf("waitForInterrupt2: unknown event\n");
-                                break;
-                        }
+                        wfiStatus.edge = edge;
                         wfiStatus.timeStamp_us = evdat[i].timestamp_ns/1000LL;
                         if (wiringPiDebug) {
                           printf( "interruptHandlerV2: call isr function\n");
@@ -3105,6 +3165,14 @@ int wiringPiISRInternal(int pin, int edgeMode, void (*function)(struct WPIWfiSta
     isrFunctions[pin] = functionClassic;
     isrEdgeMode[pin] = edgeMode;
     isrDebouncePeriodUs[pin] = debounce_period_us;
+
+    edgeEventState[pin].count = 0;
+    for (int i=0; i<MAX_EDGE_EVENTS; ++i) {
+      edgeEventState[pin].edge[i] = 0;
+      edgeEventState[pin].timestamp[i] = 0;
+    }
+    edgeEventState[pin].LowPulse = 0;
+    edgeEventState[pin].HighPulse = 0;
 
     pinPass = pin ;
     if (params.fd > 0) {
@@ -3311,28 +3379,9 @@ unsigned long long piMicros64(void) {
  *  or gives up and returns 0 if no complete pulse recieved within timeout.
  *********************************************************************************
 */
-unsigned long pulseIn(int pin, int level, unsigned long timeout) {
-  unsigned long startTime = micros();
-  //0. missed pulse start - prevents bad readings
-  while (digitalRead(pin) == level) {
-    if ((micros() - startTime) > timeout){
-      return 0;
-    }
-  }
-  // 1. Wait for pulse to start.
-  while (digitalRead(pin) != level) {
-      if ((micros() - startTime) > timeout)
-          return 0;
-  }
-  unsigned long pulseStart = micros();
+unsigned int pulseIn(int pin, int level, unsigned int timeout) {
 
-  // 2. Wait for pulse to end.
-  while (digitalRead(pin) == level) {
-      if ((micros() - startTime) > timeout)
-          return 0;
-  }
-  unsigned long pulseEnd = micros();
-  return pulseEnd - pulseStart;
+  return (pulseIn64(pin, level, timeout*1000) / 1000);
 }
 
 /*
