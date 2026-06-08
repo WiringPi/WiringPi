@@ -67,21 +67,45 @@ int main(void)
 	int major=0, minor=0;
 
 	wiringPiVersion(&major, &minor);
+	printf("WiringPi GPIO test program 11 (using GPIO%d (output) and GPIO%d (input))\n", pinOut, pinIn);
+	printf("pulseIn test (WiringPi %d.%d)\n", major, minor);
+
+	wiringPiSetupGpio();
 
     int _is40pin = piBoard40Pin();
     CheckNotSame("40-Pin board: ", _is40pin, -1);
     if (_is40pin==0) {
         printf("Old 28pin system\n");
-            //GPIO = 23;
-            //GPIOIN = 24;
         pinOut = 17;
         pinIn = 18;
     }
 
-	printf("WiringPi GPIO test program 11 (using GPIO%d (output) and GPIO%d (input))\n", pinOut, pinIn);
-	printf("pulseIn test (WiringPi %d.%d)\n", major, minor);
+    int rev, mem, maker, overVolted, RaspberryPiModel;
+    piBoardId(&RaspberryPiModel, &rev, &mem, &maker, &overVolted);
+    CheckNotSame("Model: ", RaspberryPiModel, -1);
 
-	wiringPiSetupGpio();
+    float tolerancePulseIn = 0.01;
+    switch(RaspberryPiModel) {
+        case PI_MODEL_A:
+        case PI_MODEL_B:     //ARM=800MHz
+        case PI_MODEL_BP:
+        case PI_MODEL_AP:
+        case PI_MODEL_CM:
+        case PI_MODEL_ZERO:
+        case PI_MODEL_ZERO_W: //ARM=1000MHz
+            tolerancePulseIn = 0.08;
+            break;
+        case PI_MODEL_2:
+            tolerancePulseIn = 0.06;
+            break;
+        case PI_MODEL_3B:
+        case PI_MODEL_3AP:
+        case PI_MODEL_3BP:
+        case PI_MODEL_ZERO_2W:
+            tolerancePulseIn = 0.02;
+            break;
+    }
+    printf("Use tolerance of %g %%\n", tolerancePulseIn*100);
 
 
     pinMode(pinOut, OUTPUT);
@@ -97,14 +121,14 @@ int main(void)
     pthread_create(&th, NULL, pulse_generator, NULL);
     printf("Wait for pulse high...\n");
     duration_ns = pulseIn64(pinIn, HIGH, timeout_ns);
-    CheckAlmostSame("pulseIn()", duration_ns, 28000000);  
+    CheckAlmostSameX("pulseIn()", duration_ns, 28000000, tolerancePulseIn);
     pthread_join(th, NULL);
 
     sleep(1);
     pthread_create(&th, NULL, pulse_generator, NULL);
     printf("Wait for pulse low...\n");
     duration_ns = pulseIn64(pinIn, LOW, timeout_ns);
-    CheckAlmostSame("pulseIn()", duration_ns, 48000000);  
+    CheckAlmostSameX("pulseIn()", duration_ns, 48000000, tolerancePulseIn);
     pthread_join(th, NULL);
 
     sleep(1);
@@ -113,22 +137,22 @@ int main(void)
     printf("Wait for time out pulse ...\n");
     duration_ns = pulseIn64(pinIn, LOW, timeoutshort_ns);
     int time_ms = (micros() - start_time)/1000;
-    CheckSame("pulseIn()", duration_ns, 0);  
-    CheckAlmostSame("pulseIn() timeout us", timeoutshort_ns/1000, time_ms);  
+    CheckSame("pulseIn()", duration_ns, 0);
+    CheckAlmostSame("pulseIn() timeout us", timeoutshort_ns/1000, time_ms);
 
     digitalWrite(pinOut, HIGH);
     sleep(1);
     pthread_create(&th, NULL, pulse_generator, NULL);
     printf("Wait for pulse high...\n");
     duration_ms = pulseInPoll(pinIn, HIGH, timeout_ms);
-    CheckAlmostSame("pulseInPoll()", (int)duration_ms, 28000);  
+    CheckAlmostSameX("pulseInPoll()", (int)duration_ms, 28000, tolerancePulseIn);
     pthread_join(th, NULL);
 
     sleep(1);
     pthread_create(&th, NULL, pulse_generator, NULL);
     printf("Wait for pulse low...\n");
     duration_ms = pulseInPoll(pinIn, LOW, timeout_ms);
-    CheckAlmostSame("pulseInPoll()", (int)duration_ms, 48000);  
+    CheckAlmostSameX("pulseInPoll()", (int)duration_ms, 48000, tolerancePulseIn;
     pthread_join(th, NULL);
 
     return 0;
