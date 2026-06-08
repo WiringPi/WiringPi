@@ -152,7 +152,7 @@ int main(void)
     pthread_create(&th, NULL, pulse_generator, NULL);
     printf("Wait for pulse low...\n");
     duration_ms = pulseInPoll(pinIn, LOW, timeout_ms);
-    CheckAlmostSameX("pulseInPoll()", (int)duration_ms, 48000, tolerancePulseIn;
+    CheckAlmostSameX("pulseInPoll()", (int)duration_ms, 48000, tolerancePulseIn);
     pthread_join(th, NULL);
 
     return 0;
