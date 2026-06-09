@@ -52,6 +52,7 @@
 //		Change maxPins to numPins to more accurately reflect purpose
 
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -123,27 +124,28 @@ struct wiringPiNodeStruct *wiringPiNodes = NULL ;
 //	X / 10 + ((X % 10) * 3)
 
 // Port function select bits
+enum WPI_FSEL {
+  FSEL_INPT = 0b000,  // 0
+  FSEL_OUTP = 0b001,  // 1
+  FSEL_ALT0 = 0b100,  // 4
+  FSEL_ALT1 = 0b101,  // 5
+  FSEL_ALT2 = 0b110,  // 6
+  FSEL_ALT3 = 0b111,  // 7
+  FSEL_ALT4 = 0b011,  // 3
+  FSEL_ALT5 = 0b010,  // 2
 
-#define	FSEL_INPT		0b000 //0
-#define	FSEL_OUTP		0b001 //1
-#define	FSEL_ALT0		0b100 //4
-#define	FSEL_ALT1		0b101 //5
-#define	FSEL_ALT2		0b110 //6
-#define	FSEL_ALT3		0b111 //7
-#define	FSEL_ALT4		0b011 //3
-#define	FSEL_ALT5		0b010 //2
-//RP1 defines
-#define	FSEL_ALT6		8
-#define	FSEL_ALT7		9
-#define	FSEL_ALT8		10
-#define	FSEL_ALT9		11
+  // RP1 defines
+  FSEL_ALT6 = 8,
+  FSEL_ALT7 = 9,
+  FSEL_ALT8 = 10,
+  FSEL_ALT9 = 11,
 
-
-//RP1 chip (@Pi5) - 3.1.1. Function select
-#define RP1_FSEL_ALT0			0x00
-#define RP1_FSEL_GPIO			0x05  //SYS_RIO
-#define RP1_FSEL_NONE			0x09
-#define RP1_FSEL_NONE_HW	0x1f  //default, mask
+  // RP1 chip (@Pi5) - 3.1.1. Function select
+  RP1_FSEL_ALT0    = 0x00,
+  RP1_FSEL_GPIO    = 0x05,  // SYS_RIO
+  RP1_FSEL_NONE    = 0x09,
+  RP1_FSEL_NONE_HW = 0x1f  // default, mask
+};
 
 // maybe faster then piRP1Model
 #define ISRP1MODEL (PI_MODEL_5==RaspberryPiModel || PI_MODEL_CM5==RaspberryPiModel|| PI_MODEL_500==RaspberryPiModel || PI_MODEL_CM5L==RaspberryPiModel)
@@ -317,6 +319,11 @@ static volatile unsigned int *pads ;
 static volatile unsigned int *timer ;
 static volatile unsigned int *timerIrqRaw ;
 static volatile unsigned int *rio ;
+
+// Defines for hardware memory struct access
+
+#define PWM_BCM (*((BCM_PWM_BANK*)pwm))
+#define PWM_RP1 (*((RP1_PWM_BANK*)pwm))
 
 // Export variables for the hardware pointers
 
@@ -1513,25 +1520,38 @@ void pwmSetRange (unsigned int range) {
     }
 
     if (piRP1Model()) {
-      pwm[RP1_PWM0_CHAN0_RANGE] = range;
-      pwm[RP1_PWM0_CHAN1_RANGE] = range;
-      pwm[RP1_PWM0_CHAN2_RANGE] = range;
-      pwm[RP1_PWM0_CHAN3_RANGE] = range;
 
-      if (wiringPiDebug) {
-        printf("PWM range: %u. Current registers[ch. 0-3]: 0x%08X, 0x%08X, 0x%08X, 0x%08X\n", range, 
-          pwm[RP1_PWM0_CHAN0_RANGE], pwm[RP1_PWM0_CHAN1_RANGE], pwm[RP1_PWM0_CHAN2_RANGE], pwm[RP1_PWM0_CHAN3_RANGE]);
+      for (unsigned int channel = 0; channel < 4; ++channel) {
+
+        if (PWM_RP1.CHAN[channel].BIND) {
+
+          if (wiringPiDebug) {
+            printf("PWM channel %u bound to COMMON_RANGE and COMMON_DUTY. Setting CHAN[%u].DUTY to COMMON_DUTY and unbinding.\n", channel, channel);
+          }
+
+          PWM_RP1.CHAN[channel].DUTY = PWM_RP1.COMMON_DUTY;
+          PWM_RP1.CHAN[channel].BIND = false;
+
+        }
+
+        PWM_RP1.CHAN[channel].RANGE = range;
+
       }
 
-    } else {
+      if (wiringPiDebug) {
+        printf("PWM range: %u. Current registers[ch. 0-3]: 0x%08X, 0x%08X, 0x%08X, 0x%08X\n", range,
+          PWM_RP1.CHAN[0].RANGE, PWM_RP1.CHAN[1].RANGE, PWM_RP1.CHAN[2].RANGE, PWM_RP1.CHAN[3].RANGE);
+      }
 
-      pwm[PWM0_RANGE] = range;
+    } else { // BCM Model
+
+      PWM_BCM.CHAN[0].RANGE = range;
       delayMicroseconds (10);
-      pwm[PWM1_RANGE] = range;
+      PWM_BCM.CHAN[1].RANGE = range;
       delayMicroseconds (10);
 
       if (wiringPiDebug) {
-        printf("PWM range: %u. Current registers[ch. 0-1]: 0x%08X, 0x%08X\n", range, pwm[PWM0_RANGE], pwm[PWM1_RANGE]);
+        printf("PWM range: %u. Current registers[ch. 0-1]: 0x%08X, 0x%08X\n", range, PWM_BCM.CHAN[0].RANGE, PWM_BCM.CHAN[1].RANGE);
       }
 
     }
@@ -1563,17 +1583,21 @@ void pwmSetChannelRange (unsigned int channel, unsigned int range) {
         return;
       }
 
-      const unsigned int RP1_PWM0_RANGE_CHAN[4] = { // Temporary stand-in before merging #392
-        RP1_PWM0_CHAN0_RANGE,
-        RP1_PWM0_CHAN1_RANGE,
-        RP1_PWM0_CHAN2_RANGE,
-        RP1_PWM0_CHAN3_RANGE
-      };
+      if (PWM_RP1.CHAN[channel].BIND) {
 
-      pwm[RP1_PWM0_RANGE_CHAN[channel]] = range;
+        if (wiringPiDebug) {
+          printf("PWM channel %u bound to COMMON_RANGE and COMMON_DUTY. Setting CHAN[%u].DUTY to COMMON_DUTY and unbinding.\n", channel, channel);
+        }
+
+        PWM_RP1.CHAN[channel].DUTY = PWM_RP1.COMMON_DUTY;
+        PWM_RP1.CHAN[channel].BIND = false;
+
+      }
+
+      PWM_RP1.CHAN[channel].RANGE = range;
 
       if (wiringPiDebug) {
-        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, pwm[RP1_PWM0_RANGE_CHAN[channel]]);
+        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, PWM_RP1.CHAN[channel].RANGE);
       }
 
     } else {  // BCM Model
@@ -1583,16 +1607,11 @@ void pwmSetChannelRange (unsigned int channel, unsigned int range) {
         return;
       }
 
-      const unsigned int BCM_PWM0_RANGE_CHAN[2] = {
-        PWM0_RANGE,
-        PWM1_RANGE
-      };
-
-      pwm[BCM_PWM0_RANGE_CHAN[channel]] = range;
+      PWM_BCM.CHAN[channel].RANGE = range;
       delayMicroseconds(10);
 
       if (wiringPiDebug) {
-        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, pwm[BCM_PWM0_RANGE_CHAN[channel]]);
+        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, PWM_BCM.CHAN[channel].RANGE);
       }
 
     }
@@ -1609,7 +1628,7 @@ void pwmSetChannelRange (unsigned int channel, unsigned int range) {
  */
 
 void pwmSetPinRange(int pin, unsigned int range)  {
-  
+
   if (!ToBCMPin(&pin)) {
     return;
   }
@@ -2424,10 +2443,10 @@ int digitalRead (int pin)
     }
 
     if (ISRP1MODEL) {
-      switch(gpio[2*pin] & RP1_STATUS_LEVEL_MASK) {
-        default: // 11 or 00 not allowed, give LOW!
-        case RP1_STATUS_LEVEL_LOW:  return LOW ;
-        case RP1_STATUS_LEVEL_HIGH: return HIGH ;
+      if ((gpio[2*pin] & RP1_STATUS_LEVEL_MASK) == RP1_STATUS_LEVEL_HIGH) {
+        return HIGH;
+      } else { // 11 or 00 not allowed, give LOW!
+        return LOW;
       }
     } else {
       if ((*(gpio + gpioToGPLEV [pin]) & (1 << (pin & 31))) != 0)
