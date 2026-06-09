@@ -68,19 +68,35 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     union {  // CHANx_CTRL; Offset 0x04 + 0x08 * x
       volatile uint32_t CTRL_register;
       struct {
-        volatile uint32_t FUNCSEL : 5;                         // Function select. 31 == NULL. See GPIO function table for available functions.
-        volatile uint32_t F_M     : 7;                         // Filter/debounce time constant M
+        volatile enum RP1_GPIO_FSEL : uint32_t {
+          RP1_FSEL_ALT0     = 0x00,
+          RP1_FSEL_ALT1     = 0x01,
+          RP1_FSEL_DPI      = 0x01,
+          RP1_FSEL_ALT2     = 0x02,
+          RP1_FSEL_ALT3     = 0x03,
+          RP1_FSEL_ALT4     = 0x04,
+          RP1_FSEL_ALT5     = 0x05,
+          RP1_FSEL_GPIO     = 0x05,
+          RP1_FSEL_ALT6     = 0x06,
+          RP1_FSEL_PROC_RIO = 0x06,
+          RP1_FSEL_ALT7     = 0x07,
+          RP1_FSEL_PIO      = 0x07,
+          RP1_FSEL_ALT8     = 0x08,
+          RP1_FSEL_NONE     = 0x09,
+          RP1_FSEL_NULL     = 0x1F
+        } FSEL                : 5;                             // Function select. See GPIO function table for available functions.
+        volatile uint32_t F_M : 7;                             // Filter/debounce time constant M
         volatile enum RP1_GPIO_CHAN_CTRL_OUTOVER : uint32_t {  // OUTOVER - Output Override
-          OUTOVER_FUNCSEL         = 0x0,                       //  Drive output from peripheral signal selected by funcsel
-          OUTOVER_INVERSE_FUNCSEL = 0x1,                       //  Drive output from inverse of peripheral signal selected by funcsel
-          OUTOVER_LOW             = 0x2,                       //  Drive output low
-          OUTOVER_HIGH            = 0x3                        //  Drive output high
+          OUTOVER_FSEL         = 0x0,                          //  Drive output from peripheral signal selected by funcsel
+          OUTOVER_INVERSE_FSEL = 0x1,                          //  Drive output from inverse of peripheral signal selected by funcsel
+          OUTOVER_LOW          = 0x2,                          //  Drive output low
+          OUTOVER_HIGH         = 0x3                           //  Drive output high
         } OUTOVER : 2;
         volatile enum RP1_GPIO_CHAN_CTRL_OEOVER : uint32_t {  // OEOVER - Output Enable Override
-          OEOVER_FUNCSEL        = 0x0,                        //  Drive output enable from peripheral signal selected by funcsel
-          OEOVER_INVERT_FUNCSEL = 0x1,                        //  Drive output enable from inverse of peripheral signal selected by funcsel
-          OEOVER_DISABLE        = 0x2,                        //  Disable output
-          OEOVER_ENABLE         = 0x3                         //  Enable output
+          OEOVER_FSEL        = 0x0,                           //  Drive output enable from peripheral signal selected by funcsel
+          OEOVER_INVERT_FSEL = 0x1,                           //  Drive output enable from inverse of peripheral signal selected by funcsel
+          OEOVER_DISABLE     = 0x2,                           //  Disable output
+          OEOVER_ENABLE      = 0x3                            //  Enable output
         } OEOVER : 2;
         volatile enum RP1_GPIO_CHAN_CTRL_INOVER : uint32_t {  // INOVER - Input Override
           RP1_GPIO_CHAN_CTRL_INOVER_DEFAULT    = 0x0,         //  Don’t invert the peripheral input
@@ -223,7 +239,7 @@ typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
     };
   } PROC0_INTF;
 
-  union RP1_GPIO_IO_PROC0_INTS {  // PROC0_INTs : Interrupt status after masking & forcing for proc0; Offset 0x10C
+  union RP1_GPIO_IO_PROC0_INTS {  // PROC0_INTS : Interrupt status after masking & forcing for proc0; Offset 0x10C
     const volatile uint32_t PROC0_INTS_register;
     struct {
       const volatile uint32_t GPIO0  : 1;
