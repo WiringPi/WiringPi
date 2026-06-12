@@ -12,7 +12,7 @@
  *	Jan 2013: This way of doing things is sort of deprecated now, see
  *	the wiringPiISR() function instead and the isr.c test program here.
  *
- * Copyright (c) 2012-2013 Gordon Henderson.
+ * Copyright (c) 2012-2013 Gordon Henderson; 2019–2026 Contributors
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/
@@ -75,7 +75,15 @@ PI_THREAD (waitForIt)
 
   for (;;)
   {
-    if (waitForInterrupt (BUTTON_PIN, -1) > 0)	// Got it
+// Legacy call 'waitForInterrupt(BUTTON_PIN, -1)' is no longer supported.
+// It depended on sysfs edge configuration ("gpio edge 17 falling"),
+// which has been removed in modern kernels.
+// Use 'waitForInterrupt2' instead and define the desired edge explicitly.
+// Note: 'waitForInterrupt2' also provides built-in debounce support,
+// but this sample keeps the original user-space debounce implementation.
+// NOTE: This sample has not been tested after the API change.
+    struct WPIWfiStatus  wfistatus = waitForInterrupt2(BUTTON_PIN, INT_EDGE_FALLING, 60000, 0) ;
+    if (1==wfistatus.statusOK)	// Got it
     {
 // Bouncing?
 
@@ -116,7 +124,7 @@ void setup (void)
 // Use the gpio program to initialise the hardware
 //	(This is the crude, but effective)
 
-  system ("gpio edge 17 falling") ;
+  //system ("gpio edge 17 falling") ;  is no longer supported.
 
 // Setup wiringPi
 

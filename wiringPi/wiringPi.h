@@ -302,7 +302,12 @@ struct WPIWfiStatus {
     long long int timeStamp_us; // time stamp in microseconds
 };
 
-//extern int  waitForInterrupt    (int pin, int ms);  unknown if still working, disabled for V3.16, please contact developer via github
+//extern int  waitForInterrupt    (int pin, int ms);  disabled since V3.16
+// Legacy call 'waitForInterrupt' is no longer supported.
+// It depended on sysfs edge configuration "gpio edge 17 falling",
+// which has been removed in modern kernels.
+// Use 'waitForInterrupt2' instead and define the desired edge explicitly.
+// Note: 'waitForInterrupt2' also provides built-in debounce support,
 extern int  wiringPiISR         (int pin, int mode, void (*function)(void)) ;
 extern struct WPIWfiStatus  waitForInterrupt2(int pin, int edgeMode, int ms, unsigned long debounce_period_us) ;   // V3.16
 extern int  wiringPiISR2       (int pin, int edgeMode, void (*function)(struct WPIWfiStatus wfiStatus, void* userdata), unsigned long debounce_period_us, void* userdata) ;  // V3.16
@@ -325,8 +330,11 @@ extern void         delay             (unsigned int ms) ;
 extern void         delayMicroseconds (unsigned int us) ;
 extern unsigned int millis            (void) ;
 extern unsigned int micros            (void) ;
-
 extern unsigned long long piMicros64(void);   // Interface V3.7
+
+extern unsigned long long pulseIn64 (int pin, int level, unsigned long long timeout_us);
+extern unsigned int       pulseIn   (int pin, int level, unsigned int       timeout) ;
+
 
 #ifdef __cplusplus
 }
