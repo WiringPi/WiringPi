@@ -33,6 +33,36 @@
 
 #define CHECK_OFFSET(struct_type, member, offset) static_assert(offsetof(struct_type, member) == offset, "Invalid offset for member " #member " of structure " #struct_type ". Should match " #offset ".");
 
+
+typedef enum  {
+  BCM_AUX_MU_INT_ID_NONE = 0b00,      // No interrupts
+  BCM_AUX_MU_INT_ID_TX   = 0b01,      // Transmit holding register empty
+  BCM_AUX_MU_INT_ID_RX   = 0b10       // Receiver holds valid byte
+} BCM_AUX_MU_INT_ID;  // On read this register shows the interrupt ID bit.
+
+typedef enum  {
+  BCM_AUX_MU_INT_CLR_NONE = 0b00,
+  BCM_AUX_MU_INT_CLR_RX   = 0b01,  // Writing with bit 1 set will clear the receive FIFO
+  BCM_AUX_MU_INT_CLR_TX   = 0b10,  // Writing with bit 2 set will clear the transmit FIFO
+  BCM_AUX_MU_INT_CLR_BOTH = 0b11   // Writing with both bits set will clear both the receive FIFO and transmit FIFO
+} BCM_AUX_MU_INT_CLR;       // Clear the receive and/or transmit FIFO
+
+typedef enum {
+  BCM_AUX_MU_RTS_FLOW_LEVEL_3S = 0b00,   //   De-assert RTS when the receive FIFO has 3 empty spaces left.
+  BCM_AUX_MU_RTS_FLOW_LEVEL_2S = 0b01,   //   De-assert RTS when the receive FIFO has 2 empty spaces left.
+  BCM_AUX_MU_RTS_FLOW_LEVEL_1S = 0b10,   //   De-assert RTS when the receive FIFO has 1 empty space left.
+  BCM_AUX_MU_RTS_FLOW_LEVEL_4S = 0b11    //   De-assert RTS when the receive FIFO has 4 empty spaces left.
+} BCM_AUX_MU_EXTRA_CTRL_RTS_FLOW_LEVEL;  // RTS AUTO flow level: These two bits specify at what receiver FIFO level the RTS line is de-asserted in auto-flow mode.
+
+
+typedef enum {
+  BCM_AUX_SPI_CTRL_DOUT_HOLD_0C = 0b00,  //   No extra hold time
+  BCM_AUX_SPI_CTRL_DOUT_HOLD_1C = 0b01,  //   1 system clock extra hold time
+  BCM_AUX_SPI_CTRL_DOUT_HOLD_4C = 0b10,  //   4 system clocks extra hold time
+  BCM_AUX_SPI_CTRL_DOUT_HOLD_7C = 0b11   //   7 system clocks extra hold time
+} BCM_AUX_SPI_CTRL_DOUT_HOLD;      // Controls the extra DOUT hold time in system clock cycles.
+
+
 typedef struct [[gnu::packed]] BCM_AUXILLARY_UART_SPI_BANK {
 
   // Note: The SPI master numbers used differ from the peripherals documentation for the BCM283X / BCM2711 chips.
@@ -73,6 +103,7 @@ typedef struct [[gnu::packed]] BCM_AUXILLARY_UART_SPI_BANK {
   volatile uint32_t : 32;  // Reserved: Padding; Offset 0x38
   volatile uint32_t : 32;  // Reserved: Padding; Offset 0x3C
 
+
   struct BCM_AUX_MINI_UART {
     union BCM_AUX_MU_IO_DATA_REGISTER {  // AUX_MU_IO_REG : Mini UART I/O Data; Offset 0x40
       volatile uint32_t       IO_DATA_register;
@@ -94,26 +125,17 @@ typedef struct [[gnu::packed]] BCM_AUXILLARY_UART_SPI_BANK {
       volatile uint32_t INT_ID_register;
       const struct {
         volatile const uint32_t NOT_PENDING : 1;  // This bit is clear whenever an interrupt is pending.
-        volatile const enum BCM_AUX_MU_INT_ID : uint32_t {
-          BCM_AUX_MU_INT_ID_NONE = 0b00,      // No interrupts
-          BCM_AUX_MU_INT_ID_TX   = 0b01,      // Transmit holding register empty
-          BCM_AUX_MU_INT_ID_RX   = 0b10       // Receiver holds valid byte
-        } INT_ID                        : 2;  // On read this register shows the interrupt ID bit.
-        volatile const uint32_t         : 1;  // Always read as zero as the mini UART has no timeout function.
-        volatile const uint32_t         : 2;  // Always read as zero.
-        volatile const uint32_t FIFO_EN : 2;  // Both bits always read as 1 as the FIFOs are always enabled.
+        volatile       uint32_t INT_ID      : 2;  // On read this register shows the interrupt ID bit. Use BCM_AUX_MU_INT_ID
+        volatile const uint32_t             : 1;  // Always read as zero as the mini UART has no timeout function.
+        volatile const uint32_t             : 2;  // Always read as zero.
+        volatile const uint32_t FIFO_EN     : 2;  // Both bits always read as 1 as the FIFOs are always enabled.
       };
       struct {
-        volatile const uint32_t : 1;  // Overlaps with NOT_PENDING
-        volatile enum BCM_AUX_MU_INT_CLR : uint32_t {
-          BCM_AUX_MU_INT_CLR_NONE = 0b00,
-          BCM_AUX_MU_INT_CLR_RX   = 0b01,  // Writing with bit 1 set will clear the receive FIFO
-          BCM_AUX_MU_INT_CLR_TX   = 0b10,  // Writing with bit 2 set will clear the transmit FIFO
-          BCM_AUX_MU_INT_CLR_BOTH = 0b11   // Writing with both bits set will clear both the receive FIFO and transmit FIFO
-        } INT_CLR               : 2;       // Clear the receive and/or transmit FIFO
-        volatile const uint32_t : 1;       // Always read as zero as the mini UART has no timeout function.
-        volatile const uint32_t : 2;       // Always read as zero.
-        volatile const uint32_t : 2;       // Both bits always read as 1 as the FIFOs are always enabled.
+        volatile const uint32_t             : 1;  // Overlaps with NOT_PENDING
+        volatile       uint32_t INT_CLR     : 2;  // Clear the receive and/or transmit FIFO, use BCM_AUX_MU_INT_CLR
+        volatile const uint32_t             : 1;  // Always read as zero as the mini UART has no timeout function.
+        volatile const uint32_t             : 2;  // Always read as zero.
+        volatile const uint32_t             : 2;  // Both bits always read as 1 as the FIFOs are always enabled.
       };
     } INT_ID;
 
@@ -175,12 +197,8 @@ typedef struct [[gnu::packed]] BCM_AUXILLARY_UART_SPI_BANK {
         volatile uint32_t CTS_ENABLE : 1;  // Enable transmit Auto flow-control using CTS:
                                            //   If this bit is set the transmitter will stop if the CTS line is de-asserted.
                                            //   If this bit is clear the transmitter will ignore the status of the CTS line.
-        volatile enum BCM_AUX_MU_EXTRA_CTRL_RTS_FLOW_LEVEL : uint32_t {
-          BCM_AUX_MU_RTS_FLOW_LEVEL_3S = 0b00,   //   De-assert RTS when the receive FIFO has 3 empty spaces left.
-          BCM_AUX_MU_RTS_FLOW_LEVEL_2S = 0b01,   //   De-assert RTS when the receive FIFO has 2 empty spaces left.
-          BCM_AUX_MU_RTS_FLOW_LEVEL_1S = 0b10,   //   De-assert RTS when the receive FIFO has 1 empty space left.
-          BCM_AUX_MU_RTS_FLOW_LEVEL_4S = 0b11    //   De-assert RTS when the receive FIFO has 4 empty spaces left.
-        } RTS_FLOW_LEVEL                   : 2;  // RTS AUTO flow level: These two bits specify at what receiver FIFO level the RTS line is de-asserted in auto-flow mode.
+        volatile uint32_t RTS_FLOW_LEVEL   : 2;  // RTS AUTO flow level: These two bits specify at what receiver FIFO level the RTS line is de-asserted in auto-flow mode.
+                                                 // Use BCM_AUX_MU_EXTRA_CTRL_RTS_FLOW_LEVEL
         volatile uint32_t RTS_ASSERT_LEVEL : 1;  // RTS assert level: This bit allows one to invert the RTS auto flow operation polarity.
                                                  //   If set the RTS auto flow assert level is low*
                                                  //   If clear the RTS auto flow assert level is high*
@@ -240,26 +258,21 @@ typedef struct [[gnu::packed]] BCM_AUXILLARY_UART_SPI_BANK {
           volatile uint32_t CLEAR_FIFO    : 1;  // If 1 the receive and transmit FIFOs are held in reset (and thus flushed). This bit should be 0 during normal operation.
           volatile uint32_t IN_RISING     : 1;  // If 1 data is clocked in on the rising edge of the SPI clock. If 0 data is clocked in on the falling edge of the SPI clock.
           volatile uint32_t ENABLE        : 1;  // Enables the SPI interface. Whilst disabled the FIFOs can still be written to or read from. This bit should be 1 during normal operation.
-          volatile enum BCM_AUX_SPI_CTRL_DOUT_HOLD : uint32_t {
-            BCM_AUX_SPI_CTRL_DOUT_HOLD_0C = 0b00,  //   No extra hold time
-            BCM_AUX_SPI_CTRL_DOUT_HOLD_1C = 0b01,  //   1 system clock extra hold time
-            BCM_AUX_SPI_CTRL_DOUT_HOLD_4C = 0b10,  //   4 system clocks extra hold time
-            BCM_AUX_SPI_CTRL_DOUT_HOLD_7C = 0b11   //   7 system clocks extra hold time
-          } DOUT_HOLD                    : 2;      // Controls the extra DOUT hold time in system clock cycles.
-                                                   //   Because the interface runs off fast silicon the MOSI hold time against the clock will be very short. This can cause
-                                                   //   considerable problems on SPI slaves. To make it easier for the slave to see the data the hold time of the MOSI out
-                                                   //   against the SPI clock out is programmable.
-          volatile uint32_t VAR_WIDTH    : 1;      // If 1, the SPI takes the shift length and the data from the TX FIFO instead of the SHIFT_LEN field.
-                                                   //   In this mode the shift length is taken from the transmit FIFO.
-                                                   //   The transmit data bits 28:24 are used as shift length and the data bits 23:0 are the actual transmit data.
-                                                   //   If the option 'shift MS out first' is selected the first bit shifted out will be bit 23. The receive data will arrive as normal.
-          volatile uint32_t VAR_CS       : 1;      // If 1 the SPI takes the CS pattern and the data from the TX FIFO. If 0 the SPI takes the CS pattern from the CHIP_SELECTS field of this register. Set this bit only if bit 14 (variable width) is also set.
-                                                   //   This mode is used together with the variable width mode. In this mode the CS pattern is taken from the transmit FIFO.
-                                                   //   The transmit data bits 31:29 are used as CS and the data bits 23:0 are the actual transmit data. This allows the CPU
-                                                   //   to write to different SPI devices without having to change the CS bits. However the data length is limited to 24 bits.
-          volatile uint32_t POST_INPUT   : 1;      // If set the SPI input works in post-input mode.
-          volatile uint32_t CHIP_SELECTS : 3;      // The pattern output on the CS pins when active.
-          volatile uint32_t SPEED        : 12;     // Sets the SPI clock speed. spi_clk_freq = system_clock_freq/2*(speed+1)
+          volatile uint32_t DOUT_HOLD     : 2;  // Controls the extra DOUT hold time in system clock cycles. Use BCM_AUX_SPI_CTRL_DOUT_HOLD
+                                                //   Because the interface runs off fast silicon the MOSI hold time against the clock will be very short. This can cause
+                                                //   considerable problems on SPI slaves. To make it easier for the slave to see the data the hold time of the MOSI out
+                                                //   against the SPI clock out is programmable.
+          volatile uint32_t VAR_WIDTH     : 1;  // If 1, the SPI takes the shift length and the data from the TX FIFO instead of the SHIFT_LEN field.
+                                                //   In this mode the shift length is taken from the transmit FIFO.
+                                                //   The transmit data bits 28:24 are used as shift length and the data bits 23:0 are the actual transmit data.
+                                                //   If the option 'shift MS out first' is selected the first bit shifted out will be bit 23. The receive data will arrive as normal.
+          volatile uint32_t VAR_CS        : 1;  // If 1 the SPI takes the CS pattern and the data from the TX FIFO. If 0 the SPI takes the CS pattern from the CHIP_SELECTS field of this register. Set this bit only if bit 14 (variable width) is also set.
+                                                //   This mode is used together with the variable width mode. In this mode the CS pattern is taken from the transmit FIFO.
+                                                //   The transmit data bits 31:29 are used as CS and the data bits 23:0 are the actual transmit data. This allows the CPU
+                                                //   to write to different SPI devices without having to change the CS bits. However the data length is limited to 24 bits.
+          volatile uint32_t POST_INPUT    : 1;  // If set the SPI input works in post-input mode.
+          volatile uint32_t CHIP_SELECTS  : 3;  // The pattern output on the CS pins when active.
+          volatile uint32_t SPEED         : 12; // Sets the SPI clock speed. spi_clk_freq = system_clock_freq/2*(speed+1)
         };
       };
       union {  // AUX_SPIx_CNTL1_REG : SPI x Control register 1; Offset 0x84/0xC4

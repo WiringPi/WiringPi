@@ -139,12 +139,6 @@ enum WPI_FSEL {
   FSEL_ALT7 = 9,
   FSEL_ALT8 = 10,
   FSEL_ALT9 = 11,
-
-  // RP1 chip (@Pi5) - 3.1.1. Function select
-  RP1_FSEL_ALT0    = 0x00,
-  RP1_FSEL_GPIO    = 0x05,  // SYS_RIO
-  RP1_FSEL_NONE    = 0x09,
-  RP1_FSEL_NONE_HW = 0x1f  // default, mask
 };
 
 // maybe faster then piRP1Model
@@ -1421,7 +1415,7 @@ int getAlt (int pin)
   }
 
   if (piRP1Model()) {
-    alt = (gpio[2*pin+1] & RP1_FSEL_NONE_HW); //0-4  function
+    alt = (gpio[2*pin+1] & RP1_FSEL_NULL); //0-4  function
 
   /*
   BCM:
@@ -1522,20 +1516,14 @@ void pwmSetRange (unsigned int range) {
     if (piRP1Model()) {
 
       for (unsigned int channel = 0; channel < 4; ++channel) {
-
         if (PWM_RP1.CHAN[channel].BIND) {
-
           if (wiringPiDebug) {
             printf("PWM channel %u bound to COMMON_RANGE and COMMON_DUTY. Setting CHAN[%u].DUTY to COMMON_DUTY and unbinding.\n", channel, channel);
           }
-
           PWM_RP1.CHAN[channel].DUTY = PWM_RP1.COMMON_DUTY;
           PWM_RP1.CHAN[channel].BIND = false;
-
         }
-
         PWM_RP1.CHAN[channel].RANGE = range;
-
       }
 
       if (wiringPiDebug) {
@@ -1584,16 +1572,12 @@ void pwmSetChannelRange (unsigned int channel, unsigned int range) {
       }
 
       if (PWM_RP1.CHAN[channel].BIND) {
-
         if (wiringPiDebug) {
           printf("PWM channel %u bound to COMMON_RANGE and COMMON_DUTY. Setting CHAN[%u].DUTY to COMMON_DUTY and unbinding.\n", channel, channel);
         }
-
         PWM_RP1.CHAN[channel].DUTY = PWM_RP1.COMMON_DUTY;
         PWM_RP1.CHAN[channel].BIND = false;
-
       }
-
       PWM_RP1.CHAN[channel].RANGE = range;
 
       if (wiringPiDebug) {
@@ -1609,7 +1593,6 @@ void pwmSetChannelRange (unsigned int channel, unsigned int range) {
 
       PWM_BCM.CHAN[channel].RANGE = range;
       delayMicroseconds(10);
-
       if (wiringPiDebug) {
         printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, PWM_BCM.CHAN[channel].RANGE);
       }
@@ -2059,7 +2042,7 @@ void pinModeAlt (int pin, int mode)
         return;
     }
     //printf("pinModeAlt: Pi5 alt pin %d to %d\n", pin, modeRP1);
-    gpio[2*pin+1] = (modeRP1 & RP1_FSEL_NONE_HW) | RP1_DEBOUNCE_DEFAULT; //0-4  function, 5-11 debounce time
+    gpio[2*pin+1] = (modeRP1 & RP1_FSEL_NULL) | RP1_DEBOUNCE_DEFAULT; //0-4  function, 5-11 debounce time
   } else {
     int fSel  = gpioToGPFSEL [pin] ;
     int shift = gpioToShift  [pin] ;
@@ -2163,7 +2146,7 @@ void pinMode (int pin, int mode)
           rio[RP1_RIO_OE + RP1_CLR_OFFSET] = 1<<pin;            // Input
         } else  { //PM_OFF
           pads[1+pin] = (pin<=8) ? RP1_PAD_IC_DEFAULT_0TO8 : RP1_PAD_IC_DEFAULT_FROM9;
-          gpio[2*pin+1] = RP1_IRQRESET | RP1_FSEL_NONE_HW | RP1_DEBOUNCE_DEFAULT; // default but with irq reset
+          gpio[2*pin+1] = RP1_IRQRESET | RP1_FSEL_NULL | RP1_DEBOUNCE_DEFAULT; // default but with irq reset
         }
       } else {
         *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) ; // Sets bits to zero = input
