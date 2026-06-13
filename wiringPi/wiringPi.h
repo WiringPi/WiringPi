@@ -291,12 +291,12 @@ extern int wiringPiSetupPiFaceForGpioProg(void);  // Don't use this - for gpio p
 extern int          piGpioLayout(void);
 extern int          piBoardRev(void);  // Deprecated, but does the same as piGpioLayout
 extern void         piBoardId(int *model, int *rev, int *mem, int *maker, int *overVolted);
-extern int          piBoard40Pin(void);          // Interface V3.7
-extern int          piRP1Model(void);            // Interface V3.14
+extern int          piBoard40Pin(void);          // V3.8
+extern int          piRP1Model(void);            // V3.14
 extern int          wpiPinToGpio(int wpiPin);    // please don't use outside 0-63 and on RP1
 extern int          physPinToGpio(int physPin);  // please don't use outside 0-63 and on RP1
 extern void         setPadDrive(int group, int value);
-extern void         setPadDrivePin(int pin, int value);  // Interface V3.0
+extern void         setPadDrivePin(int pin, int value);  // V3.0
 extern int          getAlt(int pin);
 extern void         pwmToneWrite(int pin, int freq);
 extern void         pwmSetMode(int mode);
@@ -347,10 +347,10 @@ extern void         delay             (unsigned int ms) ;
 extern void         delayMicroseconds (unsigned int us) ;
 extern unsigned int millis            (void) ;
 extern unsigned int micros            (void) ;
-extern unsigned long long piMicros64(void);   // Interface V3.7
+extern unsigned long long piMicros64(void);   // V3.8
 
-extern unsigned long long pulseIn64 (int pin, int level, unsigned long long timeout_us);
-extern unsigned int       pulseIn   (int pin, int level, unsigned int       timeout) ;
+extern unsigned long long pulseIn64 (int pin, int level, unsigned long long timeout_us);  // V3.20
+extern unsigned int       pulseIn   (int pin, int level, unsigned int       timeout) ;    // V3.20
 
 
 #ifdef __cplusplus

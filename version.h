@@ -1,3 +1,3 @@
-#define VERSION "3.18"
+#define VERSION "3.19"
 #define VERSION_MAJOR 3
-#define VERSION_MINOR 18
+#define VERSION_MINOR 19
