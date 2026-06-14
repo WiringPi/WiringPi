@@ -86,9 +86,9 @@ pwmtest:
 		echo  ; echo  ; \
 	done ; \
 	if [ "$$error_state" = true ]; then \
-		echo "\n\e[5mPWM SHORT TEST FAILED\e[0m\n"; \
+		printf "\n\e[5mPWM SHORT TEST FAILED\e[0m\n"; \
 	else \
-		echo "\n\e[5mPWM SHORT TEST SUCCESS\e[0m\n"; \
+		printf "\n\e[5mPWM SHORT TEST SUCCESS\e[0m\n"; \
 	fi
 
 test:
@@ -106,9 +106,9 @@ test:
 		echo  ; echo  ; \
 	done ; \
 	if [ "$$error_state" = true ]; then \
-		echo "\n\e[5mSTD TEST FAILED\e[0m\n"; \
+		printf "\n\e[5mSTD TEST FAILED\e[0m\n"; \
 	else \
-		echo "\n\e[5mSTD TEST SUCCESS\e[0m\n"; \
+		printf "\n\e[5mSTD TEST SUCCESS\e[0m\n"; \
 	fi
 
 xotest:
@@ -126,9 +126,9 @@ xotest:
 		echo  ; echo  ; \
 	done
 	if [ "$$error_state" = true ]; then \
-		echo "\n\e[5mSTD/XO TEST FAILED\e[0m\n"; \
+		printf "\n\e[5mSTD/XO TEST FAILED\e[0m\n"; \
 	else \
-		echo "\n\e[5mSTD/XO TEST SUCCESS\e[0m\n"; \
+		printf "\n\e[5mSTD/XO TEST SUCCESS\e[0m\n"; \
 	fi
 
 pifacetest:
@@ -146,9 +146,9 @@ pifacetest:
 		echo  ; echo  ; \
 	done
 	if [ "$$error_state" = true ]; then \
-		echo "\n\e[5mPIFACE TEST FAILED\e[0m\n"; \
+		printf "\n\e[5mPIFACE TEST FAILED\e[0m\n"; \
 	else \
-		echo "\n\e[5mPIFACE TEST SUCCESS\e[0m\n"; \
+		printf "\n\e[5mPIFACE TEST SUCCESS\e[0m\n"; \
 	fi
 
 # Add all binaries to a folder-local .gitignore file

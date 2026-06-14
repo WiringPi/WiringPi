@@ -1543,13 +1543,20 @@ void pwmSetRange (unsigned int range) {
 
     } else { // BCM Model
 
-      PWM_BCM.CHAN[0].RANGE = range;
-      delayMicroseconds (10);
-      PWM_BCM.CHAN[1].RANGE = range;
-      delayMicroseconds (10);
+      //PWM_BCM.CHAN[0].RANGE = range;
+      //delayMicroseconds (10);
+      //PWM_BCM.CHAN[1].RANGE = range;
+      //delayMicroseconds (10);
+
+     unsigned int readback[2] = { 0x00, 0x00 };
+     *(pwm + PWM0_RANGE) = range ; delayMicroseconds (10) ;
+     *(pwm + PWM1_RANGE) = range ; delayMicroseconds (10) ;
+     readback[0] = *(pwm + PWM0_RANGE);
+     readback[1] = *(pwm + PWM1_RANGE);
 
       if (wiringPiDebug) {
-        printf("PWM range: %u. Current registers[ch. 0-1]: 0x%08X, 0x%08X\n", range, PWM_BCM.CHAN[0].RANGE, PWM_BCM.CHAN[1].RANGE);
+	printf("PWM range      : %u. Current registers[ch. 0-1]: 0x%08X, 0x%08X\n", range, readback[0], readback[1]);
+        printf("PWM range (BCM): %u. Current registers[ch. 0-1]: 0x%08X, 0x%08X\n", range, PWM_BCM.CHAN[0].RANGE, PWM_BCM.CHAN[1].RANGE);
       }
 
     }
@@ -1596,15 +1603,29 @@ void pwmSetChannelRange (unsigned int channel, unsigned int range) {
 
     } else {  // BCM Model
 
-      if (channel > 1) {
-        fputs("wiringPi: pwmSetChannelRange channel invalid, ignoring\n", stderr);
-        return;
-      }
+	if (channel > 1) {
+		fputs("wiringPi: pwmSetChannelRange channel invalid, ignoring\n", stderr);
+		return;
+     	 }
 
-      PWM_BCM.CHAN[channel].RANGE = range;
-      delayMicroseconds(10);
+	unsigned int readback = 0x00;
+     	switch (channel) {
+	  case 0:
+		*(pwm + PWM0_RANGE) = range ; delayMicroseconds(10);
+     		readback = *(pwm + PWM0_RANGE);
+		break;
+	  case 1:
+		*(pwm + PWM1_RANGE) = range ; delayMicroseconds(10);
+     		readback = *(pwm + PWM1_RANGE);
+		break;
+
+	}
+
+      //PWM_BCM.CHAN[channel].RANGE = range;
+      //delayMicroseconds(10);
       if (wiringPiDebug) {
-        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, PWM_BCM.CHAN[channel].RANGE);
+        printf("PWM range      : %u for channel %u. Current register: 0x%08X\n", range, channel, readback);
+        printf("PWM range (BCM): %u for channel %u. Current register: 0x%08X\n", range, channel, PWM_BCM.CHAN[channel].RANGE);
       }
 
     }
