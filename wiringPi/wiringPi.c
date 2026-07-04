@@ -177,6 +177,7 @@ const unsigned int RP1_PAD_IC_DEFAULT_FROM9 = 0x96; //pull-down, Schmitt
 const unsigned int RP1_PAD_DRIVE_MASK   = 0x00000030;
 const unsigned int RP1_INV_PAD_DRIVE_MASK = ~(RP1_PAD_DRIVE_MASK);
 
+//RP1 chip (@Pi5) PWM0 register
 const unsigned int RP1_PWM0_GLOBAL_CTRL  = 0;
 const unsigned int RP1_PWM0_FIFO_CTRL    = 1;
 const unsigned int RP1_PWM0_COMMON_RANGE = 2;
@@ -184,17 +185,18 @@ const unsigned int RP1_PWM0_COMMON_DUTY  = 3;
 const unsigned int RP1_PWM0_DUTY_FIFO    = 4;
 const unsigned int RP1_PWM0_CHAN_START   = 5;
 
-//offset channel
 const unsigned int RP1_PWM0_CHAN_CTRL   = 0;
 const unsigned int RP1_PWM0_CHAN_RANGE  = 1;
 const unsigned int RP1_PWM0_CHAN_PHASE  = 2;
 const unsigned int RP1_PWM0_CHAN_DUTY   = 3;
-const unsigned int RP1_PWM0_CHAN_OFFSET = 4;
+const unsigned int RP1_PWM0_CHANNELS    = 4;
 
-const unsigned int RP1_PWM0_CHAN0_RANGE = RP1_PWM0_CHAN_START+RP1_PWM0_CHAN_OFFSET*0+RP1_PWM0_CHAN_RANGE;
-const unsigned int RP1_PWM0_CHAN1_RANGE = RP1_PWM0_CHAN_START+RP1_PWM0_CHAN_OFFSET*1+RP1_PWM0_CHAN_RANGE;
-const unsigned int RP1_PWM0_CHAN2_RANGE = RP1_PWM0_CHAN_START+RP1_PWM0_CHAN_OFFSET*2+RP1_PWM0_CHAN_RANGE;
-const unsigned int RP1_PWM0_CHAN3_RANGE = RP1_PWM0_CHAN_START+RP1_PWM0_CHAN_OFFSET*3+RP1_PWM0_CHAN_RANGE;
+#define RP1_PWM0_CHAN_CTRL(ch)  (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_CTRL  + (ch) * RP1_PWM0_CHANNELS)
+#define RP1_PWM0_CHAN_RANGE(ch) (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_RANGE + (ch) * RP1_PWM0_CHANNELS)
+#define RP1_PWM0_CHAN_PHASE(ch) (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_PHASE + (ch) * RP1_PWM0_CHANNELS)
+#define RP1_PWM0_CHAN_DUTY(ch)  (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_DUTY  + (ch) * RP1_PWM0_CHANNELS)
+const unsigned int RP1_PWM_CTRL_BIND = (1u << 4);
+
 
 const unsigned int RP1_PWM_CTRL_SETUPDATE = 0x80000000; // Bit 32
 const unsigned int RP1_PWM_TRAIL_EDGE_MS = 0x1;
@@ -264,6 +266,7 @@ static          int wiringPiSetuped = false ;
 #define	PWM0_DATA   5
 #define	PWM1_RANGE  8
 #define	PWM1_DATA   9
+
 
 //	Clock regsiter offsets
 
@@ -1524,21 +1527,22 @@ void pwmSetRange (unsigned int range) {
     }
 
     if (piRP1Model()) {
-
-      for (unsigned int channel = 0; channel < 4; ++channel) {
-        if (PWM_RP1.CHAN[channel].BIND) {
+      for (unsigned int channel = 0; channel < RP1_PWM0_CHANNELS; ++channel) {
+        unsigned int ctrl = *(pwm + RP1_PWM0_CHAN_CTRL(channel));
+        if (ctrl & RP1_PWM_CTRL_BIND) {
           if (wiringPiDebug) {
             printf("PWM channel %u bound to COMMON_RANGE and COMMON_DUTY. Setting CHAN[%u].DUTY to COMMON_DUTY and unbinding.\n", channel, channel);
           }
-          PWM_RP1.CHAN[channel].DUTY = PWM_RP1.COMMON_DUTY;
-          PWM_RP1.CHAN[channel].BIND = false;
+          *(pwm + RP1_PWM0_CHAN_DUTY(channel)) = *(pwm + RP1_PWM0_COMMON_DUTY);
+          *(pwm + RP1_PWM0_CHAN_CTRL(channel)) = ctrl & ~RP1_PWM_CTRL_BIND;
         }
-        PWM_RP1.CHAN[channel].RANGE = range;
+        *(pwm + RP1_PWM0_CHAN_RANGE(channel)) = range;
       }
 
       if (wiringPiDebug) {
         printf("PWM range: %u. Current registers[ch. 0-3]: 0x%08X, 0x%08X, 0x%08X, 0x%08X\n", range,
-          PWM_RP1.CHAN[0].RANGE, PWM_RP1.CHAN[1].RANGE, PWM_RP1.CHAN[2].RANGE, PWM_RP1.CHAN[3].RANGE);
+          *(pwm + RP1_PWM0_CHAN_RANGE(0)), *(pwm + RP1_PWM0_CHAN_RANGE(1)),
+          *(pwm + RP1_PWM0_CHAN_RANGE(2)), *(pwm + RP1_PWM0_CHAN_RANGE(3)));
       }
 
     } else { // BCM Model
@@ -1555,7 +1559,7 @@ void pwmSetRange (unsigned int range) {
      readback[1] = *(pwm + PWM1_RANGE);
 
       if (wiringPiDebug) {
-	printf("PWM range      : %u. Current registers[ch. 0-1]: 0x%08X, 0x%08X\n", range, readback[0], readback[1]);
+	      printf("PWM range      : %u. Current registers[ch. 0-1]: 0x%08X, 0x%08X\n", range, readback[0], readback[1]);
         printf("PWM range (BCM): %u. Current registers[ch. 0-1]: 0x%08X, 0x%08X\n", range, PWM_BCM.CHAN[0].RANGE, PWM_BCM.CHAN[1].RANGE);
       }
 
@@ -1588,17 +1592,18 @@ void pwmSetChannelRange (unsigned int channel, unsigned int range) {
         return;
       }
 
-      if (PWM_RP1.CHAN[channel].BIND) {
+      unsigned int ctrl = *(pwm + RP1_PWM0_CHAN_CTRL(channel));
+      if (ctrl & RP1_PWM_CTRL_BIND) {
         if (wiringPiDebug) {
           printf("PWM channel %u bound to COMMON_RANGE and COMMON_DUTY. Setting CHAN[%u].DUTY to COMMON_DUTY and unbinding.\n", channel, channel);
         }
-        PWM_RP1.CHAN[channel].DUTY = PWM_RP1.COMMON_DUTY;
-        PWM_RP1.CHAN[channel].BIND = false;
+        *(pwm + RP1_PWM0_CHAN_DUTY(channel)) = *(pwm + RP1_PWM0_COMMON_DUTY);
+        *(pwm + RP1_PWM0_CHAN_CTRL(channel)) = ctrl & ~RP1_PWM_CTRL_BIND;
       }
-      PWM_RP1.CHAN[channel].RANGE = range;
+      *(pwm + RP1_PWM0_CHAN_RANGE(channel)) = range;
 
       if (wiringPiDebug) {
-        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, PWM_RP1.CHAN[channel].RANGE);
+        printf("PWM range: %u for channel %u. Current register: 0x%08X\n", range, channel, *(pwm + RP1_PWM0_CHAN_RANGE(channel)));
       }
 
     } else {  // BCM Model
@@ -2215,11 +2220,12 @@ void pinMode (int pin, int mode)
       if (0==alt) {	// Not a hardware capable PWM pin
 	      return;
       }
-      int channel = gpioToPwmPort[pin];
+      unsigned int channel = gpioToPwmPort[pin];
       if (piRP1Model()) {
-        if (channel>=0 && channel<=3) {
+        if (channel<RP1_PWM0_CHANNELS) {
           // enable channel pwm m:s mode
-          pwm[RP1_PWM0_CHAN_START+RP1_PWM0_CHAN_OFFSET*channel+RP1_PWM0_CHAN_CTRL]  = (RP1_PWM_TRAIL_EDGE_MS | RP1_PWM_FIFO_POP_MASK);
+          *(pwm + RP1_PWM0_CHAN_CTRL(channel)) = (RP1_PWM_TRAIL_EDGE_MS | RP1_PWM_FIFO_POP_MASK);
+
           // enable pwm global
           unsigned int ctrl = pwm[RP1_PWM0_GLOBAL_CTRL];
           pwm[RP1_PWM0_GLOBAL_CTRL] = ctrl | (1<<channel) | RP1_PWM_CTRL_SETUPDATE;
@@ -2584,11 +2590,11 @@ void pwmWrite (int pin, int value)
     }
     */
     usingGpioMemCheck ("pwmWrite") ;
-    int channel = gpioToPwmPort[pin];
+    unsigned int channel = gpioToPwmPort[pin];
     int readback = 0x00;
     if (piRP1Model()) {
-      if (channel>=0 && channel<=3) {
-        unsigned int addr = RP1_PWM0_CHAN_START+RP1_PWM0_CHAN_OFFSET*channel+RP1_PWM0_CHAN_DUTY;
+      if (channel<RP1_PWM0_CHANNELS) {
+        unsigned int addr = *(pwm + RP1_PWM0_CHAN_CTRL(channel));
         pwm[addr] = value;
         readback = pwm[addr];
       } else {
