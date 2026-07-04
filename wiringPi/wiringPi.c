@@ -2595,7 +2595,7 @@ void pwmWrite (int pin, int value)
     int readback = 0x00;
     if (piRP1Model()) {
       if (channel<RP1_PWM0_CHANNELS) {
-        unsigned int addr = RP1_PWM0_CHAN_CTRL(channel);
+        unsigned int addr = RP1_PWM0_CHAN_DUTY(channel);
         pwm[addr] = value;
         readback = pwm[addr];
       } else {
