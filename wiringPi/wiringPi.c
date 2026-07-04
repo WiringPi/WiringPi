@@ -189,12 +189,13 @@ const unsigned int RP1_PWM0_CHAN_CTRL   = 0;
 const unsigned int RP1_PWM0_CHAN_RANGE  = 1;
 const unsigned int RP1_PWM0_CHAN_PHASE  = 2;
 const unsigned int RP1_PWM0_CHAN_DUTY   = 3;
+const unsigned int RP1_PWM0_CHAN_OFFSET = 4; // WORD per channel
 const unsigned int RP1_PWM0_CHANNELS    = 4;
 
-#define RP1_PWM0_CHAN_CTRL(ch)  (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_CTRL  + (ch) * RP1_PWM0_CHANNELS)
-#define RP1_PWM0_CHAN_RANGE(ch) (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_RANGE + (ch) * RP1_PWM0_CHANNELS)
-#define RP1_PWM0_CHAN_PHASE(ch) (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_PHASE + (ch) * RP1_PWM0_CHANNELS)
-#define RP1_PWM0_CHAN_DUTY(ch)  (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_DUTY  + (ch) * RP1_PWM0_CHANNELS)
+#define RP1_PWM0_CHAN_CTRL(ch)  (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_CTRL  + (ch) * RP1_PWM0_CHAN_OFFSET)
+#define RP1_PWM0_CHAN_RANGE(ch) (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_RANGE + (ch) * RP1_PWM0_CHAN_OFFSET)
+#define RP1_PWM0_CHAN_PHASE(ch) (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_PHASE + (ch) * RP1_PWM0_CHAN_OFFSET)
+#define RP1_PWM0_CHAN_DUTY(ch)  (RP1_PWM0_CHAN_START + RP1_PWM0_CHAN_DUTY  + (ch) * RP1_PWM0_CHAN_OFFSET)
 const unsigned int RP1_PWM_CTRL_BIND = (1u << 4);
 
 
@@ -2594,7 +2595,7 @@ void pwmWrite (int pin, int value)
     int readback = 0x00;
     if (piRP1Model()) {
       if (channel<RP1_PWM0_CHANNELS) {
-        unsigned int addr = *(pwm + RP1_PWM0_CHAN_CTRL(channel));
+        unsigned int addr = RP1_PWM0_CHAN_CTRL(channel);
         pwm[addr] = value;
         readback = pwm[addr];
       } else {
