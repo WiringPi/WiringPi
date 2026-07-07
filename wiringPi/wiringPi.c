@@ -458,8 +458,10 @@ static int RaspberryPiLayout = -1;
 
 // Debugging & Return codes
 
-int wiringPiDebug       = false ;
-int wiringPiReturnCodes = false ;
+bool wiringPiDebug       = false;
+int  wiringPiDebugValue  = 0;
+bool wiringPiDebugIRQ    = false;
+bool wiringPiReturnCodes = false;
 
 // Use /dev/gpiomem ?
 
@@ -3188,14 +3190,14 @@ static void *interruptHandlerV2(void *arg)
         continue;
     }
     else {
-        if (wiringPiDebug & DEBUG_IRQ) {
+        if (wiringPiDebugIRQ) {
             printf("interruptHandlerV2: IRQ line %d received %d events, fd=%d\n", pin, ret, isrFds[pin]) ;
         }
         if (polls.revents & POLLIN) {
             /* read event data */
             readret = read(fd, &evdat, sizeof(evdat));
             if (readret >= sizeof(evdat[0])) {
-                if (wiringPiDebug & DEBUG_IRQ) {
+                if (wiringPiDebugIRQ) {
                     printf("interruptHandlerV2: IRQ at PIN: %d, events: %u\n", evdat[0].offset, readret/(unsigned int)sizeof(evdat[0])) ;
                 }
                 ret = readret/sizeof(evdat[0]);     // number of events read from fd
@@ -3204,22 +3206,22 @@ static void *interruptHandlerV2(void *arg)
                   switch (evdat[i].id) {
                     case GPIO_V2_LINE_EVENT_RISING_EDGE:
                         edge = INT_EDGE_RISING;
-                        if (wiringPiDebug & DEBUG_IRQ) printf("waitForInterrupt2: rising edge\n");
+                        if (wiringPiDebugIRQ) printf("waitForInterrupt2: rising edge\n");
                         break;
                     case GPIO_V2_LINE_EVENT_FALLING_EDGE:
                         edge = INT_EDGE_FALLING;
-                        if (wiringPiDebug & DEBUG_IRQ) printf("waitForInterrupt2: falling edge\n");
+                        if (wiringPiDebugIRQ) printf("waitForInterrupt2: falling edge\n");
                         break;
                     default:
                         edge = INT_EDGE_SETUP;        // edge = 0
                         if (wiringPiDebug) printf("waitForInterrupt2: unknown event\n");
                         break;
                   }
-                  if (wiringPiDebug & DEBUG_IRQ) {
+                  if (wiringPiDebugIRQ) {
                     printf("interruptHandlerV2: GPIO EVENT at %llu on line %u (%u|%u)\n", evdat[i].timestamp_ns, evdat[i].offset, evdat[i].line_seqno, evdat[i].seqno);
                   }
                   if (edgeEventState[pin].count<3) {
-                      if (wiringPiDebug & DEBUG_IRQ) {
+                      if (wiringPiDebugIRQ) {
                         printf("interruptHandlerV2: store event=%llu, edge=%d \n", edgeEventState[pin].count+1, edge);
                       }
                       edgeEventState[pin].edge[edgeEventState[pin].count] = edge;
@@ -3250,27 +3252,27 @@ static void *interruptHandlerV2(void *arg)
                         wfiStatus.pinBCM = pin;
                         wfiStatus.edge = edge;
                         wfiStatus.timeStamp_us = evdat[i].timestamp_ns/1000LL;
-                        if (wiringPiDebug & DEBUG_IRQ) {
+                        if (wiringPiDebugIRQ) {
                           printf("interruptHandlerV2: call isr function\n");
                         }
                         isrFunctionsV2[pin](wfiStatus, isrUserdata[pin]);
-                        if (wiringPiDebug & DEBUG_IRQ) {
+                        if (wiringPiDebugIRQ) {
                           printf("interruptHandlerV2: return from isr function\n");
                         }
                     }
                     if (isrFunctions[pin]) {
-                      if (wiringPiDebug & DEBUG_IRQ) {
+                      if (wiringPiDebugIRQ) {
                         printf("interruptHandlerV2: call isr function classic\n");
                       }
                       isrFunctions[pin]();
-                      if (wiringPiDebug & DEBUG_IRQ) {
+                      if (wiringPiDebugIRQ) {
                         printf("interruptHandlerV2: return from isr function classic\n");
                       }
                     }
                 }
             }
             else {  // if thread canceled we do not reach this point, read(...) does not return, is Cancellation Point
-                if (wiringPiDebug & DEBUG_IRQ) {
+                if (wiringPiDebugIRQ) {
                   printf("interruptHandlerV2: reading events from fd received signal, exit thread\n");
                 }
                 pthread_exit(NULL);
@@ -3695,20 +3697,23 @@ int wiringPiSetup (void)
 
   wiringPiSetuped = true ;
 
-  wiringPiDebug = 0;
+  wiringPiDebugValue = 0;
+  wiringPiDebug = false;
+  wiringPiDebugIRQ = false;
   char* debug = getenv(ENV_DEBUG);
   if (debug != NULL) {
-    wiringPiDebug = atoi(debug);
-    if (0==wiringPiDebug) {
-      wiringPiDebug = 1;
-    }
+    wiringPiDebug = true;
+    wiringPiDebugValue = atoi(debug);
+    if (wiringPiDebugValue & DEBUG_IRQ) {
+      wiringPiDebugIRQ = true;
+    } 
   }
 
-  if (getenv (ENV_CODES) != NULL)
+  if (getenv (ENV_CODES) != NULL) {
     wiringPiReturnCodes = true ;
-
+  }
   if (wiringPiDebug) {
-    printf ("wiringPi: wiringPiSetup called (debug %d)\n", wiringPiDebug) ;
+    printf ("wiringPi: wiringPiSetup%s\n", wiringPiDebugIRQ ? ", with debug IRQ" : "") ;
   }
 // Get the board ID information. We're not really using the information here,
 //	but it will give us information like the GPIO layout scheme (2 variants
