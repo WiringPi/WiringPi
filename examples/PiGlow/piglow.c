@@ -26,11 +26,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-#ifndef	TRUE
-#  define TRUE  (1==1)
-#  define FALSE (!TRUE)
-#endif
+#include <stdbool.h>
 
 #include <wiringPi.h>
 #include <piGlow.h>
@@ -81,7 +77,7 @@ int main (int argc, char *argv [])
 
 // Initialise the piGlow devLib
 
-  piGlowSetup (FALSE) ;
+  piGlowSetup (false) ;
 
   if (argc == 1)
     failUsage () ;
@@ -97,7 +93,7 @@ int main (int argc, char *argv [])
   {
     percent = getPercent (argv [2]) ;
 
-    /**/ if (strcasecmp (argv [1], "red") == 0)
+    if      (strcasecmp (argv [1], "red") == 0)
       piGlowRing (PIGLOW_RED, percent) ;
     else if (strcasecmp (argv [1], "yellow") == 0)
       piGlowRing (PIGLOW_YELLOW, percent) ;
@@ -122,7 +118,7 @@ int main (int argc, char *argv [])
 
   if (argc == 4)
   {
-    /**/ if (strcasecmp (argv [1], "leg") == 0)
+    if (strcasecmp (argv [1], "leg") == 0)
     {
       leg = atoi (argv [2]) ;
       if ((leg < 0) || (leg > 2))

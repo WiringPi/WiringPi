@@ -1,15 +1,14 @@
-﻿// WiringPi test program: SPI functions (need XO hardware)
+// WiringPi test program: SPI functions (need XO hardware)
 // Compile: gcc -Wall wiringpi_xotest_test1_spi.c -o wiringpi_xotest_test1_spi -lwiringPi
 
 #include <unistd.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <signal.h>
 #include <time.h>
 #include "wpi_test.h"
 #include <wiringPiSPI.h>
 
-#define TRUE                (1==1)
-#define FALSE               (!TRUE)
 #define CHAN_CONFIG_SINGLE  8
 #define CHAN_CONFIG_DIFF    0
 
@@ -66,17 +65,19 @@ int main(int argc, char *argv []){
 
     wiringPiSetup();
 
-    if ((hSPI = wiringPiSPISetup (spiChannel, spiSpeed)) < 0) {
+        printf("wiringPiSPISetup (spiChannel=%d, spiSpeed=%d)\n",spiChannel, spiSpeed);
+    if ((hSPI = wiringPiSPISetup(spiChannel, spiSpeed)) < 0) {
         FailAndExitWithErrno("wiringPiSPISetup", hSPI);
     }
 
     int hSPIOld=hSPI;
-    //printf("\nSPI fd = %d\n call close now\n", hSPI);
+      printf("wiringPiSPIClose(spiChannel=%d)\n",spiChannel);
     int ret = wiringPiSPIClose(spiChannel);
     if (ret!=0) {
         FailAndExitWithErrno("wiringPiSPIClose", ret);
     }
 
+        printf("wiringPiSPIxSetupMode(0, spiChannel=%d, spiSpeed=%d, 0)\n",spiChannel, spiSpeed);
     if ((hSPI = wiringPiSPIxSetupMode(0, spiChannel, spiSpeed, 0)) < 0) {
         FailAndExitWithErrno("wiringPiSPIxSetup", hSPI);
     }
@@ -151,12 +152,18 @@ int main(int argc, char *argv []){
     digitalWriteEx(24, GPIOIn, HIGH);
     checkVoltage(3.3f, "Analog value  6xHigh");
 
-    CH1 = AnalogRead(3, 1, &returnvalue);
-    CheckSame("\nReading Wrong channel 3 result         ", CH1, 0);
-    CheckSame("\nReading Wrong channel 3 ioctl result   ", returnvalue, -EINVAL);
-    CH1 = AnalogRead(2, 1, &returnvalue);
-    CheckSame("\nReading Wrong channel 2 result         ", CH1, 0);
-    CheckSame("\nReading Wrong channel 3  ioctl result  ", returnvalue, -EBADF);
+
+    int unsupportedSPICh = 5;
+    printf("\nCheck error for unsupported channel %d\n", unsupportedSPICh);
+    CH1 = AnalogRead(unsupportedSPICh, 1, &returnvalue);
+    CheckSame("\nReading unsupported channel result         ", CH1, 0);
+    CheckSame("Reading unsupported channel ioctl result   ", returnvalue, -EINVAL);
+
+    int uninitSPICh = 2;
+    printf("\nCheck error for uninitialized channel %d\n", uninitSPICh);
+    CH1 = AnalogRead(uninitSPICh, 1, &returnvalue);
+    CheckSame("\nReading uninitialized channel result       ", CH1, 0);
+    CheckSame("Reading uninitialized channel ioctl result ", returnvalue, -EBADF);
 
     pinMode(22, INPUT);
     pinMode(21, INPUT);
@@ -165,6 +172,7 @@ int main(int argc, char *argv []){
     pinMode(27, INPUT);
     pinMode(28, INPUT);
 
+printf("\nwiringPiSPIxClose(0, spiChannel=%d)\n",spiChannel);
     ret = wiringPiSPIxClose(0, spiChannel);
     CheckSame("wiringPiSPIxClose result", ret, 0);
     if (ret!=0) {
@@ -175,4 +183,3 @@ int main(int argc, char *argv []){
 
     return UnitTestState();
 }
-

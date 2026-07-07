@@ -24,6 +24,7 @@
  */
 
 #include <unistd.h>
+#include <stdbool.h>
 #include <stdio.h>
 
 #include "wiringPi.h"
@@ -82,7 +83,7 @@ int pcf8591Setup (const int pinBase, const int i2cAddress)
   struct wiringPiNodeStruct *node ;
 
   if ((fd = wiringPiI2CSetup (i2cAddress)) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, 4) ;
 
@@ -90,5 +91,5 @@ int pcf8591Setup (const int pinBase, const int i2cAddress)
   node->analogRead  = myAnalogRead ;
   node->analogWrite = myAnalogWrite ;
 
-  return TRUE ;
+  return true ;
 }

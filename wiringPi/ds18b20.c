@@ -29,6 +29,7 @@
 
 #include <unistd.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <malloc.h>
@@ -123,7 +124,7 @@ int ds18b20Setup (const int pinBase, const char *deviceId)
 // Allocate space for the filename
 
   if ((fileName = malloc (strlen (W1_PREFIX) + strlen (W1_POSTFIX) + strlen (deviceId) + 1)) == NULL)
-    return FALSE ;
+    return false ;
 
   sprintf (fileName, "%s%s%s", W1_PREFIX, deviceId, W1_POSTFIX) ;
 
@@ -132,7 +133,7 @@ int ds18b20Setup (const int pinBase, const char *deviceId)
   free (fileName) ;
 
   if (fd < 0)
-    return FALSE ;
+    return false ;
 
 // We'll keep the file open, to make access a little faster
 //	although it's very slow reading these things anyway )-:
@@ -142,5 +143,5 @@ int ds18b20Setup (const int pinBase, const char *deviceId)
   node->fd         = fd ;
   node->analogRead = myAnalogRead ;
 
-  return TRUE ;
+  return true ;
 }

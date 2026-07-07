@@ -1,7 +1,7 @@
 /*
  * readall.c:
  *	The readall functions - getting a bit big, so split them out.
- *	Copyright (c) 2012-2024 Gordon Henderson and contributors
+ *	Copyright (c) 2012–2019 Gordon Henderson; 2019–2026 Contributors
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/
@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <ctype.h>
 #include <string.h>
@@ -36,11 +37,6 @@
 #include <wiringPi.h>
 
 extern int wpMode ;
-
-#ifndef TRUE
-#  define       TRUE    (1==1)
-#  define       FALSE   (1==2)
-#endif
 
 /*
  * doReadallExternal:
@@ -183,7 +179,7 @@ static void readallPhys (int physPin)
     printf (" |      |  ") ;
   else
   {
-    /**/ if (wpMode == WPI_MODE_GPIO)
+    if      (wpMode == WPI_MODE_GPIO)
       pin = physPinToGpio (physPin) ;
     else if (wpMode == WPI_MODE_PHYS)
       pin = physPin ;
@@ -206,7 +202,7 @@ static void readallPhys (int physPin)
     printf (" |   |     ") ;
   else
   {
-    /**/ if (wpMode == WPI_MODE_GPIO)
+    if      (wpMode == WPI_MODE_GPIO)
       pin = physPinToGpio (physPin) ;
     else if (wpMode == WPI_MODE_PHYS)
       pin = physPin ;
@@ -380,7 +376,7 @@ void doReadall (void)
 
   piBoardId (&model, &rev, &mem, &maker, &overVolted) ;
 
-  /**/ if ((model == PI_MODEL_A) || (model == PI_MODEL_B))
+  if      ((model == PI_MODEL_A) || (model == PI_MODEL_B))
     abReadall (model, rev) ;
   else if ((model == PI_MODEL_BP) || (model == PI_MODEL_AP) ||
 	(model == PI_MODEL_2)    ||

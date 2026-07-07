@@ -92,7 +92,7 @@ void softToneWrite (int pin, int freq)
 {
   pin &= 63 ;
 
-  /**/ if (freq < 0)
+  if      (freq < 0)
     freq = 0 ;
   else if (freq > 5000)	// Max 5KHz
     freq = 5000 ;

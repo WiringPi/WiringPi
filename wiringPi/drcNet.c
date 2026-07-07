@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -254,24 +255,6 @@ static void myDigitalWrite (struct wiringPiNodeStruct *node, int pin, int value)
 
 
 /*
- * myDigitalWrite8:
- *********************************************************************************
-
-static void myDigitalWrite8 (struct wiringPiNodeStruct *node, int pin, int value)
-{
-  struct drcNetComStruct cmd ;
-
-  cmd.pin  = pin - node->pinBase ;
-  cmd.cmd  = DRCN_DIGITAL_WRITE8 ;
-  cmd.data = value ;
-
-  (void)send (node->fd, &cmd, sizeof (cmd), 0) ;
-  (void)recv (node->fd, &cmd, sizeof (cmd), 0) ;
-}
- */
-
-
-/*
  * myAnalogWrite:
  *********************************************************************************
  */
@@ -348,26 +331,6 @@ static int myDigitalRead (struct wiringPiNodeStruct *node, int pin)
 
 
 /*
- * myDigitalRead8:
- *********************************************************************************
-
-static unsigned int myDigitalRead8 (struct wiringPiNodeStruct *node, int pin)
-{
-  struct drcNetComStruct cmd ;
-
-  cmd.pin  = pin - node->pinBase ;
-  cmd.cmd  = DRCN_DIGITAL_READ8 ;
-  cmd.data = 0 ;
-
-  (void)send (node->fd, &cmd, sizeof (cmd), 0) ;
-  (void)recv (node->fd, &cmd, sizeof (cmd), 0) ;
-
-  return cmd.data ;
-}
- */
-
-
-/*
  * drcNet:
  *	Create a new instance of an DRC GPIO interface.
  *	Could be a variable nunber of pins here - we might not know in advance.
@@ -380,12 +343,12 @@ int drcSetupNet (const int pinBase, const int numPins, const char *ipAddress, co
   struct wiringPiNodeStruct *node ;
 
   if ((fd = _drcSetupNet (ipAddress, port, password)) < 0)
-    return FALSE ;
+    return false ;
 
   len = sizeof (struct drcNetComStruct) ;
 
   if (setsockopt (fd, SOL_SOCKET, SO_RCVLOWAT, (void *)&len, sizeof (len)) < 0)
-    return FALSE ;
+    return false ;
 
   node = wiringPiNewNode (pinBase, numPins) ;
 
@@ -397,9 +360,7 @@ int drcSetupNet (const int pinBase, const int numPins, const char *ipAddress, co
   node->analogWrite      = myAnalogWrite ;
   node->digitalRead      = myDigitalRead ;
   node->digitalWrite     = myDigitalWrite ;
-//node->digitalRead8     = myDigitalRead8 ;
-//node->digitalWrite8    = myDigitalWrite8 ;
   node->pwmWrite         = myPwmWrite ;
 
-  return TRUE ;
+  return true ;
 }

@@ -1,5 +1,5 @@
 // WiringPi test program: PWM test
-// Compile: gcc -Wall wiringpi_test9_pwm.c -o wiringpi_test9_pwm -lwiringPi
+// Compile: gcc -Wall wiringpi_test82_pwm.c -o wiringpi_test82_pwm -lwiringPi
 
 #include "wpi_test.h"
 #include <string.h>
@@ -65,7 +65,7 @@ int main (void) {
 
     wiringPiVersion(&major, &minor);
 
-    printf("WiringPi GPIO test program 9\n");
+    printf("WiringPi PWM test program 8.2 (BAL & MS Mode different frequencys)\n");
     printf("PWM/ISR test (WiringPi %d.%d)\n", major, minor);
 
     wiringPiSetupGpio() ;
@@ -77,15 +77,18 @@ int main (void) {
     int Pi5 = 0;
     double MaxFreq = 100.0;
     switch(RaspberryPiModel) {
-      case PI_MODEL_A:
+     case PI_MODEL_A:
       case PI_MODEL_B:
       case PI_MODEL_BP:
       case PI_MODEL_AP:
+      case PI_MODEL_CM:
+        MaxFreq = 5.0; // 4.8 kHz -> ~26% CPU@800 MHz
+        printf(" - Pi1/BCM2835 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
+        break;
       case PI_MODEL_ZERO:
       case PI_MODEL_ZERO_W:
-      case PI_MODEL_CM:
-        MaxFreq = 13.0; // 12.5 kHz -> ~40% CPU@800 MHz
-        printf(" - Pi1/BCM2835 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
+        MaxFreq = 13.0; // 12.5 kHz -> ~42% CPU@1000 MHz
+        printf(" - PiZero/BCM2835 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
         break;
       case PI_MODEL_2:
         MaxFreq = 20.0;
@@ -135,7 +138,7 @@ int main (void) {
       pinMode(PWM, PWM_OUTPUT);  //Mode BAL, pwmr=1024, pwmc=32
       printf("pwmc 4.8kHz\n");
       pwmSetClock(2000);
-      delay(250);
+      delay(1000);
 
       printf("Register ISR@%d\n", PWM);
     // INT_EDGE_BOTH, INT_EDGE_FALLING, INT_EDGE_RISING only one ISR per input

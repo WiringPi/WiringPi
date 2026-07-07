@@ -1,7 +1,7 @@
 /*
  * wiringPiI2C.c:
  *	Simplified I2C access routines
- *	Copyright (c) 2013-2024 Gordon Henderson and contributors
+ *	Copyright (c) 2013–2019 Gordon Henderson; 2019–2026 Contributors
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/

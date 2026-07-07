@@ -52,6 +52,7 @@ int main (void) {
 		delayMicroseconds(600000);
     }
 
+
 	//Error wrong direction - only for fun
 	digitalWrite(GPIO, LOW);
 
