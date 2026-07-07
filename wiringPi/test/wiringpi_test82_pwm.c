@@ -100,8 +100,9 @@ int main (void) {
       case PI_MODEL_3AP:
       case PI_MODEL_CM3P:
       case PI_MODEL_ZERO_2W:
+      case PI_MODEL_CM0:
         MaxFreq = 50.0;
-        printf(" - Pi3/BCM2837 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
+        printf(" - Pi3/Zero2/BCM2837 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
         break;
       case PI_MODEL_4B:
       case PI_MODEL_400:

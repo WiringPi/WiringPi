@@ -1,7 +1,7 @@
 /*
  * readall.h:
  *	Arduino like Wiring library for the Raspberry Pi.
- *	Copyright (c) 2012-2025 Gordon Henderson
+ *	Copyright (c) 2012–2019 Gordon Henderson; 2019–2026 Contributors
  ***********************************************************************
  * This file is part of wiringPi:
  *	https://github.com/WiringPi/WiringPi/

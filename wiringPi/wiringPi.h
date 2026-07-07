@@ -131,10 +131,11 @@ enum PI_MODEL {
   PI_MODEL_5       = 23,
   PI_MODEL_CM5     = 24,
   PI_MODEL_500     = 25,
-  PI_MODEL_CM5L    = 26
+  PI_MODEL_CM5L    = 26,
+  PI_MODEL_CM0     = 27,
 };
 
-#define PI_MODELS_MAX 27
+#define PI_MODELS_MAX 28
 
 enum PI_VERSION {
   PI_VERSION_1   = 0,

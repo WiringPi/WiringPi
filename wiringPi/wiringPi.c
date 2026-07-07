@@ -348,33 +348,34 @@ static volatile unsigned int piGpioBase = 0 ;
 
 const char *piModelNames [PI_MODELS_MAX] =
 {
-  "Model A",	//  0
-  "Model B",	//  1
-  "Model A+",	//  2
-  "Model B+",	//  3
-  "Pi 2",	//  4
-  "Alpha",	//  5
-  "CM",		//  6
-  "Unknown07",	// 07
-  "Pi 3",	// 08
-  "Pi Zero",	// 09
-  "CM3",	// 10
-  "Unknown11",	// 11
-  "Pi Zero-W",	// 12
-  "Pi 3B+",	// 13
-  "Pi 3A+",	// 14
-  "Unknown15",	// 15
-  "CM3+",	// 16
-  "Pi 4B",	// 17
-  "Pi Zero2-W",	// 18
-  "Pi 400",	// 19
-  "CM4",	// 20
-  "CM4S",	// 21
-  "Unknown22",	// 22
-  "Pi 5",	// 23
-  "CM5",	// 24
-  "Pi 500",	// 25
-  "CM5 Lite",	// 26
+  "Model A",	 //  0
+  "Model B",	 //  1
+  "Model A+",	 //  2
+  "Model B+",	 //  3
+  "Pi 2",      //  4
+  "Alpha",     //  5
+  "CM",        //  6
+  "Unknown07", // 07
+  "Pi 3",      // 08
+  "Pi Zero",	 // 09
+  "CM3",	     // 10
+  "Unknown11", // 11
+  "Pi Zero-W", // 12
+  "Pi 3B+",	   // 13
+  "Pi 3A+",	   // 14
+  "Unknown15", // 15
+  "CM3+",	     // 16
+  "Pi 4B",	   // 17
+  "Pi Zero2-W",// 18
+  "Pi 400",	   // 19
+  "CM4",	     // 20
+  "CM4S",	     // 21
+  "Unknown22", // 22
+  "Pi 5",	     // 23
+  "CM5",	     // 24
+  "Pi 500",	   // 25
+  "CM5 Lite",	 // 26
+  "CM0",	     // 27
 } ;
 
 const char *piProcessor [5] =
@@ -408,12 +409,12 @@ const char *piRevisionNames [16] =
 
 const char *piMakerNames [16] =
 {
-  "Sony UK",//	 0
-  "Egoman",	//	 1
-  "Embest",	//	 2
-  "Sony Japan",//	 3
-  "Embest",	//	 4
-  "Stadium",//	 5
+  "Sony UK",    //	 0
+  "Egoman",	    //	 1
+  "Embest",	    //	 2
+  "Sony Japan", //	 3
+  "Embest",	    //	 4
+  "Stadium",    //	 5
   "Unknown06",	//	 6
   "Unknown07",	//	 7
   "Unknown08",	//	 8
@@ -435,7 +436,7 @@ const int piMemorySize [8] =
   4096,		//	 4
   8192,		//	 5
  16384,		//	 6
-     0,		//	 7
+     0,		//	 7 , Other, detecting with 'rpi-sdram-size-gbit' not supported
 } ;
 
 // Time for easy calculations
@@ -655,6 +656,9 @@ int piBoard40Pin() {
 // PI_MODEL_CM3
 // PI_MODEL_CM4
 // PI_MODEL_CM4S
+// PI_MODEL_CM5
+// PI_MODEL_CM5L
+// PI_MODEL_CM0
 //     ? guess yes
 	default:
 		return 1;
@@ -1267,7 +1271,8 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
 
   RaspberryPiModel = *model;
 
-  switch (RaspberryPiModel){
+  switch (RaspberryPiModel) {
+    //BCM2835
     case PI_MODEL_A:
     case PI_MODEL_B:
     case PI_MODEL_AP:
@@ -1280,6 +1285,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
       piGpioPupOffset = GPPUD ;
       break ;
 
+    //BCM2711
     case PI_MODEL_4B:
     case PI_MODEL_400:
     case PI_MODEL_CM4:
@@ -1288,6 +1294,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
       piGpioPupOffset = GPPUPPDN0 ;
       break ;
 
+    //BCM2712
     case PI_MODEL_5:
     case PI_MODEL_CM5:
     case PI_MODEL_500:
@@ -1296,6 +1303,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
       piGpioPupOffset = 0 ;
       break ;
 
+    //BCM2836, BCM2837, BCM2710A1
     default:
       piGpioBase = GPIO_PERI_BASE_2835 ;
       piGpioPupOffset = GPPUD ;

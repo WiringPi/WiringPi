@@ -102,6 +102,7 @@ int main(void)
         case PI_MODEL_3AP:
         case PI_MODEL_3BP:
         case PI_MODEL_ZERO_2W:
+        case PI_MODEL_CM0:
             tolerancePulseIn = 0.02;
             break;
     }

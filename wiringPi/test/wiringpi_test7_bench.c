@@ -77,6 +77,7 @@ int main (void) {
     case PI_MODEL_3AP:
     case PI_MODEL_CM3P:
     case PI_MODEL_ZERO_2W:
+    case PI_MODEL_CM0:
       ToggleValue /= 2;
       break;
     case PI_MODEL_4B:     //ARM=1500MHz
