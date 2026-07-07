@@ -3695,15 +3695,21 @@ int wiringPiSetup (void)
 
   wiringPiSetuped = true ;
 
-  if (getenv (ENV_DEBUG) != NULL)
-    wiringPiDebug = true ;
+  wiringPiDebug = 0;
+  char* debug = getenv(ENV_DEBUG);
+  if (debug != NULL) {
+    wiringPiDebug = atoi(debug);
+    if (0==wiringPiDebug) {
+      wiringPiDebug = 1;
+    }
+  }
 
   if (getenv (ENV_CODES) != NULL)
     wiringPiReturnCodes = true ;
 
-  if (wiringPiDebug)
-    printf ("wiringPi: wiringPiSetup called\n") ;
-
+  if (wiringPiDebug) {
+    printf ("wiringPi: wiringPiSetup called (debug %d)\n", wiringPiDebug) ;
+  }
 // Get the board ID information. We're not really using the information here,
 //	but it will give us information like the GPIO layout scheme (2 variants
 //	on the older 26-pin Pi's) and the GPIO peripheral base address.
