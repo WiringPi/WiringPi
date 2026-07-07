@@ -427,7 +427,7 @@ const char *piMakerNames [16] =
   "Unknown15",	//	15
 } ;
 
-const int piMemorySize [8] =
+int piMemorySize [8] =
 {
    256,		//	 0
    512,		//	 1
@@ -436,7 +436,7 @@ const int piMemorySize [8] =
   4096,		//	 4
   8192,		//	 5
  16384,		//	 6
-     0,		//	 7 , Other, detecting with 'rpi-sdram-size-gbit' not supported
+     0,		//	 7 , Other; overwritten at runtime from 'rpi-sdram-size-gbit' if present, see GetPiRAM()
 } ;
 
 // Time for easy calculations
@@ -1048,6 +1048,7 @@ void ReportDeviceError(const char *function, int pin, const char *mode, int ret)
  *********************************************************************************
  */
  const char* revfile = "/proc/device-tree/system/linux,revision";
+ const char* ramfile = "/proc/device-tree/chosen/rpi-sdram-size-gbit";
 
 void piGpioLayoutOops (const char *why)
 {
@@ -1076,32 +1077,63 @@ int piBoardRev (void)
   return piGpioLayout () ;
 }
 
-const char* GetPiRevision(char* line, int linelength, unsigned int* revision) {
+// getIntValueFromFile:
+//	Read a single big-endian 32-bit value from a device-tree file
+//	(e.g. .../linux,revision or .../rpi-sdram-size-gbit).
+//	Returns 0 and fills *value on success, -1 on missing file / read error.
 
-  const char* c = NULL;
-  uint32_t Revision = 0;
-  _Static_assert(sizeof(Revision)==4, "should be unsigend integer with 4 byte size");
+int getIntValueFromFile (const char *file, unsigned int *value) {
 
-	FILE* fp = fopen(revfile,"rb");
+  uint32_t raw = 0;
+  _Static_assert(sizeof(raw)==4, "should be unsigend integer with 4 byte size");
+
+	FILE* fp = fopen(file,"rb");
 	if (!fp) {
     if (wiringPiDebug)
-		  perror(revfile);
-		return NULL; // revision file not found or no access
+		  perror(file);
+		return -1; // file not found or no access
 	}
-	int result = fread(&Revision, sizeof(Revision), 1, fp);
+	int result = fread(&raw, sizeof(raw), 1, fp);
 	fclose(fp);
 	if (result<1) {
     if (wiringPiDebug)
-		  perror(revfile);
-		return NULL; // read error
+		  perror(file);
+		return -1; // read error
 	}
-	Revision = bswap_32(Revision);
+	*value = bswap_32(raw);
+	return 0;
+}
+
+const char* GetPiRevision(char* line, int linelength, unsigned int* revision) {
+
+  const char* c = NULL;
+  unsigned int Revision = 0;
+
+  if (getIntValueFromFile(revfile, &Revision) != 0) {
+    return NULL; // revision file not found, no access, or read error
+  }
 	snprintf(line, linelength, "Revision\t: %04x", Revision);
   c =  &line[11];
   *revision = Revision;
   if (wiringPiDebug)
 	  printf("GetPiRevision: Revision string: \"%s\" (%s) - 0x%x\n", line, c, *revision);
 	return c;
+}
+
+// GetPiRAM:
+//	For boards where the revision code's memory field reads as "Other" (7),
+//	read the actual RAM size from the device tree. The file holds the size
+//	in gigabit (e.g. 0x00000020 = 32 gigabit = 4096 MiB)
+//	Returns the RAM size in MiB, or 0 if the file is missing/unreadable.
+
+unsigned int GetPiRAM (void) {
+
+  unsigned int gigabit = 0;
+
+  if (getIntValueFromFile(ramfile, &gigabit) != 0)
+    return 0; // ram size file not found, no access, or read error
+
+  return (gigabit * 1024 / 8);
 }
 
 /*
@@ -1179,8 +1211,6 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
   unsigned int revision = 0x00 ;
   int bRev, bType, bProc, bMfg, bMem, bWarranty ;
 
-  //piGpioLayoutOops ("this is only a test case");
-
   c = GetPiRevision(line, maxlength,  &revision); // device tree
   if (NULL==c) {
     c = GetPiRevisionLegacy(line, maxlength, &revision); // proc/cpuinfo
@@ -1212,6 +1242,15 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     if (wiringPiDebug)
       printf ("piBoardId: rev: %d, type: %d, proc: %d, mfg: %d, mem: %d, warranty: %d\n",
 		bRev, bType, bProc, bMfg, bMem, bWarranty) ;
+
+    if (7 == bMem) {		// "Other" - actual size not encoded in the revision, read it from the device tree
+      int ramMB = GetPiRAM();
+      if (ramMB > 0) {
+        piMemorySize [7] = ramMB;
+      } else {
+        piMemorySize [7] = 0;
+      }
+    }
   }
   else					// Old way
   {

@@ -160,7 +160,7 @@ extern const char *piModelNames    [PI_MODELS_MAX];
 extern const char *piProcessor     [ 5] ;
 extern const char *piRevisionNames [16] ;
 extern const char *piMakerNames    [16] ;
-extern const int   piMemorySize    [ 8] ;
+extern int         piMemorySize    [ 8] ;
 
 
 //  Intended for the GPIO program Use at your own risk.
