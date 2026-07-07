@@ -42,15 +42,10 @@
 #include <piFace.h>
 
 #include "../version.h"
+#include "readall.h"
 
 extern int wiringPiDebug ;
 int gpioDebug ;
-
-// External functions I can't be bothered creating a separate .h file for:
-
-extern void doReadall    (void) ;
-extern void doAllReadall (void) ;
-extern void doQmode      (int argc, char *argv []) ;
 
 #define	PI_USB_POWER_CONTROL	38
 #define	I2CDETECT		"i2cdetect"
