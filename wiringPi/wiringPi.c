@@ -91,10 +91,10 @@
 
 // Environment Variables
 
-#define	ENV_DEBUG	"WIRINGPI_DEBUG"
-#define	ENV_CODES	"WIRINGPI_CODES"
-#define	ENV_GPIOMEM	"WIRINGPI_GPIOMEM"
-
+#define	ENV_DEBUG	         "WIRINGPI_DEBUG"
+#define	ENV_CODES          "WIRINGPI_CODES"
+#define	ENV_GPIOMEM        "WIRINGPI_GPIOMEM"
+#define	ENV_FORCE_REVISION "WIRINGPI_FORCE_REVISION"
 
 // Extend wiringPi with other pin-based devices and keep track of
 //	them in this structure
@@ -1109,14 +1109,23 @@ const char* GetPiRevision(char* line, int linelength, unsigned int* revision) {
   const char* c = NULL;
   unsigned int Revision = 0;
 
-  if (getIntValueFromFile(revfile, &Revision) != 0) {
+  const char *forcedRevision = getenv (ENV_FORCE_REVISION);
+  if (forcedRevision != NULL) {
+    // Unit test hook: skip the device-tree file and use the given hex
+    // revision word instead, so the bit-field decode in piBoardId() can be
+    // exercised for any board without needing that board's hardware.
+    Revision = (unsigned int) strtoul (forcedRevision, NULL, 16);
+  } else if (getIntValueFromFile(revfile, &Revision) != 0) {
+    fprintf(stderr, "wiringPi: ERROR: could not get revision from '%s' (Error: %s)", revfile, strerror(errno));
     return NULL; // revision file not found, no access, or read error
   }
 	snprintf(line, linelength, "Revision\t: %04x", Revision);
   c =  &line[11];
   *revision = Revision;
-  if (wiringPiDebug)
-	  printf("GetPiRevision: Revision string: \"%s\" (%s) - 0x%x\n", line, c, *revision);
+  if (wiringPiDebug) {
+	  printf("GetPiRevision: Revision string from '%s': \"%s\" (%s) - 0x%x\n", 
+     forcedRevision != NULL ? forcedRevision : revfile, line, c, *revision);
+  }
 	return c;
 }
 
