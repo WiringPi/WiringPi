@@ -500,6 +500,7 @@ typedef struct {
    atomic_ullong timestamp[MAX_EDGE_EVENTS];
    atomic_ullong LowPulse;
    atomic_ullong HighPulse;
+   atomic_ullong lastTimestamp;
 } edge_event_state_t;
 
 // ISR Data
@@ -2809,6 +2810,38 @@ unsigned long long pulseIn64(int pin, int level, unsigned long long timeout_us) 
 
 
 /*
+ * frequencyIn:
+ *	Measure frequency on pin by counting rising edges over window_ms via ISR
+ *  Returns measured frequency in Hz or 0 if fewer than 2 edges were captured.
+ *********************************************************************************
+ */
+unsigned long long frequencyIn(int pin, unsigned long window_ms) {
+
+  unsigned long long start_time = piMicros64();
+  wiringPiISR2(pin, INT_EDGE_RISING, NULL, 0, NULL);
+  delay(window_ms);
+  wiringPiISRStop(pin);
+
+  unsigned long long count   = edgeEventState[pin].count;
+  unsigned long long firstTs = edgeEventState[pin].timestamp[0];
+  unsigned long long lastTs  = edgeEventState[pin].lastTimestamp;
+
+  if (count < 2 || lastTs <= firstTs) {
+    if (wiringPiDebug) printf("frequencyIn: not enough edges captured\n");
+    return 0;
+  }
+
+  unsigned long long freqHz = (count - 1) * 1000000000ULL / (lastTs - firstTs);
+
+  if (wiringPiDebug) {
+    printf("frequencyIn: count %llu, span timestamp %llu ns, span time %llu us, freq %llu Hz\n", 
+      count, lastTs - firstTs, piMicros64() - start_time, freqHz);
+  }
+  return freqHz;
+}
+
+
+/*
  * waitForInterrupt2:
  *	Wait for Interrupt on a GPIO pin and use v2 of the character device API, need Kernel 5.1
  *  Returns struct WPIWfiStatus
@@ -3231,7 +3264,8 @@ static void *interruptHandlerV2(void *arg)
                         }
                       }
                   }
-                  ++edgeEventState[pin].count;
+                  edgeEventState[pin].lastTimestamp = evdat[i].timestamp_ns;
+                  edgeEventState[pin].count++;
 
                   if (isrFunctionsV2[pin]) {
                         wfiStatus.statusOK = 1;
@@ -3320,6 +3354,7 @@ int wiringPiISRInternal(int pin, int edgeMode, void (*function)(struct WPIWfiSta
     }
     edgeEventState[pin].LowPulse = 0;
     edgeEventState[pin].HighPulse = 0;
+    edgeEventState[pin].lastTimestamp = 0;
 
     pinPass = pin ;
     if (params.fd > 0) {

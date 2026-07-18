@@ -13,8 +13,10 @@ int PWM_OUT[4] = { 18, 12, 13, 19 };
 int PWM_IN[4]  = { 17, 13, 12, 26 };
 
 volatile int gCounter = 0;
+int gFreqinPin = 0;
+int gUseLegacy = 0;   // -legacy: old gCounter ISR instead of frequencyIn()
 
-//Interrupt Service Routine for FREQIN
+//Interrupt Service Routine for FREQIN (legacy method only)
 void ISR_FREQIN(void) {
     gCounter++;
 }
@@ -22,28 +24,35 @@ void ISR_FREQIN(void) {
 double MeasureAndCheckFreqTolerance(const char* msg, double expect_freq, int tolerance) {
   double fFrequency;
   clock_t CPUClockBegin, CPUClockEnd;
-  int CountBegin, CountEnd;
-  double CPUClockInterval, CountInterval;
+  double CPUClockInterval;
   double elapsed_time, CPULoad;
   uint64_t tbegin, tend;
   int SleepMs = 1200;
 
   CPUClockBegin = clock();
   tbegin = piMicros64();
-  CountBegin = gCounter;
-  delay(SleepMs);
-  CountEnd = gCounter;
-  CPUClockEnd = clock();
-  tend = piMicros64();
 
-  elapsed_time = (double)(tend-tbegin)/1.0e6;
-  CountInterval = CountEnd - CountBegin;
+  if (gUseLegacy) {
+    int CountBegin, CountEnd;
+    CountBegin = gCounter;
+    delay(SleepMs);
+    CountEnd = gCounter;
+    tend = piMicros64();
+    elapsed_time = (double)(tend-tbegin)/1.0e6;
+    fFrequency = (CountEnd - CountBegin) / elapsed_time / 1000;
+  } else {
+    unsigned long long freqHz = frequencyIn(gFreqinPin, (unsigned long)SleepMs);
+    tend = piMicros64();
+    elapsed_time = (double)(tend-tbegin)/1.0e6;
+    fFrequency = (double)freqHz / 1000.0;
+  }
+
+  CPUClockEnd = clock();
   CPUClockInterval = CPUClockEnd - CPUClockBegin;
   CPULoad = CPUClockInterval*100.0 / CLOCKS_PER_SEC / elapsed_time;
-  fFrequency = CountInterval / elapsed_time / 1000;
 
-  printf("\nInterval:  time: %.6f sec (CPU: %3.1f %%), count: %g  -> frequency: %.3f kHz\n",
-    elapsed_time, CPULoad, CountInterval, fFrequency);
+  printf("\nInterval:  time: %.6f sec (CPU: %3.1f %%) [%s] -> frequency: %.3f kHz\n",
+    elapsed_time, CPULoad, gUseLegacy ? "legacy ISR" : "frequencyIn", fFrequency);
 
   CheckSameDouble("Wait for freq. meas.", elapsed_time, SleepMs/1000.0, 0.1); //100ms tolerance. maybe problematic on high freq/cpu load
   CheckSameDouble(msg, fFrequency, expect_freq, (expect_freq!=0.0) ? expect_freq*tolerance/100 : 0.1); //x% tolerance
@@ -55,15 +64,18 @@ double MeasureAndCheckFreq(const char* msg, double expect_freq) {
 }
 
 
-int main (void) {
+int main (int argc, char *argv[]) {
 
     int major, minor;
     int PWM, FREQIN;
+
+    gUseLegacy = (argc > 1 && strcmp(argv[1], "-legacy") == 0);
 
     wiringPiVersion(&major, &minor);
 
     printf("WiringPi PWM GPIO test program 8\n");
     printf("PWM/ISR test (WiringPi %d.%d)\n", major, minor);
+    printf("Frequency measurement method: %s\n", gUseLegacy ? "legacy gCounter ISR (-legacy)" : "frequencyIn()");
 
     wiringPiSetupGpio() ;
 
@@ -73,14 +85,17 @@ int main (void) {
 
     PWM = 18;
     FREQIN = 17;
+    gFreqinPin = FREQIN;
 
-    printf("Register ISR@%d\n", PWM);
-    // INT_EDGE_BOTH, INT_EDGE_FALLING, INT_EDGE_RISING only one ISR per input
-    int result = wiringPiISR(FREQIN, INT_EDGE_RISING, &ISR_FREQIN);
-    CheckSame("Register ISR", result, 0);
-    if (result < 0) {
-        printf("Unable to setup ISR for GPIO %d (%s)\n\n", FREQIN, strerror(errno));
-        return UnitTestState();
+    if (gUseLegacy) {
+      printf("Register ISR@%d\n", PWM);
+      // INT_EDGE_BOTH, INT_EDGE_FALLING, INT_EDGE_RISING only one ISR per input
+      int result = wiringPiISR(FREQIN, INT_EDGE_RISING, &ISR_FREQIN);
+      CheckSame("Register ISR", result, 0);
+      if (result < 0) {
+          printf("Unable to setup ISR for GPIO %d (%s)\n\n", FREQIN, strerror(errno));
+          return UnitTestState();
+      }
     }
 
     printf("\n==> Set pwm 0%% and enable PWM output with PWM_OUTPUT (default mode)\n");
@@ -176,11 +191,13 @@ int main (void) {
     printf("set PWM0 CLK off @ Pi5\n");
     pwmSetClock(0);
 
-    result = wiringPiISRStop(FREQIN);
-    CheckSame("\n\nRelease ISR", result, 0);
-    if (result < 0) {
-      printf("Unable to release ISR for GPIO %d (%s)\n\n", FREQIN, strerror(errno));
-      return UnitTestState();
+    if (gUseLegacy) {
+      int result = wiringPiISRStop(FREQIN);
+      CheckSame("\n\nRelease ISR", result, 0);
+      if (result < 0) {
+        printf("Unable to release ISR for GPIO %d (%s)\n\n", FREQIN, strerror(errno));
+        return UnitTestState();
+      }
     }
 
     return UnitTestState();
