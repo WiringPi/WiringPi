@@ -35,7 +35,7 @@ double MeasureAndCheckFreq(const char* msg, double expect_freq) {
   printf("\nInterval:  time: %.6f sec (CPU: %3.1f %%) -> frequency: %.3f kHz\n",
     elapsed_time, CPULoad, fFrequency);
 
-  CheckSameDouble("Wait for freq. meas.", elapsed_time, SleepMs/1000.0, 0.1); //100ms tolerance. maybe problematic on high freq/cpu load
+  CheckBetweenDouble("Wait for freq. meas.", elapsed_time, SleepMs/1000.0, 2.0*SleepMs/1000.0); //no undershoot allowed, up to 2x overrun ok (RT-prio ISR thread can delay main thread on busy/weak hardware)
   CheckSameDouble(msg, fFrequency, expect_freq, expect_freq*2/100); //2% toleranc
   return fFrequency;
 }
