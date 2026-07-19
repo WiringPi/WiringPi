@@ -2,8 +2,6 @@
 // Compile: gcc -Wall wiringpi_test82_pwm.c -o wiringpi_test82_pwm -lwiringPi
 
 #include "wpi_test.h"
-#include <string.h>
-#include <errno.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <time.h>
@@ -12,38 +10,30 @@
 int PWM_OUT[4] = { 18, 12, 13, 19 };
 int PWM_IN[4]  = { 17, 13, 12, 26 };
 
-volatile int gCounter = 0;
-
-//Interrupt Service Routine for FREQIN
-void ISR_FREQIN(void) {
-    gCounter++;
-}
+int gFreqinPin = 0;
 
 double MeasureAndCheckFreq(const char* msg, double expect_freq) {
   double fFrequency;
   clock_t CPUClockBegin, CPUClockEnd;
-  int CountBegin, CountEnd;
-  double CPUClockInterval, CountInterval;
+  double CPUClockInterval;
   double elapsed_time, CPULoad;
   uint64_t tbegin, tend;
   int SleepMs = 1200;
 
   CPUClockBegin = clock();
   tbegin = piMicros64();
-  CountBegin = gCounter;
-  delay(SleepMs);
-  CountEnd = gCounter;
-  CPUClockEnd = clock();
-  tend = piMicros64();
 
+  unsigned long long freqHz = frequencyIn(gFreqinPin, (unsigned long)SleepMs);
+  tend = piMicros64();
   elapsed_time = (double)(tend-tbegin)/1.0e6;
-  CountInterval = CountEnd - CountBegin;
+  fFrequency = (double)freqHz / 1000.0;
+
+  CPUClockEnd = clock();
   CPUClockInterval = CPUClockEnd - CPUClockBegin;
   CPULoad = CPUClockInterval*100.0 / CLOCKS_PER_SEC / elapsed_time;
-  fFrequency = CountInterval / elapsed_time / 1000;
 
-  printf("\nInterval:  time: %.6f sec (CPU: %3.1f %%), count: %g  -> frequency: %.3f kHz\n",
-    elapsed_time, CPULoad, CountInterval, fFrequency);
+  printf("\nInterval:  time: %.6f sec (CPU: %3.1f %%) -> frequency: %.3f kHz\n",
+    elapsed_time, CPULoad, fFrequency);
 
   CheckSameDouble("Wait for freq. meas.", elapsed_time, SleepMs/1000.0, 0.1); //100ms tolerance. maybe problematic on high freq/cpu load
   CheckSameDouble(msg, fFrequency, expect_freq, expect_freq*2/100); //2% toleranc
@@ -61,12 +51,12 @@ int main (void) {
     int major, minor;
     char msg[255];
     int testruns = 4;
-    int PWM, FREQIN;
+    int PWM;
 
     wiringPiVersion(&major, &minor);
 
     printf("WiringPi PWM test program 8.2 (BAL & MS Mode different frequencys)\n");
-    printf("PWM/ISR test (WiringPi %d.%d)\n", major, minor);
+    printf("PWM/frequencyIn/ISR test (WiringPi %d.%d)\n", major, minor);
 
     wiringPiSetupGpio() ;
 
@@ -123,8 +113,8 @@ int main (void) {
 
     for (int testrun=0; testrun<testruns; testrun++) {
       PWM = PWM_OUT[testrun];
-      FREQIN = PWM_IN[testrun];
-      printf("using PWM@GPIO%d (output) and GPIO%d (input)\n", PWM, FREQIN);
+      gFreqinPin = PWM_IN[testrun];
+      printf("using PWM@GPIO%d (output) and GPIO%d (input)\n", PWM, gFreqinPin);
       delay(1000);
       printf("\n");
       printf("*********************************\n");
@@ -140,14 +130,6 @@ int main (void) {
       pwmSetClock(2000);
       delay(1000);
 
-      printf("Register ISR@%d\n", PWM);
-    // INT_EDGE_BOTH, INT_EDGE_FALLING, INT_EDGE_RISING only one ISR per input
-      int result = wiringPiISR(FREQIN, INT_EDGE_RISING, &ISR_FREQIN);
-      CheckSame("Register ISR", result, 0);
-      if (result < 0) {
-        printf("Unable to setup ISR for GPIO %d (%s)\n\n", FREQIN, strerror(errno));
-        return UnitTestState();
-      }
       printf("Wait for start ...\n");
       delay(500);
       printf("Start:\n");
@@ -215,12 +197,6 @@ int main (void) {
         }
       }
 
-      result = wiringPiISRStop(FREQIN);
-      CheckSame("\n\nRelease ISR", result, 0);
-      if (result < 0) {
-       printf("Unable to release ISR for GPIO %d (%s)\n\n", FREQIN, strerror(errno));
-       return UnitTestState();
-     }
      printf("set PWM@GPIO%d (output) back to input\n", PWM);
      pinMode(PWM, INPUT);
    }
