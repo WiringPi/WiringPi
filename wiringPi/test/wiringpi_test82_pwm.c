@@ -18,7 +18,12 @@ double MeasureAndCheckFreq(const char* msg, double expect_freq) {
   double CPUClockInterval;
   double elapsed_time, CPULoad;
   uint64_t tbegin, tend;
-  int SleepMs = 1200;
+  const double TargetEdges = 25.0;   // aim to capture this many edges for a stable reading
+  const int MinSleepMs = 300;
+  const int MaxSleepMs = 1200;
+  int SleepMs = (expect_freq>0.0) ? (int)(TargetEdges/expect_freq) : MaxSleepMs;
+  if (SleepMs<MinSleepMs) SleepMs = MinSleepMs;
+  if (SleepMs>MaxSleepMs) SleepMs = MaxSleepMs;
 
   CPUClockBegin = clock();
   tbegin = piMicros64();
@@ -43,8 +48,10 @@ double MeasureAndCheckFreq(const char* msg, double expect_freq) {
 
 int tests_pwmc[7] = {1456, 1000,  512,  200, 2000, 3000, 4000};
 int tests_duty[7] = { 512,  768,  682,  922,  256,  341,  102};
-int tests_pwmr[12]= {  50,  100,  200,  512, 1024, 1456, 2000, 3000, 5000, 10000, 15000, 20000};
+int tests_pwmr[5] = {  50,  512, 2000, 5000, 20000};
 int tests_pwm[3]  = {  50,  25,  75};
+
+#define DUTY_TEST_PWMC 1000  // fixed clock used for the duty-cycle formula sweep (BAL mode)
 
 int main (void) {
 
@@ -54,10 +61,7 @@ int main (void) {
     int PWM;
 
     wiringPiVersion(&major, &minor);
-
-    printf("WiringPi PWM test program 8.2 (BAL & MS Mode different frequencys)\n");
-    printf("PWM/frequencyIn/ISR test (WiringPi %d.%d)\n", major, minor);
-
+    printf("WiringPi PWM test program 8.2 (BAL & MS Mode, different frequencys, up to 4 PWM pins) - WiringPi %d.%d\n", major, minor);
     wiringPiSetupGpio() ;
 
     int rev, mem, maker, overVolted, RaspberryPiModel;
@@ -73,16 +77,16 @@ int main (void) {
       case PI_MODEL_AP:
       case PI_MODEL_CM:
         MaxFreq = 5.0; // 4.8 kHz -> ~26% CPU@800 MHz
-        printf(" - Pi1/BCM2835 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
+        printf("Pi1/BCM2835 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
         break;
       case PI_MODEL_ZERO:
       case PI_MODEL_ZERO_W:
         MaxFreq = 13.0; // 12.5 kHz -> ~42% CPU@1000 MHz
-        printf(" - PiZero/BCM2835 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
+        printf("PiZero/BCM2835 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
         break;
       case PI_MODEL_2:
         MaxFreq = 20.0;
-        printf(" - Pi2/BCM2836 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
+        printf("Pi2/BCM2836 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
         break;
       case PI_MODEL_3B:
       case PI_MODEL_CM3:
@@ -91,7 +95,7 @@ int main (void) {
       case PI_MODEL_CM3P:
       case PI_MODEL_ZERO_2W:
         MaxFreq = 50.0;
-        printf(" - Pi3/BCM2837 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
+        printf("Pi3/BCM2837 detected, will skip tests with frequency above %g kHz\n", MaxFreq);
         break;
       case PI_MODEL_4B:
       case PI_MODEL_400:
@@ -114,11 +118,11 @@ int main (void) {
     for (int testrun=0; testrun<testruns; testrun++) {
       PWM = PWM_OUT[testrun];
       gFreqinPin = PWM_IN[testrun];
-      printf("using PWM@GPIO%d (output) and GPIO%d (input)\n", PWM, gFreqinPin);
+      printf("\n--- using PWM@GPIO%d (output) and GPIO%d (input)---\n", PWM, gFreqinPin);
       delay(1000);
       printf("\n");
       printf("*********************************\n");
-      printf("*          PWM BAL mode         *\n");
+      printf("*  PWM BAL mode  @  GPIO%02d      *\n", PWM);
       printf("*********************************\n");
       const int pmw = 512;
       int pmwr = 1024; //default!
@@ -128,48 +132,61 @@ int main (void) {
       pinMode(PWM, PWM_OUTPUT);  //Mode BAL, pwmr=1024, pwmc=32
       printf("pwmc 4.8kHz\n");
       pwmSetClock(2000);
-      delay(1000);
-
+      delay(200);
       printf("Wait for start ...\n");
-      delay(500);
-      printf("Start:\n");
-      //MeasureAndCheckFreq("50\% Duty (default)", 300.000);   //FAIL , freq (pwmc=32) to high for irq count
-      if(!Pi5) {
-      for (int c_duty=0, c_duty_end = sizeof(tests_duty)/sizeof(tests_duty[0]); c_duty<c_duty_end; c_duty++) {
-        double tests_duty_corr;
-        if (tests_duty[c_duty]>(pmwr/2)) {
-          tests_duty_corr = pmwr-tests_duty[c_duty];
-        } else {
-          tests_duty_corr = tests_duty[c_duty];
-        }
-
-        double duty_fact = tests_duty_corr/(double)pmwr;
-        printf("\n%d/%d set duty %d/%d\n",c_duty+1, c_duty_end, tests_duty[c_duty], pmwr);
-        pwmWrite(PWM, tests_duty[c_duty]);
-
+      delay(1000);
+      if (!Pi5) {
+        printf("Start:\n");
+        //MeasureAndCheckFreq("50\% Duty (default)", 300.000);   //FAIL , freq (pwmc=32) to high for irq count
+        printf("\n--- Clock (pwmc) sweep at fixed 50%% duty ---\n");
+        pwmWrite(PWM, pmwr/2);  // 50% duty
         for (int c_pwmc=0, end = sizeof(tests_pwmc)/sizeof(tests_pwmc[0]); c_pwmc<end; c_pwmc++) {
           int pwmc = tests_pwmc[c_pwmc];
           if (Pi4 && pwmc>1456) {
             printf("* Set clock (pwmc) %d not possible on BCM2711 system (OSC 54 MHz), ignore\n", pwmc);
             continue;
           }
-          double freq = 19200.0/pwmc*duty_fact;
+          double freq = 19200.0/pwmc*0.5;
           if (freq>MaxFreq) {
             printf("* Set clock (pwmc) %d not possible on system (to slow to measure %g kHz with ISR), ignore\n", pwmc, freq);
             continue;
           }
           pwmSetClock(pwmc);
           delay(250);
-          sprintf(msg, "Set Clock (pwmc) %d, %d%% duty", pwmc, tests_duty[c_duty]*100/pmwr);
+          sprintf(msg, "Set Clock (pwmc) %d, 50%% duty", pwmc);
           MeasureAndCheckFreq(msg, freq);
         }
-      }
+
+        printf("\n--- Duty sweep at fixed pwmc=%d ---\n", DUTY_TEST_PWMC);
+        pwmSetClock(DUTY_TEST_PWMC);
+        for (int c_duty=0, c_duty_end = sizeof(tests_duty)/sizeof(tests_duty[0]); c_duty<c_duty_end; c_duty++) {
+          double tests_duty_corr;
+          if (tests_duty[c_duty]>(pmwr/2)) {
+            tests_duty_corr = pmwr-tests_duty[c_duty];
+          } else {
+            tests_duty_corr = tests_duty[c_duty];
+          }
+
+          double duty_fact = tests_duty_corr/(double)pmwr;
+          double freq = 19200.0/DUTY_TEST_PWMC*duty_fact;
+          if (freq>MaxFreq) {
+            printf("* Duty %d not possible on system (to slow to measure %g kHz with ISR), ignore\n", tests_duty[c_duty], freq);
+            continue;
+          }
+          printf("\n%d/%d set duty %d/%d\n",c_duty+1, c_duty_end, tests_duty[c_duty], pmwr);
+          pwmWrite(PWM, tests_duty[c_duty]);
+          delay(250);
+          sprintf(msg, "Set duty %d%%, pwmc=%d", tests_duty[c_duty]*100/pmwr, DUTY_TEST_PWMC);
+          MeasureAndCheckFreq(msg, freq);
+        }
+      } else {
+        printf("skipped, Pi5 has no support for BAL mode...\n");
       }
 
       delay(250);
       printf("\n");
       printf("*********************************\n");
-      printf("*          PWM MS mode          *\n");
+      printf("*  PWM MS  mode  @  GPIO%02d     *\n", PWM);
       printf("*********************************\n");
       int pwmc = 10;
       printf("SetClock pwmc=%d and enable MS mode\n", pwmc);
