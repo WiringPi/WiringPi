@@ -289,6 +289,55 @@ if (value == HIGH)
 }
 ```
 
+### setPadDrive
+
+Sets the pad driver (output drive strength) for a whole GPIO pad group.
+
+```C
+void setPadDrive(int group, int value);
+```
+
+``group``: The pad group to configure.
+
+- On the Raspberry Pi 0-4 (BCM283x): `0`, `1` or `2` — group 0 = GPIO 0-27, group 1 = GPIO 28-45, group 2 = GPIO 46-53.
+- On the Raspberry Pi 5 (RP1): only group `0` is supported and it applies to all GPIOs at once; any other value is ignored.
+- `-1` is a special, read-only value: it changes nothing but prints the currently configured drive strength of every pad/pin to stdout.
+
+``value``: The drive strength, `0`-`7`, in 2 mA steps (`0` = 2 mA ... `7` = 16 mA).
+
+**Notice:**  
+
+- On the Raspberry Pi 5 (RP1) the hardware only offers 4 discrete drive levels. The requested `0`-`7` value is mapped down to the closest supported RP1 level (2 mA, 4 mA, 8 mA or 12 mA) and applied to all pins at once — RP1 has no per-group control.
+- `setPadDrive` is also exposed on the command line as `gpio drive <group> <value>`.
+
+**Example:**  
+
+```C
+setPadDrive(0, 7); // Set GPIO 0-27 (group 0) to maximum drive strength (16 mA on Pi 0-4 / 12 mA on Pi 5)
+```
+
+### setPadDrivePin
+
+Sets the pad driver (output drive strength) for a single GPIO pin. Only available on the Raspberry Pi 5 (RP1); on all other models this call has no effect.
+
+```C
+void setPadDrivePin(int pin, int value);
+```
+
+``pin``: The desired pin (BCM-, WiringPi- or Pin-number).  
+``value``: The drive strength, `0`-`3` (`0` = 2 mA, `1` = 4 mA, `2` = 8 mA, `3` = 12 mA).
+
+**Notice:**  
+
+- Unlike `setPadDrive`, this function always only affects the one given pin.
+- `setPadDrivePin` is also exposed on the command line as `gpio drivepin <pin> <value>`.
+
+**Example:**  
+
+```C
+setPadDrivePin(17, 3); // Set the drive strength of GPIO 17 to 12 mA (Pi 5 only)
+```
+
 ## Interrupts
 
 ### wiringPiISR

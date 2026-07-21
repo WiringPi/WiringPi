@@ -281,6 +281,54 @@ if (value==HIGH)
 ```
 
 
+### setPadDrive
+
+Setzt den Pad-Treiber (Ausgangstreiberstärke) für eine gesamte GPIO Pad-Gruppe.
+>>>
+```C
+void setPadDrive(int group, int value)
+```
+
+``group``: Die zu konfigurierende Pad-Gruppe.
+ - Beim Raspberry Pi 0-4 (BCM283x): `0`, `1` oder `2` — Gruppe 0 = GPIO 0-27, Gruppe 1 = GPIO 28-45, Gruppe 2 = GPIO 46-53.
+ - Beim Raspberry Pi 5 (RP1) wird nur Gruppe `0` unterstützt und betrifft dabei alle GPIOs gleichzeitig; andere Werte werden ignoriert.
+ - `-1` ist ein spezieller, reiner Lesewert: es wird nichts verändert, stattdessen wird die aktuell eingestellte Treiberstärke aller Pads/Pins auf der Konsole ausgegeben.
+
+``value``: Die Treiberstärke, `0`-`7`, in 2 mA Schritten (`0` = 2 mA ... `7` = 16 mA).
+
+**Support:**  
+Beim Raspberry Pi 5 (RP1) bietet die Hardware nur 4 diskrete Treiberstufen. Der angeforderte Wert (`0`-`7`) wird daher auf die nächstliegende von RP1 unterstützte Stufe (2 mA, 4 mA, 8 mA oder 12 mA) abgebildet und gleichzeitig auf alle Pins angewendet — RP1 kennt keine getrennte Gruppensteuerung.  
+`setPadDrive` steht auch über die Kommandozeile als `gpio drive <group> <value>` zur Verfügung.
+
+**Beispiel:**
+
+```C
+setPadDrive(0, 7); // Gruppe 0 (GPIO 0-27) auf maximale Treiberstärke setzen (16 mA bei Pi 0-4 / 12 mA bei Pi 5)
+```
+
+
+### setPadDrivePin
+
+Setzt den Pad-Treiber (Ausgangstreiberstärke) für einen einzelnen GPIO-Pin. Nur beim Raspberry Pi 5 (RP1) verfügbar; bei allen anderen Modellen hat der Aufruf keine Wirkung.
+>>>
+```C
+void setPadDrivePin(int pin, int value)
+```
+
+``pin``: Der gewünschte Pin (BCM-, WiringPi- oder Pin-Nummer).  
+``value``: Die Treiberstärke, `0`-`3` (`0` = 2 mA, `1` = 4 mA, `2` = 8 mA, `3` = 12 mA).
+
+**Support:**  
+Im Gegensatz zu `setPadDrive` betrifft diese Funktion immer nur den angegebenen Pin.  
+`setPadDrivePin` steht auch über die Kommandozeile als `gpio drivepin <pin> <value>` zur Verfügung.
+
+**Beispiel:**
+
+```C
+setPadDrivePin(17, 3); // Treiberstärke von GPIO 17 auf 12 mA setzen (nur Pi 5)
+```
+
+
 ## Interrupts
 
 ### wiringPiISR
