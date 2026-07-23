@@ -605,13 +605,13 @@ gpio BCM = 16, IRQ edge = rising, timestamp = 256544092021 microseconds, timenow
 pi@RaspberryPi:~/wiringpi-test-v3.16 $
 ```
 
-### pulseIn64 / pulseIn
+### pulseInNS / pulseIn
 
 Measures the length of a single pulse (HIGH or LOW level) on a GPIO pin.
 
 ```C
-unsigned long long pulseIn64(int pin, int level, unsigned long long timeout_us);
-unsigned int        pulseIn  (int pin, int level, unsigned int       timeout);
+unsigned long long pulseInNS(int pin, int level, unsigned long long timeout_ns);
+unsigned int        pulseIn  (int pin, int level, unsigned int       timeout_us);
 ```
 
 ``pin``: The desired pin (BCM-, WiringPi- or Pin-number).  
@@ -620,23 +620,22 @@ unsigned int        pulseIn  (int pin, int level, unsigned int       timeout);
 - `HIGH` ... Waits for the pin to go from LOW to HIGH, starts timing, then waits for it to go back to LOW and stops timing.
 - `LOW` ... Same, but for a LOW pulse (HIGH → LOW → HIGH).
 
-``timeout_us`` / ``timeout``: Give up and return `0` if no complete pulse is seen within this time.  
+``timeout_ns`` / ``timeout_us``: Give up and return `0` if no complete pulse is seen within this time.  
 ``Return Value``: The measured pulse length, or `0` on timeout.
 
-- `pulseIn64`: ``timeout_us`` in microseconds, return value in **nanoseconds** (kernel edge-timestamp resolution).
-- `pulseIn`: ``timeout`` in **milliseconds**, return value in **microseconds** (Arduino-`pulseIn()`-style, except for the timeout unit).
+- `pulseInNS`: ``timeout_ns`` in nanoseconds, return value in **nanoseconds** (kernel edge-timestamp resolution).
+- `pulseIn`: ``timeout_us`` in **microseconds**, return value in **microseconds** (matches Arduino's `pulseIn()` convention).
 
 **Notice:**  
 
-- `pulseIn`/`pulseIn64` register their own ISR internally (via `wiringPiISR2`) for the duration of the call and deregister it again afterwards — don't call them on a pin that already has an ISR registered via `wiringPiISR`/`wiringPiISR2`.
-- Because WiringPi's `pulseIn` takes its timeout in milliseconds, not microseconds like Arduino's `pulseIn()`, porting Arduino code needs the timeout value adjusted (e.g. `pulseIn(pin, HIGH, 1000)` here waits up to 1 second, not 1 millisecond).
+- `pulseIn`/`pulseInNS` register their own ISR internally (via `wiringPiISR2`) for the duration of the call and deregister it again afterwards — don't call them on a pin that already has an ISR registered via `wiringPiISR`/`wiringPiISR2`.
 
 **Example:**  
 
 ```C
 pinMode(17, INPUT);
 
-unsigned int us = pulseIn(17, HIGH, 1000); // wait up to 1000ms for a HIGH pulse
+unsigned int us = pulseIn(17, HIGH, 1000); // wait up to 1000us for a HIGH pulse
 if (us == 0)
     printf("timeout, no pulse seen\n");
 else
@@ -659,7 +658,7 @@ unsigned long long frequencyIn(int pin, unsigned long window_ms);
 
 - Only rising edges are counted; there's no parameter to select falling or both edges.
 - Choose `window_ms` large enough to capture a reasonable number of edges — at very low frequencies a short window may capture fewer than 2 edges and yield `0`.
-- Like `pulseIn`/`pulseIn64`, `frequencyIn` registers its own ISR for the duration of the call — don't use it on a pin that already has an ISR registered.
+- Like `pulseIn`/`pulseInNS`, `frequencyIn` registers its own ISR for the duration of the call — don't use it on a pin that already has an ISR registered.
 
 **Example:**  
 
