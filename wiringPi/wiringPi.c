@@ -2783,18 +2783,18 @@ unsigned int digitalReadByte2 (void)
 }
 
 
-unsigned long long pulseIn64(int pin, int level, unsigned long long timeout_us) {
+unsigned long long pulseInNS(int pin, int level, unsigned long long timeout_ns) {
 
   wiringPiISR2(pin, INT_EDGE_BOTH, NULL, 0, NULL);
 
   unsigned long long Pulse_ns = 0;
-  unsigned long long start_time = piMicros64();
+  unsigned long long stop_time =  piMicros64() + timeout_ns/1000;
   while (true) {
     Pulse_ns = level==HIGH ? edgeEventState[pin].HighPulse : edgeEventState[pin].LowPulse;
     if (Pulse_ns>0) {
       break;
     }
-    if (piMicros64() - start_time > timeout_us) {
+    if (piMicros64() > stop_time) {
       if (wiringPiDebug) printf("pulseIn timeout\n");
       Pulse_ns = 0;
       break;
@@ -2802,10 +2802,10 @@ unsigned long long pulseIn64(int pin, int level, unsigned long long timeout_us) 
     delay(10);
   }
 
-  if (wiringPiDebug) printf("pulseIn: HighPulse %llu, LowPulse %llu\n", edgeEventState[pin].HighPulse,  edgeEventState[pin].LowPulse);
   wiringPiISRStop(pin);
+  if (wiringPiDebug) printf("pulseIn: HighPulse %llu, LowPulse %llu, pulse time %llu\n", edgeEventState[pin].HighPulse,  edgeEventState[pin].LowPulse, Pulse_ns);
 
-  return Pulse_ns; // Micro seconds
+  return Pulse_ns;
 }
 
 
@@ -3561,9 +3561,9 @@ unsigned long long piMicros64(void) {
  *  or gives up and returns 0 if no complete pulse recieved within timeout.
  *********************************************************************************
 */
-unsigned int pulseIn(int pin, int level, unsigned int timeout) {
+unsigned int pulseIn(int pin, int level, unsigned int timeout_us) {
 
-  return (pulseIn64(pin, level, timeout*1000) / 1000);
+  return (pulseInNS(pin, level, timeout_us*1000) / 1000);
 }
 
 /*

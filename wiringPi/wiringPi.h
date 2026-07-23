@@ -349,8 +349,8 @@ extern unsigned int millis            (void) ;
 extern unsigned int micros            (void) ;
 extern unsigned long long piMicros64(void);   // V3.8
 
-extern unsigned long long pulseIn64  (int pin, int level, unsigned long long timeout_us); // V3.20
-extern unsigned int       pulseIn    (int pin, int level, unsigned int       timeout);    // V3.20
+extern unsigned long long pulseInNS  (int pin, int level, unsigned long long timeout_ns); // V3.20
+extern unsigned int       pulseIn    (int pin, int level, unsigned int       timeout_us); // V3.20
 extern unsigned long long frequencyIn(int pin, unsigned long window_ms);                  // V3.20
 
 #ifdef __cplusplus
