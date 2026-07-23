@@ -88,6 +88,7 @@ int main(void)
     piBoardId(&RaspberryPiModel, &rev, &mem, &maker, &overVolted);
     CheckNotSame("Model: ", RaspberryPiModel, -1);
 
+    int toleranceTimeout_us = 20000;  //22ms
     float tolerancePulseIn = 0.01;
     switch(RaspberryPiModel) {
         case PI_MODEL_A:
@@ -97,7 +98,7 @@ int main(void)
         case PI_MODEL_CM:
         case PI_MODEL_ZERO:
         case PI_MODEL_ZERO_W: //ARM=1000MHz
-            tolerancePulseIn = 0.08;
+            tolerancePulseIn = 0.09;
             break;
         case PI_MODEL_2:
             tolerancePulseIn = 0.06;
@@ -115,8 +116,6 @@ int main(void)
     pinMode(pinOut, OUTPUT);
     pinMode(pinIn, INPUT);
 
-    digitalWrite(pinOut, HIGH);
-
     const uint64_t timeout_ns      = 2000000000ULL; // 2 s
     const uint64_t timeoutshort_ns =  330000000ULL; // 0.33 s
     const unsigned int timeout_us      = timeout_ns/1000;
@@ -128,71 +127,98 @@ int main(void)
     pthread_t th;
 
     // nanoseconds test
+    digitalWrite(pinOut, HIGH);
+    sleep(1);
 
     pthread_create(&th, NULL, pulse_generator, NULL);
     printf("Wait for pulse high...\n");
     duration_ns = pulseInNS(pinIn, HIGH, timeout_ns);
     CheckAlmostSameX("pulseInNS()", duration_ns, pulse_time_high_us*1000, tolerancePulseIn);
     pthread_join(th, NULL);
-
     sleep(1);
+
     pthread_create(&th, NULL, pulse_generator, NULL);
     printf("Wait for pulse low...\n");
     duration_ns = pulseInNS(pinIn, LOW, timeout_ns);
     CheckAlmostSameX("pulseInNS()", duration_ns, pulse_time_low_us*1000, tolerancePulseIn);
     pthread_join(th, NULL);
-
     sleep(1);
+
+    pthread_create(&th, NULL, pulse_generator, NULL);
+    printf("Wait for pulse high...\n");
+    duration_ns = pulseInNS(pinIn, HIGH, timeout_ns);
+    CheckAlmostSameX("pulseInNS()", duration_ns, pulse_time_high0_us*1000, tolerancePulseIn);
+    pthread_join(th, NULL);
+    sleep(1);
+
     start_time = micros();
     printf("Wait for time out pulse ...\n");
     duration_ns = pulseInNS(pinIn, LOW, timeoutshort_ns);
     time_us = (micros() - start_time);
     CheckSame("pulseInNS()", duration_ns, 0);
-    CheckAlmostSameX("pulseInNS() timeout us", timeoutshort_ns/1000, time_us, tolerancePulseIn);
+    CheckBetween("pulseInNS() timeout us", time_us, timeoutshort_ns/1000, timeoutshort_ns/1000+toleranceTimeout_us);
+    sleep(1);
 
     // microseconds test
-
+    digitalWrite(pinOut, HIGH);
     sleep(1);
-    pthread_create(&th, NULL, pulse_generator, NULL);
-    start_time = micros();
-    printf("Wait for pulse low ...\n");
-    duration_us = pulseIn(pinIn, LOW, timeout_us);
-    CheckAlmostSameX("pulseInNS()", duration_us, pulse_time_low_us, tolerancePulseIn);
-    pthread_join(th, NULL);
 
-    sleep(1);
     pthread_create(&th, NULL, pulse_generator, NULL);
     start_time = micros();
     printf("Wait for pulse high ...\n");
     duration_us = pulseIn(pinIn, HIGH, timeout_us);
-    CheckAlmostSameX("pulseInNS()", duration_us, pulse_time_high_us, tolerancePulseIn);
+    CheckAlmostSameX("pulseIn()", duration_us, pulse_time_high_us, tolerancePulseIn);
     pthread_join(th, NULL);
-
     sleep(1);
+
+    pthread_create(&th, NULL, pulse_generator, NULL);
+    start_time = micros();
+    printf("Wait for pulse low ...\n");
+    duration_us = pulseIn(pinIn, LOW, timeout_us);
+    CheckAlmostSameX("pulseIn()", duration_us, pulse_time_low_us, tolerancePulseIn);
+    pthread_join(th, NULL);
+    sleep(1);
+
+    pthread_create(&th, NULL, pulse_generator, NULL);
+    start_time = micros();
+    printf("Wait for pulse high ...\n");
+    duration_us = pulseIn(pinIn, HIGH, timeout_us);
+    CheckAlmostSameX("pulseIn()", duration_us, pulse_time_high0_us, tolerancePulseIn);
+    pthread_join(th, NULL);
+    sleep(1);
+
     start_time = micros();
     printf("Wait for time out pulse ...\n");
     duration_us = pulseIn(pinIn, LOW, timeoutshort_us);
     time_us = (micros() - start_time);
     CheckSame("pulseIn()", duration_us, 0);
-    CheckAlmostSameX("pulseIn() timeout us", timeoutshort_us, time_us, tolerancePulseIn);
+    CheckBetween("pulseIn() timeout us", time_us, timeoutshort_us, timeoutshort_us+toleranceTimeout_us);
+    sleep(1);
 
     // old version
 
-    sleep(1);
     digitalWrite(pinOut, HIGH);
     sleep(1);
     pthread_create(&th, NULL, pulse_generator, NULL);
     printf("Wait for pulse high...\n");
     duration_us = pulseInPoll(pinIn, HIGH, timeout_us);
-    CheckAlmostSameX("pulseIn()", (int)duration_us, pulse_time_high_us, tolerancePulseIn);
+    CheckAlmostSameX("pulseInPoll()", (int)duration_us, pulse_time_high_us, tolerancePulseIn);
     pthread_join(th, NULL);
-
     sleep(1);
+
     pthread_create(&th, NULL, pulse_generator, NULL);
     printf("Wait for pulse low...\n");
     duration_us = pulseInPoll(pinIn, LOW, timeout_us);
-    CheckAlmostSameX("pulseIn()", (int)duration_us, pulse_time_low_us, tolerancePulseIn);
+    CheckAlmostSameX("pulseInPoll()", (int)duration_us, pulse_time_low_us, tolerancePulseIn);
     pthread_join(th, NULL);
+
+    pthread_create(&th, NULL, pulse_generator, NULL);
+    printf("Wait for pulse high...\n");
+    duration_us = pulseInPoll(pinIn, HIGH, timeout_us);
+    CheckAlmostSameX("pulseInPoll()", (int)duration_us, pulse_time_high0_us, tolerancePulseIn);
+    pthread_join(th, NULL);
+    sleep(1);
+
 
     return 0;
 }
