@@ -696,6 +696,10 @@ pwmSetRange (unsigned int range);
 
 ``range``: PWM Range
 
+**Notice:**
+
+On Raspberry Pi 5 (RP1), a PWM channel can be "bound" to the common range/duty registers (`BIND` flag). If a channel's `BIND` flag is already set when `pwmSetRange`/`pwmSetChannelRange` is called, the channel's duty value is taken over from `COMMON_DUTY` and `BIND` is cleared automatically before the new range is applied. WiringPi itself never sets `BIND` — this only matters if another program has enabled it beforehand.
+
 ### pwmSetMode
 
 Set the PWM mode for all PWM pins or PWM channels.
