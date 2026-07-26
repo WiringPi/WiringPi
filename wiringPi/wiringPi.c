@@ -983,6 +983,23 @@ static void usingGpioMemCheck (const char *what)
 
 }
 
+/*
+ * pwmMemCheck:
+ *	Aborts if the given register memory (pwm/clk) failed to mmap during setup
+ *  Only meant for the pinMode PWM/GPIO_CLOCK gates; downstream
+ *	functions (pwmWrite, pwmSetMode, ...) can only be reached afterwards
+ *	with a valid pointer, so they just ignore instead of aborting.
+ *********************************************************************************
+ */
+
+static void pwmMemCheck(const char *what, const volatile void *mem) {
+  usingGpioMemCheck(what);
+  if (NULL == mem) {
+    fprintf(stderr, "%s: Unable to do this, required memory not mapped (mmap failed during setup).\n", what);
+    exit(EXIT_FAILURE);
+  }
+}
+
 
 void PrintSystemStdErr () {
   struct utsname sys_info;
@@ -1490,6 +1507,10 @@ void pwmSetMode (int mode)
       }
       return;
     }
+    if (!pwm) {
+      fprintf(stderr, "wiringPi: pwmSetMode but no pwm memory available, ignoring\n");
+      return;
+    }
     if (mode == PWM_MODE_MS) {
       *(pwm + PWM_CONTROL) = PWM0_ENABLE | PWM1_ENABLE | PWM0_MS_MODE | PWM1_MS_MODE ;
     } else {
@@ -1718,7 +1739,11 @@ void pwmSetClock (int divisor)
       clk[CLK_PWM0_DIV_FRAC] = 0;
       clk[CLK_PWM0_SEL] = 1;
       clk[CLK_PWM0_CTRL] = RP1_CLK_PWM0_CTRL_ENABLE_MAGIC;
-      }
+    }
+    return;
+  }
+  if (!pwm) {
+    fprintf(stderr, "wiringPi: pwmSetClock but no pwm memory available, ignoring\n");
     return;
   }
   if (piGpioBase == GPIO_PERI_BASE_2711) {
@@ -1776,6 +1801,10 @@ void gpioClockSet (int pin, int freq)
   int divi, divr, divf ;
 
   FailOnModel5("gpioClockSet");
+  if (!clk) {
+    fprintf(stderr, "wiringPi: gpioClockSet but no clk memory available, ignoring\n");
+    return;
+  }
   if (!ToBCMPin(&pin)) {
     return;
   }
@@ -2210,7 +2239,7 @@ void pinMode (int pin, int mode)
     }
     else if (PWM_OUTPUT==mode || PWM_MS_OUTPUT==mode || PWM_BAL_OUTPUT==mode) {
 
-      usingGpioMemCheck("pinMode PWM") ;  // exit on error!
+      pwmMemCheck("pinMode PWM", pwm);  //'exit(EXIT_FAILURE)' on no access!
       alt = gpioToPwmALT[pin];
       if (0==alt) {	// Not a hardware capable PWM pin
 	      return;
@@ -2250,7 +2279,7 @@ void pinMode (int pin, int mode)
       if ((alt = gpioToGpClkALT0 [pin]) == 0)	// Not a GPIO_CLOCK pin
 	      return ;
 
-      usingGpioMemCheck ("pinMode CLOCK") ;
+      pwmMemCheck("pinMode CLOCK", clk); //'exit(EXIT_FAILURE)' on no access!
 
 // Set pin to GPIO_CLOCK mode and set the clock frequency to 100KHz
 
@@ -2583,7 +2612,10 @@ void pwmWrite (int pin, int value)
       value = (OSC_FREQ_BCM2711*value)/OSC_FREQ_DEFAULT;
     }
     */
-    usingGpioMemCheck ("pwmWrite") ;
+    if (!pwm) {
+      fprintf(stderr, "wiringPi: pwmWrite but no pwm memory available, ignoring\n");
+      return;
+    }
     int channel = gpioToPwmPort[pin];
     int readback = 0x00;
     if (piRP1Model()) {
@@ -3784,14 +3816,19 @@ int wiringPiSetup (void)
   //	PWM
 
     pwm = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PWM) ;
-    if (pwm == MAP_FAILED)
-      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PWM) failed: %s\n", strerror (errno)) ;
+    if (pwm == MAP_FAILED) {
+      // e.g. kernel CONFIG_STRICT_DEVMEM can deny this even with /dev/mem open as root
+      fprintf (stderr, "wiringPi: mmap (PWM) failed: %s - PWM functions disabled, falling back to basic GPIO access\n", strerror (errno)) ;
+      pwm = NULL ;
+    }
 
   //	Clock control (needed for PWM)
 
     clk = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_CLOCK_ADR) ;
-    if (clk == MAP_FAILED)
-      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (CLOCK) failed: %s\n", strerror (errno)) ;
+    if (clk == MAP_FAILED) {
+      fprintf (stderr, "wiringPi: mmap (CLOCK) failed: %s - PWM/clock functions disabled, falling back to basic GPIO access\n", strerror (errno)) ;
+      clk = NULL ;
+    }
 
   //	The drive pads
 
