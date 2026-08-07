@@ -1362,6 +1362,10 @@ void setPadDrivePin (int pin, int value) {
   if (!piRP1Model() || !ToBCMPin(&pin)) {
     return;
   }
+  if (!pads) {
+    fprintf(stderr, "wiringPi: setPadDrivePin but no pads memory available, ignoring\n");
+    return;
+  }
 
   uint32_t wrVal;
   value = value & 3; // 0-3 supported
@@ -1376,6 +1380,10 @@ void setPadDrivePin (int pin, int value) {
 void setPadDrive (int group, int value)
 {
   uint32_t wrVal, rdVal;
+  if (!pads) {
+    fprintf(stderr, "wiringPi: setPadDrive but no pads memory available, ignoring\n");
+    return;
+  }
 
   if ((wiringPiMode == WPI_MODE_PINS) || (wiringPiMode == WPI_MODE_PHYS) || (wiringPiMode == WPI_MODE_GPIO))
   {
@@ -2121,13 +2129,16 @@ void pinModeAlt (int pin, int mode)
  * pinMode:
  *	Sets the mode of a pin to be input, output or PWM output
  *********************************************************************************
- */
+ *
+ * /
 
+ /*
 //Default: rp1_set_pad(pin, 0, 1, 0, 1, 1, 1, 0);
 void rp1_set_pad(int pin, int slewfast, int schmitt, int pulldown, int pullup, int drive, int inputenable, int outputdisable) {
 
   pads[1+pin] = (slewfast != 0) | ((schmitt != 0) << 1) | ((pulldown != 0) << 2) | ((pullup != 0) << 3) | ((drive & 0x3) << 4) | ((inputenable != 0) << 6) | ((outputdisable != 0) << 7);
 }
+*/
 
 void pinModeFlagsDevice (int pin, int mode, const unsigned int flags) {
   unsigned int lflag = flags;
@@ -3816,8 +3827,7 @@ int wiringPiSetup (void)
   }
 //	GPIO:
   if (!piRP1Model()) {
-   //Set the offsets into the memory interface.
-
+    //Set the offsets into the memory interface.
     GPIO_PADS 	   = piGpioBase + GPIO_PADS__OFFSET;
     GPIO_CLOCK_ADR = piGpioBase + GPIO_CLOCK_OFFSET;
     GPIO_BASE	     = piGpioBase + GPIO_BASE__OFFSET;
@@ -3825,50 +3835,65 @@ int wiringPiSetup (void)
     GPIO_PWM	     = piGpioBase + GPIO_PWM___OFFSET;
     GPIO_RIO       = 0x00;
 
-// Map the individual hardware components
+    // Map the individual hardware components
 
-  //	GPIO:
+    //	GPIO:
     base = NULL;
-    gpio = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_BASE) ;
-    if (gpio == MAP_FAILED)
-      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno)) ;
-
-  //	PWM
-
-    pwm = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PWM) ;
-    if (pwm == MAP_FAILED) {
-      // e.g. kernel CONFIG_STRICT_DEVMEM can deny this even with /dev/mem open as root
-      fprintf (stderr, "wiringPi: mmap (PWM) failed: %s - PWM functions disabled, falling back to basic GPIO access\n", strerror (errno)) ;
-      pwm = NULL ;
+    gpio = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_BASE);
+    if (gpio == MAP_FAILED) {
+      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (GPIO) failed: %s\n", strerror (errno));
     }
+  //	PWM / Clock / Pads / Timer
+  //
+  //	/dev/gpiomem only ever exposes the single GPIO register page: its driver
+  //	ignores the mmap offset entirely and always remaps that one page, for
+  //	any offset requested (verified against the bcm2835-gpiomem kernel driver
+  //	source). So under usingGpioMem, mmap'ing these would never fail (no
+  //	MAP_FAILED) - it would silently alias into the GPIO registers instead of
+  //	the real PWM/clock/pads/timer hardware. Skip the attempt entirely and go
+  //	straight to NULL, same as RP1 already does for pwm/clk.
 
-  //	Clock control (needed for PWM)
+    if (usingGpioMem) {
+      pwm   = NULL;
+      clk   = NULL;
+      pads  = NULL;
+      timer = NULL;
+    } else {
+      //	PWM
+      pwm = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PWM);
+      if (pwm == MAP_FAILED) {
+        // e.g. kernel CONFIG_STRICT_DEVMEM can deny this even with /dev/mem open as root
+        fprintf(stderr, "wiringPi: mmap (PWM) failed: %s - PWM functions disabled, falling back to basic GPIO access\n", strerror (errno));
+        pwm = NULL;
+      }
 
-    clk = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_CLOCK_ADR) ;
-    if (clk == MAP_FAILED) {
-      fprintf (stderr, "wiringPi: mmap (CLOCK) failed: %s - PWM/clock functions disabled, falling back to basic GPIO access\n", strerror (errno)) ;
-      clk = NULL ;
-    }
+      //	Clock control (needed for PWM)
+      clk = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_CLOCK_ADR);
+      if (clk == MAP_FAILED) {
+        fprintf(stderr, "wiringPi: mmap (CLOCK) failed: %s - PWM/clock functions disabled, falling back to basic GPIO access\n", strerror (errno));
+        clk = NULL;
+      }
 
-  //	The drive pads
+      //	The drive pads
+      pads = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PADS) ;
+      if (pads == MAP_FAILED) {
+        return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PADS) failed: %s\n", strerror (errno));
+      }
 
-    pads = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_PADS) ;
-    if (pads == MAP_FAILED)
-      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (PADS) failed: %s\n", strerror (errno)) ;
-
-  //	The system timer
-
-    timer = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_TIMER) ;
-    if (timer == MAP_FAILED)
-      return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (TIMER) failed: %s\n", strerror (errno)) ;
+      //	The system timer
+      timer = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, GPIO_TIMER) ;
+      if (timer == MAP_FAILED) {
+        return wiringPiFailure (WPI_ALMOST, "wiringPiSetup: mmap (TIMER) failed: %s\n", strerror (errno));
+      }
 
   // Set the timer to free-running, 1MHz.
   //	0xF9 is 249, the timer divide is base clock / (divide+1)
   //	so base clock is 250MHz / 250 = 1MHz.
 
-    *(timer + TIMER_CONTROL) = 0x0000280 ;
-    *(timer + TIMER_PRE_DIV) = 0x00000F9 ;
-    timerIrqRaw = timer + TIMER_IRQ_RAW ;
+      *(timer + TIMER_CONTROL) = 0x0000280;
+      *(timer + TIMER_PRE_DIV) = 0x00000F9;
+      timerIrqRaw = timer + TIMER_IRQ_RAW;
+    }
 
     // Export the base addresses for any external software that might need them
     _wiringPiBase  = base ;
