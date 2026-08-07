@@ -171,7 +171,31 @@ wiringPiSetupPinType(WPI_PIN_BCM);
 
 **Hinweis:**
 
-WiringPi öffnet zunächst `/dev/mem` (benötigt root oder `CAP_SYS_RAWIO`) und fällt bei Fehlschlag auf `/dev/gpiomem` (BCM) bzw. `/dev/gpiomem0` (RP1/Pi 5) zurück – letzteres gewährt nur Zugriff auf den GPIO-Bereich, PWM- und GPIO-Clock-Funktionen sind dann nicht verfügbar. Selbst wenn `/dev/mem` als root geöffnet werden konnte, kann ein einzelner `mmap()`-Aufruf für einen bestimmten Registerbereich vom Kernel dennoch verweigert werden (z. B. durch `CONFIG_STRICT_DEVMEM`), während andere Bereiche erfolgreich gemappt werden. Bei den klassischen BCM-Pi-Modellen (1–4) werden PWM- und Clock-Register daher unabhängig vom GPIO-Bereich gemappt: Schlägt eines davon fehl, bricht WiringPi *nicht* ab, sondern fällt auf reinen GPIO-Betrieb zurück – die betroffenen PWM-/Clock-Funktionen ignorieren sich dann mit einer Warnung auf stderr, statt abzustürzen. Auf dem RP1 (Pi 5) teilen sich GPIO/PWM/Clock ein gemeinsames Mapping, ein Fehlschlag dort ist daher fatal und bricht das Setup ab. Mit `wiringPiGlobalMemoryAccess()` lässt sich vorab prüfen, welche Zugriffsebene verfügbar ist.
+WiringPi versucht zunächst das Gerät mit vollem Zugriff – bei den klassischen BCM-Pi-Modellen `/dev/mem`, beim RP1 (Pi 5) die PCIe-`resource1`-Datei der RP1-Southbridge (siehe `wiringPiGlobalMemoryAccess()` weiter unten) – das jeweils root oder `CAP_SYS_RAWIO` erfordert. Schlägt das fehl, wird auf `/dev/gpiomem` (BCM) bzw. `/dev/gpiomem0` (RP1/Pi 5) zurückgefallen; das gewährt nur Zugriff auf den GPIO-Bereich, PWM- und GPIO-Clock-Funktionen sind dann nicht verfügbar. Selbst wenn `/dev/mem` als root geöffnet werden konnte, kann ein einzelner `mmap()`-Aufruf für einen bestimmten Registerbereich vom Kernel dennoch verweigert werden (z. B. durch `CONFIG_STRICT_DEVMEM`), während andere Bereiche erfolgreich gemappt werden. Bei den klassischen BCM-Pi-Modellen (1–4) werden PWM- und Clock-Register daher unabhängig vom GPIO-Bereich gemappt: Schlägt eines davon fehl, bricht WiringPi *nicht* ab, sondern fällt auf reinen GPIO-Betrieb zurück – die betroffenen PWM-/Clock-Funktionen ignorieren sich dann mit einer Warnung auf stderr, statt abzustürzen. Auf dem RP1 (Pi 5) teilen sich GPIO/PWM/Clock ein gemeinsames Mapping, ein Fehlschlag dort ist daher fatal und bricht das Setup ab. Mit `wiringPiGlobalMemoryAccess()` lässt sich vorab prüfen, welche Zugriffsebene verfügbar ist.
+
+### wiringPiGlobalMemoryAccess
+
+Prüft unabhängig von `wiringPiSetup()`, welche Stufe des speichergemappten Hardware-Zugriffs verfügbar ist – ein Fallback auf `/dev/gpiomem`/`/dev/gpiomem0` findet dabei *nicht* statt. Nützlich, um Zugriffsprobleme (z. B. fehlendes root/`CAP_SYS_RAWIO`, oder eine `CONFIG_STRICT_DEVMEM`-Einschränkung des Kernels für einen bestimmten Registerbereich) vor dem Aufruf einer der Setup-Funktionen zu diagnostizieren.
+
+Bei den klassischen BCM-Pi-Modellen wird dazu direkt `/dev/mem` geöffnet. Auf dem RP1 (Pi 5) wird stattdessen `/sys/bus/pci/devices` nach dem Eintrag durchsucht, dessen `vendor`-/`device`-Dateien `0x1de4`/`0x0001` enthalten (die PCI-Vendor-/Device-ID der RP1-Southbridge). Anschließend wird die `resource1`-Datei dieses Geräts im sysfs geöffnet und gemappt (PCI-BAR1, 4 MiB) – diese Datei ist das über PCIe bereitgestellte Registerfenster für GPIO/PWM/Clock und verhält sich dafür wie `/dev/mem` (gleiche Anforderung an root/`CAP_SYS_RAWIO`).
+
+```C
+enum WPIGlobalMemoryAccess wiringPiGlobalMemoryAccess(void)
+```
+
+``Rückgabewert``: Stufe des Speicherzugriffs
+
+> WPI_GLOBAL_MEM_NONE (0)      ... `/dev/mem` (bzw. bei RP1 die PCIe-`resource1`-Datei) konnte gar nicht geöffnet/gemappt werden  
+> WPI_GLOBAL_MEM_GPIO_ONLY (1) ... nur der GPIO-Registerbereich ist zugänglich  
+> WPI_GLOBAL_MEM_GPIO_PWM (2)  ... GPIO-, PWM- und Clock-Registerbereich sind alle zugänglich
+
+**Beispiel:**
+
+```C
+if (wiringPiGlobalMemoryAccess() < WPI_GLOBAL_MEM_GPIO_PWM) {
+  printf("PWM-Funktionen sind auf diesem System eventuell nicht verfügbar.\n");
+}
+```
 
 ## Basisfunktionen
 
