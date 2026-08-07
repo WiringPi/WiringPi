@@ -944,15 +944,15 @@ static void doVersion (char *argv [])
     }
   }
 
-  int bGlobalAccess = wiringPiGlobalMemoryAccess();		// User level GPIO is GO
-  switch(bGlobalAccess) {
-    case 0:
+  enum WPIGlobalMemoryAccess GlobalAccess = wiringPiGlobalMemoryAccess();	// User level GPIO is GO
+  switch(GlobalAccess) {
+    case WPI_GLOBAL_MEM_NONE:
         printf ("  * Does not support basic user-level GPIO access via memory.\n") ;
         break;
-    case 1:
+    case WPI_GLOBAL_MEM_GPIO_ONLY:
         printf ("  * Supports basic user-level GPIO access via /dev/mem.\n") ;
         break;
-    case 2:
+    case WPI_GLOBAL_MEM_GPIO_PWM:
         printf ("  * Supports full  user-level GPIO access via memory.\n") ;
         break;
   }
@@ -960,7 +960,7 @@ static void doVersion (char *argv [])
         printf ("  * Supports basic user-level GPIO access via /dev/gpiomem.\n") ;
   } else  {
         printf ("  * Does not support basic user-level GPIO access via /dev/gpiomem.\n") ;
-    if(0==bGlobalAccess) {
+    if (WPI_GLOBAL_MEM_NONE==GlobalAccess) {
         printf ("  * root or sudo may be required for direct GPIO access.\n") ;
     }
   }

@@ -240,8 +240,14 @@ enum WPIPinType {
   WPI_PIN_PHYS,
 };
 
+enum WPIGlobalMemoryAccess {
+  WPI_GLOBAL_MEM_NONE      = 0,  // no user-level memory access at all
+  WPI_GLOBAL_MEM_GPIO_ONLY = 1,  // only GPIO accessible
+  WPI_GLOBAL_MEM_GPIO_PWM  = 2,  // GPIO & PWM accessible
+};
+
 extern void wiringPiVersion (int *major, int *minor) ;
-extern int  wiringPiGlobalMemoryAccess(void);                 //Interface V3.3
+extern enum WPIGlobalMemoryAccess wiringPiGlobalMemoryAccess(void);   //Interface V3.3
 extern int  wiringPiUserLevelAccess (void) ;
 extern int  wiringPiSetup       (void) ;
 extern int  wiringPiSetupSys    (void) ;

@@ -241,6 +241,11 @@ const int   pciemem_RP1_Size  = 0x00400000;
 const char* pciemem_RP1_Ventor= "0x1de4";
 const char* pciemem_RP1_Device= "0x0001";
 
+static const unsigned int GPIO_BASE__OFFSET = 0x00200000;  // BCM base  offset from GPIO peripheral base
+static const unsigned int GPIO_PWM___OFFSET = 0x0020C000;  // BCM pwm   offset from GPIO peripheral base
+static const unsigned int GPIO_TIMER_OFFSET = 0x0000B000;  // BCM timer offset from GPIO peripheral base
+static const unsigned int GPIO_PADS__OFFSET = 0x00100000;  // BCM pads  offset from GPIO peripheral base
+static const unsigned int GPIO_CLOCK_OFFSET = 0x00101000;  // BCM clock offset from GPIO peripheral base
 
 static volatile unsigned int GPIO_PADS ;
 static volatile unsigned int GPIO_CLOCK_ADR ;
@@ -3640,12 +3645,12 @@ void GetRP1Memory(void) {
 }
 
 
-int wiringPiGlobalMemoryAccess(void)
+enum WPIGlobalMemoryAccess wiringPiGlobalMemoryAccess(void)
 {
   const char* gpiomemGlobal;
   int fd=-1;
   unsigned int MMAP_size;
-  unsigned int BaseAddr, PWMAddr;
+  unsigned int BaseAddr, PWMAddr, ClkAddr;
 
   piBoard();
   if (piRP1Model()) {
@@ -3654,43 +3659,54 @@ int wiringPiGlobalMemoryAccess(void)
     MMAP_size = pciemem_RP1_Size;
     BaseAddr  = 0x00000000;
     PWMAddr	  = 0x00000000;  //not supported so far
+    ClkAddr	  = 0x00000000;  //not supported so far
   } else {
     gpiomemGlobal = gpiomem_global;
     MMAP_size = BLOCK_SIZE;
-    BaseAddr	= piGpioBase + 0x00200000 ;
-    PWMAddr	  = piGpioBase + 0x0020C000 ;
+    BaseAddr	= piGpioBase + GPIO_BASE__OFFSET;
+    PWMAddr	  = piGpioBase + GPIO_PWM___OFFSET;
+    ClkAddr	  = piGpioBase + GPIO_CLOCK_OFFSET;
   }
 
   if ((fd = open (gpiomemGlobal, O_RDWR | O_SYNC | O_CLOEXEC)) >0) {
-    int returnvalue = 1; // OK
+    enum WPIGlobalMemoryAccess gma = WPI_GLOBAL_MEM_GPIO_ONLY;
 
     uint32_t * lgpio = (uint32_t *)mmap(0, MMAP_size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, BaseAddr) ;
     if (lgpio == MAP_FAILED) {
-      returnvalue = 0;
+      gma = WPI_GLOBAL_MEM_NONE;
       if (wiringPiDebug)
         fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (GPIO 0x%X,0x%X) failed: %s\n", BaseAddr, MMAP_size, strerror (errno)) ;
     } else {
       munmap(lgpio, MMAP_size);
       if (piRP1Model()) {
-        returnvalue = 2;    // GPIO & PWM accessible (same area, nothing to mmap)
+        gma = WPI_GLOBAL_MEM_GPIO_PWM;    // GPIO & PWM accessible (same area, nothing to mmap)
       } else {
         //check PWM area
         uint32_t* lpwm = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, PWMAddr) ;
         if (lpwm == MAP_FAILED) {
-          returnvalue = 1;    // only GPIO accessible
+          gma = WPI_GLOBAL_MEM_GPIO_ONLY;
           if (wiringPiDebug)
             fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (PWM 0x%X,0x%X) failed: %s\n", PWMAddr, MMAP_size, strerror (errno)) ;
         } else {
-          returnvalue = 2;  // GPIO & PWM accessible
           munmap(lpwm, BLOCK_SIZE);
+          // PWM needs the clock area too, otherwise pwmSetClock()/gpioClockSet() can't work
+          uint32_t* lclk = (uint32_t *)mmap(0, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd, ClkAddr) ;
+          if (lclk == MAP_FAILED) {
+            gma = WPI_GLOBAL_MEM_GPIO_ONLY;
+            if (wiringPiDebug)
+              fprintf(stderr,"wiringPiGlobalMemoryAccess: mmap (CLOCK 0x%X,0x%X) failed: %s\n", ClkAddr, MMAP_size, strerror (errno)) ;
+          } else {
+            gma = WPI_GLOBAL_MEM_GPIO_PWM;  // GPIO & PWM & CLOCK accessible
+            munmap(lclk, BLOCK_SIZE);
+          }
         }
       }
     }
 
     close(fd);
-    return returnvalue;
+    return gma;
   }
-  return 0;  // Failed!
+  return WPI_GLOBAL_MEM_NONE;  // Failed!
 }
 
 /*
@@ -3798,12 +3814,12 @@ int wiringPiSetup (void)
   if (!piRP1Model()) {
    //Set the offsets into the memory interface.
 
-    GPIO_PADS 	= piGpioBase + 0x00100000 ;
-    GPIO_CLOCK_ADR = piGpioBase + 0x00101000 ;
-    GPIO_BASE	  = piGpioBase + 0x00200000 ;
-    GPIO_TIMER	= piGpioBase + 0x0000B000 ;
-    GPIO_PWM	  = piGpioBase + 0x0020C000 ;
-    GPIO_RIO    = 0x00 ;
+    GPIO_PADS 	   = piGpioBase + GPIO_PADS__OFFSET;
+    GPIO_CLOCK_ADR = piGpioBase + GPIO_CLOCK_OFFSET;
+    GPIO_BASE	     = piGpioBase + GPIO_BASE__OFFSET;
+    GPIO_TIMER	   = piGpioBase + GPIO_TIMER_OFFSET;
+    GPIO_PWM	     = piGpioBase + GPIO_PWM___OFFSET;
+    GPIO_RIO       = 0x00;
 
 // Map the individual hardware components
 
