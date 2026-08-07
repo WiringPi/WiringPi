@@ -169,6 +169,10 @@ int wiringPiSetupPinType(enum WPIPinType pinType)
 wiringPiSetupPinType(WPI_PIN_BCM);
 ```
 
+**Hinweis:**
+
+WiringPi öffnet zunächst `/dev/mem` (benötigt root oder `CAP_SYS_RAWIO`) und fällt bei Fehlschlag auf `/dev/gpiomem` (BCM) bzw. `/dev/gpiomem0` (RP1/Pi 5) zurück – letzteres gewährt nur Zugriff auf den GPIO-Bereich, PWM- und GPIO-Clock-Funktionen sind dann nicht verfügbar. Selbst wenn `/dev/mem` als root geöffnet werden konnte, kann ein einzelner `mmap()`-Aufruf für einen bestimmten Registerbereich vom Kernel dennoch verweigert werden (z. B. durch `CONFIG_STRICT_DEVMEM`), während andere Bereiche erfolgreich gemappt werden. Bei den klassischen BCM-Pi-Modellen (1–4) werden PWM- und Clock-Register daher unabhängig vom GPIO-Bereich gemappt: Schlägt eines davon fehl, bricht WiringPi *nicht* ab, sondern fällt auf reinen GPIO-Betrieb zurück – die betroffenen PWM-/Clock-Funktionen ignorieren sich dann mit einer Warnung auf stderr, statt abzustürzen. Auf dem RP1 (Pi 5) teilen sich GPIO/PWM/Clock ein gemeinsames Mapping, ein Fehlschlag dort ist daher fatal und bricht das Setup ab. Mit `wiringPiGlobalMemoryAccess()` lässt sich vorab prüfen, welche Zugriffsebene verfügbar ist.
+
 ## Basisfunktionen
 
 ### pinMode
