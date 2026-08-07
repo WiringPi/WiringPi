@@ -3722,7 +3722,6 @@ enum WPIGlobalMemoryAccess wiringPiGlobalMemoryAccess(void)
 
 int wiringPiSetup (void)
 {
-  int   fd ;
   int   model, rev, mem, maker, overVolted ;
 
   if (wiringPiSetuped)
@@ -3791,7 +3790,12 @@ int wiringPiSetup (void)
   }
 
   usingGpioMem = false;
-  if (gpiomemGlobal==NULL || (fd = open (gpiomemGlobal, O_RDWR | O_SYNC | O_CLOEXEC)) < 0)
+  int fd = -1;
+  // wiringPiGlobalMemoryAccess() probes the GPIO mmap => fallback to module /dev/gpiomem if fail
+  if (gpiomemGlobal!=NULL && wiringPiGlobalMemoryAccess()!=WPI_GLOBAL_MEM_NONE) {
+    fd = open(gpiomemGlobal, O_RDWR | O_SYNC | O_CLOEXEC);
+  }
+  if (fd < 0)
   {
     if (wiringPiDebug) {
       printf ("wiringPi: no access to %s try %s\n", gpiomemGlobal, gpiomemModule) ;
