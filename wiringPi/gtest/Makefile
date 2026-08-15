@@ -24,7 +24,8 @@ TEST_SRCS := \
     test_isr_restart.cpp \
     test_isr_restart2.cpp \
     test_isr_rising.cpp \
-    test_isr_rising2.cpp
+    test_isr_rising2.cpp \
+    test_gpiomem_fallback.cpp
 
 # Derive test binaries (in bin/)
 TEST_BINS := $(addprefix $(BIN_DIR)/, $(TEST_SRCS:.cpp=))
