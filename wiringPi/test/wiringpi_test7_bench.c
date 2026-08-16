@@ -78,6 +78,9 @@ int main (void) {
     case PI_MODEL_CM3P:
     case PI_MODEL_ZERO_2W:
     case PI_MODEL_CM0:
+      fExpectTimedigitalWrite = 0.048; //us;
+      fExpectTimedigitalRead  = 0.102; //us
+      fExpectTimepinMode      = 0.189; //us
       ToggleValue /= 2;
       break;
     case PI_MODEL_4B:     //ARM=1500MHz
