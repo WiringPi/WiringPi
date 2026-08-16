@@ -8,13 +8,7 @@
  * Root-cause demonstration for #446, deliberately NOT using wiringPi's own
  * setup - it mmaps /dev/gpiomem twice by hand, exactly like the old (buggy)
  * wiringPiSetup() did: once at the GPIO offset, once at the TIMER offset.
- *
- * The bcm2835-gpiomem kernel driver ignores the mmap offset entirely and
- * always remaps the same one GPIO register page, no matter what offset is
- * requested. So the "timer" mapping below is not the real system timer at
- * all - it is the exact same physical page as "gpio". A write through one
- * pointer must therefore be visible through the other.
- *
+
  * BCM only (Pi 0-4). RP1 (Pi 5) has a real, offset-respecting /dev/gpiomem0
  * and is not affected.
  */
@@ -30,12 +24,21 @@ int main (void) {
   int RaspberryPiModel = -1;
 	int rev, mem, maker, overVolted;
 
+  printf("The bcm2835-gpiomem kernel driver '/dev/gpiomem' ignores the mmap offset entirely and\n \
+always remaps the same one GPIO register page, no matter what offset is\n \
+requested. So the \"timer\" pointer mapping is not the real system timer at all.\n\n");
+
+  printf("This test uses the old WirirngPi setup code that writes beyond the last mapped gpio address (time pointer)\n \
+ only to see what appends in that case. The bug is fixed in 3.20.\n\n");
+
 	piBoardId(&RaspberryPiModel, &rev, &mem, &maker, &overVolted);
   CheckNotSame("Model: ", RaspberryPiModel, -1);
   if (-1==RaspberryPiModel || piRP1Model()) {
     printf("Test only valid for Pi0-4 models!");
     return UnitTestState();
   }
+
+  printf("Start test:\n\n");
 
   int fd = open(GPIOMEM_DEVICE, O_RDWR | O_SYNC | O_CLOEXEC);
   if (fd < 0)

@@ -171,7 +171,7 @@ pifacetest:
 	done
 
 clean:
-	for t in $(tests) $(xotests) $(pifacetests) ; do \
+	for t in $(tests) $(xotests) $(pifacetests) wiringpi_test12_gpiomem_alias ; do \
 		rm -fv $${t} ; \
 	done
 	rm -fv .gitignore
