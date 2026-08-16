@@ -507,6 +507,7 @@ typedef struct {
    atomic_ullong timestamp[MAX_EDGE_EVENTS];
    atomic_ullong LowPulse;
    atomic_ullong HighPulse;
+   atomic_ullong lastTimestamp;
 } edge_event_state_t;
 
 // ISR Data
@@ -2792,18 +2793,18 @@ unsigned int digitalReadByte2 (void)
 }
 
 
-unsigned long long pulseIn64(int pin, int level, unsigned long long timeout_us) {
+unsigned long long pulseInNS(int pin, int level, unsigned long long timeout_ns) {
 
   wiringPiISR2(pin, INT_EDGE_BOTH, NULL, 0, NULL);
 
   unsigned long long Pulse_ns = 0;
-  unsigned long long start_time = piMicros64();
+  unsigned long long stop_time =  piMicros64() + timeout_ns/1000;
   while (true) {
     Pulse_ns = level==HIGH ? edgeEventState[pin].HighPulse : edgeEventState[pin].LowPulse;
     if (Pulse_ns>0) {
       break;
     }
-    if (piMicros64() - start_time > timeout_us) {
+    if (piMicros64() > stop_time) {
       if (wiringPiDebug) printf("pulseIn timeout\n");
       Pulse_ns = 0;
       break;
@@ -2811,10 +2812,42 @@ unsigned long long pulseIn64(int pin, int level, unsigned long long timeout_us) 
     delay(10);
   }
 
-  if (wiringPiDebug) printf("pulseIn: HighPulse %llu, LowPulse %llu\n", edgeEventState[pin].HighPulse,  edgeEventState[pin].LowPulse);
+  wiringPiISRStop(pin);
+  if (wiringPiDebug) printf("pulseIn: HighPulse %llu, LowPulse %llu, pulse time %llu\n", edgeEventState[pin].HighPulse,  edgeEventState[pin].LowPulse, Pulse_ns);
+
+  return Pulse_ns;
+}
+
+
+/*
+ * frequencyIn:
+ *	Measure frequency on pin by counting rising edges over window_ms via ISR
+ *  Returns measured frequency in Hz or 0 if fewer than 2 edges were captured.
+ *********************************************************************************
+ */
+unsigned long long frequencyIn(int pin, unsigned long window_ms) {
+
+  unsigned long long start_time = piMicros64();
+  wiringPiISR2(pin, INT_EDGE_RISING, NULL, 0, NULL);
+  delay(window_ms);
   wiringPiISRStop(pin);
 
-  return Pulse_ns; // Micro seconds
+  unsigned long long count   = edgeEventState[pin].count;
+  unsigned long long firstTs = edgeEventState[pin].timestamp[0];
+  unsigned long long lastTs  = edgeEventState[pin].lastTimestamp;
+
+  if (count < 2 || lastTs <= firstTs) {
+    if (wiringPiDebug) printf("frequencyIn: not enough edges captured\n");
+    return 0;
+  }
+
+  unsigned long long freqHz = (count - 1) * 1000000000ULL / (lastTs - firstTs);
+
+  if (wiringPiDebug) {
+    printf("frequencyIn: count %llu, span timestamp %llu ns, span time %llu us, freq %llu Hz\n", 
+      count, lastTs - firstTs, piMicros64() - start_time, freqHz);
+  }
+  return freqHz;
 }
 
 
@@ -3245,7 +3278,8 @@ static void *interruptHandlerV2(void *arg)
                         }
                       }
                   }
-                  ++edgeEventState[pin].count;
+                  edgeEventState[pin].lastTimestamp = evdat[i].timestamp_ns;
+                  edgeEventState[pin].count++;
 
                   if (isrFunctionsV2[pin]) {
                         wfiStatus.statusOK = 1;
@@ -3335,6 +3369,7 @@ int wiringPiISRInternal(int pin, int edgeMode, void (*function)(struct WPIWfiSta
     }
     edgeEventState[pin].LowPulse = 0;
     edgeEventState[pin].HighPulse = 0;
+    edgeEventState[pin].lastTimestamp = 0;
 
     pinPass = pin ;
     if (params.fd > 0) {
@@ -3541,9 +3576,9 @@ unsigned long long piMicros64(void) {
  *  or gives up and returns 0 if no complete pulse recieved within timeout.
  *********************************************************************************
 */
-unsigned int pulseIn(int pin, int level, unsigned int timeout) {
+unsigned int pulseIn(int pin, int level, unsigned int timeout_us) {
 
-  return (pulseIn64(pin, level, timeout*1000) / 1000);
+  return (pulseInNS(pin, level, timeout_us*1000) / 1000);
 }
 
 /*
