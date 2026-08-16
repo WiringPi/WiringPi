@@ -1,0 +1,54 @@
+name: WiringPi ARM64 Hardware Unit Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: "Run ID of the previous build-arm64.yml workflow"
+        required: true
+        type: string
+
+jobs:
+  hardware-test:
+    # This job runs ONLY on your real Raspberry Pi ARM64 self-hosted runner
+    runs-on: [self-hosted, linux, arm64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download ARM64 Debian package artifact
+        # We download the artifact from the specific build run ID
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.build_run_id }}
+          name: wiringPi-arm64-deb
+          path: deb
+
+      - name: Unpack ZIP archive
+        # The build workflow produces wiringPi-arm64-deb.zip
+        run: |
+          unzip deb/wiringPi-arm64-deb.zip -d deb
+
+      - name: Install WiringPi ARM64 Debian package
+        # Install the .deb package on the real Raspberry Pi hardware
+        run: |
+          sudo dpkg -i deb/*.deb || sudo apt --fix-broken install -y
+
+      - name: Build WiringPi unit tests
+        # Compile the test binaries inside wiringPi/test
+        working-directory: wiringPi/test
+        run: make
+
+      - name: Run standard unit tests
+        # Execute your custom test framework via "make test"
+        working-directory: wiringPi/test
+        run: |
+          make test | tee ../../test-output-arm64.txt
+
+      - name: Upload test results
+        # Store the test output as an artifact for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: wiringpi-test-output-arm64
+          path: test-output-arm64.txt

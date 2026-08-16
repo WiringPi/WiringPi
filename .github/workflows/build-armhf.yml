@@ -1,0 +1,115 @@
+name: Build ARMHF (Bookworm + Debian Package)
+
+on:
+  push:
+    branches:
+      - crossbuild
+      - develop
+
+jobs:
+  build-armhf:
+    runs-on: ubuntu-latest
+
+    container:
+      image: debian:bookworm
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install ARMHF toolchain & packaging tools
+        run: |
+          dpkg --add-architecture armhf
+          apt-get update
+          apt-get install -y \
+            build-essential \
+            gcc-arm-linux-gnueabihf libc6-dev-armhf-cross \
+            crossbuild-essential-armhf \
+            pkg-config \
+            fakeroot \
+            dpkg-dev \
+            gettext \
+            libcrypt-dev:armhf \
+            libcrypt1:armhf
+
+      - name: Build wiringPi (ARMHF)
+        run: |
+          export CC=arm-linux-gnueabihf-gcc
+          export AR=arm-linux-gnueabihf-ar
+          export STRIP=arm-linux-gnueabihf-strip
+          export CFLAGS="-v"
+          export LDFLAGS="-v"
+
+          echo "=== COMPILER SEARCH DIRS ==="
+          $CC -print-search-dirs
+
+          echo "Building wiringPi..."
+          cd wiringPi
+          make -j$(nproc) V=1
+
+          echo "Building devLib..."
+          cd ../devLib
+          make -j$(nproc) V=1 \
+            INCLUDE='-I. -I../wiringPi' \
+            LDFLAGS='-L../debian-template/wiringPi/usr/lib'
+
+          echo "Building gpio..."
+          cd ../gpio
+          make -j$(nproc) V=1 \
+            INCLUDE='-I. -I../wiringPi -I../devLib' \
+            LDFLAGS='-L../debian-template/wiringPi/usr/lib' \
+            LIBS='../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt'
+
+      - name: Build Debian package
+        run: |
+          export CC=arm-linux-gnueabihf-gcc
+          export AR=arm-linux-gnueabihf-ar
+          export STRIP=arm-linux-gnueabihf-strip
+
+          vMaj=$(cut -d. -f1 VERSION)
+          vMin=$(cut -d. -f2 VERSION)
+          export VERSION="$vMaj.$vMin"
+          export ARCH="armhf"
+
+          here=$(pwd)
+          deb_destdir="${here}/debian-template/wiringPi"
+
+          echo "VERSION=$VERSION"
+          echo "ARCH=$ARCH"
+
+          cd debian-template/wiringPi
+          envsubst < control_template > DEBIAN/control
+          rm -rf usr
+
+          cd "$here/wiringPi"
+          make install-deb DEB_DESTDIR="${deb_destdir}"
+
+          cd "$here/devLib"
+          make install-deb INCLUDE='-I. -I../wiringPi' DEB_DESTDIR="${deb_destdir}"
+
+          cd "$here/gpio"
+          make install-deb INCLUDE='-I../wiringPi -I../devLib' \
+            LDFLAGS=-L../debian-template/wiringPi/usr/lib \
+            DEB_DESTDIR="${deb_destdir}"
+
+          cd "$here/debian-template"
+          fakeroot dpkg-deb --build wiringPi
+          dpkg-name -o wiringPi.deb
+
+      - name: Upload Debian package
+        uses: actions/upload-artifact@v4
+        with:
+          name: wiringPi-armhf-deb
+          path: debian-template/*.deb
+
+      - name: Generate SHA256 checksum
+        run: |
+          cd debian-template
+          sha256sum *.deb > SHA256SUMS-armhf
+
+      - name: Upload SHA256 checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: wiringPi-armhf-sha256
+          path: debian-template/SHA256SUMS-armhf
+
