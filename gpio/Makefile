@@ -59,6 +59,8 @@ gpio:	$(OBJ)
 	$Q echo [Compile] $<
 	$Q $(CC) -c $(CFLAGS) $< -o $@
 
+gpio.o: readall.h
+
 .PHONY:	clean
 clean:
 	$Q echo "[Clean]"

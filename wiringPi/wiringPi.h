@@ -131,10 +131,11 @@ enum PI_MODEL {
   PI_MODEL_5       = 23,
   PI_MODEL_CM5     = 24,
   PI_MODEL_500     = 25,
-  PI_MODEL_CM5L    = 26
+  PI_MODEL_CM5L    = 26,
+  PI_MODEL_CM0     = 27,
 };
 
-#define PI_MODELS_MAX 27
+#define PI_MODELS_MAX 28
 
 enum PI_VERSION {
   PI_VERSION_1   = 0,
@@ -159,7 +160,7 @@ extern const char *piModelNames    [PI_MODELS_MAX];
 extern const char *piProcessor     [ 5] ;
 extern const char *piRevisionNames [16] ;
 extern const char *piMakerNames    [16] ;
-extern const int   piMemorySize    [ 8] ;
+extern int         piMemorySize    [ 8] ;
 
 
 //  Intended for the GPIO program Use at your own risk.

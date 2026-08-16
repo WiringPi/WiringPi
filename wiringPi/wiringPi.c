@@ -94,7 +94,7 @@
 #define	ENV_DEBUG	"WIRINGPI_DEBUG"
 #define	ENV_CODES	"WIRINGPI_CODES"
 #define	ENV_GPIOMEM	"WIRINGPI_GPIOMEM"
-
+#define	ENV_FORCE_REVISION "WIRINGPI_FORCE_REVISION"
 #define DEBUG_IRQ 0x2
 
 // Extend wiringPi with other pin-based devices and keep track of
@@ -353,33 +353,34 @@ static volatile unsigned int piGpioBase = 0 ;
 
 const char *piModelNames [PI_MODELS_MAX] =
 {
-  "Model A",	//  0
-  "Model B",	//  1
-  "Model A+",	//  2
-  "Model B+",	//  3
-  "Pi 2",	//  4
-  "Alpha",	//  5
-  "CM",		//  6
-  "Unknown07",	// 07
-  "Pi 3",	// 08
-  "Pi Zero",	// 09
-  "CM3",	// 10
-  "Unknown11",	// 11
-  "Pi Zero-W",	// 12
-  "Pi 3B+",	// 13
-  "Pi 3A+",	// 14
-  "Unknown15",	// 15
-  "CM3+",	// 16
-  "Pi 4B",	// 17
-  "Pi Zero2-W",	// 18
-  "Pi 400",	// 19
-  "CM4",	// 20
-  "CM4S",	// 21
-  "Unknown22",	// 22
-  "Pi 5",	// 23
-  "CM5",	// 24
-  "Pi 500",	// 25
-  "CM5 Lite",	// 26
+  "Model A",	 //  0
+  "Model B",	 //  1
+  "Model A+",	 //  2
+  "Model B+",	 //  3
+  "Pi 2",      //  4
+  "Alpha",     //  5
+  "CM",        //  6
+  "Unknown07", // 07
+  "Pi 3",      // 08
+  "Pi Zero",	 // 09
+  "CM3",	     // 10
+  "Unknown11", // 11
+  "Pi Zero-W", // 12
+  "Pi 3B+",	   // 13
+  "Pi 3A+",	   // 14
+  "Unknown15", // 15
+  "CM3+",	     // 16
+  "Pi 4B",	   // 17
+  "Pi Zero2-W",// 18
+  "Pi 400",	   // 19
+  "CM4",	     // 20
+  "CM4S",	     // 21
+  "Unknown22", // 22
+  "Pi 5",	     // 23
+  "CM5",	     // 24
+  "Pi 500",	   // 25
+  "CM5 Lite",	 // 26
+  "CM0",	     // 27
 } ;
 
 const char *piProcessor [5] =
@@ -413,12 +414,12 @@ const char *piRevisionNames [16] =
 
 const char *piMakerNames [16] =
 {
-  "Sony UK",//	 0
-  "Egoman",	//	 1
-  "Embest",	//	 2
-  "Sony Japan",//	 3
-  "Embest",	//	 4
-  "Stadium",//	 5
+  "Sony UK",    //	 0
+  "Egoman",	    //	 1
+  "Embest",	    //	 2
+  "Sony Japan", //	 3
+  "Embest",	    //	 4
+  "Stadium",    //	 5
   "Unknown06",	//	 6
   "Unknown07",	//	 7
   "Unknown08",	//	 8
@@ -431,7 +432,7 @@ const char *piMakerNames [16] =
   "Unknown15",	//	15
 } ;
 
-const int piMemorySize [8] =
+int piMemorySize [8] =
 {
    256,		//	 0
    512,		//	 1
@@ -440,7 +441,7 @@ const int piMemorySize [8] =
   4096,		//	 4
   8192,		//	 5
  16384,		//	 6
-     0,		//	 7
+     0,		//	 7 , Other; overwritten at runtime from 'rpi-sdram-size-gbit' if present, see GetPiRAM()
 } ;
 
 // Time for easy calculations
@@ -663,6 +664,9 @@ int piBoard40Pin() {
 // PI_MODEL_CM3
 // PI_MODEL_CM4
 // PI_MODEL_CM4S
+// PI_MODEL_CM5
+// PI_MODEL_CM5L
+// PI_MODEL_CM0
 //     ? guess yes
 	default:
 		return 1;
@@ -1052,6 +1056,7 @@ void ReportDeviceError(const char *function, int pin, const char *mode, int ret)
  *********************************************************************************
  */
  const char* revfile = "/proc/device-tree/system/linux,revision";
+ const char* ramfile = "/proc/device-tree/chosen/rpi-sdram-size-gbit";
 
 void piGpioLayoutOops (const char *why)
 {
@@ -1080,32 +1085,72 @@ int piBoardRev (void)
   return piGpioLayout () ;
 }
 
-const char* GetPiRevision(char* line, int linelength, unsigned int* revision) {
+// getIntValueFromFile:
+//	Read a single big-endian 32-bit value from a device-tree file
+//	(e.g. .../linux,revision or .../rpi-sdram-size-gbit).
+//	Returns 0 and fills *value on success, -1 on missing file / read error.
 
-  const char* c = NULL;
-  uint32_t Revision = 0;
-  _Static_assert(sizeof(Revision)==4, "should be unsigend integer with 4 byte size");
+int getIntValueFromFile (const char *file, unsigned int *value) {
 
-	FILE* fp = fopen(revfile,"rb");
+  uint32_t raw = 0;
+  _Static_assert(sizeof(raw)==4, "should be unsigend integer with 4 byte size");
+
+	FILE* fp = fopen(file,"rb");
 	if (!fp) {
     if (wiringPiDebug)
-		  perror(revfile);
-		return NULL; // revision file not found or no access
+		  perror(file);
+		return -1; // file not found or no access
 	}
-	int result = fread(&Revision, sizeof(Revision), 1, fp);
+	int result = fread(&raw, sizeof(raw), 1, fp);
 	fclose(fp);
 	if (result<1) {
     if (wiringPiDebug)
-		  perror(revfile);
-		return NULL; // read error
+		  perror(file);
+		return -1; // read error
 	}
-	Revision = bswap_32(Revision);
+	*value = bswap_32(raw);
+	return 0;
+}
+
+const char* GetPiRevision(char* line, int linelength, unsigned int* revision) {
+
+  const char* c = NULL;
+  unsigned int Revision = 0;
+
+  const char *forcedRevision = getenv (ENV_FORCE_REVISION);
+  if (forcedRevision != NULL) {
+    // Unit test hook: skip the device-tree file and use the given hex
+    // revision word instead, so the bit-field decode in piBoardId() can be
+    // exercised for any board without needing that board's hardware.
+    Revision = (unsigned int) strtoul (forcedRevision, NULL, 16);
+  } else if (getIntValueFromFile(revfile, &Revision) != 0) {
+    fprintf(stderr, "wiringPi: ERROR: could not get revision from '%s' (Error: %s)", revfile, strerror(errno));
+    return NULL; // revision file not found, no access, or read error
+  }
 	snprintf(line, linelength, "Revision\t: %04x", Revision);
   c =  &line[11];
   *revision = Revision;
-  if (wiringPiDebug)
-	  printf("GetPiRevision: Revision string: \"%s\" (%s) - 0x%x\n", line, c, *revision);
+  if (wiringPiDebug) {
+	  printf("GetPiRevision: Revision string from '%s': \"%s\" (%s) - 0x%x\n", 
+     forcedRevision != NULL ? forcedRevision : revfile, line, c, *revision);
+  }
 	return c;
+}
+
+// GetPiRAM:
+//	For boards where the revision code's memory field reads as "Other" (7),
+//	read the actual RAM size from the device tree. The file holds the size
+//	in gigabit (e.g. 0x00000020 = 32 gigabit = 4096 MiB)
+//	Returns the RAM size in MiB, or 0 if the file is missing/unreadable.
+
+unsigned int GetPiRAM (void) {
+
+  unsigned int gigabit = 0;
+
+  if (getIntValueFromFile(ramfile, &gigabit) != 0)
+    return 0; // ram size file not found, no access, or read error
+
+  return (gigabit * 1024 / 8);
 }
 
 /*
@@ -1183,8 +1228,6 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
   unsigned int revision = 0x00 ;
   int bRev, bType, bProc, bMfg, bMem, bWarranty ;
 
-  //piGpioLayoutOops ("this is only a test case");
-
   c = GetPiRevision(line, maxlength,  &revision); // device tree
   if (NULL==c) {
     c = GetPiRevisionLegacy(line, maxlength, &revision); // proc/cpuinfo
@@ -1216,6 +1259,15 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
     if (wiringPiDebug)
       printf ("piBoardId: rev: %d, type: %d, proc: %d, mfg: %d, mem: %d, warranty: %d\n",
 		bRev, bType, bProc, bMfg, bMem, bWarranty) ;
+
+    if (7 == bMem) {		// "Other" - actual size not encoded in the revision, read it from the device tree
+      int ramMB = GetPiRAM();
+      if (ramMB > 0) {
+        piMemorySize [7] = ramMB;
+      } else {
+        piMemorySize [7] = 0;
+      }
+    }
   }
   else					// Old way
   {
@@ -1275,7 +1327,8 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
 
   RaspberryPiModel = *model;
 
-  switch (RaspberryPiModel){
+  switch (RaspberryPiModel) {
+    //BCM2835
     case PI_MODEL_A:
     case PI_MODEL_B:
     case PI_MODEL_AP:
@@ -1288,6 +1341,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
       piGpioPupOffset = GPPUD ;
       break ;
 
+    //BCM2711
     case PI_MODEL_4B:
     case PI_MODEL_400:
     case PI_MODEL_CM4:
@@ -1296,6 +1350,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
       piGpioPupOffset = GPPUPPDN0 ;
       break ;
 
+    //BCM2712
     case PI_MODEL_5:
     case PI_MODEL_CM5:
     case PI_MODEL_500:
@@ -1304,6 +1359,7 @@ void piBoardId (int *model, int *rev, int *mem, int *maker, int *warranty)
       piGpioPupOffset = 0 ;
       break ;
 
+    //BCM2836, BCM2837, BCM2710A1
     default:
       piGpioBase = GPIO_PERI_BASE_2835 ;
       piGpioPupOffset = GPPUD ;

@@ -327,7 +327,8 @@ const char piModelNamesShort[PI_MODELS_MAX][11] =
   "---Pi 5---",	// 23
   "---CM5----",	// 24
   "--Pi 500--",	// 25
-  "---CM5L---",	// 24
+  "---CM5L---",	// 26
+  "---CM0----",	// 27
 } ;
 
 static void plus2header (int model)
@@ -383,7 +384,7 @@ void doReadall (void)
 	(model == PI_MODEL_3AP)  ||
 	(model == PI_MODEL_3B)   || (model == PI_MODEL_3BP) ||
 	(model == PI_MODEL_4B)   || (model == PI_MODEL_400) || (model == PI_MODEL_CM4) || (model == PI_MODEL_CM4S) ||
-	(model == PI_MODEL_ZERO) || (model == PI_MODEL_ZERO_W) || (model == PI_MODEL_ZERO_2W) ||
+	(model == PI_MODEL_ZERO) || (model == PI_MODEL_ZERO_W) || (model == PI_MODEL_ZERO_2W) || (model == PI_MODEL_CM0) ||
   (model == PI_MODEL_5)    || (model == PI_MODEL_500) || (model == PI_MODEL_CM5) || (model == PI_MODEL_CM5L) )
     piPlusReadall (model) ;
   else if ((model == PI_MODEL_CM) || (model == PI_MODEL_CM3) || (model == PI_MODEL_CM3P) )  //could be Compute Module 1/3/3+ IO Board 120 GPIO pins, legacy code
