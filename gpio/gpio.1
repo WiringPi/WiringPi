@@ -37,6 +37,10 @@ gpio \- Command-line access to Raspberry Pi's GPIO
 group value
 .PP
 .B gpio
+.B drivepin
+pin value
+.PP
+.B gpio
 .B usbp
 high | low
 .PP
@@ -187,9 +191,34 @@ so does not consume and CPU while it's waiting.
 .B drive
 group value
 
-Change the pad driver value for the given pad group to the supplied drive
-value. Group is 0, 1 or 2 and value is 0-7. Do not use unless you are
-absolutely sure you know what you're doing.
+Change the pad driver (output drive strength) value for the given pad group.
+\fIgroup\fR is 0, 1 or 2, selecting which block of GPIOs is affected
+(group 0 = GPIO 0-27, group 1 = GPIO 28-45, group 2 = GPIO 46-53).
+\fIvalue\fR is 0-7, selecting the drive strength in 2mA steps from 2mA
+(value 0) up to 16mA (value 7).
+
+On the Raspberry Pi 5 (RP1), only group 0 is supported and it applies to
+all GPIOs at once (there's no separate control per group on this model);
+the requested value is mapped down to the closest of the four drive
+levels the RP1 hardware actually offers (2, 4, 8 or 12mA).
+
+Passing -1 as \fIgroup\fR changes nothing; it instead prints the drive
+strength currently configured for every pad/pin.
+
+Do not use unless you are absolutely sure you know what you're doing.
+
+.TP
+.B drivepin
+pin value
+
+Change the pad driver (output drive strength) value for a single GPIO
+pin. This is only supported on the Raspberry Pi 5 (RP1); on all other
+models the command has no effect.
+\fIpin\fR is the pin number (BCM, WiringPi or physical, depending on the
+active numbering mode), 0-27. \fIvalue\fR is 0-3, selecting the drive
+strength: 2, 4, 8 or 12mA.
+
+Do not use unless you are absolutely sure you know what you're doing.
 
 .TP
 .B usbp

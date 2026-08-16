@@ -170,6 +170,34 @@ int wiringPiSetupPinType(enum WPIPinType pinType);
 wiringPiSetupPinType(WPI_PIN_BCM);
 ```
 
+**Notice:**
+
+WiringPi first tries the full-access device — on the classic BCM Pi models `/dev/mem`, on RP1 (Pi 5) the PCIe `resource1` file of the RP1 southbridge (see `wiringPiGlobalMemoryAccess()` below) — which requires root or `CAP_SYS_RAWIO`. If that fails, it falls back to `/dev/gpiomem` (BCM) / `/dev/gpiomem0` (RP1/Pi 5); this only grants access to the GPIO area, so PWM and GPIO-clock functions are unavailable. Even with `/dev/mem` open as root, an individual `mmap()` call can still be denied by the kernel (e.g. `CONFIG_STRICT_DEVMEM`) for a specific register area while others succeed. On the classic BCM Pi models (1-4), the PWM and clock register areas are therefore mapped independently of GPIO: if either mapping fails, WiringPi does *not* abort — it falls back to basic GPIO-only operation, and the affected PWM/clock functions silently no-op with a warning on stderr instead of crashing. On RP1 (Pi 5), GPIO/PWM/clock share a single mapping, so a failure there is fatal and aborts setup. Use `wiringPiGlobalMemoryAccess()` to check in advance which access level is available.
+
+### wiringPiGlobalMemoryAccess
+
+Checks, independently of `wiringPiSetup()`, which level of memory-mapped hardware access is available — it does *not* fall back to `/dev/gpiomem`/`/dev/gpiomem0`. Useful to diagnose access problems (e.g. missing root/`CAP_SYS_RAWIO`, or a kernel `CONFIG_STRICT_DEVMEM` restriction on a specific register area) before calling one of the setup functions.
+
+On the classic BCM Pi models this opens `/dev/mem` directly. On RP1 (Pi 5) it instead scans `/sys/bus/pci/devices` for the entry whose `vendor`/`device` files read `0x1de4`/`0x0001` (the RP1 southbridge's PCI vendor/device ID), then opens and `mmap()`s that device's `resource1` sysfs file (PCI BAR1, 4 MiB) — this file is the PCIe-exposed register window for GPIO/PWM/clock and behaves like `/dev/mem` for this purpose (same root/`CAP_SYS_RAWIO` requirement).
+
+```C
+enum WPIGlobalMemoryAccess wiringPiGlobalMemoryAccess(void);
+```
+
+``Return Value``: Level of memory access
+
+> WPI_GLOBAL_MEM_NONE (0)      ... `/dev/mem` (or, on RP1, the PCIe `resource1` file) could not be opened/mapped at all  
+> WPI_GLOBAL_MEM_GPIO_ONLY (1) ... only the GPIO register area is accessible  
+> WPI_GLOBAL_MEM_GPIO_PWM (2)  ... GPIO, PWM and clock register areas are all accessible
+
+**Example:**
+
+```C
+if (wiringPiGlobalMemoryAccess() < WPI_GLOBAL_MEM_GPIO_PWM) {
+  printf("PWM functions may not be available on this system.\n");
+}
+```
+
 ## Basic Functions
 
 ### pinMode
@@ -287,6 +315,55 @@ if (value == HIGH)
 {
     // Your Code
 }
+```
+
+### setPadDrive
+
+Sets the pad driver (output drive strength) for a whole GPIO pad group.
+
+```C
+void setPadDrive(int group, int value);
+```
+
+``group``: The pad group to configure.
+
+- On the Raspberry Pi 0-4 (BCM283x): `0`, `1` or `2` — group 0 = GPIO 0-27, group 1 = GPIO 28-45, group 2 = GPIO 46-53.
+- On the Raspberry Pi 5 (RP1): only group `0` is supported and it applies to all GPIOs at once; any other value is ignored.
+- `-1` is a special, read-only value: it changes nothing but prints the currently configured drive strength of every pad/pin to stdout.
+
+``value``: The drive strength, `0`-`7`, in 2 mA steps (`0` = 2 mA ... `7` = 16 mA).
+
+**Notice:**  
+
+- On the Raspberry Pi 5 (RP1) the hardware only offers 4 discrete drive levels. The requested `0`-`7` value is mapped down to the closest supported RP1 level (2 mA, 4 mA, 8 mA or 12 mA) and applied to all pins at once — RP1 has no per-group control.
+- `setPadDrive` is also exposed on the command line as `gpio drive <group> <value>`.
+
+**Example:**  
+
+```C
+setPadDrive(0, 7); // Set GPIO 0-27 (group 0) to maximum drive strength (16 mA on Pi 0-4 / 12 mA on Pi 5)
+```
+
+### setPadDrivePin
+
+Sets the pad driver (output drive strength) for a single GPIO pin. Only available on the Raspberry Pi 5 (RP1); on all other models this call has no effect.
+
+```C
+void setPadDrivePin(int pin, int value);
+```
+
+``pin``: The desired pin (BCM-, WiringPi- or Pin-number).  
+``value``: The drive strength, `0`-`3` (`0` = 2 mA, `1` = 4 mA, `2` = 8 mA, `3` = 12 mA).
+
+**Notice:**  
+
+- Unlike `setPadDrive`, this function always only affects the one given pin.
+- `setPadDrivePin` is also exposed on the command line as `gpio drivepin <pin> <value>`.
+
+**Example:**  
+
+```C
+setPadDrivePin(17, 3); // Set the drive strength of GPIO 17 to 12 mA (Pi 5 only)
 ```
 
 ## Interrupts
@@ -556,6 +633,69 @@ gpio BCM = 16, IRQ edge = rising, timestamp = 256544092021 microseconds, timenow
 pi@RaspberryPi:~/wiringpi-test-v3.16 $
 ```
 
+### pulseInNS / pulseIn
+
+Measures the length of a single pulse (HIGH or LOW level) on a GPIO pin.
+
+```C
+unsigned long long pulseInNS(int pin, int level, unsigned long long timeout_ns);
+unsigned int        pulseIn  (int pin, int level, unsigned int       timeout_us);
+```
+
+``pin``: The desired pin (BCM-, WiringPi- or Pin-number).  
+``level``: Which pulse to measure.
+
+- `HIGH` ... Waits for the pin to go from LOW to HIGH, starts timing, then waits for it to go back to LOW and stops timing.
+- `LOW` ... Same, but for a LOW pulse (HIGH → LOW → HIGH).
+
+``timeout_ns`` / ``timeout_us``: Give up and return `0` if no complete pulse is seen within this time.  
+``Return Value``: The measured pulse length, or `0` on timeout.
+
+- `pulseInNS`: ``timeout_ns`` in nanoseconds, return value in **nanoseconds** (kernel edge-timestamp resolution).
+- `pulseIn`: ``timeout_us`` in **microseconds**, return value in **microseconds** (matches Arduino's `pulseIn()` convention).
+
+**Notice:**  
+
+- `pulseIn`/`pulseInNS` register their own ISR internally (via `wiringPiISR2`) for the duration of the call and deregister it again afterwards — don't call them on a pin that already has an ISR registered via `wiringPiISR`/`wiringPiISR2`.
+
+**Example:**  
+
+```C
+pinMode(17, INPUT);
+
+unsigned int us = pulseIn(17, HIGH, 1000); // wait up to 1000us for a HIGH pulse
+if (us == 0)
+    printf("timeout, no pulse seen\n");
+else
+    printf("pulse length: %u us\n", us);
+```
+
+### frequencyIn
+
+Measures the frequency of a signal on a GPIO pin by counting rising edges over a fixed time window.
+
+```C
+unsigned long long frequencyIn(int pin, unsigned long window_ms);
+```
+
+``pin``: The desired pin (BCM-, WiringPi- or Pin-number).  
+``window_ms``: Measurement window in milliseconds. The function registers an ISR for rising edges (`INT_EDGE_RISING`), blocks for `window_ms`, then deregisters it again.  
+``Return Value``: The measured frequency in Hz, derived from the timestamp span between the first and last captured edge (not from the wall-clock window length). Returns `0` if fewer than 2 edges were captured during the window.
+
+**Notice:**  
+
+- Only rising edges are counted; there's no parameter to select falling or both edges.
+- Choose `window_ms` large enough to capture a reasonable number of edges — at very low frequencies a short window may capture fewer than 2 edges and yield `0`.
+- Like `pulseIn`/`pulseInNS`, `frequencyIn` registers its own ISR for the duration of the call — don't use it on a pin that already has an ISR registered.
+
+**Example:**  
+
+```C
+pinMode(17, INPUT);
+
+unsigned long long freq = frequencyIn(17, 200); // measure over a 200ms window
+printf("frequency: %llu Hz\n", freq);
+```
 
 ## Hardware Pulse Width Modulation (PWM)
 
@@ -583,6 +723,10 @@ pwmSetRange (unsigned int range);
 ```
 
 ``range``: PWM Range
+
+**Notice:**
+
+On Raspberry Pi 5 (RP1), a PWM channel can be "bound" to the common range/duty registers (`BIND` flag). If a channel's `BIND` flag is already set when `pwmSetRange`/`pwmSetChannelRange` is called, the channel's duty value is taken over from `COMMON_DUTY` and `BIND` is cleared automatically before the new range is applied. WiringPi itself never sets `BIND` — this only matters if another program has enabled it beforehand.
 
 ### pwmSetMode
 
