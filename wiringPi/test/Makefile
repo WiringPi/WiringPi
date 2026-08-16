@@ -50,6 +50,10 @@ wiringpi_test62_isr_wpin:
 wiringpi_test11_pulseIn:
 	${CC} ${CFLAGS} wiringpi_test11_pulseIn.c -o wiringpi_test11_pulseIn -lwiringPi
 
+# Talks to /dev/gpiomem to executes old bug that access area beyond last mapped gpio address - for exclusive test
+wiringpi_test12_gpiomem_alias:
+	${CC} ${CFLAGS} wiringpi_test12_gpiomem_alias.c -o wiringpi_test12_gpiomem_alias -lwiringPi
+
 wiringpi_test7_bench:
 	${CC} ${CFLAGS} wiringpi_test7_bench.c -o wiringpi_test7_bench -lwiringPi
 
