@@ -39,10 +39,6 @@ jobs:
           export STRIP=arm-linux-gnueabihf-strip
           export CFLAGS="-v"
           export LDFLAGS="-v"
-          # Pi 1/Zero (ARM1176JZF-S) are ARMv6 - Debian's armhf toolchain
-          # otherwise builds with an ARMv7 baseline (Thumb-2/VFPv3), which
-          # causes SIGILL/segfault on ARMv6.
-          export EXTRA_CFLAGS="-march=armv6 -mfpu=vfp -mfloat-abi=hard -marm"
 
           echo "=== COMPILER SEARCH DIRS ==="
           $CC -print-search-dirs
@@ -62,14 +58,13 @@ jobs:
           make -j$(nproc) V=1 \
             INCLUDE='-I. -I../wiringPi -I../devLib' \
             LDFLAGS='-L../debian-template/wiringPi/usr/lib' \
-            LIBS='../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt -latomic'
+            LIBS='../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt'
 
       - name: Build Debian package
         run: |
           export CC=arm-linux-gnueabihf-gcc
           export AR=arm-linux-gnueabihf-ar
           export STRIP=arm-linux-gnueabihf-strip
-          export EXTRA_CFLAGS="-march=armv6 -mfpu=vfp -mfloat-abi=hard -marm"
 
           vMaj=$(cut -d. -f1 VERSION)
           vMin=$(cut -d. -f2 VERSION)

@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        arch: [armhf, arm64]
+        arch: [arm64]  # armhf disabled: official Debian armhf requires ARMv7, no Pi1/Zero support - see #450
 
     steps:
       - name: Checkout repository
@@ -44,10 +44,6 @@ jobs:
             export CC=arm-linux-gnueabihf-gcc
             export AR=arm-linux-gnueabihf-ar
             export STRIP=arm-linux-gnueabihf-strip
-            # Pi 1/Zero (ARM1176JZF-S) are ARMv6 - Debian's armhf toolchain
-            # otherwise builds with an ARMv7 baseline (Thumb-2/VFPv3), which
-            # causes SIGILL/segfault on ARMv6.
-            export EXTRA_CFLAGS="-march=armv6 -mfpu=vfp -mfloat-abi=hard -marm"
           else
             export CC=aarch64-linux-gnu-gcc
             export AR=aarch64-linux-gnu-ar
@@ -84,7 +80,7 @@ jobs:
           make install-deb V=1 \
             INCLUDE='-I../wiringPi -I../devLib' \
             LDFLAGS='' \
-            LIBS="../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt -latomic" \
+            LIBS="../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt" \
             DEB_DESTDIR="${deb_destdir}"
 
           cd "$here/debian-template"
