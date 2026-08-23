@@ -62,7 +62,7 @@ jobs:
           make -j$(nproc) V=1 \
             INCLUDE='-I. -I../wiringPi -I../devLib' \
             LDFLAGS='-L../debian-template/wiringPi/usr/lib' \
-            LIBS='../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt'
+            LIBS='../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt -latomic'
 
       - name: Build Debian package
         run: |

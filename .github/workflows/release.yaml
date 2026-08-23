@@ -84,7 +84,7 @@ jobs:
           make install-deb V=1 \
             INCLUDE='-I../wiringPi -I../devLib' \
             LDFLAGS='' \
-            LIBS="../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt" \
+            LIBS="../wiringPi/*.o ../devLib/*.o -lpthread -lrt -lm -lcrypt -latomic" \
             DEB_DESTDIR="${deb_destdir}"
 
           cd "$here/debian-template"
