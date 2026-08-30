@@ -223,6 +223,14 @@ int main (void) {
       accuracy = 0.02;
       bounce_acc = 2.7;
       break;
+    case PI_MODEL_3B:
+    case PI_MODEL_3AP:
+    case PI_MODEL_3BP:
+    case PI_MODEL_ZERO_2W:
+    case PI_MODEL_CM0:
+      accuracy = 0.014;
+      bounce_acc = 2.6;
+      break;
     default:
       accuracy = 0.012;
       bounce_acc = 1.0;
