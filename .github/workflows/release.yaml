@@ -1,4 +1,4 @@
-name: Release WiringPi (ARMHF + ARM64)
+name: Release WiringPi (ARMv7 + ARM64)
 
 on:
   push:
@@ -14,7 +14,14 @@ jobs:
 
     strategy:
       matrix:
-        arch: [arm64]  # armhf disabled: official Debian armhf requires ARMv7, no Pi1/Zero support - see #450
+        # label = release asset name, debarch = dpkg architecture.
+        # armv7 builds with the armhf toolchain (ARMv7 baseline): Pi 2-5, Zero 2.
+        # ARMv6 Pi 1/Zero are built manually and uploaded separately - see #448/#450.
+        include:
+          - label: arm64
+            debarch: arm64
+          - label: armv7
+            debarch: armhf
 
     steps:
       - name: Checkout repository
@@ -35,12 +42,12 @@ jobs:
             fakeroot \
             dpkg-dev \
             gettext \
-            libcrypt-dev:${{ matrix.arch }} \
-            libcrypt1:${{ matrix.arch }}
+            libcrypt-dev:${{ matrix.debarch }} \
+            libcrypt1:${{ matrix.debarch }}
 
-      - name: Build WiringPi (${{ matrix.arch }})
+      - name: Build WiringPi (${{ matrix.label }})
         run: |
-          if [ "${{ matrix.arch }}" = "armhf" ]; then
+          if [ "${{ matrix.debarch }}" = "armhf" ]; then
             export CC=arm-linux-gnueabihf-gcc
             export AR=arm-linux-gnueabihf-ar
             export STRIP=arm-linux-gnueabihf-strip
@@ -53,10 +60,10 @@ jobs:
           vMaj=$(cut -d. -f1 VERSION)
           vMin=$(cut -d. -f2 VERSION)
           export VERSION="$vMaj.$vMin"
-          export ARCH="${{ matrix.arch }}"
+          export ARCH="${{ matrix.debarch }}"
 
           here=$(pwd)
-          deb_destdir="${here}/debian-template/wiringPi-${{ matrix.arch }}"
+          deb_destdir="${here}/debian-template/wiringPi-${{ matrix.label }}"
           rm -rf "${deb_destdir}"
           mkdir -p "${deb_destdir}/DEBIAN"
           cp -v ${here}/debian-template/wiringPi/control_template "${deb_destdir}/"
@@ -84,21 +91,28 @@ jobs:
             DEB_DESTDIR="${deb_destdir}"
 
           cd "$here/debian-template"
-          fakeroot dpkg-deb --build wiringPi-${{ matrix.arch }}
-          dpkg-name -o wiringPi-${{ matrix.arch }}.deb
+          fakeroot dpkg-deb --build wiringPi-${{ matrix.label }}
+          dpkg-name -o wiringPi-${{ matrix.label }}.deb
+          # dpkg-name uses the dpkg arch (armhf); give the asset the distinct
+          # armv7 name so it is not confused with the manual ARMv6 armhf build.
+          if [ "${{ matrix.label }}" != "${{ matrix.debarch }}" ]; then
+            for f in wiringpi_*_${{ matrix.debarch }}.deb; do
+              mv "$f" "${f%_${{ matrix.debarch }}.deb}_${{ matrix.label }}.deb"
+            done
+          fi
           ls -R
 
       - name: Generate SHA256 checksum
         run: |
           cd debian-template
           ls -R
-          debfile=$(ls -1 wiringpi_*_${{ matrix.arch }}.deb | head -n 1)
+          debfile=$(ls -1 wiringpi_*_${{ matrix.label }}.deb | head -n 1)
           echo "file: $debfile"
-          sha256sum "$debfile" > "SHA256SUMS-${{ matrix.arch }}"
+          sha256sum "$debfile" > "SHA256SUMS-${{ matrix.label }}"
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            debian-template/wiringpi_*_${{ matrix.arch }}.deb
-            debian-template/SHA256SUMS-${{ matrix.arch }}
+            debian-template/wiringpi_*_${{ matrix.label }}.deb
+            debian-template/SHA256SUMS-${{ matrix.label }}
