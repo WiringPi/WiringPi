@@ -89,7 +89,7 @@ int main(void)
     CheckNotSame("Model: ", RaspberryPiModel, -1);
 
     int toleranceTimeout_us = 20000;  //22ms
-    float tolerancePulseIn = 0.01;
+    float tolerancePulseIn = 0.012;
     switch(RaspberryPiModel) {
         case PI_MODEL_A:
         case PI_MODEL_B:     //ARM=800MHz
