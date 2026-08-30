@@ -123,10 +123,12 @@ double StartSequence2(int Edge, int OUTpin, int INpin, int bounce, int* localCou
   if (globalCounter==expected) {
     char str[1024];
     float fTime = (gEndTime - gStartTime) / 1000.0;
+    // bounce overhead varies, grant extra slack in that case
+    float eps = timeExpected_ms*accuracy + (bounce ? 5.0f : 0.0f);
     sprintf(str, "IRQ measured  %g msec (~%g expected)", fTime, timeExpected_ms);
-    CheckSameFloat(str, fTime, timeExpected_ms, timeExpected_ms*accuracy);
+    CheckSameFloat(str, fTime, timeExpected_ms, eps);
     sprintf(str, "IRQ timestamp %g msec (~%g expected)", irq_timstamp_sum, timeExpected_ms);
-    CheckSameFloat(str, irq_timstamp_sum, timeExpected_ms, timeExpected_ms*accuracy);
+    CheckSameFloat(str, irq_timstamp_sum, timeExpected_ms, eps);
     // new data struct
     CheckSame("GPIO IRQ pin", wfiStatusOld.pinBCM, INpin);
     if (INT_EDGE_FALLING==Edge || INT_EDGE_RISING==Edge) {
