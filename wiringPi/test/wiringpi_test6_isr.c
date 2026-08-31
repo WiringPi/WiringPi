@@ -60,8 +60,8 @@ double StartSequence (int Enge, int OUTpin) {
   if (globalCounter==expected) {
     double fTime = (gEndTime - gStartTime) / 1000000.0;
     printf("IRQ worked %g sec (~%gs expected)", fTime, timeExpected/1000.0);
-    double diff = fTime-(timeExpected/1000.0); 
-    if(diff<0.05 && diff>0) {
+    double diff = fTime-(timeExpected/1000.0);
+    if(diff<0.05 && diff>-0.05) {  // symmetric +/-50ms tolerance (jitter may undershoot)
       printf("          -> %spassed%s\n", COLORGRN, COLORDEF);
     } else {
       printf("          -> %sfailed%s\n", COLORRED, COLORDEF);
@@ -141,24 +141,24 @@ int main (void) {
 
 
 	printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d rising\n", IRQpin, OUTpin);
-	wiringPiISR (IRQpin, INT_EDGE_RISING, &wfi) ;
+	wiringPiISR(IRQpin, INT_EDGE_RISING, &wfi);
 	sleep(1);
-	StartSequence (INT_EDGE_RISING, OUTpin);
+	StartSequence(INT_EDGE_RISING, OUTpin);
 	printf("Testing close\n");
 
 	wiringPiISRStop (IRQpin) ;
 
 	printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d falling\n", IRQpin, OUTpin);
-	wiringPiISR (IRQpin, INT_EDGE_FALLING, &wfi) ;
+	wiringPiISR(IRQpin, INT_EDGE_FALLING, &wfi);
 	sleep(1);
-	StartSequence (INT_EDGE_FALLING, OUTpin);
+	StartSequence(INT_EDGE_FALLING, OUTpin);
 	printf("Testing close\n");
 	wiringPiISRStop (IRQpin) ;
 
 	printf("Testing IRQ @ GPIO%d with trigger @ GPIO%d both\n", IRQpin, OUTpin);
-	wiringPiISR (IRQpin, INT_EDGE_BOTH, &wfi) ;
+	wiringPiISR(IRQpin, INT_EDGE_BOTH, &wfi);
 	sleep(1);
-	StartSequence (INT_EDGE_BOTH, OUTpin);
+	StartSequence(INT_EDGE_BOTH, OUTpin);
 	printf("Testing close\n");
 	wiringPiISRStop (IRQpin) ;
 

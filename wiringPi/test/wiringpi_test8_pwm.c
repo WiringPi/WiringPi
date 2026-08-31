@@ -117,7 +117,7 @@ int main (int argc, char *argv[]) {
 
     if (!piRP1Model()) {
       pwmSetMode(PWM_MODE_BAL);
-      pwmc  = 1000;
+      pwmc  = 2000;
       pwmr  = 1024;
       pwm   =  512;
       duty_fact = (double)pwm/(double)pwmr;
