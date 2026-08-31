@@ -1,4 +1,4 @@
-name: Build ARMHF (Bookworm + Debian Package)
+name: Build ARMv7 (Bookworm + Debian Package)
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - develop
 
 jobs:
-  build-armhf:
+  build-armv7:
     runs-on: ubuntu-latest
 
     container:
@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install ARMHF toolchain & packaging tools
+      - name: Install ARMv7 (armhf) toolchain & packaging tools
         run: |
           dpkg --add-architecture armhf
           apt-get update
@@ -32,7 +32,7 @@ jobs:
             libcrypt-dev:armhf \
             libcrypt1:armhf
 
-      - name: Build wiringPi (ARMHF)
+      - name: Build wiringPi (ARMv7)
         run: |
           export CC=arm-linux-gnueabihf-gcc
           export AR=arm-linux-gnueabihf-ar
@@ -69,6 +69,8 @@ jobs:
           vMaj=$(cut -d. -f1 VERSION)
           vMin=$(cut -d. -f2 VERSION)
           export VERSION="$vMaj.$vMin"
+          # dpkg arch stays armhf; ARMv7 baseline (Pi 2-5, Zero 2).
+          # Pi 1/Zero (ARMv6) are built manually - see #448/#450.
           export ARCH="armhf"
 
           here=$(pwd)
@@ -95,21 +97,23 @@ jobs:
           cd "$here/debian-template"
           fakeroot dpkg-deb --build wiringPi
           dpkg-name -o wiringPi.deb
+          # distinct filename so it is not confused with the manual ARMv6 armhf build
+          for f in wiringpi_*_armhf.deb; do [ -e "$f" ] && mv "$f" "${f%_armhf.deb}_armv7.deb"; done
 
       - name: Upload Debian package
         uses: actions/upload-artifact@v4
         with:
-          name: wiringPi-armhf-deb
+          name: wiringPi-armv7-deb
           path: debian-template/*.deb
 
       - name: Generate SHA256 checksum
         run: |
           cd debian-template
-          sha256sum *.deb > SHA256SUMS-armhf
+          sha256sum *.deb > SHA256SUMS-armv7
 
       - name: Upload SHA256 checksum
         uses: actions/upload-artifact@v4
         with:
-          name: wiringPi-armhf-sha256
-          path: debian-template/SHA256SUMS-armhf
+          name: wiringPi-armv7-sha256
+          path: debian-template/SHA256SUMS-armv7
 

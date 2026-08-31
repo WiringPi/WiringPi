@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       arch:
-        description: "Architecture (arm64 or armhf)"
+        description: "Architecture (arm64, armv7 or armhf)"
         required: true
         type: string
       timestamp:
