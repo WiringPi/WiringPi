@@ -85,6 +85,8 @@ void CheckSame(const char* msg, int value, int expect) {
 }
 
 
+
+
 void CheckNotSame(const char* msg, int value, int expect) {
     if (value!=expect) {
         printf("%39s (% 3d<>% 3d) -> %spassed%s\n", msg, value, expect, COLORGRN, COLORDEF);
@@ -101,6 +103,14 @@ void CheckBetween(const char* msg, int value, int min, int max) {
         printf("%39s (% 3d< % 3d <% 3d) -> %sfailed%s\n", msg, min, value, max, COLORRED, COLORDEF);
         globalError=1;
     }
+}
+
+void CheckAlmostSameX(const char* msg, int value, int expect, float factor) {
+    return CheckBetween(msg, value, expect*(1.0f-factor), expect*(1.0f+factor));
+}
+
+void CheckAlmostSame(const char* msg, int value, int expect) {
+    return CheckAlmostSameX(msg, value, expect, 0.01f);
 }
 
 

@@ -1,0 +1,27 @@
+name: Upload Local Test Results
+
+on:
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: "Architecture (arm64, armv7 or armhf)"
+        required: true
+        type: string
+      timestamp:
+        description: "Timestamp for unique artifact naming"
+        required: true
+        type: string
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Upload test results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wiringpi-test-output-${{ inputs.arch }}-${{ inputs.timestamp }}
+          path: test-results.zip
