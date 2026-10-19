@@ -81,7 +81,7 @@ typedef enum  {  // IRQOVER - Interrupt Override
 } RP1_GPIO_CHAN_CTRL_IRQOVER;
 
 
-typedef struct [[gnu::packed]] RP1_GPIO_IO_BANK {
+typedef struct __attribute__((packed)) RP1_GPIO_IO_BANK {
 
   struct RP1_GPIO_IO_CHAN {  // Offset 0x00, Array of 28 by 0x08
 
@@ -529,7 +529,7 @@ typedef enum {
 
 
 
-typedef struct [[gnu::packed]] RP1_GPIO_PADS_BANK {
+typedef struct __attribute__((packed)) RP1_GPIO_PADS_BANK {
 
   volatile RP1_GPIO_PADS_VOLTAGE_SELECT VOLTAGE_SELECT;
 
@@ -564,7 +564,7 @@ typedef enum {  // PWM generation mode
   RP1_PWM_CHAN_MODE_LSB       = 0x07          //  LSB Serialiser output
 } RP1_PWM_CHAN_MODE;
 
-typedef struct [[gnu::packed]] RP1_PWM_BANK {
+typedef struct __attribute__((packed)) RP1_PWM_BANK {
 
   union RP1_PWM_GLOBAL_CTRL {  // GLOBAL_CTRL
     volatile uint32_t GLOBAL_CTRL_register;

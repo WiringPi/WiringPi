@@ -63,7 +63,7 @@ typedef enum {
 } BCM_AUX_SPI_CTRL_DOUT_HOLD;      // Controls the extra DOUT hold time in system clock cycles.
 
 
-typedef struct [[gnu::packed]] BCM_AUXILLARY_UART_SPI_BANK {
+typedef struct __attribute__((packed)) BCM_AUXILLARY_UART_SPI_BANK {
 
   // Note: The SPI master numbers used differ from the peripherals documentation for the BCM283X / BCM2711 chips.
   //    WiringPi uses SPI 0 and 1, whereas the hardware documentation uses SPI 1 and 2.
@@ -373,7 +373,7 @@ CHECK_OFFSET(BCM_AUX_BANK, SPI[1].IO_DATA_TXHOLD[1],   0xF4);
 CHECK_OFFSET(BCM_AUX_BANK, SPI[1].IO_DATA_TXHOLD[2],   0xF8);
 CHECK_OFFSET(BCM_AUX_BANK, SPI[1].IO_DATA_TXHOLD[3],   0xFC);
 
-typedef struct [[gnu::packed]] BCM_PWM_BANK {
+typedef struct __attribute__((packed)) BCM_PWM_BANK {
 
   // Note: The channel numbers used differ from the peripherals documentation for the BCM283X / BCM2711 chips.
   //    WiringPi uses channel numbers 0 and 1, whereas the hardware documentation uses channel numbers 1 and 2.
