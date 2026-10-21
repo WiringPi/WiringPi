@@ -4,4 +4,5 @@ lib*.so.*
 *~
 debian-template/wiringPi
 debian-template/wiringpi-*.deb
+debian/debhelper-build-stamp
 gpio/gpio

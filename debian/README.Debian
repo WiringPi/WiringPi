@@ -1,0 +1,43 @@
+wiringPi Debian Package Split
+=============================
+
+This package has been split into three separate binary packages:
+
+  libwiringpi3  - Runtime library only (GPIO functions)
+  libwiringpi-dev - Development files (headers, symlinks)
+  wiringpi      - gpio command line utility
+
+Why the split?
+  - The library soname changed from libwiringPi.so.2 to libwiringPi.so.3
+    in WiringPi 3.x, requiring a new package name to avoid conflicts.
+  - Separating the dev files allows independent installation.
+  - The wiringpi binary depends only on the runtime library.
+
+Installation
+------------
+
+  sudo apt install libwiringpi3 wiringpi   # runtime + utility
+  sudo apt install libwiringpi-dev         # headers & symlinks
+
+Usage
+-----
+
+  gpio -export all out
+  gpio -mode 0 out
+  gpio -write 0 1
+
+For full documentation, see:
+  /usr/share/doc/wiringpi/
+  /usr/share/doc/libwiringpi3/
+
+Notes
+-----
+
+- The utility requires wiringPi board setup (run gpio readall first time).
+- Header files are in /usr/include/ and symlinked via libwiringpi-dev.
+- ABI compatibility: libwiringPi.so.3 is the soname; links against
+  -lwiringPi expect this library.
+
+See also:
+  /usr/share/doc/wiringpi/changelog.Debian.gz
+  /usr/share/doc/libwiringpi3/copyright

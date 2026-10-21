@@ -91,7 +91,7 @@ if [ x$1 = "xdebian" ]; then
   export VERSION=$vMaj.$vMin
   export ARCH=$(dpkg-architecture -qDEB_HOST_ARCH)
   echo version:$VERSION architecture:$ARCH
-  envsubst < control_template > DEBIAN/control
+  envsubst < ../control_template > DEBIAN/control
   rm -rf usr
   cd $here/wiringPi
   make install-deb DEB_DESTDIR=${deb_destdir}

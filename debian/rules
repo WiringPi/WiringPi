@@ -37,11 +37,13 @@ override_dh_auto_build: dirs
 	    bash -xe ./build
 
 override_dh_auto_install:
+
+override_dh_install:
 	dh_install
 	set -ex; for l in libwiringPi libwiringPiDev; do \
-		ln -sf $$l.so.$${VERSION} \
+		ln -sfT $$l.so.$${VERSION} \
 			debian/libwiringpi$$soname/usr/lib/$$l.so.$$soname; \
-		ln -sf $$l.so.$${VERSION} \
+		ln -sfT $$l.so.$$soname \
 			debian/libwiringpi-dev/usr/lib/$$l.so; \
 	done
 
