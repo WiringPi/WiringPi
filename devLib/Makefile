@@ -93,7 +93,7 @@ install:	$(DYNAMIC)
 	$Q echo "[Install Dynamic Lib]"
 	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/lib
 	$Q install -m 0755 libwiringPiDev.so.$(VERSION)			$(DESTDIR)$(PREFIX)/lib/libwiringPiDev.so.$(VERSION)
-	$Q ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPiDev.so.$(VERSION)	$(DESTDIR)/lib/libwiringPiDev.so
+	$Q ln -sf libwiringPiDev.so.$(VERSION)				$(DESTDIR)/lib/libwiringPiDev.so
 	$Q $(LDCONFIG)
 
 .PHONY:	install-static
@@ -119,7 +119,7 @@ install-deb:	$(DYNAMIC) check-deb-destdir
 	$Q echo "[Install Dynamic Lib: deb]"
 	install -m 0755 -d							$(DEB_DESTDIR)/usr/lib
 	install -m 0755 libwiringPiDev.so.$(VERSION)				$(DEB_DESTDIR)/usr/lib/libwiringPiDev.so.$(VERSION)
-	ln -sf $(DEB_DESTDIR)/usr/lib/libwiringPiDev.so.$(VERSION)		$(DEB_DESTDIR)/usr/lib/libwiringPiDev.so
+	ln -sf libwiringPiDev.so.$(VERSION)					$(DEB_DESTDIR)/usr/lib/libwiringPiDev.so
 
 .PHONY:	uninstall
 uninstall:
