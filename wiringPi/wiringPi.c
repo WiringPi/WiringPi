@@ -3246,7 +3246,6 @@ static void *interruptHandlerV2(void *arg)
   struct pollfd polls ;
   struct gpio_v2_line_event evdat[64];
   struct WPIWfiStatus wfiStatus;
-  struct timespec tspec = {0, 5e5};  /* 0.5 ms timeout {0, 1e6} */
 
   params = (struct interrupt_handler_params *)arg;
   pin = params->pin;
@@ -3261,11 +3260,11 @@ static void *interruptHandlerV2(void *arg)
 
   // Setup poll structure
     polls.fd      = fd;
-    polls.events  = POLLIN | POLLPRI;
+    polls.events  = POLLIN | POLLPRI | POLLERR;
     polls.revents = 0;
 
     // get event data, this is also a cancelation point, when pthread_cancel is called
-    ret = ppoll(&polls, 1, &tspec, NULL);     // returns -1 on error, 0 on timeout, >0 number of elements
+    ret = ppoll(&polls, 1, NULL, NULL);     // returns -1 on error, 0 on timeout (wait forever), >0 number of elements
 
     if (ret < 0) {      // we do not reach this point if canceled, ppoll does not return, is Cancellation Point
         if (wiringPiDebug) {
@@ -3274,8 +3273,8 @@ static void *interruptHandlerV2(void *arg)
         pthread_exit(NULL);
         return NULL;        // never landing here
     } else if (ret == 0) {
-//        if (wiringPiDebug)
-//            printf("interruptHandlerV2: timeout: poll returned=%d\n", ret);
+        if (wiringPiDebug)
+            printf("interruptHandlerV2: timeout: poll returned=%d\n", ret);
         continue;
     }
     else {
