@@ -102,7 +102,7 @@ install:	$(DYNAMIC)
 	$Q echo "[Install Dynamic Lib]"
 	$Q install -m 0755 -d						$(DESTDIR)$(PREFIX)/lib
 	$Q install -m 0755 libwiringPi.so.$(VERSION)			$(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION)
-	$Q ln -sf $(DESTDIR)$(PREFIX)/lib/libwiringPi.so.$(VERSION)	$(DESTDIR)/lib/libwiringPi.so
+	$Q ln -sf libwiringPi.so.$(VERSION)				$(DESTDIR)$(PREFIX)/lib/libwiringPi.so
 	$Q $(LDCONFIG)
 
 .PHONY: check-deb-destdir
@@ -126,6 +126,8 @@ uninstall:
 	$Q echo "[UnInstall]"
 	$Q cd $(DESTDIR)$(PREFIX)/include/ && rm -f $(HEADERS)
 	$Q cd $(DESTDIR)$(PREFIX)/lib/     && rm -f libwiringPi.*
+# remove link to $(PREFIX)/lib left in $(DESTDIR)/lib by older installs
+	$Q if [ -n "$(PREFIX)" ]; then case "$$(readlink $(DESTDIR)/lib/libwiringPi.so)" in $(DESTDIR)$(PREFIX)/lib/*) rm -f $(DESTDIR)/lib/libwiringPi.so ;; esac; fi
 	$Q $(LDCONFIG)
 
 

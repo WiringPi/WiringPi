@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+
+# Warn about a copy installed with ./build (make install) in /usr/local,
+# it is found before this package by the linker and in PATH.
+
+found=""
+for f in /usr/local/lib/libwiringPi.so* /usr/local/lib/libwiringPiDev.so* /usr/local/bin/gpio; do
+  [ -e "$f" ] && found="$found $f"
+done
+
+if [ -n "$found" ]; then
+  echo "WARNING: wiringPi is also installed in /usr/local (./build):" >&2
+  for f in $found; do
+    echo "  $f" >&2
+  done
+  echo "These files are used instead of this package. Remove them with" >&2
+  echo "'sudo ./build uninstall' in the WiringPi source directory, then 'sudo ldconfig'." >&2
+fi
+
+exit 0

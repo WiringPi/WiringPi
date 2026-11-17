@@ -114,6 +114,31 @@ fi
   echo "====================="
   echo
 
+# Don't install a second copy next to the deb package (not for staging installs with DESTDIR)
+
+if [ -z "$DESTDIR" ] && dpkg-query -W -f='${Status}' wiringpi 2>/dev/null | grep -q "install ok installed"; then
+  echo "The wiringpi deb package is already installed."
+  echo "Remove it first to avoid two different versions on the system:"
+  echo "  sudo apt purge wiringpi"
+  exit 1
+fi
+
+# Recommend the deb package, ask only when run interactively (not in CI or debian/rules)
+
+if [ -z "$DESTDIR" ] && [ -t 0 ]; then
+  echo "This installs wiringPi to /usr/local (not managed by apt)."
+  echo "Recommended is to build and install the deb package instead:"
+  echo "  ./build debian"
+  echo "  sudo apt install ./debian-template/wiringpi_*.deb"
+  echo
+  printf "Install to /usr/local anyway? [y/N] "
+  read answer
+  case "$answer" in
+    [yYjJ]*) echo ;;
+    *) echo "Aborted." ; exit 1 ;;
+  esac
+fi
+
   hardware=`fgrep Hardware /proc/cpuinfo | head -1 | awk '{ print $3 }'`
 
   echo
