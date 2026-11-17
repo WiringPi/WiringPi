@@ -1,6 +1,35 @@
+wiringpi (3.20-1) unstable; urgency=medium
+
+  * New upstream release 3.20.
+  * Rename libwiringpi2 to libwiringpi3: since 3.x the soname is
+    libwiringPi.so.3 and debian/rules derives the package directory name
+    from the major version, so the old name no longer matched and
+    override_dh_auto_install failed to create libwiringPi.so.3.
+  * libwiringpi-dev: depend on libwiringpi3.
+  * libwiringpi3.shlibs: declare soname 3 instead of 2.
+  * wiringpi.install: the man page is installed under usr/share/man (not
+    usr/man) and the readme is README.md (not README.TXT).
+  * debian/rules: fix the soname symlinks in override_dh_install instead
+    of override_dh_auto_install. The debhelper sequence runs dh_install
+    immediately after dh_auto_install, so the copy performed inside the
+    auto_install override was followed by a second dh_install run that
+    re-copied the absolute symlinks from debian/tmp over the corrected
+    ones, shipping build-directory paths in libwiringpi-dev. Use ln -sfT
+    so an existing destination symlink is never treated as a directory.
+  * debian/compat: bump from 8 to 10
+  * debian/copyright: convert to SPDX-2.1, LGPL-3.0-or-later,
+    update copyright years to 2012-2026
+  * debian/control: update Standards-Version to 4.6.2,
+    Build-Depends to debhelper (>= 10), add Vcs-Git/Vcs-Browser,
+    fix typo "librariees" -> "libraries",
+    set placeholder maintainer (to be set by project team)
+  * debian/source/format: add 3.0 (quilt)
+  * debian/README.Debian: add package split documentation
+
+ -- Martin Homuth-Rosemann <Ho-Ro@users.noreply.github.com>  Wed, 21 Oct 2026 12:00:00 +0200
+
 wiringpi (2.26~iwj) rpi-unstable; urgency=low
 
   * Initial version with real Debian source package build.
 
- -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Sep 2015 18:31:35 +0100
-
+ -- Ian Jackson <ijackson@chiark.greenend.org.uk>  Sat, 12 Sep 2015 18:31:21 +0100

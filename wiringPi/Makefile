@@ -119,7 +119,7 @@ install-deb:	$(DYNAMIC) check-deb-destdir
 	$Q echo "[Install Dynamic Lib: deb]"
 	install -m 0755 -d							$(DEB_DESTDIR)/usr/lib
 	install -m 0755 libwiringPi.so.$(VERSION)				$(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION)
-	ln -sf $(DEB_DESTDIR)/usr/lib/libwiringPi.so.$(VERSION)	$(DEB_DESTDIR)/usr/lib/libwiringPi.so
+	ln -sf libwiringPi.so.$(VERSION)	$(DEB_DESTDIR)/usr/lib/libwiringPi.so
 
 .PHONY:	uninstall
 uninstall:

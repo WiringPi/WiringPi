@@ -125,6 +125,49 @@ mv debian-template/wiringpi-3.x.deb .
 sudo apt install ./wiringpi-3.x.deb
 ```
 
+### From Source (Debian source package, split)
+
+The repository also carries classic `debian/` packaging that builds three
+separate packages instead of the single all-in-one package described above:
+
+```sh
+sudo apt install debhelper      # build dependency
+dpkg-buildpackage -us -uc -b    # run from the source root
+
+# produces, next to the source tree:
+#   libwiringpi3_..._arm64.deb       runtime library (soname .so.3)
+#   libwiringpi-dev_..._arm64.deb    headers, dev symlinks, examples
+#   wiringpi_..._arm64.deb           gpio command + man page
+```
+
+Install all three together:
+
+```sh
+sudo apt install ../libwiringpi3_*_arm64.deb \
+                 ../libwiringpi-dev_*_arm64.deb \
+                 ../wiringpi_*_arm64.deb
+```
+
+### The two packaging schemes are mutually exclusive
+
+Both schemes install the same files (`/usr/bin/gpio`, `/usr/include/*.h`,
+`/usr/lib/libwiringPi*.so*`), but neither declares `Conflicts`/`Replaces`
+against the other. They therefore **cannot be installed at the same time**, and
+one cannot simply be installed on top of the other as a replacement - `apt`
+stops with a file conflict:
+
+```
+dpkg: error: trying to overwrite '/usr/lib/libwiringPi.so.3.20', which is
+also in package wiringpi 3.20
+```
+
+To switch from one scheme to the other, purge the installed one first:
+
+```sh
+sudo apt purge '*wiringpi*'
+sudo apt install ./<chosen-package>.deb
+```
+
 ### Prebuilt Binaries
 
 Grab the latest release from [here](https://github.com/WiringPi/WiringPi/releases).

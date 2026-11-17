@@ -2,7 +2,7 @@
 *.substvars
 tmp
 wiringpi
-libwiringpi2
+libwiringpi3
 libwiringpi-dev
 files
 *.postinst.debhelper
