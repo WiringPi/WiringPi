@@ -211,6 +211,18 @@ const unsigned int CLK_PWM0_DIV_INT  = (0x00078/4);
 const unsigned int CLK_PWM0_DIV_FRAC = (0x0007C/4);
 const unsigned int CLK_PWM0_SEL	     = (0x00080/4);
 
+//RP1 chip (@Pi5) GPCLK, clocks_main block. Offsets from clk-rp1.c (rpi-6.12.y),
+//layout mirrors CLK_PWM0_* with 0x10 stride per generator. See wiringpi_rp1_gpclk.md.
+const unsigned int RP1_GPCLK_OE_CTRL   = (0x00000/4); // output-enable, 1 bit per GPCLK (bit mapping unverified)
+const unsigned int CLK_GP0_CTRL        = (0x00174/4);
+const unsigned int CLK_GP0_DIV_INT     = (0x00178/4);
+const unsigned int CLK_GP0_DIV_FRAC    = (0x0017C/4);
+const unsigned int CLK_GP0_SEL         = (0x00180/4);
+const unsigned int RP1_GPCLK_REG_STRIDE   = (0x10/4); // GP0 -> GP1 -> GP2
+const unsigned int RP1_GPCLK_XOSC_HZ      = 24000000; // xosc reference (exact value unverified on Pi5 HW)
+const unsigned int RP1_GPCLK_DIV_FRAC_BITS = 16;      // RP1 frac divisor: 65536 steps
+const unsigned int RP1_GPCLK_DIV_INT_MAX  = 0xFFFF;   // 16-bit integer divisor
+
 //RP1 chip (@Pi5) address
 const unsigned long long RP1_64_BASE_Addr = 0x1f000d0000;
 const unsigned int RP1_BASE_Addr     = 0x40000000;
@@ -1832,6 +1844,84 @@ void pwmSetClock (int divisor)
 
 
 /*
+ * gpioToGpClkRP1:
+ *	Map a BCM pin to its RP1 GPCLK generator index (0..2).
+ *	Only BCM4/5/6 (GPCLK0/1/2, ALT0) are on the Pi5 40-pin header.
+ *	Returns -1 if the pin has no usable GPCLK.
+ *********************************************************************************
+ */
+
+static int gpioToGpClkRP1 (int bcmPin)
+{
+  switch (bcmPin) {
+    case 4:  return 0 ;
+    case 5:  return 1 ;
+    case 6:  return 2 ;
+    default: return -1 ;
+  }
+}
+
+
+/*
+ * gpioClockSetRP1:
+ *	RP1 (Pi5) GPCLK path for gpioClockSet. pin is already a BCM number.
+ *	f = xosc / (DIV_INT + DIV_FRAC/65536), xosc = 24 MHz.
+ *	DIV_FRAC register uses its upper 16 bits (hw reads frac >> 16).
+ *********************************************************************************
+ */
+
+static void gpioClockSetRP1 (int pin, int freq)
+{
+  if (!clk) {
+    fprintf (stderr, "wiringPi: gpioClockSet but no clk memory available (need root), ignoring\n") ;
+    return ;
+  }
+
+  int gpclk = gpioToGpClkRP1 (pin) ;
+  if (gpclk < 0) {
+    if (wiringPiDebug) {
+      printf ("gpioClockSet: BCM pin %d has no usable GPCLK on Pi5\n", pin) ;
+    }
+    return ;
+  }
+  if (freq < 1) {
+    freq = 1 ;
+  }
+
+  uint64_t ref  = RP1_GPCLK_XOSC_HZ ;
+  uint32_t ufreq = (uint32_t)freq ;
+  uint32_t divi = (uint32_t)(ref / ufreq) ;
+  uint32_t divf = (uint32_t)(((ref % ufreq) << RP1_GPCLK_DIV_FRAC_BITS) / ufreq) ; // 0..65535
+
+  if (divi > RP1_GPCLK_DIV_INT_MAX) {
+    divi = RP1_GPCLK_DIV_INT_MAX ;
+    divf = 0 ;
+  }
+  if (divi < 1) {
+    divi = 1 ;
+  }
+
+  unsigned int off     = (unsigned int)gpclk * RP1_GPCLK_REG_STRIDE ;
+  unsigned int ctrlReg = CLK_GP0_CTRL     + off ;
+  unsigned int diviReg = CLK_GP0_DIV_INT  + off ;
+  unsigned int divfReg = CLK_GP0_DIV_FRAC + off ;
+  unsigned int selReg  = CLK_GP0_SEL      + off ;
+
+  clk[ctrlReg] = RP1_CLK_PWM0_CTRL_DISABLE_MAGIC ;                    // stop before reprogramming
+  clk[diviReg] = divi ;
+  clk[divfReg] = divf << (32 - RP1_GPCLK_DIV_FRAC_BITS) ;            // value in upper 16 bit
+  clk[selReg]  = 1 ;                                                 // xosc / aux source, as PWM0
+  clk[ctrlReg] = RP1_CLK_PWM0_CTRL_ENABLE_MAGIC ;                    // enable (CTRL.ENABLE = bit 11)
+  clk[RP1_GPCLK_OE_CTRL] |= (1u << gpclk) ;                          // pad output-enable (bit mapping unverified)
+
+  if (wiringPiDebug) {
+    printf ("gpioClockSet RP1: GPCLK%d BCM%d %dHz -> DIV_INT %u DIV_FRAC %u (0x%08X)\n",
+            gpclk, pin, freq, divi, divf, clk[divfReg]) ;
+  }
+}
+
+
+/*
  * gpioClockSet:
  *	Set the frequency on a GPIO clock pin
  *********************************************************************************
@@ -1841,9 +1931,13 @@ void gpioClockSet (int pin, int freq)
 {
   int divi, divr, divf ;
 
-  FailOnModel5("gpioClockSet");
   if (!ToBCMPin(&pin)) {
     return;
+  }
+
+  if (piRP1Model()) {			// Pi5 / RP1 has its own clock-manager layout
+    gpioClockSetRP1 (pin, freq) ;
+    return ;
   }
 
   divi = 19200000 / freq ;
@@ -2313,7 +2407,6 @@ void pinMode (int pin, int mode)
     }
     else if (mode == GPIO_CLOCK)
     {
-      RETURN_ON_MODEL5
       if ((alt = gpioToGpClkALT0 [pin]) == 0)	// Not a GPIO_CLOCK pin
 	      return ;
 
@@ -2321,9 +2414,19 @@ void pinMode (int pin, int mode)
 
 // Set pin to GPIO_CLOCK mode and set the clock frequency to 100KHz
 
-      *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
-      delayMicroseconds (110) ;
-      gpioClockSet      (pin, 100000) ;
+      if (piRP1Model()) {
+        if (gpioToGpClkRP1 (pin) < 0) {		// Pi5: only BCM4/5/6 on the header
+          fprintf (stderr, "pinMode: BCM pin %d has no usable GPCLK on Pi5\n", pin) ;
+          return ;
+        }
+        pads[1+pin] = (pin<=8) ? RP1_PAD_DEFAULT_0TO8 : RP1_PAD_DEFAULT_FROM9 ;	// enable output
+        pinModeAlt (origPin, FSEL_ALT0) ;	// GPCLK function
+        gpioClockSet (origPin, 100000) ;
+      } else {
+        *(gpio + fSel) = (*(gpio + fSel) & ~(7 << shift)) | (alt << shift) ;
+        delayMicroseconds (110) ;
+        gpioClockSet      (pin, 100000) ;
+      }
     }
   }
   else
