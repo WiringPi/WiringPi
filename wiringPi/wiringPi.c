@@ -3242,7 +3242,7 @@ static void *interruptHandlerV2(void *arg)
 {
   struct interrupt_handler_params *params;
   int pin, ret, fd, i;
-  unsigned int readret;
+  ssize_t readret;
   struct pollfd polls ;
   struct gpio_v2_line_event evdat[64];
   struct WPIWfiStatus wfiStatus;
@@ -3267,6 +3267,9 @@ static void *interruptHandlerV2(void *arg)
     ret = ppoll(&polls, 1, NULL, NULL);     // returns -1 on error, 0 on timeout (wait forever), >0 number of elements
 
     if (ret < 0) {      // we do not reach this point if canceled, ppoll does not return, is Cancellation Point
+        if (errno == EINTR) {   // interrupted by a signal, wait again
+            continue;
+        }
         if (wiringPiDebug) {
           printf("interruptHandlerV2: ERROR: poll returned=%d\n", ret);
         }
@@ -3281,14 +3284,22 @@ static void *interruptHandlerV2(void *arg)
         if (wiringPiDebugIRQ) {
             printf("interruptHandlerV2: IRQ line %d received %d events, fd=%d\n", pin, ret, isrFds[pin]) ;
         }
+        if (!(polls.revents & POLLIN) && (polls.revents & (POLLERR | POLLHUP | POLLNVAL))) {
+            // fd error without data, ppoll would return immediately again (endless loop)
+            if (wiringPiDebug) {
+                printf("interruptHandlerV2: poll revents=0x%X, exit thread\n", polls.revents);
+            }
+            pthread_exit(NULL);
+            return NULL;        // never landing here
+        }
         if (polls.revents & POLLIN) {
             /* read event data */
             readret = read(fd, &evdat, sizeof(evdat));
-            if (readret >= sizeof(evdat[0])) {
+            if (readret >= (ssize_t)sizeof(evdat[0])) {
+                ret = (int)(readret/(ssize_t)sizeof(evdat[0]));     // number of events read from fd
                 if (wiringPiDebugIRQ) {
-                    printf("interruptHandlerV2: IRQ at PIN: %d, events: %u\n", evdat[0].offset, readret/(unsigned int)sizeof(evdat[0])) ;
+                    printf("interruptHandlerV2: IRQ at PIN: %d, events: %d\n", evdat[0].offset, ret) ;
                 }
-                ret = readret/sizeof(evdat[0]);     // number of events read from fd
                 for (i = 0; i < ret; ++i) {
                   int edge;
                   switch (evdat[i].id) {
